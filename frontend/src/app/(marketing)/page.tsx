@@ -4,7 +4,9 @@ import { organizationSchema } from '@/lib/schema'
 import { Section } from '@/components/layout/Section'
 import { Container } from '@/components/layout/Container'
 import { LinkButton } from '@/components/ui/link-button'
+import { StatsSection } from '@/components/home/StatsSection'
 import { whatsappLink } from '@/config/site'
+import { homeContent } from '@/content/home'
 import { stats } from '@/content/stats'
 import { courses } from '@/content/courses'
 import { testimonials } from '@/content/testimonials'
@@ -20,6 +22,7 @@ import {
   Clock,
   ArrowRight,
 } from 'lucide-react'
+import type { LucideIcon } from 'lucide-react'
 
 export const metadata: Metadata = buildMetadata({
   title: 'Online Quran Academy | 1-on-1 Classes | Alrayan Academy',
@@ -28,31 +31,15 @@ export const metadata: Metadata = buildMetadata({
   path: '/',
 })
 
-const trustBadges = [
-  { icon: Users, label: '1-on-1 Classes' },
-  { icon: ShieldCheck, label: 'Free First Class' },
-  { icon: Heart, label: 'Female Teachers Available' },
-  { icon: Globe, label: 'Native Arab Tutors' },
-  { icon: GraduationCap, label: 'Ijazah-Certified' },
-]
-
-const whyUs = [
-  {
-    icon: BookOpen,
-    title: 'Qualified Teachers',
-    desc: 'All teachers hold Ijazah and are graduates of Al-Azhar or equivalent Islamic universities.',
-  },
-  {
-    icon: Clock,
-    title: 'Flexible Scheduling',
-    desc: 'Classes 7 days a week across all timezones — mornings, afternoons, or evenings.',
-  },
-  {
-    icon: ShieldCheck,
-    title: 'Risk-Free Trial',
-    desc: 'Book your first class completely free. No credit card, no commitment.',
-  },
-]
+const iconMap: Record<string, LucideIcon> = {
+  Users,
+  Globe,
+  Heart,
+  GraduationCap,
+  ShieldCheck,
+  BookOpen,
+  Clock,
+}
 
 export default function HomePage() {
   return (
@@ -86,29 +73,27 @@ export default function HomePage() {
               className="font-arabic text-accent text-2xl mb-6"
               dir="rtl"
               lang="ar"
-              aria-label="In the name of Allah, the Most Gracious, the Most Merciful"
+              aria-label={homeContent.hero.arabicVerseLabel}
             >
-              بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ
+              {homeContent.hero.arabicVerse}
             </p>
 
             <h1
               id="hero-heading"
               className="heading-display font-display text-white text-balance mb-6"
             >
-              Learn{' '}
-              <em className="text-accent not-italic">Quran Online</em>
-              {' '}with Certified Teachers
+              {homeContent.hero.headingStart}{' '}
+              <em className="text-accent not-italic">{homeContent.hero.headingEmphasis}</em>
+              {' '}{homeContent.hero.headingEnd}
             </h1>
 
             <p className="text-white/80 text-xl leading-relaxed mb-10 max-w-2xl">
-              Premium 1-on-1 classes in Quran, Tajweed, Hifz, Arabic, and
-              Islamic Studies. Certified teachers from Al-Azhar. Students in
-              50+ countries.
+              {homeContent.hero.subheading}
             </p>
 
             <div className="flex flex-wrap items-center gap-4 mb-10">
               <LinkButton href="/contact" size="lg" variant="gold">
-                Book Free Trial Class
+                {homeContent.hero.ctaPrimary}
               </LinkButton>
               <a
                 href={whatsappLink()}
@@ -116,13 +101,11 @@ export default function HomePage() {
                 rel="noopener noreferrer"
                 className="flex items-center gap-2.5 h-14 px-7 rounded-xl border border-white/30 text-white text-base font-medium hover:border-accent hover:text-accent transition-colors"
               >
-                Chat on WhatsApp
+                {homeContent.hero.ctaSecondary}
               </a>
             </div>
 
-            <p className="text-white/50 text-sm">
-              ✓ Free first class &nbsp;·&nbsp; ✓ No credit card required &nbsp;·&nbsp; ✓ Cancel anytime
-            </p>
+            <p className="text-white/50 text-sm">{homeContent.hero.microcopy}</p>
           </div>
         </Container>
       </section>
@@ -135,32 +118,24 @@ export default function HomePage() {
             role="list"
             aria-label="Trust badges"
           >
-            {trustBadges.map(({ icon: Icon, label }) => (
-              <li
-                key={label}
-                className="flex items-center gap-2.5 bg-white border border-border-soft rounded-full px-5 py-3 text-sm font-medium text-primary shadow-soft"
-              >
-                <Icon className="size-4 text-secondary" aria-hidden="true" />
-                {label}
-              </li>
-            ))}
+            {homeContent.trustBadges.map(({ icon, label }) => {
+              const Icon = iconMap[icon] ?? BookOpen
+              return (
+                <li
+                  key={label}
+                  className="flex items-center gap-2.5 bg-white border border-border-soft rounded-full px-5 py-3 text-sm font-medium text-primary shadow-soft"
+                >
+                  <Icon className="size-4 text-secondary" aria-hidden="true" />
+                  {label}
+                </li>
+              )
+            })}
           </ul>
         </Container>
       </Section>
 
-      {/* ── Stats ── */}
-      <Section>
-        <Container>
-          <dl className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
-            {stats.map(({ value, label }) => (
-              <div key={label}>
-                <dt className="heading-xl font-display text-secondary mb-2">{value}</dt>
-                <dd className="text-muted-text text-sm font-medium uppercase tracking-wide">{label}</dd>
-              </div>
-            ))}
-          </dl>
-        </Container>
-      </Section>
+      {/* ── Stats (client component — scroll-animated counters) ── */}
+      <StatsSection stats={stats} />
 
       {/* ── Courses Grid ── */}
       <Section bg="cream" aria-labelledby="courses-heading">
@@ -212,26 +187,30 @@ export default function HomePage() {
         <Container>
           <div className="grid lg:grid-cols-2 gap-16 items-center">
             <div>
-              <p className="text-secondary text-sm font-semibold uppercase tracking-wider mb-3">Why Alrayan Academy</p>
+              <p className="text-secondary text-sm font-semibold uppercase tracking-wider mb-3">
+                {homeContent.whyUs.eyebrow}
+              </p>
               <h2 id="why-heading" className="heading-xl font-heading text-primary mb-6">
-                Scholars, Not Just Teachers
+                {homeContent.whyUs.heading}
               </h2>
               <p className="text-muted-text text-lg leading-relaxed mb-8">
-                Every teacher at Alrayan holds an authenticated Ijazah — a chain of transmission going back to the
-                Prophet ﷺ. We don&apos;t hire tutors; we partner with certified scholars.
+                {homeContent.whyUs.body}
               </p>
               <ul className="space-y-6" role="list">
-                {whyUs.map(({ icon: Icon, title, desc }) => (
-                  <li key={title} className="flex gap-4">
-                    <div className="shrink-0 w-11 h-11 rounded-xl bg-accent/15 flex items-center justify-center">
-                      <Icon className="size-5 text-accent" aria-hidden="true" />
-                    </div>
-                    <div>
-                      <h3 className="font-semibold text-primary mb-1">{title}</h3>
-                      <p className="text-muted-text text-sm leading-relaxed">{desc}</p>
-                    </div>
-                  </li>
-                ))}
+                {homeContent.whyUs.items.map(({ icon, title, desc }) => {
+                  const Icon = iconMap[icon] ?? BookOpen
+                  return (
+                    <li key={title} className="flex gap-4">
+                      <div className="shrink-0 w-11 h-11 rounded-xl bg-accent/15 flex items-center justify-center">
+                        <Icon className="size-5 text-accent" aria-hidden="true" />
+                      </div>
+                      <div>
+                        <h3 className="font-semibold text-primary mb-1">{title}</h3>
+                        <p className="text-muted-text text-sm leading-relaxed">{desc}</p>
+                      </div>
+                    </li>
+                  )
+                })}
               </ul>
               <div className="mt-10 flex gap-4 flex-wrap">
                 <LinkButton href="/about">Meet Our Teachers</LinkButton>
@@ -245,10 +224,10 @@ export default function HomePage() {
             >
               <div className="absolute top-0 right-0 w-64 h-64 rounded-full bg-secondary/20 translate-x-1/3 -translate-y-1/3" />
               <p className="font-arabic text-accent text-3xl mb-6" dir="rtl" lang="ar">
-                اقْرَأْ بِاسْمِ رَبِّكَ الَّذِي خَلَقَ
+                {homeContent.whyUs.decorativeVerse}
               </p>
               <p className="text-white/60 text-sm italic mb-10">
-                &quot;Read in the name of your Lord who created.&quot; — Al-Alaq 96:1
+                {homeContent.whyUs.decorativeVerseTranslation}
               </p>
               <div className="grid grid-cols-2 gap-6">
                 {stats.map(({ value, label }) => (
@@ -361,20 +340,20 @@ export default function HomePage() {
         <Container>
           <div className="text-center max-w-2xl mx-auto">
             <p className="font-arabic text-accent text-2xl mb-4" dir="rtl" lang="ar" aria-hidden="true">
-              خَيْرُكُمْ مَنْ تَعَلَّمَ الْقُرْآنَ وَعَلَّمَهُ
+              {homeContent.cta.arabicHadith}
             </p>
             <p className="text-white/60 text-sm italic mb-8">
-              &quot;The best of you are those who learn the Quran and teach it.&quot; — Prophet Muhammad ﷺ
+              {homeContent.cta.hadithTranslation}
             </p>
             <h2 id="cta-heading" className="heading-xl font-display text-white mb-4">
-              Begin Your Quran Journey Today
+              {homeContent.cta.heading}
             </h2>
             <p className="text-white/70 text-lg mb-10">
-              Join 10,000+ students from 50+ countries. Your first class is completely free.
+              {homeContent.cta.subheading}
             </p>
             <div className="flex flex-wrap justify-center gap-4">
               <LinkButton href="/contact" size="lg" variant="gold">
-                Book Free Trial Class
+                {homeContent.cta.ctaPrimary}
               </LinkButton>
               <a
                 href={whatsappLink()}
@@ -382,7 +361,7 @@ export default function HomePage() {
                 rel="noopener noreferrer"
                 className="flex items-center gap-2.5 h-14 px-7 rounded-xl border border-white/30 text-white font-medium hover:border-accent hover:text-accent transition-colors"
               >
-                Chat on WhatsApp
+                {homeContent.cta.ctaSecondary}
               </a>
             </div>
           </div>

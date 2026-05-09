@@ -32,6 +32,16 @@ export const courses: Course[] = [
     features: ['Noorani Qaida included', 'Patient, child-specialist teachers', 'Interactive and engaging lessons', 'Progress reports for parents'],
   },
   {
+    slug: 'quran-classes-for-adults',
+    title: 'Quran for Adults',
+    shortDescription: 'Start or restart your Quran journey as an adult — at your own pace, with your own teacher.',
+    longDescription: 'Designed for adults who are beginners or returning to the Quran after a gap. No judgment, no rush — just a qualified teacher dedicated entirely to your progress. Covers Noorani Qaida through Tajweed at a pace that works for your life.',
+    icon: 'BookOpen',
+    ageGroup: 'Adults 18+',
+    level: 'Beginner',
+    features: ['Start from scratch or pick up where you left off', 'Flexible scheduling around work and family', 'Certified teacher, 1-on-1 only', 'Tajweed correction from the first lesson'],
+  },
+  {
     slug: 'tajweed-course',
     title: 'Tajweed Course',
     shortDescription: 'Master the rules of Tajweed and recite the Quran beautifully and correctly.',
