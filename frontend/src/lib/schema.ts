@@ -1,4 +1,5 @@
 import { siteConfig } from '@/config/site'
+import type { Teacher } from '@/content/teachers'
 
 export function organizationSchema() {
   return {
@@ -37,6 +38,33 @@ export function breadcrumbSchema(
       name: item.name,
       item: `${siteConfig.url}${item.href}`,
     })),
+  }
+}
+
+export function aboutPageSchema() {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'AboutPage',
+    name: `About ${siteConfig.name}`,
+    url: `${siteConfig.url}/about`,
+    description: 'Learn about Alrayan Academy — our mission, story, teaching approach, and certified teachers.',
+    publisher: {
+      '@type': 'EducationalOrganization',
+      name: siteConfig.name,
+      url: siteConfig.url,
+    },
+  }
+}
+
+export function personSchema(teacher: Teacher) {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'Person',
+    name: teacher.name,
+    jobTitle: teacher.role,
+    worksFor: { '@type': 'EducationalOrganization', name: siteConfig.name },
+    knowsLanguage: teacher.languages,
+    description: teacher.bio,
   }
 }
 

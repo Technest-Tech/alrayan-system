@@ -5,6 +5,10 @@ import { Section } from '@/components/layout/Section'
 import { Container } from '@/components/layout/Container'
 import { LinkButton } from '@/components/ui/link-button'
 import { whatsappLink } from '@/config/site'
+import { stats } from '@/content/stats'
+import { courses } from '@/content/courses'
+import { testimonials } from '@/content/testimonials'
+import { featuredTeachers } from '@/content/teachers'
 import {
   BookOpen,
   Users,
@@ -14,6 +18,7 @@ import {
   GraduationCap,
   Heart,
   Clock,
+  ArrowRight,
 } from 'lucide-react'
 
 export const metadata: Metadata = buildMetadata({
@@ -31,38 +36,22 @@ const trustBadges = [
   { icon: GraduationCap, label: 'Ijazah-Certified' },
 ]
 
-const stats = [
-  { value: '10,000+', label: 'Students Taught' },
-  { value: '50+', label: 'Countries Served' },
-  { value: '100+', label: 'Certified Teachers' },
-  { value: '4.9★', label: 'Average Rating' },
-]
-
-const courses = [
-  { title: 'Noorani Qaida', desc: 'Start from the very beginning — Arabic letters, pronunciation, and Qaida rules.', href: '/courses/noorani-qaida' },
-  { title: 'Quran for Kids', desc: 'Fun, structured Quran learning designed for children aged 5 to 14.', href: '/courses/quran-classes-for-kids' },
-  { title: 'Tajweed Course', desc: 'Master the rules of Tajweed and recite the Quran beautifully and correctly.', href: '/courses/tajweed-course' },
-  { title: 'Hifz / Memorization', desc: 'Memorize the Quran with a structured curriculum and dedicated teacher support.', href: '/courses/hifz-memorization' },
-  { title: 'Ijazah Program', desc: 'Earn an authenticated Ijazah with an unbroken chain back to the Prophet ﷺ.', href: '/courses/ijazah-program' },
-  { title: 'Arabic for Non-Arabs', desc: 'Learn Modern Standard Arabic and conversational Arabic from scratch.', href: '/courses/arabic-for-non-arabs' },
-  { title: 'Tafseer', desc: 'Understand the meaning and wisdom behind the words of Allah.', href: '/courses/tafseer-course' },
-  { title: 'Islamic Studies', desc: 'Aqeedah, Seerah, Fiqh, and Islamic history for all ages.', href: '/courses/islamic-studies' },
-  { title: 'Ten Qiraat', desc: 'Advanced program covering all ten authentic modes of Quranic recitation.', href: '/courses/ten-qiraat' },
-  { title: 'Female Teachers', desc: 'Learn with certified female teachers — comfortable, safe, and effective.', href: '/courses/female-quran-teachers' },
-]
-
-const testimonials = [
-  { name: 'Sarah A.', location: 'London, UK', quote: "My children's Tajweed has improved beyond recognition in just 3 months. The teachers are so patient and knowledgeable.", course: 'Quran for Kids' },
-  { name: 'Ahmed K.', location: 'Toronto, Canada', quote: 'I started as a complete beginner and now read the Quran with confidence. The 1-on-1 format makes all the difference.', course: 'Noorani Qaida' },
-  { name: 'Fatima R.', location: 'New York, USA', quote: 'Having a female teacher was so important to me. The class schedule is flexible and fits perfectly around my work hours.', course: 'Tajweed for Adults' },
-  { name: 'Omar M.', location: 'Melbourne, Australia', quote: 'The Ijazah program is rigorous and authentic. My teacher has a direct chain to Al-Azhar. Highly recommend.', course: 'Ijazah Program' },
-  { name: 'Amina H.', location: 'Birmingham, UK', quote: "I've tried several online academies. Alrayan is the only one where I felt genuinely supported. The free trial convinced me immediately.", course: 'Arabic for Non-Arabs' },
-]
-
 const whyUs = [
-  { icon: BookOpen, title: 'Qualified Teachers', desc: 'All teachers hold Ijazah and are graduates of Al-Azhar or equivalent Islamic universities.' },
-  { icon: Clock, title: 'Flexible Scheduling', desc: 'Classes 7 days a week across all timezones — mornings, afternoons, or evenings.' },
-  { icon: ShieldCheck, title: 'Risk-Free Trial', desc: 'Book your first class completely free. No credit card, no commitment.' },
+  {
+    icon: BookOpen,
+    title: 'Qualified Teachers',
+    desc: 'All teachers hold Ijazah and are graduates of Al-Azhar or equivalent Islamic universities.',
+  },
+  {
+    icon: Clock,
+    title: 'Flexible Scheduling',
+    desc: 'Classes 7 days a week across all timezones — mornings, afternoons, or evenings.',
+  },
+  {
+    icon: ShieldCheck,
+    title: 'Risk-Free Trial',
+    desc: 'Book your first class completely free. No credit card, no commitment.',
+  },
 ]
 
 export default function HomePage() {
@@ -81,7 +70,8 @@ export default function HomePage() {
         <div
           className="absolute inset-0 opacity-[0.07]"
           style={{
-            backgroundImage: 'radial-gradient(circle at 20% 80%, #C9A24B 0%, transparent 50%), radial-gradient(circle at 80% 20%, #0E7C5A 0%, transparent 50%)',
+            backgroundImage:
+              'radial-gradient(circle at 20% 80%, #C9A24B 0%, transparent 50%), radial-gradient(circle at 80% 20%, #0E7C5A 0%, transparent 50%)',
           }}
           aria-hidden="true"
         />
@@ -186,20 +176,25 @@ export default function HomePage() {
           </div>
 
           <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6" role="list">
-            {courses.map(({ title, desc, href }) => (
-              <li key={href}>
+            {courses.map(({ slug, title, shortDescription }) => (
+              <li key={slug}>
                 <a
-                  href={href}
+                  href={`/courses/${slug}`}
                   className="group flex flex-col h-full bg-white rounded-2xl p-7 border border-border-soft shadow-soft hover:shadow-md hover:border-secondary/30 transition-all duration-200"
                 >
                   <div className="flex items-center justify-between mb-4">
                     <div className="w-10 h-10 rounded-xl bg-secondary/10 flex items-center justify-center">
                       <BookOpen className="size-5 text-secondary" aria-hidden="true" />
                     </div>
-                    <span className="text-accent text-xl font-display group-hover:translate-x-1 transition-transform" aria-hidden="true">→</span>
+                    <span
+                      className="text-accent text-xl font-display group-hover:translate-x-1 transition-transform"
+                      aria-hidden="true"
+                    >
+                      →
+                    </span>
                   </div>
                   <h3 className="font-heading font-semibold text-primary text-lg mb-2">{title}</h3>
-                  <p className="text-muted-text text-sm leading-relaxed flex-1">{desc}</p>
+                  <p className="text-muted-text text-sm leading-relaxed flex-1">{shortDescription}</p>
                   <span className="mt-4 text-secondary text-sm font-semibold">Learn more</span>
                 </a>
               </li>
@@ -222,7 +217,8 @@ export default function HomePage() {
                 Scholars, Not Just Teachers
               </h2>
               <p className="text-muted-text text-lg leading-relaxed mb-8">
-                Every teacher at Alrayan holds an authenticated Ijazah — a chain of transmission going back to the Prophet ﷺ. We don&apos;t hire tutors; we partner with certified scholars.
+                Every teacher at Alrayan holds an authenticated Ijazah — a chain of transmission going back to the
+                Prophet ﷺ. We don&apos;t hire tutors; we partner with certified scholars.
               </p>
               <ul className="space-y-6" role="list">
                 {whyUs.map(({ icon: Icon, title, desc }) => (
@@ -267,8 +263,62 @@ export default function HomePage() {
         </Container>
       </Section>
 
+      {/* ── Teachers Strip ── */}
+      <Section bg="cream" aria-labelledby="teachers-strip-heading">
+        <Container>
+          <div className="text-center mb-12">
+            <p className="text-secondary text-sm font-semibold uppercase tracking-wider mb-3">Our Scholars</p>
+            <h2 id="teachers-strip-heading" className="heading-xl font-heading text-primary mb-4">
+              Meet Some of Our Teachers
+            </h2>
+            <p className="text-muted-text text-lg max-w-xl mx-auto">
+              Al-Azhar graduates and Ijazah-certified scholars — vetting takes months, trust takes years.
+            </p>
+          </div>
+
+          <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-10" role="list">
+            {featuredTeachers.map((teacher) => (
+              <li key={teacher.id}>
+                <div className="bg-white rounded-2xl p-6 border border-border-soft shadow-soft text-center">
+                  <div
+                    className="size-16 rounded-full bg-primary flex items-center justify-center text-accent font-display font-semibold text-2xl mx-auto mb-4"
+                    aria-hidden="true"
+                  >
+                    {teacher.name.charAt(0)}
+                  </div>
+                  <p className="font-heading font-semibold text-primary text-sm">{teacher.name}</p>
+                  <p className="text-secondary text-xs font-medium mt-1 mb-3">{teacher.role}</p>
+                  <div className="flex flex-wrap justify-center gap-1 mb-3">
+                    {teacher.specialties.slice(0, 2).map((s) => (
+                      <span
+                        key={s}
+                        className="text-xs bg-cream text-muted-text px-2.5 py-0.5 rounded-full border border-border-soft"
+                      >
+                        {s}
+                      </span>
+                    ))}
+                  </div>
+                  <p className="text-muted-text text-xs">
+                    {teacher.yearsExperience} years · {teacher.studentsCount}+ students
+                  </p>
+                </div>
+              </li>
+            ))}
+          </ul>
+
+          <div className="text-center">
+            <LinkButton href="/about" variant="outline">
+              <span className="flex items-center gap-2">
+                Meet All Our Teachers
+                <ArrowRight className="size-4" aria-hidden="true" />
+              </span>
+            </LinkButton>
+          </div>
+        </Container>
+      </Section>
+
       {/* ── Testimonials ── */}
-      <Section bg="cream" aria-labelledby="testimonials-heading">
+      <Section aria-labelledby="testimonials-heading">
         <Container>
           <div className="text-center mb-14">
             <p className="text-secondary text-sm font-semibold uppercase tracking-wider mb-3">Student Stories</p>
@@ -278,8 +328,8 @@ export default function HomePage() {
           </div>
 
           <ul className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" role="list">
-            {testimonials.map(({ name, location, quote, course }) => (
-              <li key={name} className="bg-white rounded-2xl p-7 border border-border-soft shadow-soft">
+            {testimonials.map(({ id, name, location, quote, course }) => (
+              <li key={id} className="bg-cream rounded-2xl p-7 border border-border-soft">
                 <div className="flex mb-4" aria-label="5 out of 5 stars">
                   {[...Array(5)].map((_, i) => (
                     <Star key={i} className="size-4 fill-accent text-accent" aria-hidden="true" />
