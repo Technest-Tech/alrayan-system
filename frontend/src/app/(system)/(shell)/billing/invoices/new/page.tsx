@@ -43,7 +43,7 @@ export default function NewInvoicePage() {
             onChange={e => setStudentId(e.target.value)}
             className="w-full rounded-xl border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2"
             placeholder="Enter student ID"
-            style={{ focusRingColor: 'rgb(14 124 90)' }}
+            style={{}}
           />
           <p className="mt-1 text-xs text-gray-400">
             You can find the student ID on the student detail page.

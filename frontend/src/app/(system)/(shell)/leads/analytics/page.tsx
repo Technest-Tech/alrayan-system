@@ -4,8 +4,7 @@ import { PageHeader } from '@/components/system/primitives/PageHeader'
 import { useLeadAnalytics } from '@/hooks/system/useLeads'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
-import Link from 'next/link'
-import { Button } from '@/components/ui/button'
+import { LinkButton } from '@/components/ui/link-button'
 
 function pct(n: number, total: number) {
   if (!total) return '0%'
@@ -27,7 +26,7 @@ export default function LeadAnalyticsPage() {
     <>
       <PageHeader title="Lead analytics" description="Conversion funnel, sources, and trends.">
         <div className="flex items-center gap-2">
-          <Button variant="ghost" asChild><Link href="/leads">← Leads</Link></Button>
+          <LinkButton variant="ghost" href="/leads">← Leads</LinkButton>
           <Select value={preset} onValueChange={setPreset}>
             <SelectTrigger className="w-36"><SelectValue /></SelectTrigger>
             <SelectContent>

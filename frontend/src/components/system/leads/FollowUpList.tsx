@@ -88,7 +88,7 @@ function FollowUpRow({ followUp }: { followUp: ReturnType<typeof useFollowUps>['
         </div>
         <div className="flex gap-1 shrink-0">
           {!isDone && (
-            <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => complete.mutate()}>
+            <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => complete.mutate(undefined)}>
               <CheckCircle className="h-3.5 w-3.5" />
             </Button>
           )}

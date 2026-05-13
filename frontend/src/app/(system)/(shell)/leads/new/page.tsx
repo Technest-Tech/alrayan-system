@@ -2,12 +2,12 @@
 import { useRouter } from 'next/navigation'
 import { PageHeader } from '@/components/system/primitives/PageHeader'
 import { Button } from '@/components/ui/button'
+import { LinkButton } from '@/components/ui/link-button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useCreateLead } from '@/hooks/system/useLeads'
 import { useState } from 'react'
-import Link from 'next/link'
 
 export default function NewLeadPage() {
   const router = useRouter()
@@ -23,7 +23,7 @@ export default function NewLeadPage() {
   return (
     <>
       <PageHeader title="New lead" description="Manually create a lead for inbound WhatsApp or referral enquiries.">
-        <Button variant="ghost" asChild><Link href="/leads">← Back</Link></Button>
+        <LinkButton variant="ghost" href="/leads">← Back</LinkButton>
       </PageHeader>
       <div className="max-w-xl">
         <form onSubmit={handleSubmit} className="space-y-4">

@@ -103,7 +103,7 @@ export default function PricingSettingsPage() {
                     type="number"
                     min={0}
                     step={0.01}
-                    value={(form as Record<string, unknown>)[`base_${dur}`] as number}
+                    value={(form as unknown as Record<string, number>)[`base_${dur}`]}
                     onChange={e =>
                       setForm(f => ({ ...f, [`base_${dur}`]: Number(e.target.value) }))
                     }

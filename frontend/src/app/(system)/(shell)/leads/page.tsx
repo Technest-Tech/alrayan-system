@@ -4,9 +4,8 @@ import { PageHeader } from '@/components/system/primitives/PageHeader'
 import { LeadKanban } from '@/components/system/leads/LeadKanban'
 import { LeadTable } from '@/components/system/leads/LeadTable'
 import { useLeads } from '@/hooks/system/useLeads'
-import { Button } from '@/components/ui/button'
+import { LinkButton } from '@/components/ui/link-button'
 import { LayoutGrid, List, Plus } from 'lucide-react'
-import Link from 'next/link'
 
 export default function LeadsPage() {
   const [view, setView] = useState<'kanban' | 'table'>('kanban')
@@ -35,11 +34,9 @@ export default function LeadsPage() {
           >
             <List className="h-4 w-4" />
           </button>
-          <Button asChild size="sm">
-            <Link href="/leads/new">
-              <Plus className="h-4 w-4 mr-1" /> New lead
-            </Link>
-          </Button>
+          <LinkButton href="/leads/new" size="sm">
+            <Plus className="h-4 w-4 mr-1" /> New lead
+          </LinkButton>
         </div>
       </PageHeader>
 

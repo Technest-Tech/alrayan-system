@@ -6,8 +6,7 @@ import { LeadProfile } from '@/components/system/leads/LeadProfile'
 import { FollowUpList } from '@/components/system/leads/FollowUpList'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Badge } from '@/components/ui/badge'
-import Link from 'next/link'
-import { Button } from '@/components/ui/button'
+import { LinkButton } from '@/components/ui/link-button'
 
 export default function LeadDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
@@ -20,7 +19,7 @@ export default function LeadDetailPage({ params }: { params: Promise<{ id: strin
     <>
       <PageHeader title={lead.name} description={`${lead.source.replace('_', ' ')} · ${lead.country ?? '—'}`}>
         <div className="flex items-center gap-2">
-          <Button variant="ghost" asChild><Link href="/leads">← Leads</Link></Button>
+          <LinkButton variant="ghost" href="/leads">← Leads</LinkButton>
           <Badge variant={lead.status === 'lost' ? 'destructive' : lead.status === 'enrolled' ? 'default' : 'secondary'}>
             {lead.status.replace('_', ' ')}
           </Badge>

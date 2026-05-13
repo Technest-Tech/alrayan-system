@@ -2,6 +2,7 @@
 import type { LeadDetail } from '@/types/system/lead'
 import { useMarkLeadLost, useAssignLead } from '@/hooks/system/useLeads'
 import { Button } from '@/components/ui/button'
+import { LinkButton } from '@/components/ui/link-button'
 import { useState } from 'react'
 import { MarkLostDialog } from './MarkLostDialog'
 import Link from 'next/link'
@@ -43,9 +44,7 @@ export function LeadProfile({ lead }: { lead: LeadDetail }) {
       {/* Actions */}
       {!['enrolled', 'lost'].includes(lead.status) && (
         <div className="flex gap-2">
-          <Button variant="outline" asChild>
-            <Link href={`/students/new?lead=${lead.id}`}>Convert to student</Link>
-          </Button>
+          <LinkButton variant="outline" href={`/students/new?lead=${lead.id}`}>Convert to student</LinkButton>
           <Button variant="ghost" className="text-destructive" onClick={() => setLostOpen(true)}>
             Mark lost
           </Button>

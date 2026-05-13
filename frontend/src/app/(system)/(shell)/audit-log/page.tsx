@@ -38,7 +38,7 @@ export default function AuditLogPage() {
         ].map(f => (
           <input key={f.key} type={f.type ?? 'text'}
             placeholder={f.placeholder}
-            value={(filters as Record<string, string>)[f.key]}
+            value={(filters as Record<string, string | number>)[f.key] as string}
             onChange={e => setFilters(prev => ({ ...prev, [f.key]: e.target.value, page: 1 }))}
             className="rounded-xl border px-3 py-2 text-sm w-40"
             style={{ borderColor: 'rgb(var(--border-default))' }} />

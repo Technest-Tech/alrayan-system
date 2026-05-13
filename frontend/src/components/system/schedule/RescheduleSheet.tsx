@@ -14,7 +14,7 @@ interface Props {
 const CONFLICT_LABELS: Record<string, string> = {
   teacher_double_booking: 'Teacher already has a session at this time',
   teacher_on_leave:       'Teacher is on approved leave — this cannot be overridden',
-  teacher_unavailable:    'Outside teacher's available hours',
+  teacher_unavailable:    "Outside teacher's available hours",
 }
 
 export function RescheduleSheet({ session, open, onClose, onSuccess }: Props) {
