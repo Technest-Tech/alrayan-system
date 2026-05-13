@@ -1,0 +1,197 @@
+'use client'
+import { useState, useEffect } from 'react'
+import { useQuery, useMutation } from '@tanstack/react-query'
+import { api } from '@/lib/system/api'
+import { PageHeader } from '@/components/system/primitives/PageHeader'
+import type { PaymobSettings } from '@/types/system/paymob'
+
+interface PaymobFormState {
+  api_key: string
+  integration_id: string
+  public_iframe_id: string
+  webhook_hmac_secret: string
+}
+
+export default function PaymobSettingsPage() {
+  const { data: settings, isLoading } = useQuery({
+    queryKey: ['system', 'integrations', 'paymob'],
+    queryFn: () => api<PaymobSettings>('/integrations/paymob'),
+  })
+
+  const { mutateAsync: save, isPending: saving } = useMutation({
+    mutationFn: (data: Partial<PaymobFormState & { integration_id: string; public_iframe_id: string }>) =>
+      api<PaymobSettings>('/integrations/paymob', {
+        method: 'PUT',
+        body: JSON.stringify(data),
+      }),
+  })
+
+  const { mutateAsync: testConnection, isPending: testing } = useMutation({
+    mutationFn: () => api<{ ok: boolean; message: string }>('/integrations/paymob/test', { method: 'POST' }),
+  })
+
+  const [form, setForm] = useState<PaymobFormState>({
+    api_key: '',
+    integration_id: '',
+    public_iframe_id: '',
+    webhook_hmac_secret: '',
+  })
+  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
+  const [testResult, setTestResult] = useState<{ ok: boolean; message: string } | null>(null)
+
+  useEffect(() => {
+    if (settings) {
+      setForm(f => ({
+        ...f,
+        integration_id: settings.integration_id ?? '',
+        public_iframe_id: settings.public_iframe_id ?? '',
+      }))
+    }
+  }, [settings])
+
+  const handleSave = async () => {
+    setMessage(null)
+    try {
+      const payload: Record<string, string> = {
+        integration_id: form.integration_id,
+        public_iframe_id: form.public_iframe_id,
+      }
+      if (form.api_key) payload.api_key = form.api_key
+      if (form.webhook_hmac_secret) payload.webhook_hmac_secret = form.webhook_hmac_secret
+
+      await save(payload)
+      setMessage({ type: 'success', text: 'Paymob settings saved.' })
+      // Clear secret fields after save
+      setForm(f => ({ ...f, api_key: '', webhook_hmac_secret: '' }))
+    } catch (e: unknown) {
+      setMessage({ type: 'error', text: e instanceof Error ? e.message : 'Failed to save.' })
+    }
+  }
+
+  const handleTest = async () => {
+    setTestResult(null)
+    try {
+      const result = await testConnection()
+      setTestResult(result)
+    } catch {
+      setTestResult({ ok: false, message: 'Connection test failed.' })
+    }
+  }
+
+  if (isLoading) {
+    return <div className="py-20 text-center text-sm opacity-40">Loading…</div>
+  }
+
+  return (
+    <>
+      <PageHeader
+        title="Paymob"
+        description="Online payment gateway integration. Webhook is verified by HMAC-SHA512."
+      />
+      <div className="max-w-lg space-y-6">
+        {message && (
+          <p className={`text-sm ${message.type === 'success' ? 'text-green-600' : 'text-red-600'}`}>
+            {message.text}
+          </p>
+        )}
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            API key
+            <span className="ml-1 text-xs font-normal text-gray-400">(leave blank to keep current)</span>
+          </label>
+          <input
+            type="password"
+            value={form.api_key}
+            onChange={e => setForm(f => ({ ...f, api_key: e.target.value }))}
+            className="w-full rounded-xl border border-gray-300 px-3 py-2 text-sm"
+            placeholder="Paste new API key to update"
+            autoComplete="off"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Integration ID</label>
+          <input
+            value={form.integration_id}
+            onChange={e => setForm(f => ({ ...f, integration_id: e.target.value }))}
+            className="w-full rounded-xl border border-gray-300 px-3 py-2 text-sm"
+            placeholder="e.g. 1234567"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Iframe ID</label>
+          <input
+            value={form.public_iframe_id}
+            onChange={e => setForm(f => ({ ...f, public_iframe_id: e.target.value }))}
+            className="w-full rounded-xl border border-gray-300 px-3 py-2 text-sm"
+            placeholder="e.g. 890123"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Webhook HMAC secret
+            <span className="ml-1 text-xs font-normal text-gray-400">(leave blank to keep current)</span>
+          </label>
+          <input
+            type="password"
+            value={form.webhook_hmac_secret}
+            onChange={e => setForm(f => ({ ...f, webhook_hmac_secret: e.target.value }))}
+            className="w-full rounded-xl border border-gray-300 px-3 py-2 text-sm"
+            placeholder="Paste new HMAC secret to update"
+            autoComplete="off"
+          />
+        </div>
+
+        {settings?.webhook_url && (
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Webhook URL</label>
+            <div className="flex items-center gap-2">
+              <code className="flex-1 text-xs bg-gray-50 rounded-xl px-3 py-2 text-gray-700 break-all border border-gray-200">
+                {settings.webhook_url}
+              </code>
+              <button
+                type="button"
+                onClick={() => navigator.clipboard.writeText(settings.webhook_url)}
+                className="text-xs text-blue-600 hover:underline shrink-0"
+              >
+                Copy
+              </button>
+            </div>
+            <p className="mt-1 text-xs text-gray-400">
+              Configure this URL in your Paymob dashboard under Transaction Notifications.
+            </p>
+          </div>
+        )}
+
+        {testResult && (
+          <p className={`text-sm ${testResult.ok ? 'text-green-600' : 'text-red-600'}`}>
+            {testResult.message}
+          </p>
+        )}
+
+        <div className="flex gap-3 pt-2">
+          <button
+            type="button"
+            onClick={handleSave}
+            disabled={saving}
+            className="px-4 py-2 rounded-xl text-white text-sm font-semibold disabled:opacity-50"
+            style={{ background: 'rgb(14 124 90)' }}
+          >
+            {saving ? 'Saving…' : 'Save settings'}
+          </button>
+          <button
+            type="button"
+            onClick={handleTest}
+            disabled={testing}
+            className="px-4 py-2 rounded-xl border border-gray-300 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+          >
+            {testing ? 'Testing…' : 'Test connection'}
+          </button>
+        </div>
+      </div>
+    </>
+  )
+}

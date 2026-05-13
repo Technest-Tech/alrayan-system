@@ -35,4 +35,14 @@ return [
         ],
     ],
 
+    'turnstile' => [
+        'secret'  => env('TURNSTILE_SECRET_KEY'),
+        'sitekey' => env('TURNSTILE_SITE_KEY'),
+    ],
+
+    'nextjs' => [
+        'revalidate_url'    => env('NEXT_REVALIDATE_URL'),
+        'revalidate_secret' => env('NEXT_REVALIDATE_SECRET'),
+    ],
+
 ];

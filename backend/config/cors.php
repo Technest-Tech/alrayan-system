@@ -5,7 +5,14 @@ return [
 
     'allowed_methods' => ['*'],
 
-    'allowed_origins' => explode(',', env('CORS_ALLOWED_ORIGINS', 'http://localhost:3000')),
+    'allowed_origins' => array_filter([
+        env('FRONTEND_URL'),                  // alrayan-academy.com
+        env('FRONTEND_URL_STAGING'),          // staging.alrayan-academy.com
+        env('SYSTEM_FRONTEND_URL'),           // app.alrayan-academy.com
+        env('SYSTEM_FRONTEND_URL_STAGING'),   // app-staging.alrayan-academy.com
+        'http://localhost:3000',
+        'http://app.localhost:3000',
+    ]),
 
     'allowed_origins_patterns' => [],
 

@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 import { Menu, X, ChevronDown, Phone } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -40,14 +39,15 @@ export function Navbar() {
   const navClass = cn(
     'fixed top-0 left-0 right-0 z-50 transition-all duration-300',
     scrolledOrInner
-      ? 'bg-white/90 backdrop-blur-md shadow-soft border-b border-border-soft'
+      ? 'bg-white/92 backdrop-blur-md shadow-soft border-b border-border-soft'
       : 'bg-transparent',
   )
   const linkClass = (active: boolean) =>
     cn(
-      'flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-colors duration-150',
-      scrolledOrInner ? 'text-primary hover:bg-cream' : 'text-white hover:bg-white/10',
-      active && 'text-accent',
+      'flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-all duration-150 relative',
+      scrolledOrInner ? 'text-primary hover:bg-cream' : 'text-white/90 hover:bg-white/10',
+      active && scrolledOrInner && 'text-secondary bg-secondary/8 font-semibold',
+      active && !scrolledOrInner && 'text-accent',
     )
 
   return (
@@ -60,24 +60,53 @@ export function Navbar() {
       </a>
 
       <header className={navClass} role="banner">
+        {/* Announcement bar — visible only at top of home page */}
+        <div
+          className={cn(
+            'overflow-hidden transition-all duration-500',
+            !scrolledOrInner ? 'max-h-10 opacity-100' : 'max-h-0 opacity-0',
+          )}
+        >
+          <div
+            className="flex items-center justify-center gap-2 min-h-[2.5rem] py-2 px-4 text-center"
+            style={{ background: 'rgba(201,162,75,0.12)', borderBottom: '1px solid rgba(201,162,75,0.2)' }}
+          >
+            <span className="text-accent shrink-0" aria-hidden="true">✦</span>
+            <p className="text-accent text-xs font-medium">
+              Your first class is completely free — no credit card required.{' '}
+              <Link href="/contact" className="underline decoration-accent/40 underline-offset-2 hover:decoration-accent transition-all">
+                Book now →
+              </Link>
+            </p>
+          </div>
+        </div>
+
         <nav
-          className="container-site flex items-center justify-between h-16 md:h-20"
+          className="container-site flex items-center justify-between h-16 sm:h-20 md:h-24 lg:h-28"
           aria-label="Main navigation"
         >
-          {/* Logo */}
+          {/* Wordmark */}
           <Link
             href="/"
             aria-label="Alrayan Academy — Home"
-            className="inline-flex items-center"
+            className="flex flex-col leading-none group"
           >
-            <Image
-              src={scrolledOrInner ? '/logo/alrayan-full.svg' : '/logo/alrayan-white.svg'}
-              alt="Alrayan Academy"
-              width={200}
-              height={52}
-              priority
-              className="h-10 md:h-12 w-auto"
-            />
+            <span
+              className={cn(
+                'font-display font-semibold tracking-tight transition-colors duration-300',
+                'text-[1.5rem] sm:text-[1.8rem] md:text-[2.4rem]',
+                scrolledOrInner ? 'text-primary' : 'text-white',
+              )}
+            >
+              Alrayan
+            </span>
+            <span
+              className={cn(
+                'text-accent text-[0.6rem] md:text-[0.65rem] font-sans font-semibold uppercase tracking-[0.22em] mt-0.5',
+              )}
+            >
+              Quran Academy
+            </span>
           </Link>
 
           {/* Desktop nav */}
@@ -151,14 +180,25 @@ export function Navbar() {
               rel="noopener noreferrer"
               className={cn(
                 'flex items-center gap-1.5 text-sm font-medium transition-colors',
-                scrolledOrInner ? 'text-primary hover:text-secondary' : 'text-white hover:text-accent',
+                scrolledOrInner ? 'text-primary hover:text-secondary' : 'text-white/80 hover:text-white',
               )}
               aria-label="Chat with us on WhatsApp"
             >
               <Phone className="size-4" aria-hidden="true" />
-              <span className="hidden xl:inline">Chat</span>
+              <span className="hidden xl:inline">WhatsApp</span>
             </a>
-            <LinkButton href="/contact" size="sm" variant="gold">
+            <span
+              className={cn('w-px h-5 opacity-20', scrolledOrInner ? 'bg-primary' : 'bg-white')}
+              aria-hidden="true"
+            />
+            <LinkButton
+              href="/contact"
+              size="sm"
+              variant="gold"
+              className={cn(
+                !scrolledOrInner && 'shadow-[0_0_20px_rgba(201,162,75,0.35)]',
+              )}
+            >
               Free Trial Class
             </LinkButton>
           </div>
@@ -179,14 +219,9 @@ export function Navbar() {
               <div className="flex flex-col h-full">
                 {/* Mobile header */}
                 <div className="flex items-center justify-between p-5 border-b border-border-soft">
-                  <Link href="/" aria-label="Alrayan Academy" onClick={() => setMobileOpen(false)}>
-                    <Image
-                      src="/logo/alrayan-full.svg"
-                      alt="Alrayan Academy"
-                      width={160}
-                      height={42}
-                      className="h-9 w-auto"
-                    />
+                  <Link href="/" aria-label="Alrayan Academy" onClick={() => setMobileOpen(false)} className="flex flex-col leading-none">
+                    <span className="font-display font-semibold text-[1.6rem] tracking-tight text-primary">Alrayan</span>
+                    <span className="text-accent text-[0.6rem] font-sans font-semibold uppercase tracking-[0.22em] mt-0.5">Quran Academy</span>
                   </Link>
                   <button
                     className="p-2 rounded-lg text-muted-text hover:bg-cream transition-colors"

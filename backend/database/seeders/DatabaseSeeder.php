@@ -3,21 +3,34 @@
 namespace Database\Seeders;
 
 use App\Models\User;
-// use Illuminate\Database\Console\Seeds\WithoutModelEvents;
+use Database\Seeders\System\RolePermissionSeeder;
+use Database\Seeders\System\SystemDemoSeeder;
 use Illuminate\Database\Seeder;
 
 class DatabaseSeeder extends Seeder
 {
-    /**
-     * Seed the application's database.
-     */
     public function run(): void
     {
-        // User::factory(10)->create();
+        // Seed roles + permissions first so the admin user gets the admin role
+        $this->call([RolePermissionSeeder::class]);
 
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
+        $admin = User::firstOrCreate(
+            ['email' => 'admin@alrayan-academy.com'],
+            [
+                'name'      => 'Alrayan Admin',
+                'password'  => bcrypt('password'),
+                'role'      => 'admin',
+                'is_active' => true,
+            ],
+        );
+        $admin->syncRoles(['admin']);
+
+        $this->call([
+            BlogCategorySeeder::class,
+            BlogPostSeeder::class,
+            CourseSeeder::class,
+            TeacherSeeder::class,
+            SystemDemoSeeder::class,
         ]);
     }
 }

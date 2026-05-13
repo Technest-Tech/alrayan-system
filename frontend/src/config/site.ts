@@ -5,15 +5,15 @@ export const siteConfig = {
   description:
     'Premium online Quran, Arabic language, and Islamic studies academy. 1-on-1 classes with certified teachers from Al-Azhar. Free trial available.',
   url: process.env.NEXT_PUBLIC_SITE_URL ?? 'https://alrayan-academy.com',
-  email: 'info@alrayan-academy.com',
-  phone: '+20 100 000 0000',
-  whatsapp: process.env.NEXT_PUBLIC_WHATSAPP ?? '201000000000',
+  email: 'alrayanacadmy@gmail.com',
+  phone: '+20 127 919 3105',
+  whatsapp: process.env.NEXT_PUBLIC_WHATSAPP ?? '201279193105',
   whatsappDefaultMessage:
     'Assalamu alaikum, I would like to learn more about your Quran classes.',
   address: 'Online — Serving students worldwide',
   social: {
-    facebook: 'https://facebook.com/alrayanacademy',
-    instagram: 'https://instagram.com/alrayanacademy',
+    facebook: 'https://www.facebook.com/alrayanaquran/',
+    instagram: 'https://www.instagram.com/rayan_academyy/',
     youtube: 'https://youtube.com/@alrayanacademy',
     twitter: 'https://twitter.com/alrayanacademy',
   },

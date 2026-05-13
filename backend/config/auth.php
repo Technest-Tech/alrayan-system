@@ -40,6 +40,11 @@ return [
             'driver' => 'session',
             'provider' => 'users',
         ],
+        // Named guard for system surface — uses Sanctum, same users table, permissions via Spatie
+        'system' => [
+            'driver'   => 'sanctum',
+            'provider' => 'users',
+        ],
     ],
 
     /*

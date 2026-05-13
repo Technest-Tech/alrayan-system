@@ -1,0 +1,67 @@
+/* System surface tokens — scoped to data-system-root so they never bleed into marketing */
+
+@layer base {
+  [data-system-root='true'] {
+    --surface-bg:      244 246 250;
+    --surface-card:    255 255 255;
+    --surface-card-2:  248 250 252;
+    --surface-sidebar: 11 31 58;
+    --surface-sidebar-active: 14 124 90;
+    --surface-topbar:  255 255 255;
+    --border-default:  229 233 240;
+    --border-strong:   203 211 222;
+
+    --status-success:  14 124 90;
+    --status-warning:  154 113 23;
+    --status-danger:   166 39 30;
+    --status-info:     30 90 171;
+    --status-neutral:  90 100 112;
+
+    background: rgb(var(--surface-bg));
+    color: rgb(11 31 58);
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    line-height: 1.55;
+  }
+
+  [data-theme='dark'] [data-system-root='true'] {
+    --surface-bg:      11 18 32;
+    --surface-card:    16 26 44;
+    --surface-card-2:  15 25 41;
+    --surface-sidebar: 7 14 27;
+    --surface-sidebar-active: 14 124 90;
+    --surface-topbar:  15 25 41;
+    --border-default:  31 42 63;
+    --border-strong:   44 58 82;
+
+    background: rgb(var(--surface-bg));
+    color: rgb(228 234 244);
+  }
+
+  [data-system-root='true'] .tabular {
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+/* Tailwind v4 system tokens — these create bg-surface-*, border-sys-*, status-* utilities */
+@theme inline {
+  --color-surface-bg:      rgb(var(--surface-bg, 244 246 250));
+  --color-surface-card:    rgb(var(--surface-card, 255 255 255));
+  --color-surface-card-2:  rgb(var(--surface-card-2, 248 250 252));
+  --color-surface-sidebar: rgb(var(--surface-sidebar, 11 31 58));
+  --color-surface-sidebar-active: rgb(var(--surface-sidebar-active, 14 124 90));
+  --color-surface-topbar:  rgb(var(--surface-topbar, 255 255 255));
+
+  --color-border-sys:      rgb(var(--border-default, 229 233 240));
+  --color-border-sys-strong: rgb(var(--border-strong, 203 211 222));
+
+  --color-status-success:  rgb(var(--status-success, 14 124 90));
+  --color-status-warning:  rgb(var(--status-warning, 154 113 23));
+  --color-status-danger:   rgb(var(--status-danger, 166 39 30));
+  --color-status-info:     rgb(var(--status-info, 30 90 171));
+  --color-status-neutral:  rgb(var(--status-neutral, 90 100 112));
+
+  --spacing-sidebar-w:           260px;
+  --spacing-sidebar-w-collapsed: 72px;
+  --spacing-topbar-h:            60px;
+}

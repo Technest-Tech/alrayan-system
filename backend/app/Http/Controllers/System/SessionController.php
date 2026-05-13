@@ -1,0 +1,244 @@
+<?php
+
+namespace App\Http\Controllers\System;
+
+use App\Events\System\SessionAbsent;
+use App\Events\System\SessionAttended;
+use App\Events\System\SessionRescheduled;
+use App\Http\Controllers\Controller;
+use App\Http\Requests\System\Session\AttendanceRequest;
+use App\Http\Requests\System\Session\BulkAttendanceRequest;
+use App\Http\Requests\System\Session\CancelRequest;
+use App\Http\Requests\System\Session\RescheduleRequest;
+use App\Http\Requests\System\Session\StoreSessionRequest;
+use App\Http\Resources\System\SessionDetailResource;
+use App\Http\Resources\System\SessionResource;
+use App\Jobs\System\CreateSessionZoomMeeting;
+use App\Jobs\System\DeleteSessionZoomMeeting;
+use App\Jobs\System\UpdateSessionZoomMeeting;
+use App\Models\System\Session;
+use App\Models\System\Student;
+use App\Models\System\Teacher;
+use App\Services\System\ScheduleConflictDetector;
+use Carbon\Carbon;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+
+class SessionController extends Controller
+{
+    public function __construct(private ScheduleConflictDetector $detector) {}
+
+    public function index(Request $request): \Illuminate\Http\Resources\Json\AnonymousResourceCollection
+    {
+        $this->authorize('create', Session::class); // schedule.view via policy
+
+        $query = Session::with(['student', 'teacher'])
+            ->when($request->teacher_id, fn ($q) => $q->where('teacher_id', $request->teacher_id))
+            ->when($request->student_id, fn ($q) => $q->where('student_id', $request->student_id))
+            ->when($request->status, fn ($q) => $q->where('status', $request->status))
+            ->when($request->from, fn ($q) => $q->where('scheduled_start', '>=', Carbon::parse($request->from)))
+            ->when($request->to, fn ($q) => $q->where('scheduled_start', '<=', Carbon::parse($request->to)))
+            ->orderBy('scheduled_start');
+
+        // Scope teachers to their own sessions
+        if (auth()->user()->role === 'teacher') {
+            $query->where('teacher_id', auth()->user()->teacher?->id);
+        }
+
+        return SessionResource::collection($query->paginate(50));
+    }
+
+    public function show(Session $session): SessionDetailResource
+    {
+        $this->authorize('view', $session);
+
+        $session->load(['student', 'teacher', 'pattern', 'originalSession', 'report']);
+
+        return new SessionDetailResource($session);
+    }
+
+    public function store(StoreSessionRequest $request): SessionResource
+    {
+        $this->authorize('create', Session::class);
+
+        $start = Carbon::parse($request->scheduled_start);
+        $end   = $start->copy()->addMinutes($request->duration_min);
+
+        $session = Session::create([
+            'student_id'          => $request->student_id,
+            'teacher_id'          => $request->teacher_id,
+            'scheduled_start'     => $start,
+            'scheduled_end'       => $end,
+            'duration_min'        => $request->duration_min,
+            'status'              => 'scheduled',
+            'original_session_id' => $request->original_session_id,
+        ]);
+
+        CreateSessionZoomMeeting::dispatch($session);
+
+        return new SessionResource($session->load(['student', 'teacher']));
+    }
+
+    public function reschedule(RescheduleRequest $request, Session $session): JsonResponse
+    {
+        $this->authorize('reschedule', $session);
+
+        $newStart = Carbon::parse($request->scheduled_start);
+        $newEnd   = $newStart->copy()->addMinutes($session->duration_min);
+
+        // Check conflicts
+        $conflicts = $this->detector->check($session->teacher_id, $newStart, $newEnd, $session->id);
+
+        // teacher_on_leave is always a hard block
+        $hardBlock = collect($conflicts)->first(fn ($c) => $c->type === 'teacher_on_leave');
+        if ($hardBlock) {
+            return response()->json(['message' => 'Teacher is on approved leave during this time.', 'conflicts' => [['type' => 'teacher_on_leave']]], 422);
+        }
+
+        if (!empty($conflicts) && !$request->boolean('force_conflicts')) {
+            return response()->json([
+                'message'   => 'Conflicts detected. Pass force_conflicts=true to override.',
+                'conflicts' => collect($conflicts)->map(fn ($c) => ['type' => $c->type])->values(),
+            ], 409);
+        }
+
+        $previousStart = $session->scheduled_start->copy();
+        $previousEnd   = $session->scheduled_end->copy();
+
+        $session->update([
+            'scheduled_start' => $newStart,
+            'scheduled_end'   => $newEnd,
+        ]);
+
+        SessionRescheduled::dispatch($session, $previousStart, $previousEnd);
+        UpdateSessionZoomMeeting::dispatch($session);
+
+        return response()->json(new SessionDetailResource($session->load(['student', 'teacher'])));
+    }
+
+    public function reschedulePreview(RescheduleRequest $request, Session $session): JsonResponse
+    {
+        $this->authorize('view', $session);
+
+        $newStart  = Carbon::parse($request->scheduled_start);
+        $newEnd    = $newStart->copy()->addMinutes($session->duration_min);
+        $conflicts = $this->detector->check($session->teacher_id, $newStart, $newEnd, $session->id);
+
+        return response()->json([
+            'proposed_start' => $newStart->toIso8601String(),
+            'proposed_end'   => $newEnd->toIso8601String(),
+            'conflicts'      => collect($conflicts)->map(fn ($c) => ['type' => $c->type])->values(),
+        ]);
+    }
+
+    public function cancel(CancelRequest $request, Session $session): SessionDetailResource
+    {
+        $this->authorize('cancel', $session);
+
+        $session->update([
+            'status'              => 'cancelled',
+            'cancelled_by'        => $request->cancelled_by,
+            'cancellation_reason' => $request->cancellation_reason,
+        ]);
+
+        DeleteSessionZoomMeeting::dispatch($session);
+
+        return new SessionDetailResource($session->load(['student', 'teacher']));
+    }
+
+    public function markAttendance(AttendanceRequest $request, Session $session): JsonResponse
+    {
+        $this->authorize('markAttendance', $session);
+
+        $data = ['status' => $request->status];
+
+        if ($request->status === 'attended') {
+            $data['attended_marked_at']       = now();
+            $data['attended_marked_by_user_id'] = auth()->id();
+        } elseif ($request->status === 'cancelled') {
+            $data['cancelled_by']        = $request->cancelled_by;
+            $data['cancellation_reason'] = $request->cancellation_reason;
+            DeleteSessionZoomMeeting::dispatch($session);
+        }
+
+        $session->update($data);
+
+        if ($request->status === 'attended') {
+            SessionAttended::dispatch($session);
+        } elseif ($request->status === 'absent') {
+            $session->load('student');
+            SessionAbsent::dispatch($session);
+        }
+
+        return response()->json(new SessionResource($session->load(['student', 'teacher'])));
+    }
+
+    public function bulkAttendance(BulkAttendanceRequest $request): JsonResponse
+    {
+        $this->authorize('create', Session::class); // attendance.edit via middleware
+
+        DB::transaction(function () use ($request) {
+            foreach ($request->items as $item) {
+                $session = Session::findOrFail($item['session_id']);
+                $this->authorize('markAttendance', $session);
+
+                $data = ['status' => $item['status']];
+
+                if ($item['status'] === 'attended') {
+                    $data['attended_marked_at']         = now();
+                    $data['attended_marked_by_user_id'] = auth()->id();
+                } elseif ($item['status'] === 'cancelled') {
+                    $data['cancelled_by']        = $item['cancelled_by'] ?? 'admin';
+                    $data['cancellation_reason'] = $item['cancellation_reason'] ?? null;
+                }
+
+                $session->update($data);
+
+                if ($item['status'] === 'attended') {
+                    SessionAttended::dispatch($session);
+                } elseif ($item['status'] === 'absent') {
+                    SessionAbsent::dispatch($session->load('student'));
+                }
+            }
+        });
+
+        return response()->json(['message' => 'Attendance updated.']);
+    }
+
+    public function forStudent(Student $student): JsonResponse
+    {
+        $this->authorize('view', $student);
+
+        $sessions = Session::where('student_id', $student->id)
+            ->with(['teacher'])
+            ->orderByDesc('scheduled_start')
+            ->paginate(30);
+
+        return response()->json(SessionResource::collection($sessions));
+    }
+
+    public function forTeacher(Teacher $teacher): JsonResponse
+    {
+        if (auth()->user()->role === 'teacher' && auth()->user()->teacher?->id !== $teacher->id) {
+            abort(403);
+        }
+
+        $sessions = Session::where('teacher_id', $teacher->id)
+            ->with(['student'])
+            ->orderByDesc('scheduled_start')
+            ->paginate(30);
+
+        return response()->json(SessionResource::collection($sessions));
+    }
+
+    public function conflicts(): JsonResponse
+    {
+        $results = $this->detector->detectAll();
+
+        return response()->json(collect($results)->map(fn ($r) => [
+            'session'   => new SessionResource($r['session']),
+            'conflicts' => collect($r['conflicts'])->map(fn ($c) => ['type' => $c->type])->values(),
+        ])->values());
+    }
+}

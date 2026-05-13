@@ -1,5 +1,6 @@
 import type { MetadataRoute } from 'next'
 import { siteConfig } from '@/config/site'
+import { blogPosts } from '@/content/blog'
 
 const base = siteConfig.url
 const now = new Date()
@@ -7,6 +8,7 @@ const now = new Date()
 const staticRoutes: MetadataRoute.Sitemap = [
   { url: base, lastModified: now, changeFrequency: 'weekly', priority: 1.0 },
   { url: `${base}/about`, lastModified: now, changeFrequency: 'monthly', priority: 0.8 },
+  { url: `${base}/courses`, lastModified: now, changeFrequency: 'monthly', priority: 0.9 },
   { url: `${base}/pricing`, lastModified: now, changeFrequency: 'weekly', priority: 0.9 },
   { url: `${base}/contact`, lastModified: now, changeFrequency: 'monthly', priority: 0.8 },
   { url: `${base}/faq`, lastModified: now, changeFrequency: 'monthly', priority: 0.7 },
@@ -43,6 +45,13 @@ const countryRoutes: MetadataRoute.Sitemap = ['usa', 'uk', 'canada', 'australia'
   }),
 )
 
+const blogRoutes: MetadataRoute.Sitemap = blogPosts.map((post) => ({
+  url: `${base}/blog/${post.slug}`,
+  lastModified: new Date(post.published_at),
+  changeFrequency: 'monthly' as const,
+  priority: 0.7,
+}))
+
 export default function sitemap(): MetadataRoute.Sitemap {
-  return [...staticRoutes, ...courseRoutes, ...countryRoutes]
+  return [...staticRoutes, ...courseRoutes, ...countryRoutes, ...blogRoutes]
 }

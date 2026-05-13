@@ -28,6 +28,10 @@ export function buildMetadata({
     ...(noIndex && { robots: { index: false, follow: false } }),
     alternates: {
       canonical: url,
+      languages: {
+        'en-US': url,
+        'x-default': url,
+      },
     },
     openGraph: {
       title,
