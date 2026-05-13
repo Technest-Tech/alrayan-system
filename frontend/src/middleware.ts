@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server'
 
-const APP_HOST = process.env.NEXT_PUBLIC_APP_HOST!   // app.alrayan-academy.com OR app.localhost:3000
-const SITE_HOST = process.env.NEXT_PUBLIC_SITE_HOST! // alrayan-academy.com OR localhost:3000
+const APP_HOST = process.env.NEXT_PUBLIC_APP_HOST!   // app.alrayanquran.com OR app.localhost:3000
+const SITE_HOST = process.env.NEXT_PUBLIC_SITE_HOST! // alrayanquran.com OR localhost:3000
 
 function isAppHost(host: string) {
   return (
