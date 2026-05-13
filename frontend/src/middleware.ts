@@ -30,14 +30,17 @@ export function middleware(req: NextRequest) {
     return NextResponse.next()
   }
 
+  const matchesPath = (list: string[]) =>
+    list.some(p => pathname === p || pathname.startsWith(p + '/'))
+
   if (isAppHost(host)) {
-    if (MARKETING_PATHS.some(p => pathname.startsWith(p))) {
+    if (matchesPath(MARKETING_PATHS)) {
       return NextResponse.rewrite(new URL('/not-found', req.url))
     }
     return NextResponse.next()
   }
 
-  if (SYSTEM_PATHS.some(p => pathname.startsWith(p))) {
+  if (matchesPath(SYSTEM_PATHS)) {
     return NextResponse.rewrite(new URL('/not-found', req.url))
   }
 
