@@ -14,7 +14,7 @@ return new class extends Migration
             $t->bigInteger('amount_minor');
             $t->char('currency', 3);
             $t->enum('source', ['overpayment','manual_credit','manual_debit','invoice_credit','adjustment','refund']);
-            $t->nullableMorphs('source_reference');
+            $t->nullableMorphs('source_reference', 'wt_src_ref_idx');
             $t->string('note')->nullable();
             $t->bigInteger('balance_after_minor');
             $t->foreignId('actor_user_id')->nullable()->constrained('users')->nullOnDelete();
