@@ -238,7 +238,26 @@ class SessionController extends Controller
 
         return response()->json(collect($results)->map(fn ($r) => [
             'session'   => new SessionResource($r['session']),
-            'conflicts' => collect($r['conflicts'])->map(fn ($c) => ['type' => $c->type])->values(),
+            'conflicts' => collect($r['conflicts'])->map(fn ($c) => [
+                'type'    => $c->type,
+                'related' => match ($c->type) {
+                    'teacher_double_booking' => $c->related ? [
+                        'session_id'      => $c->related->id,
+                        'scheduled_start' => $c->related->scheduled_start?->toIso8601String(),
+                        'scheduled_end'   => $c->related->scheduled_end?->toIso8601String(),
+                        'duration_min'    => $c->related->duration_min,
+                        'student'         => $c->related->student
+                            ? ['id' => $c->related->student->id, 'name' => $c->related->student->name]
+                            : null,
+                    ] : null,
+                    'teacher_on_leave' => $c->related ? [
+                        'start_date' => $c->related->start_date?->toDateString(),
+                        'end_date'   => $c->related->end_date?->toDateString(),
+                        'reason'     => $c->related->reason ?? null,
+                    ] : null,
+                    default => null,
+                },
+            ])->values(),
         ])->values());
     }
 }

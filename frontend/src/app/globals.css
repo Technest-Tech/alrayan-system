@@ -2,8 +2,6 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
-@custom-variant dark (&:is(.dark *));
-
 /* ============================================================
    Alrayan Academy Design System — Tailwind 4 theme
    ============================================================ */
@@ -30,6 +28,9 @@
   --color-ring:              var(--ring);
   --color-muted:             var(--muted);
   --color-muted-foreground:  var(--muted-foreground);
+  --color-primary-foreground:   var(--primary-foreground);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-accent-foreground:    var(--accent-foreground);
 
   /* Fonts — populated by next/font variables on <html> */
   --font-display:  var(--font-cormorant),  'Cormorant Garamond', Georgia, serif;

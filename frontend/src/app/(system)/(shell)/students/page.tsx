@@ -1,17 +1,18 @@
 'use client'
+import { useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
-import { Plus, Search, RotateCcw } from 'lucide-react'
-import Link from 'next/link'
-import { PageHeader } from '@/components/system/primitives/PageHeader'
+import { Plus, Search, RotateCcw, Users, GraduationCap, Clock, PauseCircle } from 'lucide-react'
 import { StudentTable } from '@/components/system/students/StudentTable'
+import { AddStudentDialog } from '@/components/system/students/AddStudentDialog'
 import { SavedViewsDropdown } from '@/components/system/primitives/SavedViewsDropdown'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useStudents } from '@/hooks/system/useStudents'
 import { useCourses } from '@/hooks/system/useCourses'
 import { useTeachers } from '@/hooks/system/useTeachers'
 import { useUrlFilters } from '@/lib/system/filters'
 import type { Student } from '@/types/system/student'
 
-const STATUS_OPTIONS = [
+const STATUS_PILLS = [
   { value: '',          label: 'All' },
   { value: 'trial',     label: 'Trial' },
   { value: 'active',    label: 'Active' },
@@ -20,118 +21,180 @@ const STATUS_OPTIONS = [
   { value: 'cancelled', label: 'Cancelled' },
 ]
 
-const AGE_OPTIONS = [
-  { value: '',      label: 'All ages' },
-  { value: 'child', label: 'Child' },
-  { value: 'adult', label: 'Adult' },
-]
+// sentinel keeps empty-string "all" out of the Select value prop
+const ALL = '_all_'
+function toFilter(v: string) { return v === ALL ? '' : v }
+function toSelect(v: string) { return v || ALL }
 
-const selectCls   = 'px-3 py-2 rounded-xl border text-sm outline-none focus:ring-2 focus:ring-[rgb(14,124,90)] appearance-none pr-7'
-const selectStyle = { borderColor: 'rgb(var(--border-default, 229 233 240))', background: 'rgb(var(--surface-card, 255 255 255))' }
+const selStyle = { borderColor: 'rgb(var(--border-default,229 233 240))', background: '#fff' }
 
 export default function StudentsPage() {
-  const router = useRouter()
+  const router  = useRouter()
+  const [dialogOpen, setDialogOpen] = useState(false)
   const { filters, setFilter, resetFilters } = useUrlFilters(['q', 'status', 'course_id', 'assigned_teacher_id', 'country', 'age_category'])
 
   const { data, isLoading } = useStudents({
-    q:                    filters.q || undefined,
-    status:               filters.status || undefined,
-    course_id:            filters.course_id || undefined,
-    assigned_teacher_id:  filters.assigned_teacher_id || undefined,
-    country:              filters.country || undefined,
-    age_category:         filters.age_category || undefined,
+    q:                   filters.q || undefined,
+    status:              filters.status || undefined,
+    course_id:           filters.course_id || undefined,
+    assigned_teacher_id: filters.assigned_teacher_id || undefined,
+    country:             filters.country || undefined,
+    age_category:        filters.age_category || undefined,
   })
 
-  const { data: courses = [] } = useCourses()
+  const { data: courses = [] }  = useCourses()
   const { data: teachersData }  = useTeachers()
   const teachers = teachersData?.data ?? []
 
   const students: Student[] = data?.data ?? []
   const hasFilters = Object.values(filters).some(Boolean)
 
-  function handleApplySavedView(params: string) {
-    router.push('?' + params, { scroll: false })
-  }
+  const stats = useMemo(() => {
+    const list = data?.data ?? []
+    return {
+      total:  list.length,
+      active: list.filter(s => s.status === 'active').length,
+      trial:  list.filter(s => s.status === 'trial').length,
+      paused: list.filter(s => s.status === 'paused' || s.status === 'suspended').length,
+    }
+  }, [data])
 
   return (
     <>
-      <PageHeader
-        title="Students"
-        description="Manage your student roster and enrolments."
-        actions={
-          <Link
-            href="/students/new"
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-white"
-            style={{ background: 'rgb(14 124 90)' }}
-          >
-            <Plus size={16} />
-            New student
-          </Link>
-        }
-      />
+      {/* ── Header ── */}
+      <div className="flex items-start justify-between mb-6">
+        <div>
+          <h1 className="text-xl font-semibold" style={{ color: 'rgb(11 31 58)' }}>Students</h1>
+          <p className="text-sm mt-0.5" style={{ color: 'rgb(90 100 112)' }}>Manage your student roster and enrolments.</p>
+        </div>
+        <button
+          onClick={() => setDialogOpen(true)}
+          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-white shadow-sm hover:opacity-90 transition-opacity"
+          style={{ background: 'rgb(14 124 90)' }}
+        >
+          <Plus size={15} />
+          Add Student
+        </button>
+      </div>
 
-      <div className="flex flex-wrap items-center gap-3 mb-4">
-        <div className="relative flex-1 min-w-48 max-w-sm">
-          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 opacity-40" />
-          <input
-            value={filters.q}
-            onChange={(e) => setFilter('q', e.target.value)}
-            placeholder="Search students…"
-            className="w-full pl-9 pr-3 py-2 rounded-xl border text-sm outline-none focus:ring-2 focus:ring-[rgb(14,124,90)]"
-            style={selectStyle}
-          />
+      {/* ── Stat cards ── */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
+        <StatCard
+          icon={<Users size={15} />}
+          label="Total"
+          value={stats.total}
+          accent="#0B1F3A"
+        />
+        <StatCard
+          icon={<GraduationCap size={15} />}
+          label="Active"
+          value={stats.active}
+          accent="rgb(14 124 90)"
+        />
+        <StatCard
+          icon={<Clock size={15} />}
+          label="Trial"
+          value={stats.trial}
+          accent="rgb(30 90 171)"
+        />
+        <StatCard
+          icon={<PauseCircle size={15} />}
+          label="Paused"
+          value={stats.paused}
+          accent="rgb(154 113 23)"
+        />
+      </div>
+
+      {/* ── Filters card ── */}
+      <div
+        className="rounded-xl border mb-4 overflow-hidden"
+        style={{ borderColor: 'rgb(var(--border-default,229 233 240))', background: '#fff' }}
+      >
+        {/* Status pills row */}
+        <div
+          className="flex items-center gap-1.5 px-4 py-3 border-b overflow-x-auto"
+          style={{ borderColor: 'rgb(var(--border-default,229 233 240))' }}
+        >
+          {STATUS_PILLS.map((p) => {
+            const active = filters.status === p.value
+            return (
+              <button
+                key={p.value}
+                onClick={() => setFilter('status', p.value)}
+                className="px-3.5 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all"
+                style={active ? {
+                  background: 'rgb(14 124 90)',
+                  color: '#fff',
+                  boxShadow: '0 1px 4px rgb(14 124 90 / 0.3)',
+                } : {
+                  background: 'transparent',
+                  color: 'rgb(90 100 112)',
+                  border: '1px solid rgb(var(--border-default,229 233 240))',
+                }}
+              >
+                {p.label}
+              </button>
+            )
+          })}
         </div>
 
-        <select
-          value={filters.status}
-          onChange={(e) => setFilter('status', e.target.value)}
-          className={selectCls}
-          style={selectStyle}
-        >
-          {STATUS_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-        </select>
+        {/* Other filters row */}
+        <div className="flex flex-wrap items-center gap-3 px-4 py-3">
+          <div className="relative flex-1 min-w-44 max-w-xs">
+            <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 opacity-40" />
+            <input
+              value={filters.q}
+              onChange={(e) => setFilter('q', e.target.value)}
+              placeholder="Search students…"
+              className="w-full pl-8 pr-3 py-2 rounded-lg border text-sm outline-none focus:ring-2 focus:ring-[rgb(14,124,90)] transition-shadow"
+              style={selStyle}
+            />
+          </div>
 
-        <select
-          value={filters.course_id}
-          onChange={(e) => setFilter('course_id', e.target.value)}
-          className={selectCls}
-          style={selectStyle}
-        >
-          <option value="">All courses</option>
-          {courses.map((c) => <option key={c.id} value={String(c.id)}>{c.name}</option>)}
-        </select>
+          <Select value={toSelect(filters.course_id)} onValueChange={v => setFilter('course_id', toFilter(v))}>
+            <SelectTrigger className="w-40">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={ALL}>All courses</SelectItem>
+              {courses.map(c => <SelectItem key={c.id} value={String(c.id)}>{c.name}</SelectItem>)}
+            </SelectContent>
+          </Select>
 
-        <select
-          value={filters.assigned_teacher_id}
-          onChange={(e) => setFilter('assigned_teacher_id', e.target.value)}
-          className={selectCls}
-          style={selectStyle}
-        >
-          <option value="">All teachers</option>
-          {teachers.map((t) => <option key={t.id} value={String(t.id)}>{t.name}</option>)}
-        </select>
+          <Select value={toSelect(filters.assigned_teacher_id)} onValueChange={v => setFilter('assigned_teacher_id', toFilter(v))}>
+            <SelectTrigger className="w-40">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={ALL}>All teachers</SelectItem>
+              {teachers.map(t => <SelectItem key={t.id} value={String(t.id)}>{t.name}</SelectItem>)}
+            </SelectContent>
+          </Select>
 
-        <select
-          value={filters.age_category}
-          onChange={(e) => setFilter('age_category', e.target.value)}
-          className={selectCls}
-          style={selectStyle}
-        >
-          {AGE_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-        </select>
+          <Select value={toSelect(filters.age_category)} onValueChange={v => setFilter('age_category', toFilter(v))}>
+            <SelectTrigger className="w-32">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={ALL}>All ages</SelectItem>
+              <SelectItem value="child">Child</SelectItem>
+              <SelectItem value="adult">Adult</SelectItem>
+            </SelectContent>
+          </Select>
 
-        <SavedViewsDropdown context="students" onApply={handleApplySavedView} />
+          <SavedViewsDropdown context="students" onApply={(p) => router.push('?' + p, { scroll: false })} />
 
-        {hasFilters && (
-          <button
-            onClick={resetFilters}
-            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm border hover:bg-black/5 transition-colors opacity-60 hover:opacity-100"
-            style={{ borderColor: 'rgb(var(--border-default, 229 233 240))' }}
-          >
-            <RotateCcw size={13} />
-            Reset
-          </button>
-        )}
+          {hasFilters && (
+            <button
+              onClick={resetFilters}
+              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm border hover:bg-black/5 transition-colors opacity-60 hover:opacity-100"
+              style={{ borderColor: 'rgb(var(--border-default,229 233 240))' }}
+            >
+              <RotateCcw size={12} />
+              Reset
+            </button>
+          )}
+        </div>
       </div>
 
       <StudentTable
@@ -139,6 +202,29 @@ export default function StudentsPage() {
         isLoading={isLoading}
         onRowClick={(s) => router.push(`/students/${s.id}`)}
       />
+
+      <AddStudentDialog open={dialogOpen} onOpenChange={setDialogOpen} />
     </>
+  )
+}
+
+/* ─── Stat card ────────────────────────────────── */
+function StatCard({ icon, label, value, accent }: { icon: React.ReactNode; label: string; value: number; accent: string }) {
+  return (
+    <div
+      className="flex items-center gap-3 px-4 py-3.5 rounded-xl border"
+      style={{ background: '#fff', borderColor: 'rgb(var(--border-default,229 233 240))' }}
+    >
+      <div
+        className="flex items-center justify-center w-8 h-8 rounded-lg shrink-0"
+        style={{ background: `color-mix(in srgb, ${accent} 10%, transparent)`, color: accent }}
+      >
+        {icon}
+      </div>
+      <div>
+        <p className="text-xl font-semibold leading-none" style={{ color: 'rgb(11 31 58)' }}>{value}</p>
+        <p className="text-xs mt-0.5" style={{ color: 'rgb(90 100 112)' }}>{label}</p>
+      </div>
+    </div>
   )
 }

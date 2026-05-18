@@ -53,7 +53,7 @@ export default function NewLeadPage() {
           </div>
           <div className="space-y-1">
             <Label>Source *</Label>
-            <Select value={form.source} onValueChange={v => setForm(p => ({ ...p, source: v }))}>
+            <Select value={form.source} onValueChange={(v: string) => setForm(p => ({ ...p, source: v }))}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="google_ads">Google Ads</SelectItem>

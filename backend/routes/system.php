@@ -35,6 +35,7 @@ use App\Http\Controllers\System\StudentController;
 use App\Http\Controllers\System\StudentFamilyController;
 use App\Http\Controllers\System\StudentNoteController;
 use App\Http\Controllers\System\StudentTransitionController;
+use App\Http\Controllers\System\ActivateStudentController;
 use App\Http\Controllers\System\TeacherAvailabilityController;
 use App\Http\Controllers\System\TeacherController;
 use App\Http\Controllers\System\TeacherLeaveController;
@@ -128,8 +129,11 @@ Route::prefix('system')->name('system.')->group(function () {
             Route::post('/students/{student}/siblings',                  [StudentFamilyController::class, 'store'])->name('students.siblings.store');
             Route::delete('/students/{student}/siblings/{sibling}',      [StudentFamilyController::class, 'destroy'])->name('students.siblings.destroy');
         });
-        Route::middleware('system.can:students.change_status')
-            ->post('/students/{student}/transition', StudentTransitionController::class)->name('students.transition');
+        Route::delete('/students/{student}', [StudentController::class, 'destroy'])->name('students.destroy');
+        Route::middleware('system.can:students.change_status')->group(function () {
+            Route::post('/students/{student}/transition', StudentTransitionController::class)->name('students.transition');
+            Route::post('/students/{student}/activate',  ActivateStudentController::class)->name('students.activate');
+        });
 
         Route::post('/students/{student}/notes',    [StudentNoteController::class, 'store'])->name('students.notes.store');
         Route::patch('/student-notes/{note}',       [StudentNoteController::class, 'update'])->name('student-notes.update');
@@ -279,7 +283,6 @@ Route::prefix('system')->name('system.')->group(function () {
         Route::get('/quality/{teacher}', [\App\Http\Controllers\System\QualityController::class, 'show'])->name('quality.show');
         Route::middleware('system.can:quality.review')
             ->post('/quality/{teacher}/reviews', [\App\Http\Controllers\System\QualityController::class, 'submitReview'])->name('quality.reviews.store');
-    });
 
         // ── SYS-07: Leads / CRM ──────────────────────────────────────────────────
 
@@ -445,6 +448,8 @@ Route::prefix('system')->name('system.')->group(function () {
             ->get('/settings/backups', [BackupsController::class, 'show'])->name('settings.backups');
         Route::middleware('system.can:settings.manage_backups')
             ->post('/settings/backups/run-now', [BackupsController::class, 'runNow'])->name('settings.backups.run-now');
+
+    }); // end auth:sanctum + system.active
 
     // Paymob webhook — no Sanctum, HMAC-verified
     Route::post('/system/webhooks/paymob', [PaymobWebhookController::class, 'handle'])->name('system.webhooks.paymob');

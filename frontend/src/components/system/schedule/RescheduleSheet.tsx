@@ -28,8 +28,9 @@ export function RescheduleSheet({ session, open, onClose, onSuccess }: Props) {
 
   if (!open) return null
 
-  const conflicts    = (preview.data as any)?.conflicts ?? []
-  const hasHardBlock = conflicts.some((c: any) => c.type === 'teacher_on_leave')
+  const previewData  = preview.data as { conflicts?: { type: string }[] } | undefined
+  const conflicts    = previewData?.conflicts ?? []
+  const hasHardBlock = conflicts.some((c) => c.type === 'teacher_on_leave')
 
   const handlePreview = () => {
     preview.mutate({ sessionId: session.id, scheduledStart: new Date(newStart).toISOString() })
@@ -80,7 +81,7 @@ export function RescheduleSheet({ session, open, onClose, onSuccess }: Props) {
           {conflicts.length > 0 && (
             <div className="rounded-md bg-orange-50 border border-orange-200 p-3 space-y-2">
               <div className="text-xs font-medium text-orange-800">⚠ Conflicts detected</div>
-              {conflicts.map((c: any, i: number) => (
+              {conflicts.map((c, i) => (
                 <div key={i} className="text-xs text-orange-700">{CONFLICT_LABELS[c.type] ?? c.type}</div>
               ))}
               {!hasHardBlock && (
@@ -96,7 +97,7 @@ export function RescheduleSheet({ session, open, onClose, onSuccess }: Props) {
             </div>
           )}
 
-          {preview.data && conflicts.length === 0 && (
+          {previewData && conflicts.length === 0 && (
             <div className="rounded-md bg-green-50 border border-green-200 p-3 text-xs text-green-800">
               ✅ No conflicts — safe to reschedule
             </div>

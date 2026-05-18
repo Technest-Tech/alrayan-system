@@ -5,4 +5,5 @@ export interface AuthUser {
   role: 'admin' | 'supervisor' | 'teacher'
   permissions: string[]
   is_active: boolean
+  teacher_id?: number | null
 }

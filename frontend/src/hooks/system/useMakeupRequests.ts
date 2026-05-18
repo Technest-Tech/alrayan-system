@@ -7,7 +7,7 @@ export function useMakeupRequests(status?: string) {
   const params = status ? `?status=${status}` : ''
   return useQuery({
     queryKey: ['system', 'makeup-requests', status],
-    queryFn:  () => api.get<Paginated<MakeupRequest>>(`/makeup-requests${params}`),
+    queryFn:  () => api<Paginated<MakeupRequest>>(`/makeup-requests${params}`),
   })
 }
 
@@ -19,7 +19,7 @@ export function useRequestMakeup() {
       proposed_start_at: string
       proposed_duration_min: number
       reason?: string
-    }) => api.post<MakeupRequest>('/makeup-requests', data),
+    }) => api<MakeupRequest>('/makeup-requests', { method: 'POST', body: JSON.stringify(data) }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['system', 'makeup-requests'] }),
   })
 }
@@ -28,7 +28,7 @@ export function useApproveMakeup() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: ({ id, review_note }: { id: number; review_note?: string }) =>
-      api.post<MakeupRequest>(`/makeup-requests/${id}/approve`, { review_note }),
+      api<MakeupRequest>(`/makeup-requests/${id}/approve`, { method: 'POST', body: JSON.stringify({ review_note }) }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['system', 'makeup-requests'] })
       qc.invalidateQueries({ queryKey: ['system', 'sessions'] })
@@ -40,7 +40,7 @@ export function useDenyMakeup() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: ({ id, review_note }: { id: number; review_note?: string }) =>
-      api.post<MakeupRequest>(`/makeup-requests/${id}/deny`, { review_note }),
+      api<MakeupRequest>(`/makeup-requests/${id}/deny`, { method: 'POST', body: JSON.stringify({ review_note }) }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['system', 'makeup-requests'] }),
   })
 }

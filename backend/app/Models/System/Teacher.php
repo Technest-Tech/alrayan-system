@@ -40,7 +40,7 @@ class Teacher extends Model
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()
-            ->logOnly(['qualifications', 'payment_method', 'per_minute_rate_30', 'per_minute_rate_45', 'per_minute_rate_60', 'is_active'])
+            ->logOnly(['education_level', 'years_of_experience', 'qualifications', 'cv_url', 'payment_method', 'hourly_rate', 'is_active'])
             ->logOnlyDirty()
             ->dontSubmitEmptyLogs()
             ->useLogName('system');

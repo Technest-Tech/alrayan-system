@@ -80,6 +80,18 @@ export interface MakeupRequest {
 
 export interface ConflictItem {
   type: 'teacher_double_booking' | 'teacher_on_leave' | 'teacher_unavailable'
+  related?: {
+    /** teacher_double_booking */
+    session_id?:      number
+    scheduled_start?: string
+    scheduled_end?:   string
+    duration_min?:    number
+    student?:         { id: number; name: string } | null
+    /** teacher_on_leave */
+    start_date?: string
+    end_date?:   string
+    reason?:     string | null
+  } | null
 }
 
 export interface PatternPreviewOccurrence {

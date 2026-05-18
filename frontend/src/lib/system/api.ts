@@ -31,15 +31,16 @@ export async function api<T>(path: string, init?: RequestInit): Promise<T> {
 
   if (res.status === 401) {
     clearToken()
-    if (typeof window !== 'undefined' && !window.location.pathname.startsWith('/login')) {
-      window.location.href = '/login?from=' + encodeURIComponent(window.location.pathname)
-    }
     throw new ApiError(401, 'Unauthenticated')
   }
 
   if (!res.ok) {
     const body = await res.json().catch(() => ({}))
     throw new ApiError(res.status, body.message ?? res.statusText, body.errors)
+  }
+
+  if (res.status === 204 || res.headers.get('content-length') === '0') {
+    return null as T
   }
 
   return res.json() as Promise<T>

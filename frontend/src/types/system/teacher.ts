@@ -30,8 +30,11 @@ export interface Teacher {
   phone: string | null
   whatsapp: string | null
   qualifications: string | null
+  cv_url: string | null
   teachable_course_ids: number[]
   payment_method: 'vodafone_cash' | 'instapay' | 'wallet_other'
+  payment_account_details?: string | null
+  hourly_rate: number
   per_minute_rate_30: number
   per_minute_rate_45: number
   per_minute_rate_60: number

@@ -29,8 +29,12 @@ class StudentLifecycle
         DB::transaction(function () use ($student, $next, $context) {
             $old = $student->status;
             $student->status = $next;
-            if (!$student->{$next . '_at'}) {
-                $student->{$next . '_at'} = now();
+            $timestampCol = match($next) {
+                'active' => 'enrolled_at',
+                default  => $next . '_at',
+            };
+            if (!$student->{$timestampCol}) {
+                $student->{$timestampCol} = now();
             }
             if ($next === 'cancelled') {
                 $student->cancellation_reason = $context['reason'] ?? null;
@@ -45,11 +49,7 @@ class StudentLifecycle
                 'payload'       => ['old' => $old, 'new' => $next, 'context' => $context],
             ]);
 
-            AuditLog::record(
-                action: 'student.status_changed',
-                subject: $student,
-                meta: ['old' => $old, 'new' => $next, 'context' => $context],
-            );
+            AuditLog::record('student.status_changed', $student, ['old' => $old, 'new' => $next, 'context' => $context]);
 
             event(new StudentStatusChanged($student, $old, $next));
         });

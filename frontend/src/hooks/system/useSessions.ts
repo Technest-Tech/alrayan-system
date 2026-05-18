@@ -10,6 +10,7 @@ interface SessionFilters {
   from?: string
   to?: string
   page?: number
+  per_page?: number
 }
 
 export function useSessions(filters: SessionFilters = {}) {
@@ -18,14 +19,14 @@ export function useSessions(filters: SessionFilters = {}) {
 
   return useQuery({
     queryKey: ['system', 'sessions', filters],
-    queryFn:  () => api.get<Paginated<Session>>(`/sessions?${params}`),
+    queryFn:  () => api<Paginated<Session>>(`/sessions?${params}`),
   })
 }
 
 export function useSession(id: number | null) {
   return useQuery({
     queryKey:  ['system', 'sessions', id],
-    queryFn:   () => api.get<Session>(`/sessions/${id}`),
+    queryFn:   () => api<Session>(`/sessions/${id}`),
     enabled:   id !== null,
   })
 }
@@ -38,7 +39,7 @@ export function useMarkAttendance() {
       status: 'attended' | 'absent' | 'cancelled'
       cancelled_by?: string
       cancellation_reason?: string
-    }) => api.post(`/sessions/${id}/attendance`, { status, cancelled_by, cancellation_reason }),
+    }) => api(`/sessions/${id}/attendance`, { method: 'POST', body: JSON.stringify({ status, cancelled_by, cancellation_reason }) }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['system', 'sessions'] }),
   })
 }
@@ -50,7 +51,7 @@ export function useRescheduleSession() {
       id: number
       scheduled_start: string
       force_conflicts?: boolean
-    }) => api.patch(`/sessions/${id}/reschedule`, { scheduled_start, force_conflicts }),
+    }) => api(`/sessions/${id}/reschedule`, { method: 'PATCH', body: JSON.stringify({ scheduled_start, force_conflicts }) }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['system', 'sessions'] }),
   })
 }
@@ -62,7 +63,7 @@ export function useCancelSession() {
       id: number
       cancelled_by: string
       cancellation_reason?: string
-    }) => api.post(`/sessions/${id}/cancel`, { cancelled_by, cancellation_reason }),
+    }) => api(`/sessions/${id}/cancel`, { method: 'POST', body: JSON.stringify({ cancelled_by, cancellation_reason }) }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['system', 'sessions'] }),
   })
 }
@@ -71,14 +72,38 @@ export function useBulkAttendance() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: (items: Array<{ session_id: number; status: string; cancelled_by?: string }>) =>
-      api.post('/sessions/bulk-attendance', { items }),
+      api('/sessions/bulk-attendance', { method: 'POST', body: JSON.stringify({ items }) }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['system', 'sessions'] }),
+  })
+}
+
+export function useStudentSessions(studentId: number | undefined | null) {
+  return useQuery({
+    queryKey: ['system', 'sessions', { student_id: studentId, per_page: 20 }],
+    queryFn:  () => api<Paginated<Session>>(`/sessions?student_id=${studentId}&per_page=20`),
+    enabled:  !!studentId,
+  })
+}
+
+export function useCreateSession() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (data: {
+      student_id: number
+      teacher_id: number
+      scheduled_start: string
+      duration_min: number
+    }) => api<Session>('/sessions', { method: 'POST', body: JSON.stringify(data) }),
+    onSuccess: (_data, vars) => {
+      qc.invalidateQueries({ queryKey: ['system', 'sessions'] })
+      qc.invalidateQueries({ queryKey: ['system', 'sessions', { student_id: vars.student_id }] })
+    },
   })
 }
 
 export function useSessionConflicts() {
   return useQuery({
     queryKey: ['system', 'sessions', 'conflicts'],
-    queryFn:  () => api.get<Array<{ session: Session; conflicts: Array<{ type: string }> }>>('/sessions/conflicts'),
+    queryFn:  () => api<Array<{ session: Session; conflicts: Array<{ type: string }> }>>('/sessions/conflicts'),
   })
 }

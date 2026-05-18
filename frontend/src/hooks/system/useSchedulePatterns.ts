@@ -6,7 +6,7 @@ import type { SchedulePattern, PatternPreviewOccurrence } from '@/types/system/s
 export function useSchedulePatterns(studentId: number | null) {
   return useQuery({
     queryKey: ['system', 'schedule-patterns', studentId],
-    queryFn:  () => api.get<SchedulePattern[]>(`/students/${studentId}/schedule-patterns`),
+    queryFn:  () => api<SchedulePattern[]>(`/students/${studentId}/schedule-patterns`),
     enabled:  studentId !== null,
   })
 }
@@ -19,10 +19,9 @@ export function useReplaceSchedulePatterns() {
       effectiveDate: string
       patterns: Array<{ day_of_week: number; start_time: string; duration_min: number; valid_to?: string | null }>
       forceConflicts?: boolean
-    }) => api.put(`/students/${studentId}/schedule-patterns`, {
-      effective_date: effectiveDate,
-      patterns,
-      force_conflicts: forceConflicts,
+    }) => api(`/students/${studentId}/schedule-patterns`, {
+      method: 'PUT',
+      body: JSON.stringify({ effective_date: effectiveDate, patterns, force_conflicts: forceConflicts }),
     }),
     onSuccess: (_data, vars) => {
       qc.invalidateQueries({ queryKey: ['system', 'schedule-patterns', vars.studentId] })
@@ -37,9 +36,9 @@ export function usePreviewSchedulePatterns() {
       studentId: number
       effectiveDate: string
       patterns: Array<{ day_of_week: number; start_time: string; duration_min: number }>
-    }) => api.post<{ occurrences: PatternPreviewOccurrence[]; conflicts: unknown[] }>(
+    }) => api<{ occurrences: PatternPreviewOccurrence[]; conflicts: unknown[] }>(
       `/students/${studentId}/schedule-patterns/preview`,
-      { effective_date: effectiveDate, patterns },
+      { method: 'POST', body: JSON.stringify({ effective_date: effectiveDate, patterns }) },
     ),
   })
 }

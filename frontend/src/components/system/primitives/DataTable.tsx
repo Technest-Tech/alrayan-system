@@ -24,6 +24,7 @@ interface DataTableProps<T> {
   isLoading?: boolean
   emptyState?: ReactNode
   density?: 'compact' | 'default' | 'comfortable'
+  rowClassName?: string
 }
 
 const DENSITY_CLS = {
@@ -52,6 +53,7 @@ export function DataTable<T>({
   isLoading,
   emptyState,
   density = 'default',
+  rowClassName,
 }: DataTableProps<T>) {
   const [sorting, setSorting] = useState<SortingState>([])
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({})
@@ -127,7 +129,7 @@ export function DataTable<T>({
                     borderBottom: '1px solid rgb(var(--border-default, 229 233 240))',
                     cursor: onRowClick ? 'pointer' : 'default',
                   }}
-                  className="transition-colors hover:bg-black/[0.02]"
+                  className={`transition-colors hover:bg-black/[0.02] ${rowClassName ?? ''}`}
                 >
                   {row.getVisibleCells().map(cell => (
                     <td key={cell.id} className={cellCls}>

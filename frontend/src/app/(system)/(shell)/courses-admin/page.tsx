@@ -2,7 +2,7 @@
 import { useState } from 'react'
 import { PageHeader } from '@/components/system/primitives/PageHeader'
 import { EmptyState } from '@/components/system/primitives/EmptyState'
-import { CourseTable } from '@/components/system/courses/CourseTable'
+import { CourseGrid } from '@/components/system/courses/CourseGrid'
 import { CourseToggleSheet } from '@/components/system/courses/CourseToggleSheet'
 import { useCourses } from '@/hooks/system/useCourses'
 import type { SystemCourse } from '@/types/system/course'
@@ -19,15 +19,12 @@ export default function CoursesPage() {
       />
 
       {isLoading ? (
-        <div
-          className="rounded-xl border overflow-hidden"
-          style={{ borderColor: 'rgb(var(--border-default, 229 233 240))', background: 'rgb(var(--surface-card, 255 255 255))' }}
-        >
-          {[1, 2, 3].map((i) => (
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+          {[1, 2, 3, 4, 5, 6].map(i => (
             <div
               key={i}
-              className="h-16 animate-pulse border-b"
-              style={{ borderColor: 'rgb(var(--border-default, 229 233 240))', background: 'rgb(var(--surface-card-2, 248 250 252))' }}
+              className="h-44 rounded-2xl animate-pulse"
+              style={{ background: 'rgb(var(--surface-card-2, 248 250 252))', border: '1px solid rgb(var(--border-default, 229 233 240))' }}
             />
           ))}
         </div>
@@ -38,7 +35,7 @@ export default function CoursesPage() {
           description="Courses added from the backend will appear here."
         />
       ) : (
-        <CourseTable courses={courses} onEdit={setEditing} />
+        <CourseGrid courses={courses} onEdit={setEditing} />
       )}
 
       <CourseToggleSheet course={editing} onClose={() => setEditing(null)} />

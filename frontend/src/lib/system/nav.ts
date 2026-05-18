@@ -25,11 +25,11 @@ export const SYSTEM_NAV: readonly NavSection[] = [
       { label: 'Leads',            href: '/leads',              icon: UserCheck,       perm: 'leads.view' },
       { label: 'Students',         href: '/students',           icon: Users,           perm: 'students.view' },
       { label: 'Teachers',         href: '/teachers',           icon: GraduationCap,   perm: 'teachers.view' },
-      { label: 'Courses',          href: '/courses-admin',      icon: BookOpen,        perm: 'courses.view' },
       { label: 'Schedule',         href: '/schedule',           icon: Calendar,        perm: 'schedule.view' },
       { label: 'Attendance',       href: '/attendance',         icon: ClipboardCheck,  perm: 'attendance.view' },
       { label: 'Session reports',  href: '/session-reports',    icon: FileText,        perm: 'reports.view' },
       { label: 'Certificates',     href: '/certificates',       icon: Award,           perm: 'certificates.view' },
+      { label: 'Courses',          href: '/courses-admin',      icon: BookOpen,        perm: 'courses.view' },
     ],
   },
   {

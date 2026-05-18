@@ -1,72 +1,24 @@
 'use client'
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
-import { Plus, Search } from 'lucide-react'
-import { toast } from 'sonner'
-import { PageHeader } from '@/components/system/primitives/PageHeader'
+import { Plus, Search, Users, GraduationCap, UserX } from 'lucide-react'
 import { TeacherTable } from '@/components/system/teachers/TeacherTable'
-import { TeacherForm, type TeacherFormValues } from '@/components/system/teachers/TeacherForm'
-import { useTeachers, useUpdateTeacher } from '@/hooks/system/useTeachers'
+import { AddTeacherDialog } from '@/components/system/teachers/AddTeacherDialog'
+import { useTeachers } from '@/hooks/system/useTeachers'
 import { useUrlFilters } from '@/lib/system/filters'
-import { ApiError } from '@/lib/system/api'
-import { X } from 'lucide-react'
 import type { Teacher } from '@/types/system/teacher'
 
-function AddTeacherSheet({ onClose }: { onClose: () => void }) {
-  const update = useUpdateTeacher('new')
-  const router = useRouter()
+const STATUS_PILLS = [
+  { value: '',  label: 'All' },
+  { value: '1', label: 'Active' },
+  { value: '0', label: 'Inactive' },
+]
 
-  async function handleSubmit(data: TeacherFormValues) {
-    try {
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}${process.env.NEXT_PUBLIC_SYSTEM_API_PREFIX ?? '/api/system'}/teachers`,
-        {
-          method: 'POST',
-          credentials: 'include',
-          headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-          body: JSON.stringify(data),
-        }
-      )
-      if (!res.ok) {
-        const body = await res.json().catch(() => ({}))
-        throw new ApiError(res.status, body.message ?? 'Failed')
-      }
-      const created = await res.json()
-      toast.success('Teacher created.')
-      onClose()
-      router.push(`/teachers/${created.data?.id ?? ''}`)
-    } catch (e) {
-      toast.error(e instanceof ApiError ? e.message : 'Failed to create teacher.')
-    }
-  }
-
-  return (
-    <div className="fixed inset-0 z-50 flex">
-      <div className="fixed inset-0 bg-black/30" onClick={onClose} />
-      <div
-        className="relative ml-auto h-full w-full max-w-lg flex flex-col shadow-xl overflow-y-auto"
-        style={{ background: 'rgb(var(--surface-bg, 244 246 250))' }}
-      >
-        <div
-          className="flex items-center justify-between px-6 py-4 border-b shrink-0"
-          style={{ background: 'rgb(var(--surface-card, 255 255 255))', borderColor: 'rgb(var(--border-default, 229 233 240))' }}
-        >
-          <h2 className="font-semibold">Add teacher</h2>
-          <button onClick={onClose} className="p-1 rounded-lg hover:bg-black/5 transition-colors">
-            <X size={18} />
-          </button>
-        </div>
-        <div className="flex-1 p-6">
-          <TeacherForm onSubmit={handleSubmit} isLoading={update.isPending} />
-        </div>
-      </div>
-    </div>
-  )
-}
+const selStyle = { borderColor: 'rgb(var(--border-default,229 233 240))', background: '#fff' }
 
 export default function TeachersPage() {
   const router = useRouter()
-  const [showAdd, setShowAdd] = useState(false)
+  const [dialogOpen, setDialogOpen] = useState(false)
   const { filters, setFilter } = useUrlFilters(['q', 'is_active'])
 
   const { data, isLoading } = useTeachers({
@@ -76,62 +28,115 @@ export default function TeachersPage() {
 
   const teachers: Teacher[] = data?.data ?? []
 
+  const stats = useMemo(() => {
+    const list = data?.data ?? []
+    return {
+      total:    list.length,
+      active:   list.filter(t => t.is_active).length,
+      inactive: list.filter(t => !t.is_active).length,
+    }
+  }, [data])
+
   return (
     <>
-      <PageHeader
-        title="Teachers"
-        description="Manage your teaching staff."
-        actions={
-          <button
-            onClick={() => setShowAdd(true)}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-white"
-            style={{ background: 'rgb(14 124 90)' }}
-          >
-            <Plus size={16} />
-            Add teacher
-          </button>
-        }
-      />
-
-      <div className="flex flex-wrap items-center gap-3 mb-4">
-        <div className="relative flex-1 min-w-48 max-w-sm">
-          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 opacity-40" />
-          <input
-            value={filters.q}
-            onChange={(e) => setFilter('q', e.target.value)}
-            placeholder="Search teachers…"
-            className="w-full pl-9 pr-3 py-2 rounded-xl border text-sm outline-none focus:ring-2 focus:ring-[rgb(14,124,90)]"
-            style={{ borderColor: 'rgb(var(--border-default, 229 233 240))', background: 'rgb(var(--surface-card, 255 255 255))' }}
-          />
+      {/* ── Header ── */}
+      <div className="flex items-start justify-between mb-6">
+        <div>
+          <h1 className="text-xl font-semibold" style={{ color: 'rgb(11 31 58)' }}>Teachers</h1>
+          <p className="text-sm mt-0.5" style={{ color: 'rgb(90 100 112)' }}>Manage your teaching staff and availability.</p>
         </div>
+        <button
+          onClick={() => setDialogOpen(true)}
+          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-white shadow-sm hover:opacity-90 transition-opacity"
+          style={{ background: 'rgb(14 124 90)' }}
+        >
+          <Plus size={15} />
+          Add Teacher
+        </button>
+      </div>
 
-        <div className="flex rounded-xl overflow-hidden border text-sm" style={{ borderColor: 'rgb(var(--border-default, 229 233 240))' }}>
-          {(['', '1'] as const).map((val) => {
-            const active = filters.is_active === val
+      {/* ── Stat cards ── */}
+      <div className="grid grid-cols-3 gap-3 mb-5">
+        <StatCard icon={<Users size={15} />}         label="Total"    value={stats.total}    accent="#0B1F3A" />
+        <StatCard icon={<GraduationCap size={15} />} label="Active"   value={stats.active}   accent="rgb(14 124 90)" />
+        <StatCard icon={<UserX size={15} />}         label="Inactive" value={stats.inactive} accent="rgb(90 100 112)" />
+      </div>
+
+      {/* ── Filters card ── */}
+      <div
+        className="rounded-xl border mb-4 overflow-hidden"
+        style={{ borderColor: 'rgb(var(--border-default,229 233 240))', background: '#fff' }}
+      >
+        {/* Status pills */}
+        <div
+          className="flex items-center gap-1.5 px-4 py-3 border-b"
+          style={{ borderColor: 'rgb(var(--border-default,229 233 240))' }}
+        >
+          {STATUS_PILLS.map(p => {
+            const active = filters.is_active === p.value
             return (
               <button
-                key={val}
-                onClick={() => setFilter('is_active', val)}
-                className="px-3 py-2 transition-colors"
-                style={{
-                  background: active ? 'rgb(14 124 90)' : 'rgb(var(--surface-card, 255 255 255))',
-                  color: active ? 'white' : undefined,
+                key={p.value}
+                onClick={() => setFilter('is_active', p.value)}
+                className="px-3.5 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all"
+                style={active ? {
+                  background: 'rgb(14 124 90)',
+                  color: '#fff',
+                  boxShadow: '0 1px 4px rgb(14 124 90 / 0.3)',
+                } : {
+                  background: 'transparent',
+                  color: 'rgb(90 100 112)',
+                  border: '1px solid rgb(var(--border-default,229 233 240))',
                 }}
               >
-                {val === '' ? 'All' : 'Active'}
+                {p.label}
               </button>
             )
           })}
+        </div>
+
+        {/* Search row */}
+        <div className="flex items-center gap-3 px-4 py-3">
+          <div className="relative flex-1 min-w-44 max-w-xs">
+            <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 opacity-40" />
+            <input
+              value={filters.q}
+              onChange={e => setFilter('q', e.target.value)}
+              placeholder="Search teachers…"
+              className="w-full pl-8 pr-3 py-2 rounded-lg border text-sm outline-none focus:ring-2 focus:ring-[rgb(14,124,90)] transition-shadow"
+              style={selStyle}
+            />
+          </div>
         </div>
       </div>
 
       <TeacherTable
         data={teachers}
         isLoading={isLoading}
-        onRowClick={(t) => router.push(`/teachers/${t.id}`)}
+        onRowClick={t => router.push(`/teachers/${t.id}`)}
       />
 
-      {showAdd && <AddTeacherSheet onClose={() => setShowAdd(false)} />}
+      <AddTeacherDialog open={dialogOpen} onOpenChange={setDialogOpen} />
     </>
+  )
+}
+
+function StatCard({ icon, label, value, accent }: { icon: React.ReactNode; label: string; value: number; accent: string }) {
+  return (
+    <div
+      className="flex items-center gap-3 px-4 py-3.5 rounded-xl border"
+      style={{ background: '#fff', borderColor: 'rgb(var(--border-default,229 233 240))' }}
+    >
+      <div
+        className="flex items-center justify-center w-8 h-8 rounded-lg shrink-0"
+        style={{ background: `color-mix(in srgb, ${accent} 10%, transparent)`, color: accent }}
+      >
+        {icon}
+      </div>
+      <div>
+        <p className="text-xl font-semibold leading-none" style={{ color: 'rgb(11 31 58)' }}>{value}</p>
+        <p className="text-xs mt-0.5" style={{ color: 'rgb(90 100 112)' }}>{label}</p>
+      </div>
+    </div>
   )
 }

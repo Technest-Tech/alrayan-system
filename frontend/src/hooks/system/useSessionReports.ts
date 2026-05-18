@@ -17,14 +17,14 @@ export function useSessionReports(filters: ReportFilters = {}) {
 
   return useQuery({
     queryKey: ['system', 'session-reports', filters],
-    queryFn:  () => api.get<Paginated<SessionReport>>(`/session-reports?${params}`),
+    queryFn:  () => api<Paginated<SessionReport>>(`/session-reports?${params}`),
   })
 }
 
 export function useSessionReport(sessionId: number | null) {
   return useQuery({
     queryKey:  ['system', 'session-reports', 'session', sessionId],
-    queryFn:   () => api.get<SessionReport>(`/sessions/${sessionId}/report`),
+    queryFn:   () => api<SessionReport>(`/sessions/${sessionId}/report`),
     enabled:   sessionId !== null,
     retry:     false,
   })
@@ -36,7 +36,7 @@ export function useSubmitReport() {
     mutationFn: ({ sessionId, data }: {
       sessionId: number
       data: { covered_text: string; performance: string; homework_text?: string; next_session_notes?: string }
-    }) => api.post<SessionReport>(`/sessions/${sessionId}/report`, data),
+    }) => api<SessionReport>(`/sessions/${sessionId}/report`, { method: 'POST', body: JSON.stringify(data) }),
     onSuccess: (_data, vars) => {
       qc.invalidateQueries({ queryKey: ['system', 'session-reports'] })
       qc.invalidateQueries({ queryKey: ['system', 'session-reports', 'session', vars.sessionId] })
@@ -51,7 +51,7 @@ export function useUpdateReport() {
     mutationFn: ({ id, data }: {
       id: number
       data: Partial<{ covered_text: string; performance: string; homework_text: string; next_session_notes: string }>
-    }) => api.patch<SessionReport>(`/session-reports/${id}`, data),
+    }) => api<SessionReport>(`/session-reports/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['system', 'session-reports'] }),
   })
 }
@@ -59,7 +59,7 @@ export function useUpdateReport() {
 export function useStudentReports(studentId: number | null) {
   return useQuery({
     queryKey: ['system', 'session-reports', 'student', studentId],
-    queryFn:  () => api.get<Paginated<SessionReport>>(`/students/${studentId}/reports`),
+    queryFn:  () => api<Paginated<SessionReport>>(`/students/${studentId}/reports`),
     enabled:  studentId !== null,
   })
 }
@@ -67,7 +67,7 @@ export function useStudentReports(studentId: number | null) {
 export function useTeacherReports(teacherId: number | null) {
   return useQuery({
     queryKey: ['system', 'session-reports', 'teacher', teacherId],
-    queryFn:  () => api.get<Paginated<SessionReport>>(`/teachers/${teacherId}/reports`),
+    queryFn:  () => api<Paginated<SessionReport>>(`/teachers/${teacherId}/reports`),
     enabled:  teacherId !== null,
   })
 }

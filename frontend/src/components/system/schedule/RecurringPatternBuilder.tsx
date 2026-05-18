@@ -68,9 +68,10 @@ export function RecurringPatternBuilder({
       doPreview.mutate(
         { studentId, effectiveDate, patterns },
         {
-          onSuccess: data => {
-            setPreview(data.occurrences)
-            setConflicts(data.conflicts)
+          onSuccess: (data) => {
+            const result = data as { occurrences: PatternPreviewOccurrence[]; conflicts: unknown[] }
+            setPreview(result.occurrences)
+            setConflicts(result.conflicts)
           },
         }
       )

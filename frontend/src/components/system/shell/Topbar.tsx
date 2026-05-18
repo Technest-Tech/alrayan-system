@@ -1,7 +1,6 @@
 'use client'
 import { useState, useCallback, useEffect } from 'react'
-import { Menu, Search, Moon, Sun } from 'lucide-react'
-import { useTheme } from 'next-themes'
+import { Menu, Search } from 'lucide-react'
 import { Breadcrumbs } from './Breadcrumbs'
 import { NotificationBell } from './NotificationBell'
 import { UserMenu } from './UserMenu'
@@ -13,7 +12,6 @@ interface TopbarProps {
 
 export function Topbar({ onToggleSidebar }: TopbarProps) {
   const [cmdOpen, setCmdOpen] = useState(false)
-  const { theme, setTheme } = useTheme()
   const closePalette = useCallback(() => setCmdOpen(false), [])
 
   useEffect(() => {
@@ -60,14 +58,6 @@ export function Topbar({ onToggleSidebar }: TopbarProps) {
           >
             ⌘K
           </kbd>
-        </button>
-
-        <button
-          onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-          className="p-2 rounded-lg hover:bg-black/5 transition-colors"
-          title="Toggle theme"
-        >
-          {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
         </button>
 
         <NotificationBell />

@@ -1,7 +1,9 @@
 'use client'
 import { useForm, Controller } from 'react-hook-form'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
+import { ExternalLink, GraduationCap, User, CreditCard, BookOpen } from 'lucide-react'
 import type { Teacher } from '@/types/system/teacher'
 import { useCourses } from '@/hooks/system/useCourses'
 
@@ -11,12 +13,11 @@ const schema = z.object({
   phone:                   z.string().optional(),
   whatsapp:                z.string().optional(),
   qualifications:          z.string().optional(),
+  cv_url:                  z.string().url('Must be a valid URL').optional().or(z.literal('')),
   teachable_course_ids:    z.array(z.number()).min(1, 'Select at least one course'),
   payment_method:          z.enum(['vodafone_cash', 'instapay', 'wallet_other']),
   payment_account_details: z.string().optional(),
-  per_minute_rate_30:      z.coerce.number().min(0),
-  per_minute_rate_45:      z.coerce.number().min(0),
-  per_minute_rate_60:      z.coerce.number().min(0),
+  hourly_rate:             z.coerce.number().min(0, 'Rate must be 0 or more'),
 })
 
 export type TeacherFormValues = z.infer<typeof schema>
@@ -28,14 +29,30 @@ interface TeacherFormProps {
   isEdit?: boolean
 }
 
-const inputCls   = 'w-full px-3 py-2 rounded-xl border text-sm outline-none focus:ring-2 focus:ring-[rgb(14,124,90)]'
-const inputStyle = { borderColor: 'rgb(var(--border-default, 229 233 240))', background: 'rgb(var(--surface-card, 255 255 255))' }
-
 const PAYMENT_METHODS = [
   { value: 'vodafone_cash', label: 'Vodafone Cash' },
   { value: 'instapay',      label: 'InstaPay' },
   { value: 'wallet_other',  label: 'Other Wallet' },
 ] as const
+
+const inputCls   = 'w-full px-3 py-2.5 rounded-xl border text-sm outline-none focus:ring-2 focus:ring-[rgb(14,124,90)] transition-shadow'
+const inputStyle = { borderColor: 'rgb(var(--border-default, 229 233 240))', background: 'rgb(var(--surface-card, 255 255 255))' }
+
+function SectionHeader({ icon: Icon, title }: { icon: React.ElementType; title: string }) {
+  return (
+    <div className="flex items-center gap-2.5 pb-3 border-b" style={{ borderColor: 'rgb(var(--border-default, 229 233 240))' }}>
+      <span className="flex items-center justify-center w-7 h-7 rounded-lg" style={{ background: 'rgb(14 124 90 / 0.1)' }}>
+        <Icon size={14} style={{ color: 'rgb(14 124 90)' }} />
+      </span>
+      <h3 className="text-sm font-semibold" style={{ color: 'rgb(var(--text-primary, 15 23 42))' }}>{title}</h3>
+    </div>
+  )
+}
+
+function FieldError({ message }: { message?: string }) {
+  if (!message) return null
+  return <p className="text-red-500 text-xs mt-1">{message}</p>
+}
 
 export function TeacherForm({ defaultValues, onSubmit, isLoading, isEdit }: TeacherFormProps) {
   const { data: courses = [] } = useCourses()
@@ -49,60 +66,86 @@ export function TeacherForm({ defaultValues, onSubmit, isLoading, isEdit }: Teac
       phone:                   defaultValues?.phone ?? '',
       whatsapp:                defaultValues?.whatsapp ?? '',
       qualifications:          defaultValues?.qualifications ?? '',
+      cv_url:                  defaultValues?.cv_url ?? '',
       teachable_course_ids:    defaultValues?.teachable_course_ids ?? [],
       payment_method:          defaultValues?.payment_method ?? 'vodafone_cash',
-      payment_account_details: '',
-      per_minute_rate_30:      defaultValues?.per_minute_rate_30 ?? 0,
-      per_minute_rate_45:      defaultValues?.per_minute_rate_45 ?? 0,
-      per_minute_rate_60:      defaultValues?.per_minute_rate_60 ?? 0,
+      payment_account_details: defaultValues?.payment_account_details ?? '',
+      hourly_rate:             defaultValues?.hourly_rate ?? 0,
     },
   })
   const { register, handleSubmit, control, formState: { errors } } = form
 
   return (
     <form onSubmit={handleSubmit(onSubmit as Parameters<typeof handleSubmit>[0])} className="space-y-6">
+
+      {/* ── Identity ───────────────────────────────────── */}
       <section className="space-y-4">
-        <h3 className="text-sm font-semibold opacity-60 uppercase tracking-wide">Identity</h3>
+        <SectionHeader icon={User} title="Identity" />
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium mb-1.5">Name</label>
-            <input className={inputCls} style={inputStyle} {...register('name')} />
-            {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name.message}</p>}
+            <label className="block text-xs font-medium mb-1.5 opacity-60 uppercase tracking-wide">Full Name *</label>
+            <input className={inputCls} style={inputStyle} placeholder="e.g. Ahmed Hassan" {...register('name')} />
+            <FieldError message={errors.name?.message} />
           </div>
 
           {!isEdit && (
             <div>
-              <label className="block text-sm font-medium mb-1.5">Email</label>
-              <input type="email" className={inputCls} style={inputStyle} {...register('email')} />
-              {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email.message}</p>}
+              <label className="block text-xs font-medium mb-1.5 opacity-60 uppercase tracking-wide">Email *</label>
+              <input type="email" className={inputCls} style={inputStyle} placeholder="teacher@example.com" {...register('email')} />
+              <FieldError message={errors.email?.message} />
             </div>
           )}
 
           <div>
-            <label className="block text-sm font-medium mb-1.5">Phone</label>
-            <input className={inputCls} style={inputStyle} {...register('phone')} />
+            <label className="block text-xs font-medium mb-1.5 opacity-60 uppercase tracking-wide">Phone</label>
+            <input className={inputCls} style={inputStyle} placeholder="+20 1XX XXX XXXX" {...register('phone')} />
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-1.5">WhatsApp</label>
-            <input className={inputCls} style={inputStyle} {...register('whatsapp')} />
+            <label className="block text-xs font-medium mb-1.5 opacity-60 uppercase tracking-wide">WhatsApp</label>
+            <input className={inputCls} style={inputStyle} placeholder="+20 1XX XXX XXXX" {...register('whatsapp')} />
           </div>
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium mb-1.5">Qualifications</label>
-          <textarea
-            rows={3}
-            className={inputCls}
-            style={inputStyle}
-            {...register('qualifications')}
-          />
         </div>
       </section>
 
-      <section className="space-y-3">
-        <h3 className="text-sm font-semibold opacity-60 uppercase tracking-wide">Teachable courses</h3>
+      {/* ── Qualifications ─────────────────────────────── */}
+      <section className="space-y-4">
+        <SectionHeader icon={GraduationCap} title="Qualifications" />
+
+        <div className="space-y-4">
+          <div>
+            <label className="block text-xs font-medium mb-1.5 opacity-60 uppercase tracking-wide">Bio &amp; Background</label>
+            <textarea
+              rows={3}
+              className={inputCls}
+              style={inputStyle}
+              placeholder="Specializations, Ijazah details, certifications…"
+              {...register('qualifications')}
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium mb-1.5 opacity-60 uppercase tracking-wide">CV / Resume URL</label>
+            <div className="relative">
+              <ExternalLink size={14} className="absolute left-3 top-1/2 -translate-y-1/2 opacity-40" />
+              <input
+                type="url"
+                className={inputCls + ' pl-8'}
+                style={inputStyle}
+                placeholder="https://drive.google.com/…"
+                {...register('cv_url')}
+              />
+            </div>
+            <p className="text-xs opacity-40 mt-1">Google Drive, Dropbox, or any public link</p>
+            <FieldError message={errors.cv_url?.message} />
+          </div>
+        </div>
+      </section>
+
+      {/* ── Teachable Courses ──────────────────────────── */}
+      <section className="space-y-4">
+        <SectionHeader icon={BookOpen} title="Teachable Courses" />
         <Controller
           name="teachable_course_ids"
           control={control}
@@ -113,10 +156,12 @@ export function TeacherForm({ defaultValues, onSubmit, isLoading, isEdit }: Teac
                 return (
                   <label
                     key={course.id}
-                    className="flex items-center gap-2.5 text-sm cursor-pointer px-3 py-2 rounded-xl border transition-colors"
+                    className="flex items-center gap-2.5 text-sm cursor-pointer px-3 py-2.5 rounded-xl border transition-all"
                     style={{
-                      borderColor: checked ? 'rgb(var(--status-success, 14 124 90))' : 'rgb(var(--border-default, 229 233 240))',
-                      background: checked ? 'rgb(var(--status-success, 14 124 90) / 0.08)' : 'rgb(var(--surface-card, 255 255 255))',
+                      borderColor: checked ? 'rgb(14 124 90)' : 'rgb(var(--border-default, 229 233 240))',
+                      background:  checked ? 'rgb(14 124 90 / 0.08)' : 'rgb(var(--surface-card, 255 255 255))',
+                      color:       checked ? 'rgb(14 124 90)' : undefined,
+                      fontWeight:  checked ? 500 : 400,
                     }}
                   >
                     <input
@@ -138,59 +183,58 @@ export function TeacherForm({ defaultValues, onSubmit, isLoading, isEdit }: Teac
             </div>
           )}
         />
-        {errors.teachable_course_ids && (
-          <p className="text-red-500 text-xs">{errors.teachable_course_ids.message}</p>
-        )}
+        <FieldError message={errors.teachable_course_ids?.message} />
       </section>
 
+      {/* ── Payment & Rate ─────────────────────────────── */}
       <section className="space-y-4">
-        <h3 className="text-sm font-semibold opacity-60 uppercase tracking-wide">Payment</h3>
+        <SectionHeader icon={CreditCard} title="Payment &amp; Rate" />
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium mb-1.5">Payment method</label>
-            <select className={inputCls} style={inputStyle} {...register('payment_method')}>
-              {PAYMENT_METHODS.map((m) => (
-                <option key={m.value} value={m.value}>{m.label}</option>
-              ))}
-            </select>
+            <label className="block text-xs font-medium mb-1.5 opacity-60 uppercase tracking-wide">Payment Method</label>
+            <Controller name="payment_method" control={control} render={({ field }) => (
+              <Select value={field.value} onValueChange={field.onChange}>
+                <SelectTrigger className="w-full h-10 rounded-xl text-sm"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {PAYMENT_METHODS.map(m => <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            )} />
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-1.5">Account details</label>
-            <input className={inputCls} style={inputStyle} {...register('payment_account_details')} placeholder="Phone / account number" />
+            <label className="block text-xs font-medium mb-1.5 opacity-60 uppercase tracking-wide">Account Details</label>
+            <input className={inputCls} style={inputStyle} placeholder="Phone / account number" {...register('payment_account_details')} />
           </div>
         </div>
 
-        <div className="grid grid-cols-3 gap-4">
-          {(['30', '45', '60'] as const).map((dur) => {
-            const field = `per_minute_rate_${dur}` as const
-            return (
-              <div key={dur}>
-                <label className="block text-sm font-medium mb-1.5">Rate / min ({dur}-min session)</label>
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs opacity-50">EGP</span>
-                  <input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    className={inputCls + ' pl-10'}
-                    style={inputStyle}
-                    {...register(field)}
-                  />
-                </div>
-                {errors[field] && <p className="text-red-500 text-xs mt-1">{errors[field]?.message}</p>}
-              </div>
-            )
-          })}
+        <div className="max-w-xs">
+          <label className="block text-xs font-medium mb-1.5 opacity-60 uppercase tracking-wide">Hourly Rate</label>
+          <div className="relative">
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-medium opacity-50 pointer-events-none">EGP</span>
+            <input
+              type="number"
+              step="1"
+              min="0"
+              className={inputCls + ' pl-11'}
+              style={inputStyle}
+              placeholder="0"
+              {...register('hourly_rate')}
+            />
+            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs opacity-40 pointer-events-none">/ hr</span>
+          </div>
+          <p className="text-xs opacity-40 mt-1.5">30 &amp; 45 min session costs are auto-calculated from this rate</p>
+          <FieldError message={errors.hourly_rate?.message} />
         </div>
       </section>
 
-      <div className="flex justify-end pt-2">
+      {/* ── Submit ─────────────────────────────────────── */}
+      <div className="flex justify-end pt-2 border-t" style={{ borderColor: 'rgb(var(--border-default, 229 233 240))' }}>
         <button
           type="submit"
           disabled={isLoading}
-          className="px-5 py-2 rounded-xl text-sm font-semibold text-white disabled:opacity-60 transition-opacity"
+          className="px-6 py-2.5 rounded-xl text-sm font-semibold text-white disabled:opacity-60 transition-opacity"
           style={{ background: 'rgb(14 124 90)' }}
         >
           {isLoading ? 'Saving…' : isEdit ? 'Save changes' : 'Create teacher'}

@@ -1,9 +1,149 @@
 'use client'
-import type { Lead } from '@/types/system/lead'
-import Link from 'next/link'
+import { useState, useRef, useEffect } from 'react'
+import { createPortal } from 'react-dom'
+import { useRouter } from 'next/navigation'
+import { MoreHorizontal, ExternalLink, MessageCircle, XCircle, Search } from 'lucide-react'
+import { toast } from 'sonner'
 import { formatDistanceToNow } from 'date-fns'
-import { Badge } from '@/components/ui/badge'
+import type { Lead } from '@/types/system/lead'
+import { DataTable, type ColumnDef } from '@/components/system/primitives/DataTable'
+import { EmptyState } from '@/components/system/primitives/EmptyState'
+import { useMarkLeadLost } from '@/hooks/system/useLeads'
+import { ApiError } from '@/lib/system/api'
 
+/* ─── Status styling ──────────────────────────── */
+const STATUS_STYLES: Record<string, { bg: string; color: string; label: string }> = {
+  new:              { bg: 'rgb(30 90 171 / 0.1)',   color: 'rgb(30 90 171)',   label: 'New' },
+  contacted:        { bg: 'rgb(154 113 23 / 0.1)',  color: 'rgb(154 113 23)',  label: 'Contacted' },
+  trial_booked:     { bg: 'rgb(101 56 182 / 0.1)',  color: 'rgb(101 56 182)', label: 'Trial Booked' },
+  trial_completed:  { bg: 'rgb(14 124 90 / 0.1)',   color: 'rgb(14 124 90)',   label: 'Trial Done' },
+  enrolled:         { bg: 'rgb(14 124 90 / 0.12)',  color: 'rgb(14 124 90)',   label: 'Enrolled' },
+  lost:             { bg: 'rgb(90 100 112 / 0.1)',  color: 'rgb(90 100 112)',  label: 'Lost' },
+}
+
+const SOURCE_LABELS: Record<string, string> = {
+  google_ads: 'Google', facebook_ads: 'Facebook', instagram_ads: 'Instagram',
+  whatsapp_direct: 'WhatsApp', student_referral: 'Referral', website_form: 'Website', manual_entry: 'Manual',
+}
+
+/* ─── Avatar helpers ──────────────────────────── */
+const PALETTE = ['#0E7C5A', '#0B1F3A', '#1E5AAB', '#7C3AED', '#B45309', '#BE185D']
+
+function initials(name: string) {
+  return name.split(' ').slice(0, 2).map(n => n[0]?.toUpperCase() ?? '').join('')
+}
+function avatarColor(name: string) {
+  let h = 0
+  for (let i = 0; i < name.length; i++) h = (name.charCodeAt(i) + ((h << 5) - h)) | 0
+  return PALETTE[Math.abs(h) % PALETTE.length]
+}
+
+/* ─── Row actions ─────────────────────────────── */
+function LeadRowActions({ lead }: { lead: Lead }) {
+  const router = useRouter()
+  const [open, setOpen] = useState(false)
+  const [pos,  setPos]  = useState({ top: 0, right: 0 })
+  const btnRef = useRef<HTMLButtonElement>(null)
+  const markLost = useMarkLeadLost(lead.id)
+
+  function toggle(e: React.MouseEvent) {
+    e.stopPropagation()
+    if (open) { setOpen(false); return }
+    const rect = btnRef.current!.getBoundingClientRect()
+    setPos({ top: rect.bottom + 4, right: window.innerWidth - rect.right })
+    setOpen(true)
+  }
+
+  useEffect(() => {
+    if (!open) return
+    function close() { setOpen(false) }
+    document.addEventListener('click', close)
+    return () => document.removeEventListener('click', close)
+  }, [open])
+
+  async function handleMarkLost() {
+    setOpen(false)
+    try {
+      await markLost.mutateAsync({ lost_reason: 'other' })
+      toast.success('Lead marked as lost.')
+    } catch (e) {
+      toast.error(e instanceof ApiError ? e.message : 'Action failed.')
+    }
+  }
+
+  const dropdown = open ? createPortal(
+    <div
+      className="fixed z-[9999] min-w-[192px] rounded-xl border shadow-lg overflow-hidden py-1"
+      style={{
+        top: pos.top,
+        right: pos.right,
+        background: '#fff',
+        borderColor: 'rgb(var(--border-default,229 233 240))',
+        boxShadow: '0 8px 30px rgb(11 31 58 / 0.12)',
+      }}
+      onClick={(e) => e.stopPropagation()}
+    >
+      <MenuItem icon={<ExternalLink size={14} />} label="View lead"
+        onClick={() => { setOpen(false); router.push(`/leads/${lead.id}`) }} />
+      {lead.whatsapp && (
+        <MenuItem icon={<MessageCircle size={14} />} label="Open WhatsApp"
+          onClick={() => { setOpen(false); window.open(`https://wa.me/${lead.whatsapp!.replace(/\D/g, '')}`, '_blank') }} />
+      )}
+      {lead.status !== 'lost' && lead.status !== 'enrolled' && (
+        <>
+          <div className="my-1 border-t" style={{ borderColor: 'rgb(var(--border-default,229 233 240))' }} />
+          <MenuItem icon={<XCircle size={14} />} label="Mark as lost" onClick={handleMarkLost} danger />
+        </>
+      )}
+    </div>,
+    document.body,
+  ) : null
+
+  return (
+    <>
+      <button
+        ref={btnRef}
+        onClick={toggle}
+        className="p-1.5 rounded-lg transition-colors hover:bg-black/5 opacity-0 group-hover/row:opacity-100 focus:opacity-100"
+        style={{ color: 'rgb(90 100 112)' }}
+        aria-label="Row actions"
+      >
+        <MoreHorizontal size={15} />
+      </button>
+      {dropdown}
+    </>
+  )
+}
+
+function MenuItem({ icon, label, onClick, danger }: {
+  icon?: React.ReactNode; label: string; onClick: () => void; danger?: boolean
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className="w-full flex items-center gap-2.5 px-3.5 py-2 text-sm text-left transition-colors hover:bg-black/[0.03]"
+      style={{ color: danger ? 'rgb(166 39 30)' : 'rgb(11 31 58)' }}
+    >
+      <span className="opacity-60">{icon}</span>
+      {label}
+    </button>
+  )
+}
+
+/* ─── Status badge ────────────────────────────── */
+function LeadStatusBadge({ status }: { status: string }) {
+  const s = STATUS_STYLES[status] ?? STATUS_STYLES.new
+  return (
+    <span
+      className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium"
+      style={{ background: s.bg, color: s.color }}
+    >
+      {s.label}
+    </span>
+  )
+}
+
+/* ─── Main table ──────────────────────────────── */
 interface Props {
   leads: Lead[]
   isLoading: boolean
@@ -12,63 +152,122 @@ interface Props {
 }
 
 export function LeadTable({ leads, isLoading, filters, onFiltersChange }: Props) {
-  return (
-    <div>
-      <div className="flex gap-2 mb-4">
-        <input
-          type="text"
-          placeholder="Search…"
-          className="h-8 text-sm border rounded px-2 w-48"
-          value={filters.q ?? ''}
-          onChange={e => onFiltersChange({ ...filters, q: e.target.value })}
-        />
+  const columns: ColumnDef<Lead>[] = [
+    {
+      id:     'name',
+      header: 'Lead',
+      cell: ({ row }) => {
+        const l     = row.original
+        const color = avatarColor(l.name)
+        return (
+          <div className="flex items-center gap-3">
+            <div
+              className="flex items-center justify-center w-8 h-8 rounded-full text-white text-xs font-semibold shrink-0 select-none"
+              style={{ background: color }}
+            >
+              {initials(l.name)}
+            </div>
+            <div className="min-w-0">
+              <p className="font-medium truncate" style={{ color: 'rgb(11 31 58)' }}>{l.name}</p>
+              <p className="text-xs truncate" style={{ color: 'rgb(90 100 112)' }}>
+                {l.email ?? l.country ?? ''}
+              </p>
+            </div>
+          </div>
+        )
+      },
+    },
+    {
+      id:     'source',
+      header: 'Source',
+      cell: ({ row }) => (
+        <span
+          className="text-xs font-medium px-2 py-0.5 rounded-md"
+          style={{ background: 'rgb(244 246 250)', color: 'rgb(11 31 58)' }}
+        >
+          {SOURCE_LABELS[row.original.source] ?? row.original.source}
+        </span>
+      ),
+    },
+    {
+      id:     'status',
+      header: 'Status',
+      cell: ({ row }) => <LeadStatusBadge status={row.original.status} />,
+    },
+    {
+      id:     'supervisor',
+      header: 'Supervisor',
+      cell: ({ row }) => row.original.supervisor_name
+        ? <span style={{ color: 'rgb(11 31 58)' }}>{row.original.supervisor_name}</span>
+        : <span style={{ color: 'rgb(203 211 222)' }}>—</span>,
+    },
+    {
+      id:     'updated',
+      header: 'Last activity',
+      cell: ({ row }) => (
+        <span className="text-xs" style={{ color: 'rgb(90 100 112)' }}>
+          {formatDistanceToNow(new Date(row.original.updated_at), { addSuffix: true })}
+        </span>
+      ),
+    },
+    {
+      id:            'actions',
+      header:        '',
+      enableSorting: false,
+      cell: ({ row }) => (
+        <div className="flex justify-end">
+          <LeadRowActions lead={row.original} />
+        </div>
+      ),
+    },
+  ]
+
+  const toolbar = (
+    <div className="flex items-center justify-between gap-3">
+      <div className="flex items-center gap-3">
+        <div className="relative">
+          <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 opacity-40" />
+          <input
+            type="text"
+            placeholder="Search…"
+            className="pl-7 pr-3 py-1.5 rounded-lg border text-sm outline-none focus:ring-2 focus:ring-[rgb(14,124,90)] w-44 transition-shadow"
+            style={{ borderColor: 'rgb(var(--border-default,229 233 240))', background: '#fff' }}
+            value={filters.q ?? ''}
+            onChange={e => onFiltersChange({ ...filters, q: e.target.value })}
+          />
+        </div>
         <select
-          className="h-8 text-sm border rounded px-2"
+          className="px-2.5 py-1.5 rounded-lg border text-sm outline-none focus:ring-2 focus:ring-[rgb(14,124,90)] appearance-none transition-shadow"
+          style={{ borderColor: 'rgb(var(--border-default,229 233 240))', background: '#fff' }}
           value={filters.status ?? ''}
-          onChange={e => onFiltersChange({ ...filters, status: e.target.value || undefined! })}
+          onChange={e => onFiltersChange({ ...filters, status: e.target.value || '' })}
         >
           <option value="">All statuses</option>
-          <option value="new">New</option>
-          <option value="contacted">Contacted</option>
-          <option value="trial_booked">Trial Booked</option>
-          <option value="trial_completed">Trial Completed</option>
-          <option value="enrolled">Enrolled</option>
-          <option value="lost">Lost</option>
+          {Object.entries(STATUS_STYLES).map(([v, s]) => (
+            <option key={v} value={v}>{s.label}</option>
+          ))}
         </select>
       </div>
-      <div className="border rounded overflow-hidden">
-        <table className="w-full text-sm">
-          <thead className="bg-muted text-muted-foreground">
-            <tr>
-              <th className="text-left px-4 py-2">Name</th>
-              <th className="text-left px-4 py-2">Source</th>
-              <th className="text-left px-4 py-2">Status</th>
-              <th className="text-left px-4 py-2">Supervisor</th>
-              <th className="text-left px-4 py-2">Last activity</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y">
-            {isLoading && (
-              <tr><td colSpan={5} className="px-4 py-6 text-center text-muted-foreground">Loading…</td></tr>
-            )}
-            {!isLoading && leads.map(lead => (
-              <tr key={lead.id} className="hover:bg-secondary/30">
-                <td className="px-4 py-2">
-                  <Link href={`/leads/${lead.id}`} className="font-medium hover:underline">{lead.name}</Link>
-                  {lead.email && <div className="text-xs text-muted-foreground">{lead.email}</div>}
-                </td>
-                <td className="px-4 py-2 text-muted-foreground capitalize">{lead.source.replace(/_/g, ' ')}</td>
-                <td className="px-4 py-2"><Badge variant="secondary">{lead.status.replace(/_/g, ' ')}</Badge></td>
-                <td className="px-4 py-2 text-muted-foreground">{lead.supervisor_name ?? '—'}</td>
-                <td className="px-4 py-2 text-muted-foreground">{formatDistanceToNow(new Date(lead.updated_at), { addSuffix: true })}</td>
-              </tr>
-            ))}
-            {!isLoading && leads.length === 0 && (
-              <tr><td colSpan={5} className="px-4 py-6 text-center text-muted-foreground">No leads found.</td></tr>
-            )}
-          </tbody>
-        </table>
-      </div>
+      <span className="text-sm font-medium" style={{ color: 'rgb(90 100 112)' }}>
+        {leads.length} {leads.length === 1 ? 'lead' : 'leads'}
+      </span>
     </div>
+  )
+
+  return (
+    <DataTable
+      data={leads}
+      columns={columns}
+      isLoading={isLoading}
+      toolbar={toolbar}
+      rowClassName="group/row"
+      emptyState={
+        <EmptyState
+          icon="Users"
+          title="No leads found"
+          description="Try adjusting your filters or add a new lead."
+        />
+      }
+    />
   )
 }

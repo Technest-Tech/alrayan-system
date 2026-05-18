@@ -61,12 +61,38 @@ export function useUpdateStudent(id: number | string) {
   })
 }
 
+export function useActivateStudent(studentId: number | string) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (data: Record<string, unknown>) =>
+      api<{ data: StudentDetail }>(`/students/${studentId}/activate`, { method: 'POST', body: JSON.stringify(data) }).then(r => r.data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['system', 'students', studentId] })
+      qc.invalidateQueries({ queryKey: ['system', 'students'] })
+    },
+  })
+}
+
 export function useStudentTransition(studentId: number | string) {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: (data: { to: string; reason?: string; notes?: string }) =>
       api<{ data: StudentDetail }>(`/students/${studentId}/transition`, { method: 'POST', body: JSON.stringify(data) }).then(r => r.data),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['system', 'students', studentId] }),
+  })
+}
+
+export function useDeleteStudent() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (id: number | string) =>
+      api(`/students/${id}`, { method: 'DELETE' }),
+    onSuccess: (_data, id) => {
+      qc.removeQueries({ queryKey: ['system', 'students', id] })
+      qc.removeQueries({ queryKey: ['system', 'students', String(id)] })
+      qc.removeQueries({ queryKey: ['system', 'sessions', { student_id: id, per_page: 20 }] })
+      qc.invalidateQueries({ queryKey: ['system', 'students'] })
+    },
   })
 }
 

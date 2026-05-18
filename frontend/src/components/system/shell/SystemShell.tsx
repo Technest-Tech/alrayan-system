@@ -4,6 +4,7 @@ import { usePathname, useRouter } from 'next/navigation'
 import { Sidebar } from './Sidebar'
 import { Topbar } from './Topbar'
 import { useUser } from '@/lib/system/auth'
+import { ApiError } from '@/lib/system/api'
 import { can } from '@/lib/system/permissions'
 import { SYSTEM_NAV } from '@/lib/system/nav'
 import type { AuthUser } from '@/types/system/auth'
@@ -20,6 +21,24 @@ function FullPageSpinner() {
   )
 }
 
+function FullPageError({ error }: { error: unknown }) {
+  const message = error instanceof Error ? error.message : 'Unexpected error'
+  return (
+    <div className="min-h-screen flex items-center justify-center" style={{ background: 'rgb(var(--surface-bg, 244 246 250))' }}>
+      <div className="text-center space-y-3">
+        <p className="text-sm font-medium opacity-70">Failed to load session</p>
+        <p className="text-xs opacity-40">{message}</p>
+        <button
+          onClick={() => window.location.reload()}
+          className="text-xs px-4 py-2 rounded-lg border opacity-60 hover:opacity-100 transition-opacity"
+        >
+          Retry
+        </button>
+      </div>
+    </div>
+  )
+}
+
 function navForUser(user: AuthUser): NavSection[] {
   return SYSTEM_NAV.map((section) => ({
     ...section,
@@ -30,15 +49,13 @@ function navForUser(user: AuthUser): NavSection[] {
   })).filter((section) => section.items.length > 0)
 }
 
-const AUTH_PATHS = ['/login', '/forgot-password', '/reset-password']
 
 export function SystemShell({ children }: { children: React.ReactNode }) {
-  const [collapsed, setCollapsed] = useState(false)
-  const [mounted,   setMounted]   = useState(false)
+  const [collapsed,   setCollapsed]   = useState(false)
+  const [mobileOpen,  setMobileOpen]  = useState(false)
+  const [mounted,     setMounted]     = useState(false)
   const pathname = usePathname()
   const router   = useRouter()
-
-  const isAuthRoute = AUTH_PATHS.some((p) => pathname === p || pathname.startsWith(p + '/'))
 
   const { data: user, isLoading, error } = useUser()
 
@@ -48,11 +65,28 @@ export function SystemShell({ children }: { children: React.ReactNode }) {
     setMounted(true)
   }, [])
 
+  // Close mobile drawer on navigation
   useEffect(() => {
-    if (!isAuthRoute && error) {
+    setMobileOpen(false)
+  }, [pathname])
+
+  // Lock body scroll while mobile drawer is open
+  useEffect(() => {
+    if (mobileOpen) {
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = ''
+    }
+    return () => { document.body.style.overflow = '' }
+  }, [mobileOpen])
+
+  const isUnauthorized = error instanceof ApiError && error.status === 401
+
+  useEffect(() => {
+    if (!isLoading && isUnauthorized) {
       router.push('/login?from=' + encodeURIComponent(pathname))
     }
-  }, [error, isAuthRoute, pathname, router])
+  }, [isUnauthorized, isLoading, pathname, router])
 
   function toggle() {
     setCollapsed((c) => {
@@ -62,21 +96,29 @@ export function SystemShell({ children }: { children: React.ReactNode }) {
   }
 
   if (!mounted) return null
-  if (isAuthRoute) return <>{children}</>
-  if (isLoading || !user) return <FullPageSpinner />
+  if (isLoading) return <FullPageSpinner />
+  if (!user) return isUnauthorized ? <FullPageSpinner /> : <FullPageError error={error} />
 
   const nav = navForUser(user)
 
   return (
     <UserContext.Provider value={user}>
       <div data-system-root="true" className="min-h-screen flex">
-        <Sidebar collapsed={collapsed} onToggle={toggle} nav={nav} />
+        <Sidebar
+          collapsed={collapsed}
+          onToggle={toggle}
+          nav={nav}
+          mobileOpen={mobileOpen}
+          onMobileClose={() => setMobileOpen(false)}
+        />
+        {/* On mobile: no margin (sidebar is an overlay). On desktop: margin matches sidebar width. */}
         <div
-          className="flex-1 flex flex-col transition-all duration-200"
-          style={{ marginLeft: collapsed ? '72px' : '260px' }}
+          className={`flex-1 flex flex-col transition-all duration-300 ${
+            collapsed ? 'lg:ml-[72px]' : 'lg:ml-[260px]'
+          }`}
         >
-          <Topbar onToggleSidebar={toggle} />
-          <main className="flex-1 px-6 py-6">
+          <Topbar onToggleSidebar={() => setMobileOpen(true)} />
+          <main className="flex-1 px-4 py-4 lg:px-6 lg:py-6">
             <div className="max-w-[1600px] mx-auto">{children}</div>
           </main>
         </div>

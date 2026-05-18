@@ -3,6 +3,7 @@
 namespace App\Services\System;
 
 use App\Models\System\Session;
+use App\Models\System\Teacher;
 use App\Models\System\TeacherLeave;
 use Carbon\Carbon;
 
@@ -39,7 +40,7 @@ class ScheduleConflictDetector
                       $q->where('scheduled_start', '<=', $startUtc)
                         ->where('scheduled_end', '>=', $endUtc);
                   });
-            })->get();
+            })->with(['student'])->get();
 
         foreach ($clashes as $c) {
             $out[] = new Conflict('teacher_double_booking', $c);
@@ -58,7 +59,8 @@ class ScheduleConflictDetector
 
         // 3. Outside availability
         $durationMin = $endUtc->diffInMinutes($startUtc);
-        if (!$this->availability->isAvailable($teacherId, $startUtc, $durationMin)) {
+        $teacher = Teacher::with('availability')->findOrFail($teacherId);
+        if (!$this->availability->isAvailable($teacher, $startUtc, $durationMin)) {
             $out[] = new Conflict('teacher_unavailable', null);
         }
 

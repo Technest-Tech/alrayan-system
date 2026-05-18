@@ -24,21 +24,7 @@
     line-height: 1.55;
   }
 
-  [data-theme='dark'] [data-system-root='true'] {
-    --surface-bg:      11 18 32;
-    --surface-card:    16 26 44;
-    --surface-card-2:  15 25 41;
-    --surface-sidebar: 7 14 27;
-    --surface-sidebar-active: 14 124 90;
-    --surface-topbar:  15 25 41;
-    --border-default:  31 42 63;
-    --border-strong:   44 58 82;
-
-    background: rgb(var(--surface-bg));
-    color: rgb(228 234 244);
-  }
-
-  [data-system-root='true'] .tabular {
+[data-system-root='true'] .tabular {
     font-variant-numeric: tabular-nums;
   }
 }

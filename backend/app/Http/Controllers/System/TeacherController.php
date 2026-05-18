@@ -69,15 +69,19 @@ class TeacherController extends Controller
 
             $user->notify(new SystemUserInvitedNotification($token));
 
+            $perMinute = (int) round($request->hourly_rate / 60);
+
             return Teacher::create([
                 'user_id'                  => $user->id,
                 'qualifications'           => $request->qualifications,
+                'cv_url'                   => $request->cv_url,
                 'teachable_course_ids'     => $request->teachable_course_ids ?? [],
                 'payment_method'           => $request->payment_method,
                 'payment_account_details'  => $request->payment_account_details,
-                'per_minute_rate_30'       => $request->per_minute_rate_30,
-                'per_minute_rate_45'       => $request->per_minute_rate_45,
-                'per_minute_rate_60'       => $request->per_minute_rate_60,
+                'hourly_rate'              => $request->hourly_rate,
+                'per_minute_rate_30'       => $perMinute,
+                'per_minute_rate_45'       => $perMinute,
+                'per_minute_rate_60'       => $perMinute,
             ]);
         });
 
@@ -88,7 +92,16 @@ class TeacherController extends Controller
     {
         $this->authorize('update', $teacher);
 
-        $teacher->update($request->validated());
+        $data = $request->validated();
+
+        if (isset($data['hourly_rate'])) {
+            $perMinute = (int) round($data['hourly_rate'] / 60);
+            $data['per_minute_rate_30'] = $perMinute;
+            $data['per_minute_rate_45'] = $perMinute;
+            $data['per_minute_rate_60'] = $perMinute;
+        }
+
+        $teacher->update($data);
 
         // Sync watched-field changes into activity log (done by LogsActivity trait)
 

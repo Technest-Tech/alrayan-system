@@ -141,4 +141,15 @@ class StudentController extends Controller
 
         return new StudentDetailResource($student->fresh()->load(['course', 'assignedTeacher.user']));
     }
+
+    public function destroy(int $student): \Illuminate\Http\JsonResponse
+    {
+        $model = Student::findOrFail($student);
+
+        $this->authorize('delete', $model);
+
+        $model->delete();
+
+        return response()->json(['deleted' => true]);
+    }
 }

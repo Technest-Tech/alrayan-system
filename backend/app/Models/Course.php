@@ -14,6 +14,7 @@ class Course extends Model
         'features', 'seo_title', 'seo_description',
         'outcomes', 'curriculum', 'personas', 'faqs',
         'related_slugs', 'specialty_tags', 'active', 'sort_order',
+        'is_active_for_system',
     ];
 
     protected $casts = [

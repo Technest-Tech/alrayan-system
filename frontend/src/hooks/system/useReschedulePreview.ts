@@ -6,9 +6,9 @@ import type { ConflictItem } from '@/types/system/session'
 export function useReschedulePreview() {
   return useMutation({
     mutationFn: ({ sessionId, scheduledStart }: { sessionId: number; scheduledStart: string }) =>
-      api.post<{ proposed_start: string; proposed_end: string; conflicts: ConflictItem[] }>(
+      api<{ proposed_start: string; proposed_end: string; conflicts: ConflictItem[] }>(
         `/sessions/${sessionId}/reschedule/preview`,
-        { scheduled_start: scheduledStart }
+        { method: 'POST', body: JSON.stringify({ scheduled_start: scheduledStart }) }
       ),
   })
 }
