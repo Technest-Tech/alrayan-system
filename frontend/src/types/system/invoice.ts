@@ -38,6 +38,7 @@ export interface InvoiceLine {
 export interface Invoice {
   id: number
   invoice_number: string
+  payment_token: string | null
   type: InvoiceType
   period_year: number | null
   period_month: number | null

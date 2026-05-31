@@ -466,4 +466,8 @@ Route::prefix('system')->name('system.')->group(function () {
 
     // Paymob webhook — no Sanctum, HMAC-verified
     Route::post('/system/webhooks/paymob', [PaymobWebhookController::class, 'handle'])->name('system.webhooks.paymob');
+
+    // Public invoice payment page — no auth, token-gated
+    Route::get('/pay/{token}',      [\App\Http\Controllers\System\PublicInvoiceController::class, 'show'])->name('pay.show');
+    Route::get('/pay/{token}/pdf',  [\App\Http\Controllers\System\PublicInvoiceController::class, 'pdf'])->name('pay.pdf');
 });

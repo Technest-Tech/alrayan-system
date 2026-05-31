@@ -7,7 +7,7 @@ import {
   AlertTriangle, Receipt, Loader2,
   Mail, Phone, Clock, BookOpen, User, Send, Bell, BellRing,
   CreditCard, Eye, MoreHorizontal, Calendar,
-  RefreshCw, Zap, PenLine,
+  RefreshCw, Zap, PenLine, Link2, Check,
 } from 'lucide-react'
 import { PageHeader } from '@/components/system/primitives/PageHeader'
 import { useInvoices, type InvoiceFilters } from '@/hooks/system/useInvoices'
@@ -82,6 +82,12 @@ function normalisePhone(raw: string | null | undefined): string | null {
   return digits.length >= 7 ? digits : null
 }
 
+function paymentUrl(inv: Invoice): string | null {
+  if (!inv.payment_token) return null
+  const origin = typeof window !== 'undefined' ? window.location.origin : ''
+  return `${origin}/pay/${inv.payment_token}`
+}
+
 function buildAutoFooter(inv: Invoice): string {
   const studentName = inv.student?.name ?? inv.snapshot?.student_name ?? '—'
   const amount = formatMinor(inv.total_minor, inv.currency)
@@ -90,6 +96,7 @@ function buildAutoFooter(inv: Invoice): string {
     ? new Date(inv.issued_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
     : new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
   const course = inv.snapshot?.course_name ? `\nCourse: ${inv.snapshot.course_name}` : ''
+  const link = paymentUrl(inv)
   return [
     ``,
     `──────────────────`,
@@ -97,6 +104,7 @@ function buildAutoFooter(inv: Invoice): string {
     `Date: ${issued}${course}`,
     `Amount: ${amount}`,
     `Due: ${due}`,
+    ...(link ? [``, `💳 Pay online: ${link}`] : []),
     ``,
     `— Alrayan Academy`,
   ].join('\n')
@@ -105,6 +113,7 @@ function buildAutoFooter(inv: Invoice): string {
 function buildWhatsAppMessage(inv: Invoice, kind: 'invoice' | 'reminder'): string {
   const studentName = inv.student?.name ?? inv.snapshot?.student_name ?? 'there'
   const description = inv.description ?? inv.snapshot?.description
+  const link = paymentUrl(inv)
 
   if (kind === 'reminder') {
     const amount = formatMinor(inv.total_minor, inv.currency)
@@ -116,6 +125,7 @@ function buildWhatsAppMessage(inv: Invoice, kind: 'invoice' | 'reminder'): strin
       `This is a friendly reminder about your payment${course}.`,
       `Amount due: ${amount}`,
       `Due date: ${due}`,
+      ...(link ? [``, `💳 Pay online: ${link}`] : []),
       ``,
       `Please let us know once the payment has been made. Jazak Allahu khairan.`,
       ``,
@@ -615,6 +625,16 @@ function InvoiceRow({
 
   const { mutateAsync: resend, isPending: resending } = useSendInvoice(inv.id)
   const [resendDone, setResendDone] = useState(false)
+  const [linkCopied, setLinkCopied] = useState(false)
+
+  const handleCopyPaymentLink = () => {
+    if (!inv.payment_token) return
+    const url = `${window.location.origin}/pay/${inv.payment_token}`
+    navigator.clipboard.writeText(url).then(() => {
+      setLinkCopied(true)
+      setTimeout(() => setLinkCopied(false), 2000)
+    })
+  }
 
   // Sent / reminder indicator
   let dispatch: { label: string; cls: string; icon: React.ReactNode }
@@ -775,6 +795,21 @@ function InvoiceRow({
             <CreditCard size={12} />
             Record payment
           </Link>
+        )}
+
+        {inv.payment_token && inv.status !== 'void' && (
+          <button
+            onClick={handleCopyPaymentLink}
+            title="Copy student payment link"
+            className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all border ${
+              linkCopied
+                ? 'text-emerald-700 bg-emerald-50 border-emerald-200'
+                : 'text-violet-700 hover:bg-violet-50 border-transparent hover:border-violet-200'
+            }`}
+          >
+            {linkCopied ? <Check size={12} /> : <Link2 size={12} />}
+            {linkCopied ? 'Link copied!' : 'Payment link'}
+          </button>
         )}
 
         <div className="flex-1" />
