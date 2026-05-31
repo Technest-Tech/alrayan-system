@@ -2,6 +2,17 @@ export type InvoiceStatus = 'draft' | 'sent' | 'paid' | 'overdue' | 'void'
 export type InvoiceType = 'advance' | 'monthly' | 'reactivation' | 'manual'
 export type PaymentMethod = 'paymob' | 'bank_transfer' | 'paypal' | 'vodafone_cash' | 'instapay' | 'wallet' | 'other'
 
+export interface InvoiceSnapshot {
+  student_name?: string | null
+  course_name?: string | null
+  teacher_name?: string | null
+  sessions_per_month?: number | null
+  session_duration_min?: number | null
+  currency?: string | null
+  description?: string | null
+  [key: string]: string | number | null | undefined
+}
+
 export interface InvoiceLine {
   id: number
   description: string
@@ -30,8 +41,16 @@ export interface Invoice {
   paid_at: string | null
   voided_at: string | null
   voided_reason: string | null
-  snapshot: Record<string, string | number | null> | null
-  student?: { id: number; name: string; email?: string; currency?: string }
+  snapshot: InvoiceSnapshot | null
+  description?: string | null
+  student?: {
+    id: number
+    name: string
+    email?: string | null
+    phone?: string | null
+    whatsapp?: string | null
+    currency?: string
+  }
   lines?: InvoiceLine[]
   payments?: Payment[]
   paymob_link?: { url: string; expires_at: string | null; is_active: boolean } | null

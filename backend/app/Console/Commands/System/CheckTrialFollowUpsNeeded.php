@@ -15,9 +15,9 @@ class CheckTrialFollowUpsNeeded extends Command
 
     public function handle(): int
     {
-        // Leads stuck in trial_booked or trial_completed for > 2 days without a scheduled follow-up
+        // Leads stuck in waiting_for_trial or waiting_for_payment for > 2 days without a scheduled follow-up
         $stale = Lead::query()
-            ->whereIn('status', ['trial_booked', 'trial_completed'])
+            ->whereIn('status', ['waiting_for_trial', 'waiting_for_payment'])
             ->where('updated_at', '<=', now()->subDays(2))
             ->whereDoesntHave('followUps', fn($q) => $q->whereNull('completed_at')->where('due_at', '>=', now()))
             ->limit(100)

@@ -4,6 +4,8 @@ namespace App\Models\System;
 
 use App\Models\Course;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use App\Models\System\StudentPackage;
+use App\Models\System\Lesson;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Spatie\Activitylog\LogOptions;
@@ -27,8 +29,11 @@ class Student extends Model
         'paused_at'             => 'datetime',
         'suspended_at'          => 'datetime',
         'cancelled_at'          => 'datetime',
+        'package_hours_default' => 'integer',
+        'hourly_rate_minor'     => 'integer',
     ];
 
+    public function guardian()         { return $this->belongsTo(Guardian::class, 'guardian_id'); }
     public function course()          { return $this->belongsTo(Course::class); }
     public function assignedTeacher() { return $this->belongsTo(Teacher::class, 'assigned_teacher_id'); }
     public function whatsappGroup()   { return $this->belongsTo(WhatsAppGroup::class, 'whatsapp_group_id'); }
@@ -43,6 +48,16 @@ class Student extends Model
             'student_id',
             'sibling_student_id'
         )->withPivot('discount_pct')->withTimestamps();
+    }
+
+    public function packages()
+    {
+        return $this->hasMany(StudentPackage::class, 'student_id')->orderBy('package_number');
+    }
+
+    public function lessons()
+    {
+        return $this->hasMany(Lesson::class, 'student_id')->latest('scheduled_at');
     }
 
     public function invoices()
@@ -61,10 +76,11 @@ class Student extends Model
         $query->where(fn($q) => $q
             ->where('name', 'like', $like)
             ->orWhere('email', 'like', $like)
-            ->orWhere('phone', 'like', $like)
             ->orWhere('whatsapp', 'like', $like)
-            ->orWhere('parent_name', 'like', $like)
-            ->orWhere('parent_phone', 'like', $like)
+            ->orWhereHas('guardian', fn($g) => $g
+                ->where('name', 'like', $like)
+                ->orWhere('whatsapp', 'like', $like)
+            )
         );
     }
 
@@ -79,8 +95,8 @@ class Student extends Model
     {
         return LogOptions::defaults()
             ->logOnly([
-                'name', 'email', 'phone', 'whatsapp', 'country', 'timezone',
-                'age_category', 'course_id', 'assigned_teacher_id',
+                'name', 'email', 'whatsapp', 'country', 'timezone',
+                'student_type', 'guardian_id', 'course_id', 'assigned_teacher_id',
                 'sessions_per_month', 'session_duration_min',
                 'monthly_price_minor', 'currency', 'custom_discount_pct',
                 'status', 'whatsapp_group_id',

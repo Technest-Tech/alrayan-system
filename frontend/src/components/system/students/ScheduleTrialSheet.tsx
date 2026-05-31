@@ -107,17 +107,27 @@ export function ScheduleTrialSheet({ student, open, onClose }: Props) {
   const { data: teachersData } = useTeachers()
   const teachers = (teachersData?.data ?? []).map(t => ({ id: t.id, name: t.name ?? `Teacher #${t.id}` }))
 
-  const [teacherId,   setTeacherId]   = useState<number | undefined>(student.assigned_teacher?.id)
-  const [date,        setDate]        = useState(() => new Date().toISOString().split('T')[0])
-  const [time,        setTime]        = useState('18:00')
-  const [duration,    setDuration]    = useState(student.session_duration_min ?? 60)
+  const [teacherId,        setTeacherId]        = useState<number | undefined>(student.assigned_teacher?.id)
+  const [date,             setDate]             = useState(() => new Date().toISOString().split('T')[0])
+  const [time,             setTime]             = useState('18:00')
+  const [duration,         setDuration]         = useState(student.session_duration_min ?? 60)
+  const [includedSiblings, setIncludedSiblings] = useState<Set<number>>(new Set())
 
   const create = useCreateSession()
+
+  function toggleSibling(id: number) {
+    setIncludedSiblings(prev => {
+      const next = new Set(prev)
+      next.has(id) ? next.delete(id) : next.add(id)
+      return next
+    })
+  }
 
   useEffect(() => {
     if (open) {
       setTeacherId(student.assigned_teacher?.id)
       setDuration(student.session_duration_min ?? 60)
+      setIncludedSiblings(new Set())
       const now = new Date()
       setDate(now.toISOString().split('T')[0])
       setTime(now.getMinutes() >= 30 ? `${String(now.getHours() + 1).padStart(2, '0')}:00` : `${String(now.getHours()).padStart(2, '0')}:30`)
@@ -138,7 +148,16 @@ export function ScheduleTrialSheet({ student, open, onClose }: Props) {
         scheduled_start: scheduledStart,
         duration_min:    duration,
       })
-      toast.success('Trial class scheduled.')
+      for (const sibId of includedSiblings) {
+        await create.mutateAsync({
+          student_id:      sibId,
+          teacher_id:      teacherId,
+          scheduled_start: scheduledStart,
+          duration_min:    duration,
+        })
+      }
+      const total = 1 + includedSiblings.size
+      toast.success(total > 1 ? `${total} trial classes scheduled.` : 'Trial class scheduled.')
       onClose()
     } catch (e) {
       toast.error(e instanceof ApiError ? e.message : 'Failed to schedule session.')
@@ -225,6 +244,42 @@ export function ScheduleTrialSheet({ student, open, onClose }: Props) {
               </p>
             </div>
           )}
+
+          {/* Sibling section — only for child students with siblings */}
+          {student.student_type === 'child' && student.siblings.length > 0 && (
+            <div className="rounded-2xl p-4 space-y-3"
+              style={{ background: '#fff', border: '1px solid rgb(var(--border-default,229 233 240))' }}>
+              <p className="text-xs font-semibold uppercase tracking-widest opacity-40">Also schedule for siblings?</p>
+              {student.siblings.map(sib => (
+                <label key={sib.id} className="flex items-center gap-3 cursor-pointer group">
+                  <input
+                    type="checkbox"
+                    checked={includedSiblings.has(sib.id)}
+                    onChange={() => toggleSibling(sib.id)}
+                    className="w-4 h-4 rounded accent-[rgb(14,124,90)] cursor-pointer"
+                  />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium group-hover:text-[rgb(14,124,90)] transition-colors" style={{ color: 'rgb(11 31 58)' }}>
+                      {sib.name}
+                    </p>
+                    {sib.teacher_name && (
+                      <p className="text-xs opacity-50">{sib.teacher_name}</p>
+                    )}
+                  </div>
+                  {includedSiblings.has(sib.id) && (
+                    <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full" style={{ background: 'rgb(14 124 90 / 0.1)', color: 'rgb(14 124 90)' }}>
+                      Same slot
+                    </span>
+                  )}
+                </label>
+              ))}
+              {includedSiblings.size > 0 && (
+                <p className="text-[11px] opacity-40 pt-1">
+                  Same teacher, date &amp; time will be used for all selected siblings.
+                </p>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Footer */}
@@ -239,7 +294,12 @@ export function ScheduleTrialSheet({ student, open, onClose }: Props) {
             className="inline-flex items-center gap-2 px-5 py-2 rounded-xl text-sm font-semibold text-white disabled:opacity-60 transition-opacity hover:opacity-90"
             style={{ background: 'rgb(14 124 90)' }}>
             <CalendarDays size={14} />
-            {create.isPending ? 'Scheduling…' : 'Schedule Trial'}
+            {create.isPending
+              ? 'Scheduling…'
+              : includedSiblings.size > 0
+                ? `Schedule ${1 + includedSiblings.size} Trials`
+                : 'Schedule Trial'
+            }
           </button>
         </div>
       </div>

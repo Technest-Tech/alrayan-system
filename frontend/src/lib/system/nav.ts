@@ -1,7 +1,7 @@
 import {
-  LayoutDashboard, Users, GraduationCap, BookOpen, Calendar,
-  ClipboardCheck, FileText, Award, DollarSign, Wallet, BarChart3,
-  Bell, MessageCircle, Settings, ScrollText, UserCheck,
+  LayoutDashboard, Users, GraduationCap, BookOpen, CalendarDays,
+  Award, DollarSign, Wallet, BarChart3,
+  Bell, MessageCircle, Settings, ScrollText, UserCheck, CreditCard,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 
@@ -25,9 +25,7 @@ export const SYSTEM_NAV: readonly NavSection[] = [
       { label: 'Leads',            href: '/leads',              icon: UserCheck,       perm: 'leads.view' },
       { label: 'Students',         href: '/students',           icon: Users,           perm: 'students.view' },
       { label: 'Teachers',         href: '/teachers',           icon: GraduationCap,   perm: 'teachers.view' },
-      { label: 'Schedule',         href: '/schedule',           icon: Calendar,        perm: 'schedule.view' },
-      { label: 'Attendance',       href: '/attendance',         icon: ClipboardCheck,  perm: 'attendance.view' },
-      { label: 'Session reports',  href: '/session-reports',    icon: FileText,        perm: 'reports.view' },
+      { label: 'Calendar',         href: '/calendar',           icon: CalendarDays,    perm: 'lessons.view' },
       { label: 'Certificates',     href: '/certificates',       icon: Award,           perm: 'certificates.view' },
       { label: 'Courses',          href: '/courses-admin',      icon: BookOpen,        perm: 'courses.view' },
     ],
@@ -35,6 +33,7 @@ export const SYSTEM_NAV: readonly NavSection[] = [
   {
     label: 'Finance',
     items: [
+      { label: 'Payments',   href: '/payments',           icon: CreditCard, perm: 'lessons.view'  },
       { label: 'Billing',    href: '/billing/invoices',   icon: DollarSign, perm: 'invoices.view' },
       { label: 'Payroll',    href: '/payroll',            icon: Wallet,     perm: 'payroll.view' },
       { label: 'Accounting', href: '/accounting/revenue', icon: BarChart3,  perm: 'accounting.view' },

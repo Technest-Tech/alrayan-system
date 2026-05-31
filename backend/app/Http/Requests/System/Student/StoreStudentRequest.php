@@ -12,16 +12,14 @@ class StoreStudentRequest extends FormRequest
     {
         return [
             'name'                  => ['required', 'string', 'max:255'],
-            'email'                 => ['nullable', 'email', 'unique:sys_students,email'],
-            'phone'                 => ['nullable', 'string', 'max:32'],
-            'whatsapp'              => ['nullable', 'string', 'max:32'],
+            'whatsapp'              => ['nullable', 'string', 'max:64'],
             'country'               => ['required', 'string', 'size:2'],
             'timezone'              => ['required', 'timezone'],
-            'age_category'          => ['required', 'in:child,adult'],
-            'parent_name'           => ['required_if:age_category,child', 'nullable', 'string', 'max:255'],
-            'parent_phone'          => ['required_if:age_category,child', 'nullable', 'string', 'max:32'],
-            'parent_whatsapp'       => ['nullable', 'string', 'max:32'],
-            'parent_email'          => ['nullable', 'email'],
+            'student_type'          => ['required', 'in:child,adult'],
+            // Child: either link existing guardian or create a new one
+            'guardian_id'           => ['nullable', 'integer', 'exists:sys_guardians,id'],
+            'guardian_name'         => ['required_if:student_type,child', 'nullable', 'string', 'max:255'],
+            'guardian_whatsapp'     => ['required_if:student_type,child', 'nullable', 'string', 'max:32'],
             'course_id'             => ['nullable', 'integer', 'exists:courses,id'],
             'assigned_teacher_id'   => ['nullable', 'integer', 'exists:sys_teachers,id'],
             'sessions_per_month'    => ['nullable', 'integer', 'min:0', 'max:60'],

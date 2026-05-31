@@ -1,4 +1,5 @@
 'use client'
+import { useState } from 'react'
 import { X, CalendarDays } from 'lucide-react'
 import { RecurringPatternBuilder } from '@/components/system/schedule/RecurringPatternBuilder'
 import type { StudentDetail } from '@/types/system/student'
@@ -10,7 +11,19 @@ interface Props {
 }
 
 export function SetScheduleSheet({ student, open, onClose }: Props) {
+  const [includedSiblings, setIncludedSiblings] = useState<Set<number>>(new Set())
+
+  function toggleSibling(id: number) {
+    setIncludedSiblings(prev => {
+      const next = new Set(prev)
+      next.has(id) ? next.delete(id) : next.add(id)
+      return next
+    })
+  }
+
   if (!open) return null
+
+  const hasSiblings = student.student_type === 'child' && student.siblings.length > 0
 
   return (
     <>
@@ -41,12 +54,51 @@ export function SetScheduleSheet({ student, open, onClose }: Props) {
         </div>
 
         {/* Body */}
-        <div className="flex-1 overflow-y-auto p-5">
+        <div className="flex-1 overflow-y-auto p-5 space-y-5">
+          {/* Sibling section — shown above the pattern builder for context */}
+          {hasSiblings && (
+            <div
+              className="rounded-xl p-4 space-y-3"
+              style={{ background: '#fff', border: '1px solid rgb(var(--border-default,229 233 240))' }}
+            >
+              <p className="text-[11px] font-semibold uppercase tracking-widest opacity-40">Apply same timetable to siblings?</p>
+              {student.siblings.map(sib => (
+                <label key={sib.id} className="flex items-center gap-3 cursor-pointer group">
+                  <input
+                    type="checkbox"
+                    checked={includedSiblings.has(sib.id)}
+                    onChange={() => toggleSibling(sib.id)}
+                    className="w-4 h-4 rounded accent-[rgb(14,124,90)] cursor-pointer"
+                  />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium group-hover:text-[rgb(14,124,90)] transition-colors" style={{ color: 'rgb(11 31 58)' }}>
+                      {sib.name}
+                    </p>
+                    {sib.teacher_name && (
+                      <p className="text-xs opacity-50">{sib.teacher_name}</p>
+                    )}
+                  </div>
+                  {includedSiblings.has(sib.id) && (
+                    <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full" style={{ background: 'rgb(14 124 90 / 0.1)', color: 'rgb(14 124 90)' }}>
+                      Included
+                    </span>
+                  )}
+                </label>
+              ))}
+              {includedSiblings.size > 0 && (
+                <p className="text-[11px] opacity-40">
+                  The same pattern will be saved for all selected siblings.
+                </p>
+              )}
+            </div>
+          )}
+
           <RecurringPatternBuilder
             studentId={student.id}
             timezone={student.timezone}
             sessionsPerMonth={student.sessions_per_month}
             sessionDurationMin={student.session_duration_min}
+            additionalStudentIds={[...includedSiblings]}
             onSaved={onClose}
             onCancel={onClose}
           />

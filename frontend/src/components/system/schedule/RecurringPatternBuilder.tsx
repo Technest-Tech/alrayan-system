@@ -15,6 +15,7 @@ interface Props {
   sessionsPerMonth?: number
   sessionDurationMin?: number
   initialPatterns?: PatternEntry[]
+  additionalStudentIds?: number[]
   onSaved?: () => void
   onCancel?: () => void
 }
@@ -33,6 +34,7 @@ export function RecurringPatternBuilder({
   sessionsPerMonth,
   sessionDurationMin = 60,
   initialPatterns = [],
+  additionalStudentIds = [],
   onSaved,
   onCancel,
 }: Props) {
@@ -79,11 +81,12 @@ export function RecurringPatternBuilder({
     return () => clearTimeout(t)
   }, [patterns, effectiveDate])
 
-  const handleSave = () => {
-    replace.mutate(
-      { studentId, effectiveDate, patterns, forceConflicts },
-      { onSuccess: onSaved }
-    )
+  const handleSave = async () => {
+    await replace.mutateAsync({ studentId, effectiveDate, patterns, forceConflicts })
+    for (const sibId of additionalStudentIds) {
+      await replace.mutateAsync({ studentId: sibId, effectiveDate, patterns, forceConflicts })
+    }
+    onSaved?.()
   }
 
   return (

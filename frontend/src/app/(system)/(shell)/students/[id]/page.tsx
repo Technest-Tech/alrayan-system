@@ -9,13 +9,13 @@ import Link from 'next/link'
 import {
   ChevronLeft, MessageCircle, PlayCircle, PauseCircle,
   XCircle, ChevronDown, Search, X, CalendarDays, Check, Trash2,
+  Baby, UserRound, ExternalLink,
 } from 'lucide-react'
 import { useStudent, useUpdateStudent, useStudentTransition, useActivateStudent, useDeleteStudent } from '@/hooks/system/useStudents'
 import { useStudentSessions } from '@/hooks/system/useSessions'
 import { StudentStatusBadge } from '@/components/system/students/StudentStatusBadge'
 import { StudentTimeline } from '@/components/system/students/StudentTimeline'
 import { FamilyTabContent } from '@/components/system/students/FamilyTabContent'
-import { ParentGuardianFields } from '@/components/system/students/ParentGuardianFields'
 import { ActivateStudentDialog } from '@/components/system/students/ActivateStudentDialog'
 import { ScheduleTrialSheet } from '@/components/system/students/ScheduleTrialSheet'
 import { StudentSessionsTab } from '@/components/system/students/StudentSessionsTab'
@@ -296,7 +296,6 @@ function CountryCombobox({
 const profileSchema = z.object({
   name:                 z.string().min(1),
   email:                z.string().email().optional().or(z.literal('')),
-  phone:                z.string().optional(),
   whatsapp:             z.string().optional(),
   country:              z.string().min(1),
   timezone:             z.string().min(1),
@@ -307,10 +306,6 @@ const profileSchema = z.object({
   currency:             z.string().min(1),
   monthly_price_minor:  z.coerce.number().min(0),
   custom_discount_pct:  z.coerce.number().min(0).max(100),
-  parent_name:          z.string().optional(),
-  parent_phone:         z.string().optional(),
-  parent_whatsapp:      z.string().optional(),
-  parent_email:         z.string().optional(),
 })
 type ProfileValues = z.infer<typeof profileSchema>
 
@@ -482,7 +477,6 @@ export default function StudentDetailPage({ params }: { params: Promise<{ id: st
     values: student ? {
       name:                 student.name ?? '',
       email:                student.email ?? '',
-      phone:                student.phone ?? '',
       whatsapp:             student.whatsapp ?? '',
       country:              student.country ?? '',
       timezone:             student.timezone ?? '',
@@ -493,10 +487,6 @@ export default function StudentDetailPage({ params }: { params: Promise<{ id: st
       currency:             student.currency,
       monthly_price_minor:  student.monthly_price_minor,
       custom_discount_pct:  student.custom_discount_pct,
-      parent_name:          student.parent_name ?? '',
-      parent_phone:         student.parent_phone ?? '',
-      parent_whatsapp:      student.parent_whatsapp ?? '',
-      parent_email:         student.parent_email ?? '',
     } : undefined,
   })
 
@@ -592,6 +582,13 @@ export default function StudentDetailPage({ params }: { params: Promise<{ id: st
             <div className="flex-1 min-w-0 pt-0.5">
               <div className="flex items-center gap-2.5 flex-wrap mb-1">
                 <h1 className="text-xl font-bold" style={{ color: 'rgb(11 31 58)' }}>{student.name}</h1>
+                {student.student_type === 'child' && (
+                  <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-1.5 py-0.5 rounded-full"
+                    style={{ background: 'rgb(14 124 90 / 0.1)', color: 'rgb(14 124 90)' }}>
+                    <Baby size={10} />
+                    Child
+                  </span>
+                )}
                 <StudentStatusBadge status={student.status} />
                 {student.source && (
                   <span className="text-[11px] font-medium px-2 py-0.5 rounded-full"
@@ -601,6 +598,9 @@ export default function StudentDetailPage({ params }: { params: Promise<{ id: st
                 )}
               </div>
               <p className="text-sm" style={{ color: 'rgb(90 100 112)' }}>
+                {student.student_type === 'child' && student.guardian
+                  ? <>via <span className="font-medium" style={{ color: 'rgb(11 31 58)' }}>{student.guardian.name}</span> · </>
+                  : null}
                 {student.country}
                 {student.timezone ? <> · <span className="opacity-70">{student.timezone}</span></> : null}
                 {student.enrolled_at ? <> · Enrolled {formatDate(student.enrolled_at)}</> : null}
@@ -691,7 +691,10 @@ export default function StudentDetailPage({ params }: { params: Promise<{ id: st
             <StatChip label="Course"   value={student.course?.name ?? '—'} />
             <StatChip label="Teacher"  value={student.assigned_teacher?.name ?? 'Unassigned'} />
             <StatChip label="Sessions" value={sessions} />
-            <StatChip label="Price"    value={student.monthly_price_minor ? price : '—'} />
+            {student.student_type === 'child'
+              ? <StatChip label="Parent" value={student.guardian?.name ?? '—'} />
+              : <StatChip label="Price"  value={student.monthly_price_minor ? price : '—'} />
+            }
           </div>
         </div>
       </div>
@@ -732,29 +735,103 @@ export default function StudentDetailPage({ params }: { params: Promise<{ id: st
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div><Label required>Name</Label><input className={inp} style={inpStyle} {...register('name')} /></div>
                 <div><Label>Email</Label><input type="email" className={inp} style={inpStyle} {...register('email')} /></div>
-                <div><Label>Phone</Label><input className={inp} style={inpStyle} {...register('phone')} /></div>
                 <div><Label>WhatsApp</Label><input className={inp} style={inpStyle} {...register('whatsapp')} /></div>
-                <div>
-                  <Label required>Country</Label>
-                  <Controller name="country" control={control} render={({ field }) => (
-                    <CountryCombobox value={field.value ?? ''} onChange={(code, tz) => {
-                      field.onChange(code)
-                      setValue('timezone', tz, { shouldValidate: true })
-                    }} />
-                  )} />
-                </div>
-                <div>
-                  <Label required>Timezone</Label>
-                  <Controller name="timezone" control={control} render={({ field }) => (
-                    <input className={inp} style={inpStyle} placeholder="e.g. Africa/Cairo" {...field} value={field.value ?? ''} />
-                  )} />
-                </div>
+                {student.student_type === 'adult' && (<>
+                  <div>
+                    <Label required>Country</Label>
+                    <Controller name="country" control={control} render={({ field }) => (
+                      <CountryCombobox value={field.value ?? ''} onChange={(code, tz) => {
+                        field.onChange(code)
+                        setValue('timezone', tz, { shouldValidate: true })
+                      }} />
+                    )} />
+                  </div>
+                  <div>
+                    <Label required>Timezone</Label>
+                    <Controller name="timezone" control={control} render={({ field }) => (
+                      <input className={inp} style={inpStyle} placeholder="e.g. Africa/Cairo" {...field} value={field.value ?? ''} />
+                    )} />
+                  </div>
+                </>)}
               </div>
             </Card>
 
-            {student.age_category === 'child' && (
+            {student.student_type === 'child' && (
               <Card title="Parent / Guardian">
-                <ParentGuardianFields control={control} />
+                {student.guardian ? (
+                  <div className="space-y-4">
+                    {/* Parent identity row */}
+                    <div className="flex items-center gap-3 p-3 rounded-xl"
+                      style={{ background: 'rgb(14 124 90 / 0.04)', border: '1px solid rgb(14 124 90 / 0.15)' }}>
+                      <div className="flex items-center justify-center w-10 h-10 rounded-xl shrink-0"
+                        style={{ background: 'rgb(14 124 90 / 0.1)' }}>
+                        <UserRound size={18} style={{ color: 'rgb(14 124 90)' }} />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold" style={{ color: 'rgb(11 31 58)' }}>{student.guardian.name}</p>
+                        <p className="text-xs opacity-60">{student.guardian.whatsapp}</p>
+                      </div>
+                      {student.guardian.whatsapp && (
+                        <a
+                          href={`https://wa.me/${student.guardian.whatsapp.replace(/\D/g, '')}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors hover:bg-black/5 shrink-0"
+                          style={{ borderColor: 'rgb(var(--border-default,229 233 240))', color: 'rgb(11 31 58)' }}
+                        >
+                          <MessageCircle size={12} />
+                          WhatsApp
+                        </a>
+                      )}
+                    </div>
+
+                    {/* Country / Timezone — editable, moved here for child students */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1 border-t"
+                      style={{ borderColor: 'rgb(var(--border-default,229 233 240))' }}>
+                      <div>
+                        <Label required>Country</Label>
+                        <Controller name="country" control={control} render={({ field }) => (
+                          <CountryCombobox value={field.value ?? ''} onChange={(code, tz) => {
+                            field.onChange(code)
+                            setValue('timezone', tz, { shouldValidate: true })
+                          }} />
+                        )} />
+                      </div>
+                      <div>
+                        <Label required>Timezone</Label>
+                        <Controller name="timezone" control={control} render={({ field }) => (
+                          <input className={inp} style={inpStyle} placeholder="e.g. Africa/Cairo" {...field} value={field.value ?? ''} />
+                        )} />
+                      </div>
+                    </div>
+
+                    {/* Siblings under same parent */}
+                    {student.guardian.students.filter((s) => s.id !== student.id).length > 0 && (
+                      <div className="pt-1 border-t" style={{ borderColor: 'rgb(var(--border-default,229 233 240))' }}>
+                        <p className="text-[11px] font-semibold uppercase tracking-widest opacity-40 mb-2">
+                          Other children ({student.guardian.students.filter((s) => s.id !== student.id).length})
+                        </p>
+                        <div className="flex flex-wrap gap-2">
+                          {student.guardian.students
+                            .filter((s) => s.id !== student.id)
+                            .map((s) => (
+                              <Link
+                                key={s.id}
+                                href={`/students/${s.id}`}
+                                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium border transition-colors hover:bg-black/5"
+                                style={{ borderColor: 'rgb(var(--border-default,229 233 240))', color: 'rgb(11 31 58)' }}
+                              >
+                                {s.name}
+                                <ExternalLink size={10} className="opacity-40" />
+                              </Link>
+                            ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <p className="text-sm opacity-40">No guardian linked.</p>
+                )}
               </Card>
             )}
 

@@ -12,11 +12,15 @@ class StudentResource extends JsonResource
             'id'                   => $this->id,
             'name'                 => $this->name,
             'email'                => $this->email,
-            'phone'                => $this->phone,
             'whatsapp'             => $this->whatsapp,
             'country'              => $this->country,
             'timezone'             => $this->timezone,
-            'age_category'         => $this->age_category,
+            'student_type'         => $this->student_type,
+            'guardian'             => $this->whenLoaded('guardian', fn() => $this->guardian ? [
+                'id'       => $this->guardian->id,
+                'name'     => $this->guardian->name,
+                'whatsapp' => $this->guardian->whatsapp,
+            ] : null),
             'course'               => $this->whenLoaded('course', fn() => [
                 'id'   => $this->course->id,
                 'name' => $this->course->title,

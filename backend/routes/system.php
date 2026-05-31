@@ -31,6 +31,7 @@ use App\Http\Controllers\System\SavedViewController;
 use App\Http\Controllers\System\SchedulePatternController;
 use App\Http\Controllers\System\SessionController;
 use App\Http\Controllers\System\SessionReportController;
+use App\Http\Controllers\System\GuardianController;
 use App\Http\Controllers\System\StudentController;
 use App\Http\Controllers\System\StudentFamilyController;
 use App\Http\Controllers\System\StudentNoteController;
@@ -40,11 +41,20 @@ use App\Http\Controllers\System\TeacherAvailabilityController;
 use App\Http\Controllers\System\TeacherController;
 use App\Http\Controllers\System\TeacherLeaveController;
 use App\Http\Controllers\System\TeacherNoteController;
+use App\Http\Controllers\System\TeacherReportController;
 use App\Http\Controllers\System\UserController;
+use App\Http\Controllers\System\RoleController;
 use App\Http\Controllers\System\WalletController;
 use App\Http\Controllers\System\WassenderIntegrationController;
 use App\Http\Controllers\System\WassenderLogController;
 use App\Http\Controllers\System\WhatsAppGroupController;
+use App\Http\Controllers\System\CalendarController;
+use App\Http\Controllers\System\LessonController;
+use App\Http\Controllers\System\LessonScheduleController;
+use App\Http\Controllers\System\StudentPackageController;
+use App\Http\Controllers\System\LessonSubjectController;
+use App\Http\Controllers\System\LessonEvaluationController;
+use App\Http\Controllers\System\PaymentsController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('system')->name('system.')->group(function () {
@@ -64,9 +74,10 @@ Route::prefix('system')->name('system.')->group(function () {
         // Dashboard
         Route::get('/dashboard', [DashboardController::class, 'show'])->name('dashboard');
 
-        // Users
+        // Users & Roles
         Route::middleware('system.can:users.view')->group(function () {
             Route::get('/users', [UserController::class, 'index'])->name('users.index');
+            Route::get('/roles', [RoleController::class, 'index'])->name('roles.index');
         });
         Route::middleware('system.can:users.invite')->post('/users/invite', [UserController::class, 'invite'])->name('users.invite');
         Route::middleware('system.can:users.edit')->group(function () {
@@ -105,9 +116,10 @@ Route::prefix('system')->name('system.')->group(function () {
             Route::post('/teachers/{teacher}/activate',      [TeacherController::class, 'activate'])->name('teachers.activate');
             Route::post('/teachers/{teacher}/deactivate',    [TeacherController::class, 'deactivate'])->name('teachers.deactivate');
         });
-        Route::post('/teachers/{teacher}/notes', [TeacherNoteController::class, 'store'])->name('teachers.notes.store');
-        Route::patch('/teacher-notes/{note}',    [TeacherNoteController::class, 'update'])->name('teacher-notes.update');
-        Route::delete('/teacher-notes/{note}',   [TeacherNoteController::class, 'destroy'])->name('teacher-notes.destroy');
+        Route::post('/teachers/{teacher}/notes',          [TeacherNoteController::class, 'store'])->name('teachers.notes.store');
+        Route::patch('/teacher-notes/{note}',             [TeacherNoteController::class, 'update'])->name('teacher-notes.update');
+        Route::delete('/teacher-notes/{note}',            [TeacherNoteController::class, 'destroy'])->name('teacher-notes.destroy');
+        Route::get('/teachers/{teacher}/report-summary',  [TeacherReportController::class, 'summary'])->name('teachers.report-summary');
 
         // Teacher leaves
         Route::get('/teacher-leaves',                        [TeacherLeaveController::class, 'index'])->name('teacher-leaves.index');
@@ -116,6 +128,10 @@ Route::prefix('system')->name('system.')->group(function () {
             Route::post('/teacher-leaves/{leave}/approve',   [TeacherLeaveController::class, 'approve'])->name('teacher-leaves.approve');
             Route::post('/teacher-leaves/{leave}/reject',    [TeacherLeaveController::class, 'reject'])->name('teacher-leaves.reject');
         });
+
+        // Guardians
+        Route::middleware('system.can:students.view')->get('/guardians', [GuardianController::class, 'index'])->name('guardians.index');
+        Route::middleware('system.can:students.create')->post('/guardians', [GuardianController::class, 'store'])->name('guardians.store');
 
         // Students
         Route::middleware('system.can:students.view')->group(function () {
@@ -448,6 +464,49 @@ Route::prefix('system')->name('system.')->group(function () {
             ->get('/settings/backups', [BackupsController::class, 'show'])->name('settings.backups');
         Route::middleware('system.can:settings.manage_backups')
             ->post('/settings/backups/run-now', [BackupsController::class, 'runNow'])->name('settings.backups.run-now');
+
+        // SYS-09: Lessons & Calendar
+        Route::middleware('system.can:lessons.view')->group(function () {
+            Route::get('/calendar',                                      [CalendarController::class,       'index'])->name('calendar.index');
+            Route::get('/lessons',                                       [LessonController::class,         'index'])->name('lessons.index');
+            Route::get('/lessons/{lesson}',                              [LessonController::class,         'show'])->name('lessons.show');
+            Route::get('/lesson-schedules',                              [LessonScheduleController::class, 'index'])->name('lesson-schedules.index');
+            Route::get('/lesson-schedules/{lessonSchedule}',             [LessonScheduleController::class, 'show'])->name('lesson-schedules.show');
+            Route::get('/student-packages',                              [StudentPackageController::class, 'index'])->name('student-packages.index');
+            Route::get('/student-packages/{studentPackage}',             [StudentPackageController::class, 'show'])->name('student-packages.show');
+            Route::get('/lesson-subjects',                               [LessonSubjectController::class,  'index'])->name('lesson-subjects.index');
+            Route::get('/lesson-evaluations',                            [LessonEvaluationController::class,'index'])->name('lesson-evaluations.index');
+        });
+        Route::middleware('system.can:lessons.create')->group(function () {
+            Route::post('/lessons',                                      [LessonController::class,         'store'])->name('lessons.store');
+            Route::post('/lesson-schedules',                             [LessonScheduleController::class, 'store'])->name('lesson-schedules.store');
+        });
+        Route::middleware('system.can:lessons.edit')->group(function () {
+            Route::put('/lessons/{lesson}',                              [LessonController::class,         'update'])->name('lessons.update');
+            Route::patch('/lessons/{lesson}',                            [LessonController::class,         'update']);
+            Route::put('/lesson-schedules/{lessonSchedule}',             [LessonScheduleController::class, 'update'])->name('lesson-schedules.update');
+            Route::patch('/student-packages/{studentPackage}',           [StudentPackageController::class, 'update'])->name('student-packages.update');
+            Route::post('/student-packages/{studentPackage}/confirm',    [StudentPackageController::class, 'confirm'])->name('student-packages.confirm');
+        });
+        Route::middleware('system.can:lessons.delete')->group(function () {
+            Route::delete('/lessons/{lesson}',                           [LessonController::class,         'destroy'])->name('lessons.destroy');
+            Route::delete('/lesson-schedules/{lessonSchedule}',          [LessonScheduleController::class, 'destroy'])->name('lesson-schedules.destroy');
+            Route::delete('/student-packages/{studentPackage}',          [StudentPackageController::class, 'destroy'])->name('student-packages.destroy');
+        });
+
+        // Payments overview
+        Route::middleware('system.can:lessons.view')->group(function () {
+            Route::get('/payments',        [PaymentsController::class, 'index'])->name('payments.index');
+            Route::get('/payments/stats',  [PaymentsController::class, 'stats'])->name('payments.stats');
+        });
+        Route::middleware('system.can:settings.edit')->group(function () {
+            Route::post('/lesson-subjects',                              [LessonSubjectController::class,  'store'])->name('lesson-subjects.store');
+            Route::put('/lesson-subjects/{lessonSubject}',               [LessonSubjectController::class,  'update'])->name('lesson-subjects.update');
+            Route::delete('/lesson-subjects/{lessonSubject}',            [LessonSubjectController::class,  'destroy'])->name('lesson-subjects.destroy');
+            Route::post('/lesson-evaluations',                           [LessonEvaluationController::class,'store'])->name('lesson-evaluations.store');
+            Route::put('/lesson-evaluations/{lessonEvaluation}',         [LessonEvaluationController::class,'update'])->name('lesson-evaluations.update');
+            Route::delete('/lesson-evaluations/{lessonEvaluation}',      [LessonEvaluationController::class,'destroy'])->name('lesson-evaluations.destroy');
+        });
 
     }); // end auth:sanctum + system.active
 

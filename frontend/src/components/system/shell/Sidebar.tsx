@@ -3,7 +3,6 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import type { NavSection } from '@/lib/system/nav'
-import Image from 'next/image'
 
 interface SidebarProps {
   collapsed: boolean
@@ -15,12 +14,11 @@ interface SidebarProps {
 
 export function Sidebar({ collapsed, onToggle, nav, mobileOpen, onMobileClose }: SidebarProps) {
   const pathname = usePathname()
-  // Show labels when desktop-expanded OR when mobile drawer is open
   const showLabels = !collapsed || mobileOpen
 
   return (
     <>
-      {/* Mobile backdrop — fades in/out behind the drawer */}
+      {/* Mobile backdrop */}
       <div
         aria-hidden="true"
         className={`lg:hidden fixed inset-0 bg-black/50 z-30 transition-opacity duration-300 ${
@@ -32,29 +30,31 @@ export function Sidebar({ collapsed, onToggle, nav, mobileOpen, onMobileClose }:
       <aside
         className={[
           'fixed top-0 left-0 h-full z-40 flex flex-col transition-all duration-300',
-          // Mobile: always 260px wide; desktop: narrows to 72px when collapsed
           collapsed ? 'w-[260px] lg:w-[72px]' : 'w-[260px]',
-          // Mobile: slides in/out; desktop: always visible
           mobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0',
         ].join(' ')}
         style={{ background: 'rgb(var(--surface-sidebar, 11 31 58))' }}
       >
-        {/* Logo */}
-        <div className="flex items-center h-[60px] px-4 border-b border-white/10 shrink-0">
+        {/* Logo — links to dashboard */}
+        <Link
+          href="/dashboard"
+          onClick={onMobileClose}
+          className="flex items-center justify-center h-[64px] px-4 border-b border-white/10 shrink-0 hover:bg-white/5 transition-colors"
+          aria-label="Go to dashboard"
+        >
           {showLabels ? (
-            <Image
-              src="/logo/alrayan-white.svg"
-              alt="Alrayan Academy"
-              width={120}
-              height={32}
-              className="shrink-0"
-            />
-          ) : (
-            <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center mx-auto">
-              <span className="text-white font-bold text-sm">A</span>
+            <div className="flex flex-col leading-none text-center">
+              <span className="font-display text-[1.6rem] font-semibold tracking-tight text-white">
+                Alrayan
+              </span>
+              <span className="text-[0.6rem] font-semibold uppercase tracking-[0.22em] mt-0.5" style={{ color: '#C9A24B' }}>
+                Quran Academy
+              </span>
             </div>
+          ) : (
+            <span className="font-display text-[1.4rem] font-bold text-white leading-none">A</span>
           )}
-        </div>
+        </Link>
 
         {/* Nav */}
         <nav className="flex-1 overflow-y-auto py-4 px-2 space-y-6">
@@ -94,21 +94,15 @@ export function Sidebar({ collapsed, onToggle, nav, mobileOpen, onMobileClose }:
           ))}
         </nav>
 
-        {/* Collapse toggle — desktop only */}
-        <div className="hidden lg:block shrink-0 px-2 pb-4">
-          <button
-            onClick={onToggle}
-            className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-white/50 hover:text-white hover:bg-white/8 transition-colors text-sm"
-            title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-          >
-            {collapsed ? <ChevronRight size={16} /> : (
-              <>
-                <ChevronLeft size={16} />
-                <span>Collapse</span>
-              </>
-            )}
-          </button>
-        </div>
+        {/* Collapse toggle — floating edge tab, desktop only */}
+        <button
+          onClick={onToggle}
+          aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          className="hidden lg:flex absolute -right-3 top-[76px] w-6 h-6 items-center justify-center rounded-full border border-white/20 text-white/60 hover:text-white hover:border-white/50 transition-all duration-200 shadow-lg z-50"
+          style={{ background: 'rgb(var(--surface-sidebar, 11 31 58))' }}
+        >
+          {collapsed ? <ChevronRight size={12} /> : <ChevronLeft size={12} />}
+        </button>
       </aside>
     </>
   )

@@ -34,6 +34,8 @@ class TeacherNoteController extends Controller
             'teacher_id'     => $teacher->id,
             'author_user_id' => auth()->id(),
             'body'           => $request->body,
+            'note_type'      => $request->input('note_type', 'general'),
+            'pinned'         => $request->boolean('pinned', false),
         ]);
 
         return new TeacherNoteResource($note->load('author'));
@@ -42,7 +44,11 @@ class TeacherNoteController extends Controller
     public function update(UpdateNoteRequest $request, TeacherNote $note): TeacherNoteResource
     {
         $this->authorize('update', $note);
-        $note->update(['body' => $request->body]);
+        $note->update(array_filter([
+            'body'      => $request->body,
+            'note_type' => $request->note_type,
+            'pinned'    => $request->has('pinned') ? $request->boolean('pinned') : null,
+        ], fn($v) => $v !== null));
 
         return new TeacherNoteResource($note->load('author'));
     }

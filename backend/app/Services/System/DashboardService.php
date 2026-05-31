@@ -2,9 +2,9 @@
 
 namespace App\Services\System;
 
+use App\Models\System\Invoice;
 use App\Models\System\Session;
 use App\Models\System\Student;
-use App\Models\System\SysNotification;
 use App\Models\System\AuditLog as AuditLogModel;
 use App\Models\User;
 use App\Support\System\Setting;
@@ -59,7 +59,7 @@ class DashboardService
                     'month_net_profit_base' => $monthPnl->netProfit,
                     'outstanding'           => $collection30->outstandingMinorByCurrency,
                     'collection_rate'       => $collection30->collectionRate,
-                    'conversion_rate_30d'   => $conversionRate,
+                    'conversion_rate'       => $conversionRate,
                 ],
                 'charts' => [
                     'revenue_12m'           => $this->revenue->byMonth(now()->subMonths(11)->startOfMonth(), now()->endOfMonth()),
@@ -67,14 +67,8 @@ class DashboardService
                     'expenses_breakdown_30d'=> $this->expensesByCategory(30),
                     'cancellation_reasons'  => $this->cancellationReasons(90),
                 ],
-                'alerts'          => SysNotification::where('recipient_user_id', $user->id)
-                    ->whereNull('read_at')
-                    ->orderByDesc('created_at')
-                    ->limit(10)
-                    ->get(['id', 'type', 'title', 'body', 'created_at']),
-                'recent_activity' => AuditLogModel::orderByDesc('created_at')
-                    ->limit(10)
-                    ->get(['id', 'action', 'actor_name', 'created_at']),
+                'alerts'          => $this->buildAlerts(),
+                'recent_activity' => $this->buildRecentActivity(),
             ];
         });
     }
@@ -99,9 +93,11 @@ class DashboardService
     {
         return \App\Models\System\Expense::join('sys_expense_categories', 'sys_expenses.category_id', '=', 'sys_expense_categories.id')
             ->where('sys_expenses.occurred_on', '>=', now()->subDays($days)->toDateString())
-            ->selectRaw('sys_expense_categories.name as category, SUM(sys_expenses.amount_minor) as total')
+            ->selectRaw('sys_expense_categories.name as category, SUM(sys_expenses.amount_minor) as amount')
             ->groupBy('sys_expense_categories.name')
-            ->pluck('total', 'category')
+            ->get()
+            ->map(fn($r) => ['category' => $r->category, 'amount' => (int) $r->amount])
+            ->values()
             ->toArray();
     }
 
@@ -109,9 +105,49 @@ class DashboardService
     {
         return Student::where('status', 'cancelled')
             ->where('cancelled_at', '>=', now()->subDays($days))
-            ->selectRaw('cancellation_reason, COUNT(*) as count')
+            ->selectRaw('cancellation_reason as reason, COUNT(*) as count')
             ->groupBy('cancellation_reason')
-            ->pluck('count', 'cancellation_reason')
+            ->get()
+            ->map(fn($r) => ['reason' => $r->reason ?? 'Unknown', 'count' => (int) $r->count])
+            ->values()
+            ->toArray();
+    }
+
+    private function buildAlerts(): array
+    {
+        $alerts = [];
+
+        $overdueCount = Invoice::where('status', 'overdue')->count();
+        if ($overdueCount > 0) {
+            $alerts[] = ['kind' => 'invoice.overdue', 'count' => $overdueCount, 'href' => '/billing/overdue'];
+        }
+
+        $missingReports = Session::whereDate('starts_at', '<', now())
+            ->whereDoesntHave('report')
+            ->count();
+        if ($missingReports > 0) {
+            $alerts[] = ['kind' => 'report.missing', 'count' => $missingReports, 'href' => '/session-reports'];
+        }
+
+        $noWhatsapp = Student::where('status', 'active')
+            ->whereNull('whatsapp_group_id')
+            ->count();
+        if ($noWhatsapp > 0) {
+            $alerts[] = ['kind' => 'student.no_whatsapp', 'count' => $noWhatsapp, 'href' => '/whatsapp-groups'];
+        }
+
+        return $alerts;
+    }
+
+    private function buildRecentActivity(): array
+    {
+        return AuditLogModel::orderByDesc('created_at')
+            ->limit(10)
+            ->get(['action', 'actor_name', 'created_at'])
+            ->map(fn($log) => [
+                'text' => trim(($log->actor_name ?? 'System') . ' ' . str_replace('_', ' ', $log->action)),
+                'at'   => $log->created_at->toISOString(),
+            ])
             ->toArray();
     }
 }

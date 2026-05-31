@@ -8,21 +8,22 @@ use Illuminate\Validation\ValidationException;
 
 class LeadPipelineService
 {
-    // Forward-only unless admin; enrolled blocked via drag (needs convert flow)
+    // closed is terminal — only reachable via LeadToStudentConverter
     private const TRANSITIONS = [
-        'new'             => ['contacted', 'trial_booked', 'trial_completed', 'lost'],
-        'contacted'       => ['trial_booked', 'trial_completed', 'lost'],
-        'trial_booked'    => ['trial_completed', 'contacted', 'lost'],
-        'trial_completed' => ['contacted', 'trial_booked', 'lost'],
-        'enrolled'        => [],  // terminal — only via LeadToStudentConverter
-        'lost'            => ['contacted'],  // reopen — admin only
+        'new_lead'          => ['interested', 'waiting_for_trial', 'not_interested', 'lost'],
+        'interested'        => ['waiting_for_trial', 'waiting_for_payment', 'not_interested', 'lost'],
+        'waiting_for_trial' => ['waiting_for_payment', 'interested', 'not_interested', 'lost'],
+        'waiting_for_payment' => ['interested', 'waiting_for_trial', 'not_interested', 'lost'],
+        'closed'            => [],  // terminal — only via LeadToStudentConverter
+        'not_interested'    => ['interested', 'new_lead'],  // reopen — admin only
+        'lost'              => ['interested', 'new_lead'],  // reopen — admin only
     ];
 
     public function canTransition(Lead $lead, string $toStatus, User $actor): bool
     {
         $from = $lead->status;
 
-        if ($toStatus === 'enrolled') return false;  // must use convert flow
+        if ($toStatus === 'closed') return false;  // must use convert flow
 
         $allowed = self::TRANSITIONS[$from] ?? [];
 
@@ -30,8 +31,8 @@ class LeadPipelineService
             return false;
         }
 
-        // Backward transitions (e.g. trial_completed → contacted) require admin
-        $order = ['new', 'contacted', 'trial_booked', 'trial_completed'];
+        // Reopening from terminal/negative states requires admin
+        $order = ['new_lead', 'interested', 'waiting_for_trial', 'waiting_for_payment'];
         $fromIdx = array_search($from, $order);
         $toIdx   = array_search($toStatus, $order);
 
@@ -57,6 +58,8 @@ class LeadPipelineService
                 ]);
             }
             $lead->update(array_merge(['status' => 'lost'], $extra));
+        } elseif ($toStatus === 'not_interested') {
+            $lead->update(array_merge(['status' => 'not_interested'], $extra));
         } else {
             $lead->update(['status' => $toStatus]);
         }

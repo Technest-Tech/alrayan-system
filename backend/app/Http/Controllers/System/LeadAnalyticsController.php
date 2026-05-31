@@ -21,15 +21,25 @@ class LeadAnalyticsController extends Controller
 
         $cacheKey = "lead_analytics:{$from->toDateString()}:{$to->toDateString()}";
 
-        $data = Cache::remember($cacheKey, 300, function () use ($analytics, $from, $to) {
+        $rangeData = Cache::remember($cacheKey, 300, function () use ($analytics, $from, $to) {
             return [
-                'funnel'       => $analytics->funnel($from, $to),
-                'by_source'    => $analytics->bySource($from, $to),
-                'by_supervisor'=> $analytics->bySupervisor($from, $to),
-                'trend_daily'  => $analytics->trendDaily($from, $to),
+                'funnel'        => $analytics->funnel($from, $to),
+                'by_source'     => $analytics->bySource($from, $to),
+                'by_supervisor' => $analytics->bySupervisor($from, $to),
+                'trend_daily'   => $analytics->trendDaily($from, $to),
+                'by_gender'     => $analytics->byGender($from, $to),
+                'by_country'    => $analytics->byCountry($from, $to),
             ];
         });
 
-        return response()->json($data);
+        $snapshotData = Cache::remember('lead_analytics:snapshot', 120, function () use ($analytics) {
+            return [
+                'summary'         => $analytics->summary(),
+                'by_status'       => $analytics->byStatus(),
+                'recent_activity' => $analytics->recentActivity(),
+            ];
+        });
+
+        return response()->json(array_merge($rangeData, $snapshotData));
     }
 }

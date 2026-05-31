@@ -27,7 +27,7 @@ class Lead extends Model
     public function supervisor()         { return $this->belongsTo(User::class, 'assigned_supervisor_id'); }
     public function courseInterest()     { return $this->belongsTo(Course::class, 'course_interest_id'); }
 
-    public function scopeActive($q)   { return $q->whereNotIn('status', ['enrolled', 'lost']); }
+    public function scopeActive($q)   { return $q->whereNotIn('status', ['closed', 'lost', 'not_interested']); }
     public function scopeSearch($q, string $term)
     {
         $like = '%' . $term . '%';

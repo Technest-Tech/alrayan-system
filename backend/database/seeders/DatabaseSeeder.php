@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use App\Models\User;
 use Database\Seeders\System\BillingSeeder;
+use Database\Seeders\System\LeadSeeder;
 use Database\Seeders\System\RolePermissionSeeder;
 use Database\Seeders\System\ScheduleSessionSeeder;
 use Database\Seeders\System\SystemDemoSeeder;
@@ -33,6 +34,7 @@ class DatabaseSeeder extends Seeder
             CourseSeeder::class,
             TeacherSeeder::class,
             SystemDemoSeeder::class,
+            LeadSeeder::class,
             ScheduleSessionSeeder::class,
             BillingSeeder::class,
         ]);

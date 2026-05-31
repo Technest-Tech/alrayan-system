@@ -21,7 +21,7 @@ class LeadFromTrialBookingConverter
             'country'          => $tb->country ?? null,
             'source'           => 'website_form',
             'source_detail'    => $tb->meta['utm_source'] ?? null,
-            'status'           => 'new',
+            'status'           => 'new_lead',
             'trial_booking_id' => $tb->id,
             'payload'          => array_filter([
                 'preferred_time' => $tb->preferred_time ?? null,

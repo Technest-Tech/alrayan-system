@@ -130,7 +130,7 @@ function AdminDashboard() {
               ? <BarChart
                   items={charts.student_growth_12m as unknown as Record<string, number | string>[]}
                   labelKey="month"
-                  valueKey="count"
+                  valueKey="active"
                 />
               : <p className="text-xs opacity-40">No data yet.</p>
           }

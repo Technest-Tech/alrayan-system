@@ -20,9 +20,18 @@ class UserController extends Controller
 {
     public function index(Request $request): JsonResponse
     {
-        $users = User::with('permissions')
+        $filter = $request->input('filter', []);
+        $q      = $filter['q'] ?? null;
+        $role   = $filter['role'] ?? null;
+
+        $users = User::with(['roles', 'permissions', 'teacher'])
+            ->when($q, fn($query) => $query->where(function ($query) use ($q) {
+                $query->where('name', 'like', "%{$q}%")
+                      ->orWhere('email', 'like', "%{$q}%");
+            }))
+            ->when($role, fn($query) => $query->where('role', $role))
             ->orderBy('name')
-            ->paginate(25);
+            ->paginate(50);
 
         return response()->json(UserResource::collection($users)->response()->getData(true));
     }

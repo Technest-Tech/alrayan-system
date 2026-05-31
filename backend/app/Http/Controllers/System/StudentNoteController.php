@@ -33,6 +33,8 @@ class StudentNoteController extends Controller
             'student_id'     => $student->id,
             'author_user_id' => auth()->id(),
             'body'           => $request->body,
+            'note_type'      => $request->input('note_type', 'general'),
+            'pinned'         => $request->boolean('pinned', false),
         ]);
 
         app(\App\Services\System\StudentTimelineRecorder::class)
@@ -44,7 +46,11 @@ class StudentNoteController extends Controller
     public function update(UpdateNoteRequest $request, StudentNote $note): StudentNoteResource
     {
         $this->authorize('update', $note);
-        $note->update(['body' => $request->body]);
+        $note->update(array_filter([
+            'body'      => $request->body,
+            'note_type' => $request->note_type,
+            'pinned'    => $request->has('pinned') ? $request->boolean('pinned') : null,
+        ], fn($v) => $v !== null));
 
         return new StudentNoteResource($note->load('author'));
     }

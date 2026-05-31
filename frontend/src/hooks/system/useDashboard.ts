@@ -28,7 +28,7 @@ export interface DashboardActivity {
 }
 
 export interface RevenuePoint    { month: string; amount: number }
-export interface StudentPoint    { month: string; count: number }
+export interface StudentPoint    { month: string; active: number; new: number; cancelled: number }
 export interface ExpenseSlice    { category: string; amount: number }
 export interface CancellationBar { reason: string; count: number }
 

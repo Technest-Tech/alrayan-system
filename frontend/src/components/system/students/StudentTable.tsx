@@ -4,7 +4,7 @@ import { createPortal } from 'react-dom'
 import { useRouter } from 'next/navigation'
 import {
   MoreHorizontal, ExternalLink, Pencil, MessageCircle,
-  PauseCircle, PlayCircle, XCircle, Rows3, Download,
+  PauseCircle, PlayCircle, XCircle, Rows3, Download, Baby,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import type { Student, StudentStatus } from '@/types/system/student'
@@ -220,18 +220,39 @@ export function StudentTable({ data, isLoading, onRowClick }: StudentTableProps)
       cell: ({ row }) => {
         const s     = row.original
         const color = avatarColor(s.name)
+        const isChild = s.student_type === 'child'
         return (
           <div className="flex items-center gap-3">
-            <div
-              className="flex items-center justify-center w-8 h-8 rounded-full text-white text-xs font-semibold shrink-0 select-none"
-              style={{ background: color }}
-            >
-              {initials(s.name)}
+            <div className="relative shrink-0">
+              <div
+                className="flex items-center justify-center w-8 h-8 rounded-full text-white text-xs font-semibold select-none"
+                style={{ background: color }}
+              >
+                {initials(s.name)}
+              </div>
+              {isChild && (
+                <span
+                  className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full flex items-center justify-center"
+                  style={{ background: 'rgb(14 124 90)', border: '1.5px solid #fff' }}
+                >
+                  <Baby size={8} color="#fff" />
+                </span>
+              )}
             </div>
             <div className="min-w-0">
-              <p className="font-medium truncate" style={{ color: 'rgb(11 31 58)' }}>{s.name}</p>
+              <div className="flex items-center gap-1.5">
+                <p className="font-medium truncate" style={{ color: 'rgb(11 31 58)' }}>{s.name}</p>
+                {isChild && (
+                  <span
+                    className="shrink-0 text-[10px] font-semibold px-1.5 py-0.5 rounded-full leading-none"
+                    style={{ background: 'rgb(14 124 90 / 0.1)', color: 'rgb(14 124 90)' }}
+                  >
+                    Child
+                  </span>
+                )}
+              </div>
               <p className="text-xs truncate" style={{ color: 'rgb(90 100 112)' }}>
-                {s.email ?? s.country}
+                {isChild && s.guardian?.name ? `↳ ${s.guardian.name}` : (s.email ?? s.country)}
               </p>
             </div>
           </div>

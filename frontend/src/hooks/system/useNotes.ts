@@ -1,7 +1,7 @@
 'use client'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { api, type Paginated } from '@/lib/system/api'
-import type { Note } from '@/types/system/note'
+import type { Note, NoteType } from '@/types/system/note'
 
 type NoteContext = 'students' | 'teachers'
 
@@ -15,22 +15,35 @@ export function useNotes(context: NoteContext, entityId: number | string, option
   })
 }
 
+export interface AddNotePayload {
+  body: string
+  note_type?: NoteType
+  pinned?: boolean
+}
+
 export function useAddNote(context: NoteContext, entityId: number | string) {
   const qc = useQueryClient()
   const basePath = context === 'students' ? `/students/${entityId}/notes` : `/teachers/${entityId}/notes`
   return useMutation({
-    mutationFn: (body: string) =>
-      api<{ data: Note }>(basePath, { method: 'POST', body: JSON.stringify({ body }) }).then(r => r.data),
+    mutationFn: (payload: AddNotePayload) =>
+      api<{ data: Note }>(basePath, { method: 'POST', body: JSON.stringify(payload) }).then(r => r.data),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['system', context, entityId, 'notes'] }),
   })
+}
+
+export interface UpdateNotePayload {
+  id: number
+  body?: string
+  note_type?: NoteType
+  pinned?: boolean
 }
 
 export function useUpdateNote(context: NoteContext, entityId: number | string) {
   const qc = useQueryClient()
   const notePathPrefix = context === 'students' ? '/student-notes' : '/teacher-notes'
   return useMutation({
-    mutationFn: ({ id, body }: { id: number; body: string }) =>
-      api<{ data: Note }>(`${notePathPrefix}/${id}`, { method: 'PATCH', body: JSON.stringify({ body }) }).then(r => r.data),
+    mutationFn: ({ id, ...payload }: UpdateNotePayload) =>
+      api<{ data: Note }>(`${notePathPrefix}/${id}`, { method: 'PATCH', body: JSON.stringify(payload) }).then(r => r.data),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['system', context, entityId, 'notes'] }),
   })
 }

@@ -113,12 +113,12 @@ export function SystemShell({ children }: { children: React.ReactNode }) {
         />
         {/* On mobile: no margin (sidebar is an overlay). On desktop: margin matches sidebar width. */}
         <div
-          className={`flex-1 flex flex-col transition-all duration-300 ${
+          className={`flex-1 min-w-0 flex flex-col transition-all duration-300 ${
             collapsed ? 'lg:ml-[72px]' : 'lg:ml-[260px]'
           }`}
         >
           <Topbar onToggleSidebar={() => setMobileOpen(true)} />
-          <main className="flex-1 px-4 py-4 lg:px-6 lg:py-6">
+          <main className="flex-1 min-w-0 px-4 py-4 lg:px-6 lg:py-6 overflow-x-hidden">
             <div className="max-w-[1600px] mx-auto">{children}</div>
           </main>
         </div>
