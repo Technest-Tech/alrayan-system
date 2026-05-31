@@ -28,7 +28,7 @@ class Teacher extends Model
     public function whatsappGroup() { return $this->belongsTo(WhatsAppGroup::class, 'whatsapp_group_id'); }
     public function availability() { return $this->hasMany(TeacherAvailability::class, 'teacher_id')->orderBy('day_of_week')->orderBy('start_time'); }
     public function leaves()       { return $this->hasMany(TeacherLeave::class, 'teacher_id'); }
-    public function notes()          { return $this->hasMany(TeacherNote::class, 'teacher_id')->latest(); }
+    public function notes()          { return $this->hasMany(TeacherNote::class, 'teacher_id')->orderByDesc('pinned')->latest(); }
     public function payrolls()       { return $this->hasMany(Payroll::class); }
     public function qualityReviews() { return $this->hasMany(QualityReview::class); }
 

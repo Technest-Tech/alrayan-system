@@ -24,7 +24,7 @@ export function LeadProfile({ lead }: { lead: LeadDetail }) {
         <div className="text-muted-foreground">Country</div>
         <div>{lead.country ?? '—'}</div>
         <div className="text-muted-foreground">Source</div>
-        <div className="capitalize">{lead.source.replace(/_/g, ' ')}{lead.source_detail ? ` — ${lead.source_detail}` : ''}</div>
+        <div className="capitalize">{(lead.source ?? '').replace(/_/g, ' ')}{lead.source_detail ? ` — ${lead.source_detail}` : ''}</div>
         <div className="text-muted-foreground">Course interest</div>
         <div>{lead.course_interest?.name ?? '—'}</div>
         {lead.trial_booking_id && (
@@ -42,7 +42,7 @@ export function LeadProfile({ lead }: { lead: LeadDetail }) {
       </div>
 
       {/* Actions */}
-      {!['enrolled', 'lost'].includes(lead.status) && (
+      {!['closed', 'lost'].includes(lead.status) && (
         <div className="flex gap-2">
           <LinkButton variant="outline" href={`/students/new?lead=${lead.id}`}>Convert to student</LinkButton>
           <Button variant="ghost" className="text-destructive" onClick={() => setLostOpen(true)}>

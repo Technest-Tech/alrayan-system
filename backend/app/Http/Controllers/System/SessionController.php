@@ -218,6 +218,40 @@ class SessionController extends Controller
         return response()->json(SessionResource::collection($sessions));
     }
 
+    public function checkAvailability(Request $request, Teacher $teacher): JsonResponse
+    {
+        $request->validate([
+            'scheduled_start' => ['required', 'date'],
+            'duration_min'    => ['required', 'integer', 'min:1'],
+        ]);
+
+        $start     = Carbon::parse($request->scheduled_start);
+        $end       = $start->copy()->addMinutes($request->duration_min);
+        $conflicts = $this->detector->check($teacher->id, $start, $end);
+
+        return response()->json([
+            'available' => empty($conflicts),
+            'conflicts' => collect($conflicts)->map(fn ($c) => [
+                'type'    => $c->type,
+                'related' => match ($c->type) {
+                    'teacher_double_booking' => $c->related ? [
+                        'session_id'      => $c->related->id,
+                        'scheduled_start' => $c->related->scheduled_start?->toIso8601String(),
+                        'scheduled_end'   => $c->related->scheduled_end?->toIso8601String(),
+                        'student'         => $c->related->student
+                            ? ['id' => $c->related->student->id, 'name' => $c->related->student->name]
+                            : null,
+                    ] : null,
+                    'teacher_on_leave' => $c->related ? [
+                        'start_date' => $c->related->start_date?->toDateString(),
+                        'end_date'   => $c->related->end_date?->toDateString(),
+                    ] : null,
+                    default => null,
+                },
+            ])->values(),
+        ]);
+    }
+
     public function forTeacher(Teacher $teacher): JsonResponse
     {
         if (auth()->user()->role === 'teacher' && auth()->user()->teacher?->id !== $teacher->id) {

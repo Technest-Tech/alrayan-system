@@ -3,7 +3,6 @@
 namespace App\Services\System;
 
 use App\Models\System\Lead;
-use App\Models\System\Teacher;
 use App\Services\System\Dto\TrialAnalytics;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Cache;
@@ -14,13 +13,13 @@ class TrialAnalyticsBuilder
     {
         $cacheKey = "trials:{$from->toDateString()}:{$to->toDateString()}";
         return Cache::remember($cacheKey, 300, function () use ($from, $to) {
-            $trials = Lead::whereIn('status', ['trial_booked', 'trial_completed', 'enrolled', 'lost'])
+            $trials = Lead::whereIn('status', ['waiting_for_trial', 'waiting_for_payment', 'closed', 'lost'])
                 ->whereBetween('updated_at', [$from, $to])
                 ->get();
 
             $booked    = $trials->count();
-            $completed = $trials->whereIn('status', ['trial_completed', 'enrolled'])->count();
-            $enrolled  = $trials->where('status', 'enrolled')->count();
+            $completed = $trials->whereIn('status', ['waiting_for_payment', 'closed'])->count();
+            $enrolled  = $trials->where('status', 'closed')->count();
 
             return new TrialAnalytics(
                 totalBooked:   $booked,
@@ -38,7 +37,7 @@ class TrialAnalyticsBuilder
     {
         return $trials->groupBy(fn($l) => Carbon::parse($l->updated_at)->format('Y-m'))
             ->map(function ($group, $month) {
-                $enrolled = $group->where('status', 'enrolled')->count();
+                $enrolled = $group->where('status', 'closed')->count();
                 return [
                     'month'           => $month,
                     'booked'          => $group->count(),
@@ -55,7 +54,7 @@ class TrialAnalyticsBuilder
 
     private function bestConvertingTeacher(Carbon $from, Carbon $to): ?array
     {
-        $leads = Lead::where('status', 'enrolled')
+        $leads = Lead::where('status', 'closed')
             ->whereNotNull('assigned_supervisor_id')
             ->whereBetween('updated_at', [$from, $to])
             ->selectRaw('assigned_supervisor_id, COUNT(*) as enrolled_count')

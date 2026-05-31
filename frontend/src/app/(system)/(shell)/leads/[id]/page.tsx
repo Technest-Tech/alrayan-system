@@ -17,10 +17,10 @@ export default function LeadDetailPage({ params }: { params: Promise<{ id: strin
 
   return (
     <>
-      <PageHeader title={lead.name} description={`${lead.source.replace('_', ' ')} · ${lead.country ?? '—'}`}>
+      <PageHeader title={lead.name} description={`${(lead.source ?? '').replace('_', ' ')} · ${lead.country ?? '—'}`}>
         <div className="flex items-center gap-2">
           <LinkButton variant="ghost" href="/leads">← Leads</LinkButton>
-          <Badge variant={lead.status === 'lost' ? 'destructive' : lead.status === 'enrolled' ? 'default' : 'secondary'}>
+          <Badge variant={lead.status === 'lost' ? 'destructive' : lead.status === 'closed' ? 'default' : 'secondary'}>
             {lead.status.replace('_', ' ')}
           </Badge>
         </div>

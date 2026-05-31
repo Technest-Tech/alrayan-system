@@ -15,6 +15,8 @@ class TeacherNoteResource extends JsonResource
             'author_name'    => optional($this->author)->name,
             'author_role'    => optional($this->author)->role,
             'body'           => $this->body,
+            'note_type'      => $this->note_type ?? 'general',
+            'pinned'         => (bool) ($this->pinned ?? false),
             'created_at'     => $this->created_at,
             'updated_at'     => $this->updated_at,
             'deleted_at'     => $this->deleted_at,

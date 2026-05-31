@@ -10,6 +10,7 @@ export interface NavItem {
   href: string
   icon: LucideIcon
   perm: string | null
+  badge?: number
 }
 
 export interface NavSection {

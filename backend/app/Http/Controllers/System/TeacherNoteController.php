@@ -8,7 +8,7 @@ use App\Http\Requests\System\Note\UpdateNoteRequest;
 use App\Http\Resources\System\TeacherNoteResource;
 use App\Models\System\Teacher;
 use App\Models\System\TeacherNote;
-use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class TeacherNoteController extends Controller
 {
@@ -21,7 +21,9 @@ class TeacherNoteController extends Controller
         $notes = $teacher->notes()
             ->with('author')
             ->when($includeTrashed, fn($q) => $q->withTrashed())
-            ->paginate(25);
+            ->orderByDesc('pinned')
+            ->orderByDesc('created_at')
+            ->paginate(50);
 
         return TeacherNoteResource::collection($notes);
     }
@@ -34,6 +36,8 @@ class TeacherNoteController extends Controller
             'teacher_id'     => $teacher->id,
             'author_user_id' => auth()->id(),
             'body'           => $request->body,
+            'note_type'      => $request->input('note_type', 'general'),
+            'pinned'         => $request->boolean('pinned', false),
         ]);
 
         return new TeacherNoteResource($note->load('author'));
@@ -42,7 +46,12 @@ class TeacherNoteController extends Controller
     public function update(UpdateNoteRequest $request, TeacherNote $note): TeacherNoteResource
     {
         $this->authorize('update', $note);
-        $note->update(['body' => $request->body]);
+
+        $note->update(array_filter([
+            'body'      => $request->body,
+            'note_type' => $request->note_type,
+            'pinned'    => $request->has('pinned') ? $request->boolean('pinned') : null,
+        ], fn($v) => $v !== null));
 
         return new TeacherNoteResource($note->load('author'));
     }

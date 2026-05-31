@@ -3,16 +3,15 @@ import { useForm, Controller } from 'react-hook-form'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { ExternalLink, GraduationCap, User, CreditCard, BookOpen } from 'lucide-react'
+import { User, CreditCard, BookOpen } from 'lucide-react'
 import type { Teacher } from '@/types/system/teacher'
 import { useCourses } from '@/hooks/system/useCourses'
+import { WhatsAppInput } from '@/components/system/students/WhatsAppInput'
 
 const schema = z.object({
   name:                    z.string().min(1, 'Name is required'),
   email:                   z.string().email('Valid email required').optional().or(z.literal('')),
-  phone:                   z.string().optional(),
   whatsapp:                z.string().optional(),
-  qualifications:          z.string().optional(),
   cv_url:                  z.string().url('Must be a valid URL').optional().or(z.literal('')),
   teachable_course_ids:    z.array(z.number()).min(1, 'Select at least one course'),
   payment_method:          z.enum(['vodafone_cash', 'instapay', 'wallet_other']),
@@ -63,9 +62,7 @@ export function TeacherForm({ defaultValues, onSubmit, isLoading, isEdit }: Teac
     defaultValues: {
       name:                    defaultValues?.name ?? '',
       email:                   defaultValues?.email ?? '',
-      phone:                   defaultValues?.phone ?? '',
-      whatsapp:                defaultValues?.whatsapp ?? '',
-      qualifications:          defaultValues?.qualifications ?? '',
+      whatsapp:                defaultValues?.whatsapp ?? '+20',
       cv_url:                  defaultValues?.cv_url ?? '',
       teachable_course_ids:    defaultValues?.teachable_course_ids ?? [],
       payment_method:          defaultValues?.payment_method ?? 'vodafone_cash',
@@ -98,47 +95,19 @@ export function TeacherForm({ defaultValues, onSubmit, isLoading, isEdit }: Teac
           )}
 
           <div>
-            <label className="block text-xs font-medium mb-1.5 opacity-60 uppercase tracking-wide">Phone</label>
-            <input className={inputCls} style={inputStyle} placeholder="+20 1XX XXX XXXX" {...register('phone')} />
-          </div>
-
-          <div>
             <label className="block text-xs font-medium mb-1.5 opacity-60 uppercase tracking-wide">WhatsApp</label>
-            <input className={inputCls} style={inputStyle} placeholder="+20 1XX XXX XXXX" {...register('whatsapp')} />
-          </div>
-        </div>
-      </section>
-
-      {/* ── Qualifications ─────────────────────────────── */}
-      <section className="space-y-4">
-        <SectionHeader icon={GraduationCap} title="Qualifications" />
-
-        <div className="space-y-4">
-          <div>
-            <label className="block text-xs font-medium mb-1.5 opacity-60 uppercase tracking-wide">Bio &amp; Background</label>
-            <textarea
-              rows={3}
-              className={inputCls}
-              style={inputStyle}
-              placeholder="Specializations, Ijazah details, certifications…"
-              {...register('qualifications')}
+            <Controller
+              name="whatsapp"
+              control={control}
+              render={({ field }) => (
+                <WhatsAppInput
+                  value={field.value ?? ''}
+                  onChange={field.onChange}
+                  syncDialCode="+20"
+                  inputStyle={inputStyle}
+                />
+              )}
             />
-          </div>
-
-          <div>
-            <label className="block text-xs font-medium mb-1.5 opacity-60 uppercase tracking-wide">CV / Resume URL</label>
-            <div className="relative">
-              <ExternalLink size={14} className="absolute left-3 top-1/2 -translate-y-1/2 opacity-40" />
-              <input
-                type="url"
-                className={inputCls + ' pl-8'}
-                style={inputStyle}
-                placeholder="https://drive.google.com/…"
-                {...register('cv_url')}
-              />
-            </div>
-            <p className="text-xs opacity-40 mt-1">Google Drive, Dropbox, or any public link</p>
-            <FieldError message={errors.cv_url?.message} />
           </div>
         </div>
       </section>
@@ -210,7 +179,7 @@ export function TeacherForm({ defaultValues, onSubmit, isLoading, isEdit }: Teac
         </div>
 
         <div className="max-w-xs">
-          <label className="block text-xs font-medium mb-1.5 opacity-60 uppercase tracking-wide">Hourly Rate</label>
+          <label className="block text-xs font-medium mb-1.5 opacity-60 uppercase tracking-wide">Hourly Rate (EGP / hr)</label>
           <div className="relative">
             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-medium opacity-50 pointer-events-none">EGP</span>
             <input
@@ -222,9 +191,7 @@ export function TeacherForm({ defaultValues, onSubmit, isLoading, isEdit }: Teac
               placeholder="0"
               {...register('hourly_rate')}
             />
-            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs opacity-40 pointer-events-none">/ hr</span>
           </div>
-          <p className="text-xs opacity-40 mt-1.5">30 &amp; 45 min session costs are auto-calculated from this rate</p>
           <FieldError message={errors.hourly_rate?.message} />
         </div>
       </section>

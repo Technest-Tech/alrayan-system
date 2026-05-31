@@ -8,7 +8,7 @@ interface StudentFilters {
   course_id?: string
   assigned_teacher_id?: string
   country?: string
-  age_category?: string
+  student_type?: string
   q?: string
   page?: number
   per_page?: number
@@ -20,7 +20,7 @@ export function useStudents(filters: StudentFilters = {}) {
   if (filters.course_id) params.set('filter[course_id]', filters.course_id)
   if (filters.assigned_teacher_id) params.set('filter[assigned_teacher_id]', filters.assigned_teacher_id)
   if (filters.country) params.set('filter[country]', filters.country)
-  if (filters.age_category) params.set('filter[age_category]', filters.age_category)
+  if (filters.student_type) params.set('filter[student_type]', filters.student_type)
   if (filters.q) params.set('filter[q]', filters.q)
   if (filters.page) params.set('page', String(filters.page))
   if (filters.per_page) params.set('per_page', String(filters.per_page))

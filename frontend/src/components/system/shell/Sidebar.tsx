@@ -83,8 +83,24 @@ export function Sidebar({ collapsed, onToggle, nav, mobileOpen, onMobileClose }:
                         ].join(' ')}
                         style={active ? { background: 'rgb(var(--surface-sidebar-active, 14 124 90))' } : {}}
                       >
-                        <Icon size={18} className="shrink-0" />
-                        {showLabels && <span className="truncate">{item.label}</span>}
+                        {/* Icon — with dot badge when collapsed */}
+                        <span className="relative shrink-0">
+                          <Icon size={18} />
+                          {!showLabels && item.badge ? (
+                            <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-red-500 border-2"
+                                  style={{ borderColor: 'rgb(var(--surface-sidebar, 11 31 58))' }} />
+                          ) : null}
+                        </span>
+                        {showLabels && (
+                          <>
+                            <span className="flex-1 truncate">{item.label}</span>
+                            {item.badge ? (
+                              <span className="ml-auto inline-flex items-center justify-center min-w-[18px] h-[18px] rounded-full bg-red-500 text-white text-[10px] font-bold px-1 shrink-0">
+                                {item.badge > 99 ? '99+' : item.badge}
+                              </span>
+                            ) : null}
+                          </>
+                        )}
                       </Link>
                     </li>
                   )

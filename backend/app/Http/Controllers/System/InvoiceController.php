@@ -62,6 +62,7 @@ class InvoiceController extends Controller
 
     private function createManual(StoreInvoiceRequest $req, Student $student): Invoice
     {
+        $student->loadMissing(['course', 'assignedTeacher.user']);
         $subtotal = collect($req->lines)->sum('line_total_minor');
         $inv = Invoice::create([
             'student_id'         => $student->id,
@@ -75,6 +76,15 @@ class InvoiceController extends Controller
             'issued_at'          => now(),
             'due_at'             => Carbon::parse($req->due_at),
             'created_by_user_id' => auth()->id(),
+            'snapshot'           => [
+                'student_name'         => $student->name,
+                'course_name'          => $student->course?->name,
+                'teacher_name'         => $student->assignedTeacher?->user?->name,
+                'sessions_per_month'   => $student->sessions_per_month,
+                'session_duration_min' => $student->session_duration_min,
+                'currency'             => $student->currency,
+                'description'          => $req->lines[0]['description'] ?? null,
+            ],
         ]);
         foreach ($req->lines as $line) {
             InvoiceLine::create([...$line, 'invoice_id' => $inv->id]);

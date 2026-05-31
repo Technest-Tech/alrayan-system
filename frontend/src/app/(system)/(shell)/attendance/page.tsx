@@ -3,6 +3,7 @@ import { useState, useMemo } from 'react'
 import {
   ChevronLeft, ChevronRight, Calendar, CheckCircle2, XCircle,
   Clock, RefreshCw, Ban, FileText, Video, Users, MoreHorizontal,
+  FlaskConical, BookOpen,
 } from 'lucide-react'
 import { PageHeader } from '@/components/system/primitives/PageHeader'
 import { useSessions, useBulkAttendance, useMarkAttendance } from '@/hooks/system/useSessions'
@@ -116,33 +117,18 @@ function SessionRow({
   const isPending  = markingId === session.id
 
   return (
-    <tr
-      className={`border-b border-gray-100 transition-colors ${
-        selected ? 'bg-primary/[0.03]' : 'hover:bg-gray-50/70'
-      }`}
-    >
-      {/* Color strip */}
+    <tr className={`border-b border-gray-100 transition-colors ${selected ? 'bg-primary/[0.03]' : 'hover:bg-gray-50/70'}`}>
       <td className="w-1 p-0">
         <div className="w-1 h-full min-h-[52px]" style={{ background: cfg.strip }} />
       </td>
-
-      {/* Checkbox */}
       <td className="pl-4 pr-2 py-3 w-8">
         {canMark && (
-          <input
-            type="checkbox"
-            checked={selected}
-            onChange={onToggle}
-            className="w-4 h-4 rounded cursor-pointer accent-secondary"
-          />
+          <input type="checkbox" checked={selected} onChange={onToggle}
+            className="w-4 h-4 rounded cursor-pointer accent-secondary" />
         )}
       </td>
-
-      {/* Time */}
       <td className="px-3 py-3 w-32 whitespace-nowrap">
-        <span className="text-sm font-semibold" style={{ color: '#0B1F3A' }}>
-          {fmtTime(session.scheduled_start)}
-        </span>
+        <span className="text-sm font-semibold" style={{ color: '#0B1F3A' }}>{fmtTime(session.scheduled_start)}</span>
         <span className="mx-1 text-gray-300">–</span>
         <span className="text-sm text-muted-foreground">{fmtTime(session.scheduled_end)}</span>
         <div className="mt-0.5">
@@ -152,8 +138,6 @@ function SessionRow({
           </span>
         </div>
       </td>
-
-      {/* Student */}
       <td className="px-3 py-3">
         <div className="flex items-center gap-2 min-w-0">
           <Avatar name={session.student?.name} />
@@ -162,8 +146,6 @@ function SessionRow({
           </span>
         </div>
       </td>
-
-      {/* Teacher */}
       <td className="px-3 py-3 hidden sm:table-cell">
         <div className="flex items-center gap-2 min-w-0">
           <Avatar name={session.teacher?.name} />
@@ -172,13 +154,7 @@ function SessionRow({
           </span>
         </div>
       </td>
-
-      {/* Status */}
-      <td className="px-3 py-3 w-36">
-        <StatusBadge status={session.status} />
-      </td>
-
-      {/* Report indicator */}
+      <td className="px-3 py-3 w-36"><StatusBadge status={session.status} /></td>
       <td className="px-3 py-3 w-28 hidden md:table-cell">
         {isAttended ? (
           <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium border ${
@@ -186,28 +162,18 @@ function SessionRow({
               ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
               : 'bg-amber-50 text-amber-700 border-amber-200'
           }`}>
-            <FileText size={10} />
-            {session.has_report ? 'Report ✓' : 'No report'}
+            <FileText size={10} />{session.has_report ? 'Report ✓' : 'No report'}
           </span>
-        ) : (
-          <span className="text-xs text-gray-300">—</span>
-        )}
+        ) : <span className="text-xs text-gray-300">—</span>}
       </td>
-
-      {/* Zoom */}
       <td className="px-2 py-3 w-10 hidden lg:table-cell">
         {session.zoom_join_url ? (
-          <a href={session.zoom_join_url} target="_blank" rel="noopener noreferrer"
-             title="Join Zoom"
+          <a href={session.zoom_join_url} target="_blank" rel="noopener noreferrer" title="Join Zoom"
              className="flex items-center justify-center w-7 h-7 rounded-lg hover:bg-blue-50 text-blue-400 transition-colors">
             <Video size={13} />
           </a>
-        ) : (
-          <span className="text-xs text-gray-300">—</span>
-        )}
+        ) : <span className="text-xs text-gray-300">—</span>}
       </td>
-
-      {/* Actions */}
       <td className="pl-2 pr-4 py-3 w-auto">
         <div className="flex items-center justify-end gap-1.5">
           {canMark && (
@@ -250,31 +216,59 @@ function SessionRow({
   )
 }
 
-// ─── page ─────────────────────────────────────────────────────────────────────
+// ─── table thead ──────────────────────────────────────────────────────────────
 
-export default function AttendancePage() {
-  const [currentDate,      setCurrentDate]      = useState(() => new Date())
-  const [activeTab,        setActiveTab]        = useState('all')
-  const [selected,         setSelected]         = useState<number[]>([])
-  const [rescheduleTarget, setRescheduleTarget] = useState<Session | null>(null)
-  const [cancelTarget,     setCancelTarget]     = useState<Session | null>(null)
-  const [drawerSession,    setDrawerSession]    = useState<Session | null>(null)
+function TableHead({ selectableInView, allInViewSelected, onToggleAll }: {
+  selectableInView: number[]
+  allInViewSelected: boolean
+  onToggleAll: () => void
+}) {
+  return (
+    <thead>
+      <tr className="border-b border-gray-100" style={{ background: '#F8F9FB' }}>
+        <th className="w-1 p-0" />
+        <th className="pl-4 pr-2 py-2.5 w-8">
+          {selectableInView.length > 0 && (
+            <input type="checkbox" checked={allInViewSelected} onChange={onToggleAll}
+              className="w-4 h-4 rounded cursor-pointer accent-secondary" title="Select all pending" />
+          )}
+        </th>
+        <th className="px-3 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide w-36">Time</th>
+        <th className="px-3 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Student</th>
+        <th className="px-3 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide hidden sm:table-cell">Teacher</th>
+        <th className="px-3 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide w-36">Status</th>
+        <th className="px-3 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide w-28 hidden md:table-cell">Report</th>
+        <th className="px-2 py-2.5 w-10 hidden lg:table-cell" />
+        <th className="pl-2 pr-4 py-2.5 text-right text-xs font-semibold text-gray-500 uppercase tracking-wide">Actions</th>
+      </tr>
+    </thead>
+  )
+}
 
-  const dateStr = currentDate.toISOString().split('T')[0]
-  const isToday = dateStr === new Date().toISOString().split('T')[0]
+// ─── session section ──────────────────────────────────────────────────────────
 
-  const { data: result, isLoading, refetch } = useSessions({
-    from: `${dateStr}T00:00:00Z`,
-    to:   `${dateStr}T23:59:59Z`,
-    per_page: 200,
-  })
-
-  const sessions: Session[] = (result as any)?.data ?? []
+function SessionSection({
+  title, Icon: SectionIcon, accentColor, emptyLabel,
+  sessions, isLoading, refetch,
+  onReschedule, onCancel, onView,
+}: {
+  title: string
+  Icon: React.ElementType
+  accentColor: string
+  emptyLabel: string
+  sessions: Session[]
+  isLoading: boolean
+  refetch: () => void
+  onReschedule: (s: Session) => void
+  onCancel: (s: Session) => void
+  onView: (s: Session) => void
+}) {
+  const [activeTab, setActiveTab] = useState('all')
+  const [selected,  setSelected]  = useState<number[]>([])
   const bulkMark   = useBulkAttendance()
   const markSingle = useMarkAttendance()
 
   const stats = useMemo(() => ({
-    total:    sessions.length,
     pending:  sessions.filter(s => s.status === 'scheduled' || s.status === 'pending_substitute').length,
     attended: sessions.filter(s => s.status === 'attended').length,
     absent:   sessions.filter(s => s.status === 'absent').length,
@@ -284,31 +278,18 @@ export default function AttendancePage() {
   const filtered = useMemo(() => {
     const tab = FILTER_TABS.find(t => t.key === activeTab)
     const list = tab?.statuses ? sessions.filter(s => tab.statuses!.includes(s.status)) : sessions
-    return [...list].sort((a, b) =>
-      new Date(a.scheduled_start).getTime() - new Date(b.scheduled_start).getTime()
-    )
+    return [...list].sort((a, b) => new Date(a.scheduled_start).getTime() - new Date(b.scheduled_start).getTime())
   }, [sessions, activeTab])
 
-  const pendingIds = useMemo(
-    () => sessions.filter(s => s.status === 'scheduled' || s.status === 'pending_substitute').map(s => s.id),
-    [sessions]
-  )
+  const pendingIds       = useMemo(() => sessions.filter(s => s.status === 'scheduled' || s.status === 'pending_substitute').map(s => s.id), [sessions])
   const selectableInView = filtered.filter(s => s.status === 'scheduled' || s.status === 'pending_substitute').map(s => s.id)
   const allInViewSelected = selectableInView.length > 0 && selectableInView.every(id => selected.includes(id))
+  const markingId = markSingle.isPending ? ((markSingle.variables as { id?: number } | undefined)?.id ?? null) : null
 
-  const completionPct = stats.total > 0
-    ? Math.round(((stats.attended + stats.absent + stats.closed) / stats.total) * 100)
-    : 0
-
-  function toggle(id: number) {
-    setSelected(p => p.includes(id) ? p.filter(x => x !== id) : [...p, id])
-  }
+  function toggle(id: number) { setSelected(p => p.includes(id) ? p.filter(x => x !== id) : [...p, id]) }
   function toggleAllInView() {
-    if (allInViewSelected) {
-      setSelected(p => p.filter(id => !selectableInView.includes(id)))
-    } else {
-      setSelected(p => [...new Set([...p, ...selectableInView])])
-    }
+    if (allInViewSelected) setSelected(p => p.filter(id => !selectableInView.includes(id)))
+    else setSelected(p => [...new Set([...p, ...selectableInView])])
   }
   function bulkAction(status: 'attended' | 'absent') {
     bulkMark.mutate(
@@ -319,12 +300,198 @@ export default function AttendancePage() {
   function markOne(session: Session, status: 'attended' | 'absent') {
     markSingle.mutate({ id: session.id, status }, { onSuccess: () => refetch() })
   }
+
+  return (
+    <div className="space-y-3">
+
+      {/* Section header */}
+      <div className="flex items-center justify-between gap-4">
+        <div className="flex items-center gap-2.5">
+          <div className="w-7 h-7 rounded-lg flex items-center justify-center"
+               style={{ background: `${accentColor}18` }}>
+            <SectionIcon size={14} style={{ color: accentColor }} />
+          </div>
+          <h2 className="text-sm font-semibold" style={{ color: '#0B1F3A' }}>{title}</h2>
+          <span className="inline-flex items-center justify-center min-w-[22px] h-[22px] rounded-full text-[11px] font-bold px-1.5"
+                style={{ background: `${accentColor}15`, color: accentColor }}>
+            {sessions.length}
+          </span>
+          {stats.pending > 0 && (
+            <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200">
+              <Clock size={9} />{stats.pending} pending
+            </span>
+          )}
+        </div>
+
+        {/* Mini stat pills */}
+        <div className="hidden sm:flex items-center gap-2">
+          {stats.attended > 0 && (
+            <span className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-100">
+              {stats.attended} attended
+            </span>
+          )}
+          {stats.absent > 0 && (
+            <span className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-red-50 text-red-600 border border-red-100">
+              {stats.absent} absent
+            </span>
+          )}
+          {stats.closed > 0 && (
+            <span className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-gray-50 text-gray-500 border border-gray-100">
+              {stats.closed} closed
+            </span>
+          )}
+        </div>
+      </div>
+
+      {/* Filter tabs + bulk actions */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-1 p-1 bg-gray-100 rounded-xl">
+          {FILTER_TABS.map(tab => {
+            const count = tab.statuses ? sessions.filter(s => tab.statuses!.includes(s.status)).length : sessions.length
+            const active = activeTab === tab.key
+            return (
+              <button key={tab.key} onClick={() => setActiveTab(tab.key)}
+                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                  active ? 'bg-white shadow-sm' : 'text-muted-foreground hover:text-foreground'
+                }`}
+                style={active ? { color: '#0B1F3A' } : {}}>
+                {tab.label}
+                {count > 0 && (
+                  <span className={`ml-1.5 text-[10px] px-1.5 py-0.5 rounded-full font-semibold ${
+                    active ? 'bg-secondary/10 text-secondary' : 'bg-gray-200 text-gray-500'
+                  }`}>{count}</span>
+                )}
+              </button>
+            )
+          })}
+        </div>
+
+        {selected.length > 0 && (
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-muted-foreground">{selected.length} selected</span>
+            <button onClick={() => bulkAction('attended')} disabled={bulkMark.isPending}
+              className="h-8 px-3 rounded-lg text-xs font-semibold bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-50 transition-colors">
+              {bulkMark.isPending ? 'Saving…' : '✓ Attended'}
+            </button>
+            <button onClick={() => bulkAction('absent')} disabled={bulkMark.isPending}
+              className="h-8 px-3 rounded-lg text-xs font-semibold bg-red-50 text-red-600 hover:bg-red-100 border border-red-200 disabled:opacity-50 transition-colors">
+              ✗ Absent
+            </button>
+            <button onClick={() => setSelected([])}
+              className="h-8 px-3 rounded-lg text-xs text-muted-foreground hover:bg-gray-100 border border-gray-200 transition-colors">
+              Clear
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* Table */}
+      <div className="bg-white rounded-xl border overflow-hidden">
+        {isLoading ? (
+          <div className="divide-y">
+            {[1, 2, 3].map(i => (
+              <div key={i} className="flex items-center gap-4 px-5 py-4">
+                <div className="w-4 h-4 rounded bg-gray-100 animate-pulse" />
+                <div className="w-20 h-4 rounded bg-gray-100 animate-pulse" />
+                <div className="w-32 h-4 rounded bg-gray-100 animate-pulse" />
+                <div className="w-32 h-4 rounded bg-gray-100 animate-pulse" />
+                <div className="w-20 h-5 rounded-full bg-gray-100 animate-pulse ml-auto" />
+              </div>
+            ))}
+          </div>
+        ) : filtered.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-10 gap-3">
+            <div className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center">
+              <Calendar size={16} className="text-gray-400" />
+            </div>
+            <p className="text-sm text-muted-foreground">
+              {sessions.length === 0 ? emptyLabel : 'No sessions match this filter'}
+            </p>
+          </div>
+        ) : (
+          <table className="w-full text-sm border-collapse">
+            <TableHead
+              selectableInView={selectableInView}
+              allInViewSelected={allInViewSelected}
+              onToggleAll={toggleAllInView}
+            />
+            <tbody>
+              {filtered.map(session => (
+                <SessionRow
+                  key={session.id}
+                  session={session}
+                  selected={selected.includes(session.id)}
+                  markingId={markingId}
+                  onToggle={() => toggle(session.id)}
+                  onAttended={() => markOne(session, 'attended')}
+                  onAbsent={() => markOne(session, 'absent')}
+                  onReschedule={() => onReschedule(session)}
+                  onCancel={() => onCancel(session)}
+                  onView={() => onView(session)}
+                />
+              ))}
+            </tbody>
+          </table>
+        )}
+
+        {!isLoading && filtered.length > 0 && (
+          <div className="px-5 py-2.5 border-t border-gray-100 flex items-center justify-between"
+               style={{ background: '#F8F9FB' }}>
+            <span className="text-xs text-muted-foreground">
+              {filtered.length} session{filtered.length !== 1 ? 's' : ''}
+              {pendingIds.length > 0 && (
+                <> · <span className="font-medium text-amber-600">{pendingIds.length} pending</span></>
+              )}
+            </span>
+            {selected.length > 0 && (
+              <span className="text-xs font-medium" style={{ color: '#0B1F3A' }}>{selected.length} selected</span>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+// ─── page ─────────────────────────────────────────────────────────────────────
+
+export default function AttendancePage() {
+  const [currentDate,      setCurrentDate]      = useState(() => new Date())
+  const [rescheduleTarget, setRescheduleTarget] = useState<Session | null>(null)
+  const [cancelTarget,     setCancelTarget]     = useState<Session | null>(null)
+  const [drawerSession,    setDrawerSession]    = useState<Session | null>(null)
+
+  const dateStr = currentDate.toISOString().split('T')[0]
+  const isToday = dateStr === new Date().toISOString().split('T')[0]
+
+  const { data: result, isLoading, refetch } = useSessions({
+    from:     `${dateStr}T00:00:00Z`,
+    to:       `${dateStr}T23:59:59Z`,
+    per_page: 200,
+  })
+
+  const sessions: Session[] = (result as { data?: Session[] } | undefined)?.data ?? []
+
+  // Split: trial students vs regular students
+  const trialSessions   = useMemo(() => sessions.filter(s => s.student?.status === 'trial'), [sessions])
+  const regularSessions = useMemo(() => sessions.filter(s => s.student?.status !== 'trial'), [sessions])
+
+  // Combined stats for top bar
+  const stats = useMemo(() => ({
+    total:    sessions.length,
+    pending:  sessions.filter(s => s.status === 'scheduled' || s.status === 'pending_substitute').length,
+    attended: sessions.filter(s => s.status === 'attended').length,
+    absent:   sessions.filter(s => s.status === 'absent').length,
+    closed:   sessions.filter(s => s.status === 'cancelled' || s.status === 'rescheduled').length,
+  }), [sessions])
+
+  const completionPct = stats.total > 0
+    ? Math.round(((stats.attended + stats.absent + stats.closed) / stats.total) * 100)
+    : 0
+
   function navigateDate(days: number) {
     setCurrentDate(d => shiftDate(d, days))
-    setSelected([])
   }
-
-  const markingId = markSingle.isPending ? ((markSingle.variables as any)?.id ?? null) : null
 
   return (
     <>
@@ -351,7 +518,7 @@ export default function AttendancePage() {
                 <ChevronLeft size={16} />
               </button>
               {!isToday && (
-                <button onClick={() => { setCurrentDate(new Date()); setSelected([]) }}
+                <button onClick={() => setCurrentDate(new Date())}
                   className="h-9 px-3 rounded-lg border bg-white text-sm font-medium hover:bg-gray-50 transition-colors"
                   style={{ color: '#0B1F3A' }}>
                   Today
@@ -360,7 +527,7 @@ export default function AttendancePage() {
               <input
                 type="date"
                 value={dateStr}
-                onChange={e => { setCurrentDate(new Date(e.target.value + 'T12:00:00')); setSelected([]) }}
+                onChange={e => setCurrentDate(new Date(e.target.value + 'T12:00:00'))}
                 className="h-9 px-3 rounded-lg border bg-white text-sm cursor-pointer hover:bg-gray-50 transition-colors"
               />
               <button onClick={() => navigateDate(1)}
@@ -371,7 +538,7 @@ export default function AttendancePage() {
           }
         />
 
-        {/* ── Stats ── */}
+        {/* ── Combined stats ── */}
         <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
           <StatCard label="Total"     value={stats.total}    icon={Users}        color="#0B1F3A" />
           <StatCard label="Pending"   value={stats.pending}  icon={Clock}        color="#0E7C5A" />
@@ -392,10 +559,7 @@ export default function AttendancePage() {
               </div>
               <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
                 <div className="h-full rounded-full transition-all duration-500"
-                     style={{
-                       width: `${completionPct}%`,
-                       background: completionPct === 100 ? '#0E7C5A' : '#1E5AAB',
-                     }} />
+                     style={{ width: `${completionPct}%`, background: completionPct === 100 ? '#0E7C5A' : '#1E5AAB' }} />
               </div>
             </div>
             <div className="text-xl font-bold shrink-0 tabular-nums w-12 text-right"
@@ -405,158 +569,56 @@ export default function AttendancePage() {
           </div>
         )}
 
-        {/* ── Filter tabs + bulk bar ── */}
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          {/* Tabs */}
-          <div className="flex items-center gap-1 p-1 bg-gray-100 rounded-xl">
-            {FILTER_TABS.map(tab => {
-              const count = tab.statuses
-                ? sessions.filter(s => tab.statuses!.includes(s.status)).length
-                : sessions.length
-              const active = activeTab === tab.key
-              return (
-                <button key={tab.key} onClick={() => setActiveTab(tab.key)}
-                  className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
-                    active ? 'bg-white shadow-sm' : 'text-muted-foreground hover:text-foreground'
-                  }`}
-                  style={active ? { color: '#0B1F3A' } : {}}>
-                  {tab.label}
-                  {count > 0 && (
-                    <span className={`ml-1.5 text-[10px] px-1.5 py-0.5 rounded-full font-semibold ${
-                      active ? 'bg-secondary/10 text-secondary' : 'bg-gray-200 text-gray-500'
-                    }`}>
-                      {count}
-                    </span>
-                  )}
-                </button>
-              )
-            })}
+        {/* ── No sessions at all ── */}
+        {!isLoading && sessions.length === 0 && (
+          <div className="bg-white rounded-xl border flex flex-col items-center justify-center py-16 gap-3">
+            <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
+              <Calendar size={18} className="text-gray-400" />
+            </div>
+            <div className="text-center">
+              <p className="text-sm font-medium" style={{ color: '#0B1F3A' }}>No sessions on this day</p>
+              <p className="text-xs text-muted-foreground mt-0.5">{fmtDate(currentDate)}</p>
+            </div>
           </div>
+        )}
 
-          {/* Bulk actions — only visible when rows selected */}
-          {selected.length > 0 && (
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-muted-foreground">{selected.length} selected</span>
-              <button onClick={() => bulkAction('attended')} disabled={bulkMark.isPending}
-                className="h-8 px-3 rounded-lg text-xs font-semibold bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-50 transition-colors">
-                {bulkMark.isPending ? 'Saving…' : '✓ Attended'}
-              </button>
-              <button onClick={() => bulkAction('absent')} disabled={bulkMark.isPending}
-                className="h-8 px-3 rounded-lg text-xs font-semibold bg-red-50 text-red-600 hover:bg-red-100 border border-red-200 disabled:opacity-50 transition-colors">
-                ✗ Absent
-              </button>
-              <button onClick={() => setSelected([])}
-                className="h-8 px-3 rounded-lg text-xs text-muted-foreground hover:bg-gray-100 border border-gray-200 transition-colors">
-                Clear
-              </button>
-            </div>
-          )}
-        </div>
+        {/* ── Trial Classes section ── */}
+        {(isLoading || trialSessions.length > 0) && (
+          <SessionSection
+            title="Trial Classes"
+            Icon={FlaskConical}
+            accentColor="#7C3AED"
+            emptyLabel="No trial classes on this day"
+            sessions={trialSessions}
+            isLoading={isLoading}
+            refetch={refetch}
+            onReschedule={setRescheduleTarget}
+            onCancel={setCancelTarget}
+            onView={setDrawerSession}
+          />
+        )}
 
-        {/* ── Table ── */}
-        <div className="bg-white rounded-xl border overflow-hidden">
-          {isLoading ? (
-            <div className="divide-y">
-              {[1, 2, 3, 4, 5, 6].map(i => (
-                <div key={i} className="flex items-center gap-4 px-5 py-4">
-                  <div className="w-4 h-4 rounded bg-gray-100 animate-pulse" />
-                  <div className="w-20 h-4 rounded bg-gray-100 animate-pulse" />
-                  <div className="w-32 h-4 rounded bg-gray-100 animate-pulse" />
-                  <div className="w-32 h-4 rounded bg-gray-100 animate-pulse" />
-                  <div className="w-20 h-5 rounded-full bg-gray-100 animate-pulse ml-auto" />
-                </div>
-              ))}
-            </div>
-          ) : filtered.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-16 gap-3">
-              <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
-                <Calendar size={18} className="text-gray-400" />
-              </div>
-              <div className="text-center">
-                <p className="text-sm font-medium" style={{ color: '#0B1F3A' }}>
-                  {sessions.length === 0 ? 'No sessions on this day' : 'No sessions match this filter'}
-                </p>
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  {sessions.length === 0 ? fmtDate(currentDate) : 'Try a different tab'}
-                </p>
-              </div>
-            </div>
-          ) : (
-            <table className="w-full text-sm border-collapse">
-              <thead>
-                <tr className="border-b border-gray-100" style={{ background: '#F8F9FB' }}>
-                  {/* strip */}
-                  <th className="w-1 p-0" />
-                  {/* checkbox */}
-                  <th className="pl-4 pr-2 py-2.5 w-8">
-                    {selectableInView.length > 0 && (
-                      <input
-                        type="checkbox"
-                        checked={allInViewSelected}
-                        onChange={toggleAllInView}
-                        className="w-4 h-4 rounded cursor-pointer accent-secondary"
-                        title="Select all pending"
-                      />
-                    )}
-                  </th>
-                  <th className="px-3 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide w-36">
-                    Time
-                  </th>
-                  <th className="px-3 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                    Student
-                  </th>
-                  <th className="px-3 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide hidden sm:table-cell">
-                    Teacher
-                  </th>
-                  <th className="px-3 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide w-36">
-                    Status
-                  </th>
-                  <th className="px-3 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide w-28 hidden md:table-cell">
-                    Report
-                  </th>
-                  <th className="px-2 py-2.5 w-10 hidden lg:table-cell" />
-                  <th className="pl-2 pr-4 py-2.5 text-right text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.map(session => (
-                  <SessionRow
-                    key={session.id}
-                    session={session}
-                    selected={selected.includes(session.id)}
-                    markingId={markingId}
-                    onToggle={() => toggle(session.id)}
-                    onAttended={() => markOne(session, 'attended')}
-                    onAbsent={() => markOne(session, 'absent')}
-                    onReschedule={() => setRescheduleTarget(session)}
-                    onCancel={() => setCancelTarget(session)}
-                    onView={() => setDrawerSession(session)}
-                  />
-                ))}
-              </tbody>
-            </table>
-          )}
+        {/* ── Divider (only when both sections exist) ── */}
+        {!isLoading && trialSessions.length > 0 && regularSessions.length > 0 && (
+          <hr className="border-gray-200" />
+        )}
 
-          {/* Table footer */}
-          {!isLoading && filtered.length > 0 && (
-            <div className="px-5 py-2.5 border-t border-gray-100 flex items-center justify-between"
-                 style={{ background: '#F8F9FB' }}>
-              <span className="text-xs text-muted-foreground">
-                {filtered.length} session{filtered.length !== 1 ? 's' : ''}
-                {pendingIds.length > 0 && (
-                  <> · <span className="font-medium text-amber-600">{pendingIds.length} pending</span></>
-                )}
-              </span>
-              {selected.length > 0 && (
-                <span className="text-xs font-medium" style={{ color: '#0B1F3A' }}>
-                  {selected.length} selected
-                </span>
-              )}
-            </div>
-          )}
-        </div>
+        {/* ── Regular Sessions section ── */}
+        {(isLoading || regularSessions.length > 0) && (
+          <SessionSection
+            title="Regular Sessions"
+            Icon={BookOpen}
+            accentColor="#0E7C5A"
+            emptyLabel="No regular sessions on this day"
+            sessions={regularSessions}
+            isLoading={isLoading}
+            refetch={refetch}
+            onReschedule={setRescheduleTarget}
+            onCancel={setCancelTarget}
+            onView={setDrawerSession}
+          />
+        )}
+
       </div>
 
       {/* ── Panels ── */}

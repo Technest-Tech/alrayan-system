@@ -5,6 +5,7 @@ export interface SessionRef {
   id: number
   name: string | null
   timezone?: string
+  status?: string
 }
 
 export interface Session {

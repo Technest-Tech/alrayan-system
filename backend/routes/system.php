@@ -31,6 +31,7 @@ use App\Http\Controllers\System\SavedViewController;
 use App\Http\Controllers\System\SchedulePatternController;
 use App\Http\Controllers\System\SessionController;
 use App\Http\Controllers\System\SessionReportController;
+use App\Http\Controllers\System\GuardianController;
 use App\Http\Controllers\System\StudentController;
 use App\Http\Controllers\System\StudentFamilyController;
 use App\Http\Controllers\System\StudentNoteController;
@@ -40,6 +41,7 @@ use App\Http\Controllers\System\TeacherAvailabilityController;
 use App\Http\Controllers\System\TeacherController;
 use App\Http\Controllers\System\TeacherLeaveController;
 use App\Http\Controllers\System\TeacherNoteController;
+use App\Http\Controllers\System\TeacherReportController;
 use App\Http\Controllers\System\UserController;
 use App\Http\Controllers\System\WalletController;
 use App\Http\Controllers\System\WassenderIntegrationController;
@@ -105,9 +107,10 @@ Route::prefix('system')->name('system.')->group(function () {
             Route::post('/teachers/{teacher}/activate',      [TeacherController::class, 'activate'])->name('teachers.activate');
             Route::post('/teachers/{teacher}/deactivate',    [TeacherController::class, 'deactivate'])->name('teachers.deactivate');
         });
-        Route::post('/teachers/{teacher}/notes', [TeacherNoteController::class, 'store'])->name('teachers.notes.store');
-        Route::patch('/teacher-notes/{note}',    [TeacherNoteController::class, 'update'])->name('teacher-notes.update');
-        Route::delete('/teacher-notes/{note}',   [TeacherNoteController::class, 'destroy'])->name('teacher-notes.destroy');
+        Route::post('/teachers/{teacher}/notes',          [TeacherNoteController::class, 'store'])->name('teachers.notes.store');
+        Route::patch('/teacher-notes/{note}',             [TeacherNoteController::class, 'update'])->name('teacher-notes.update');
+        Route::delete('/teacher-notes/{note}',            [TeacherNoteController::class, 'destroy'])->name('teacher-notes.destroy');
+        Route::get('/teachers/{teacher}/report-summary',  [TeacherReportController::class, 'summary'])->name('teachers.report-summary');
 
         // Teacher leaves
         Route::get('/teacher-leaves',                        [TeacherLeaveController::class, 'index'])->name('teacher-leaves.index');
@@ -117,13 +120,21 @@ Route::prefix('system')->name('system.')->group(function () {
             Route::post('/teacher-leaves/{leave}/reject',    [TeacherLeaveController::class, 'reject'])->name('teacher-leaves.reject');
         });
 
+        // Guardians
+        Route::middleware('system.can:students.view')->get('/guardians', [GuardianController::class, 'index'])->name('guardians.index');
+        Route::middleware('system.can:students.create')->post('/guardians', [GuardianController::class, 'store'])->name('guardians.store');
+
         // Students
         Route::middleware('system.can:students.view')->group(function () {
+            Route::get('/guardians',          [GuardianController::class, 'index'])->name('guardians.index');
             Route::get('/students',           [StudentController::class, 'index'])->name('students.index');
             Route::get('/students/{student}', [StudentController::class, 'show'])->name('students.show');
             Route::get('/students/{student}/notes', [StudentNoteController::class, 'index'])->name('students.notes.index');
         });
-        Route::middleware('system.can:students.create')->post('/students', [StudentController::class, 'store'])->name('students.store');
+        Route::middleware('system.can:students.create')->group(function () {
+            Route::post('/guardians', [GuardianController::class, 'store'])->name('guardians.store');
+            Route::post('/students', [StudentController::class, 'store'])->name('students.store');
+        });
         Route::middleware('system.can:students.edit')->group(function () {
             Route::patch('/students/{student}',                          [StudentController::class, 'update'])->name('students.update');
             Route::post('/students/{student}/siblings',                  [StudentFamilyController::class, 'store'])->name('students.siblings.store');
@@ -171,8 +182,10 @@ Route::prefix('system')->name('system.')->group(function () {
         Route::middleware('system.can:schedule.edit')->put('/students/{student}/schedule-patterns', [SchedulePatternController::class, 'replace'])->name('schedule-patterns.replace');
 
         // Teacher sessions + reports
-        Route::get('/teachers/{teacher}/sessions', [SessionController::class, 'forTeacher'])->name('teachers.sessions');
-        Route::get('/teachers/{teacher}/reports',  [SessionReportController::class, 'forTeacher'])->name('teachers.reports');
+        Route::get('/teachers/{teacher}/sessions',             [SessionController::class, 'forTeacher'])->name('teachers.sessions');
+        Route::post('/teachers/{teacher}/check-availability',  [SessionController::class, 'checkAvailability'])->name('teachers.check-availability');
+        Route::get('/teachers/{teacher}/reports',              [SessionReportController::class, 'forTeacher'])->name('teachers.reports');
+        Route::get('/teachers/{teacher}/report-summary',       [TeacherReportController::class, 'summary'])->name('teachers.report-summary');
 
         // Session reports
         Route::middleware('system.can:reports.view_any')->get('/session-reports', [SessionReportController::class, 'index'])->name('session-reports.index');

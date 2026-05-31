@@ -23,9 +23,15 @@ class InvoiceResource extends JsonResource
             'issued_at'           => $this->issued_at?->toISOString(),
             'due_at'              => $this->due_at?->toISOString(),
             'paid_at'             => $this->paid_at?->toISOString(),
+            'snapshot'            => $this->snapshot,
+            'description'         => $this->snapshot['description'] ?? null,
             'student'             => $this->whenLoaded('student', fn() => [
-                'id'   => $this->student->id,
-                'name' => $this->student->name,
+                'id'       => $this->student->id,
+                'name'     => $this->student->name,
+                'email'    => $this->student->email,
+                'phone'    => $this->student->phone,
+                'whatsapp' => $this->student->whatsapp,
+                'currency' => $this->student->currency,
             ]),
         ];
     }

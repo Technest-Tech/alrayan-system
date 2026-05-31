@@ -30,6 +30,7 @@ class SessionResource extends JsonResource
                 'id'      => $this->student->id,
                 'name'    => $this->student->name,
                 'timezone'=> $this->student->timezone,
+                'status'  => $this->student->status,
             ]),
             'teacher'                  => $this->whenLoaded('teacher', fn () => [
                 'id'   => $this->teacher->id,

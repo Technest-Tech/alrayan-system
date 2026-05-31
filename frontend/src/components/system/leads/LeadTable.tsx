@@ -13,12 +13,13 @@ import { ApiError } from '@/lib/system/api'
 
 /* ─── Status styling ──────────────────────────── */
 const STATUS_STYLES: Record<string, { bg: string; color: string; label: string }> = {
-  new:              { bg: 'rgb(30 90 171 / 0.1)',   color: 'rgb(30 90 171)',   label: 'New' },
-  contacted:        { bg: 'rgb(154 113 23 / 0.1)',  color: 'rgb(154 113 23)',  label: 'Contacted' },
-  trial_booked:     { bg: 'rgb(101 56 182 / 0.1)',  color: 'rgb(101 56 182)', label: 'Trial Booked' },
-  trial_completed:  { bg: 'rgb(14 124 90 / 0.1)',   color: 'rgb(14 124 90)',   label: 'Trial Done' },
-  enrolled:         { bg: 'rgb(14 124 90 / 0.12)',  color: 'rgb(14 124 90)',   label: 'Enrolled' },
-  lost:             { bg: 'rgb(90 100 112 / 0.1)',  color: 'rgb(90 100 112)',  label: 'Lost' },
+  new_lead:            { bg: 'rgb(30 90 171 / 0.1)',   color: 'rgb(30 90 171)',   label: 'New Lead' },
+  interested:          { bg: 'rgb(14 124 90 / 0.1)',   color: 'rgb(14 124 90)',   label: 'Interested' },
+  waiting_for_trial:   { bg: 'rgb(180 120 0 / 0.1)',   color: 'rgb(140 95 0)',    label: 'Waiting for Trial' },
+  waiting_for_payment: { bg: 'rgb(220 60 40 / 0.1)',   color: 'rgb(180 40 20)',   label: 'Waiting for Payment' },
+  closed:              { bg: 'rgb(14 124 90 / 0.12)',  color: 'rgb(14 124 90)',   label: 'Closed' },
+  not_interested:      { bg: 'rgb(190 24 93 / 0.1)',   color: 'rgb(190 24 93)',   label: 'Not Interested' },
+  lost:                { bg: 'rgb(90 100 112 / 0.1)',  color: 'rgb(90 100 112)',  label: 'Lost' },
 }
 
 const SOURCE_LABELS: Record<string, string> = {
@@ -89,7 +90,7 @@ function LeadRowActions({ lead }: { lead: Lead }) {
         <MenuItem icon={<MessageCircle size={14} />} label="Open WhatsApp"
           onClick={() => { setOpen(false); window.open(`https://wa.me/${lead.whatsapp!.replace(/\D/g, '')}`, '_blank') }} />
       )}
-      {lead.status !== 'lost' && lead.status !== 'enrolled' && (
+      {lead.status !== 'lost' && lead.status !== 'closed' && (
         <>
           <div className="my-1 border-t" style={{ borderColor: 'rgb(var(--border-default,229 233 240))' }} />
           <MenuItem icon={<XCircle size={14} />} label="Mark as lost" onClick={handleMarkLost} danger />
@@ -185,7 +186,7 @@ export function LeadTable({ leads, isLoading, filters, onFiltersChange }: Props)
           className="text-xs font-medium px-2 py-0.5 rounded-md"
           style={{ background: 'rgb(244 246 250)', color: 'rgb(11 31 58)' }}
         >
-          {SOURCE_LABELS[row.original.source] ?? row.original.source}
+          {(row.original.source ? SOURCE_LABELS[row.original.source] : null) ?? row.original.source}
         </span>
       ),
     },

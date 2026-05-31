@@ -35,6 +35,8 @@ class LeadController extends Controller
             ->allowedFilters([
                 AllowedFilter::exact('status'),
                 AllowedFilter::exact('source'),
+                AllowedFilter::exact('platform'),
+                AllowedFilter::exact('priority'),
                 AllowedFilter::exact('assigned_supervisor_id'),
                 AllowedFilter::exact('course_interest_id'),
                 AllowedFilter::scope('q', 'search'),
@@ -51,7 +53,7 @@ class LeadController extends Controller
     public function show(Lead $lead): LeadDetailResource
     {
         $this->authorize('view', $lead);
-        $lead->load(['supervisor', 'courseInterest', 'followUps.actor', 'trialBooking', 'convertedToStudent']);
+        $lead->load(['supervisor', 'courseInterest', 'followUps.actor', 'trialBooking', 'convertedToStudent', 'activities.causer']);
         return new LeadDetailResource($lead);
     }
 
@@ -89,7 +91,7 @@ class LeadController extends Controller
     {
         $this->authorize('convert', $lead);
 
-        if ($lead->status === 'enrolled') {
+        if ($lead->status === 'closed') {
             return response()->json(['message' => 'Lead is already converted.'], 422);
         }
 

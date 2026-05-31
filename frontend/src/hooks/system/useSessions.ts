@@ -107,3 +107,37 @@ export function useSessionConflicts() {
     queryFn:  () => api<Array<{ session: Session; conflicts: Array<{ type: string }> }>>('/sessions/conflicts'),
   })
 }
+
+interface AvailabilityConflict {
+  type: 'teacher_double_booking' | 'teacher_on_leave' | 'teacher_unavailable'
+  related?: {
+    session_id?: number
+    scheduled_start?: string
+    scheduled_end?: string
+    student?: { id: number; name: string }
+    start_date?: string
+    end_date?: string
+  } | null
+}
+
+interface AvailabilityResult {
+  available: boolean
+  conflicts: AvailabilityConflict[]
+}
+
+export function useCheckTeacherAvailability(params: {
+  teacher_id: number
+  scheduled_start: string
+  duration_min: number
+} | null) {
+  return useQuery({
+    queryKey: ['system', 'teacher-availability', params],
+    queryFn:  () => api<AvailabilityResult>(
+      `/teachers/${params!.teacher_id}/check-availability`,
+      { method: 'POST', body: JSON.stringify({ scheduled_start: params!.scheduled_start, duration_min: params!.duration_min }) },
+    ),
+    enabled:   !!(params?.teacher_id && params?.scheduled_start),
+    staleTime: 20_000,
+    retry:     false,
+  })
+}

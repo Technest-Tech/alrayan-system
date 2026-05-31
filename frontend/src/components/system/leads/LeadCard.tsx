@@ -1,145 +1,194 @@
 import type { Lead } from '@/types/system/lead'
-import Link from 'next/link'
 import { formatDistanceToNow } from 'date-fns'
-import { Clock, MessageCircle, Phone, Mail } from 'lucide-react'
+import { Globe, Users, Camera, Play, MessageCircle, Music, CircleHelp, Phone, Pencil, Trash2 } from 'lucide-react'
 
+/* ── Islamic 8-point star ───────────────────────── */
+const STAR = 'M50,5 L57.65,31.52 L81.82,18.18 L68.48,42.35 L95,50 L68.48,57.65 L81.82,81.82 L57.65,68.48 L50,95 L42.35,68.48 L18.18,81.82 L31.52,57.65 L5,50 L31.52,42.35 L18.18,18.18 L42.35,31.52 Z'
+
+/* ── Source badge styling ───────────────────────── */
 const SOURCE_LABELS: Record<string, string> = {
   google_ads:       'Google Ads',
   facebook_ads:     'Facebook Ads',
   instagram_ads:    'Instagram',
-  whatsapp_direct:  'WhatsApp',
+  whatsapp_direct:  'WhatsApp Direct',
   student_referral: 'Referral',
-  website_form:     'Website',
+  website_form:     'Website Form',
   manual_entry:     'Manual',
 }
 
 const SOURCE_COLORS: Record<string, { bg: string; color: string }> = {
-  google_ads:       { bg: 'rgb(30 90 171 / 0.1)',   color: 'rgb(30 90 171)' },
-  facebook_ads:     { bg: 'rgb(30 90 171 / 0.1)',   color: 'rgb(30 90 171)' },
-  instagram_ads:    { bg: 'rgb(190 24 93 / 0.1)',   color: 'rgb(190 24 93)' },
-  whatsapp_direct:  { bg: 'rgb(14 124 90 / 0.1)',   color: 'rgb(14 124 90)' },
-  student_referral: { bg: 'rgb(201 162 75 / 0.12)', color: 'rgb(154 113 23)' },
-  website_form:     { bg: 'rgb(101 56 182 / 0.1)',  color: 'rgb(101 56 182)' },
-  manual_entry:     { bg: 'rgb(90 100 112 / 0.1)',  color: 'rgb(90 100 112)' },
+  google_ads:       { bg: 'rgba(30,90,171,0.10)',   color: 'rgb(30 90 171)' },
+  facebook_ads:     { bg: 'rgba(30,90,171,0.10)',   color: 'rgb(30 90 171)' },
+  instagram_ads:    { bg: 'rgba(190,24,93,0.10)',   color: 'rgb(190 24 93)' },
+  whatsapp_direct:  { bg: 'rgba(14,124,90,0.10)',   color: 'rgb(14 124 90)' },
+  student_referral: { bg: 'rgba(201,162,75,0.14)',  color: 'rgb(154 113 23)' },
+  website_form:     { bg: 'rgba(101,56,182,0.10)',  color: 'rgb(101 56 182)' },
+  manual_entry:     { bg: 'rgba(90,100,112,0.10)',  color: 'rgb(90 100 112)' },
 }
 
-// Deterministic avatar color from name
+const PLATFORM_ICONS: Record<string, React.ElementType> = {
+  website:   Globe,
+  facebook:  Users,
+  instagram: Camera,
+  youtube:   Play,
+  whatsapp:  MessageCircle,
+  tiktok:    Music,
+  other:     CircleHelp,
+}
+
+const PLATFORM_COLORS: Record<string, string> = {
+  website:   'rgb(30 90 171)',
+  facebook:  'rgb(30 90 171)',
+  instagram: 'rgb(190 24 93)',
+  youtube:   'rgb(220 40 40)',
+  whatsapp:  'rgb(14 124 90)',
+  tiktok:    'rgb(11 31 58)',
+  other:     'rgb(90 100 112)',
+}
+
 const AVATAR_PALETTES = [
-  { bg: 'rgb(30 90 171 / 0.15)',  color: 'rgb(30 90 171)' },
-  { bg: 'rgb(14 124 90 / 0.15)',  color: 'rgb(14 124 90)' },
-  { bg: 'rgb(101 56 182 / 0.15)', color: 'rgb(101 56 182)' },
-  { bg: 'rgb(190 24 93 / 0.12)',  color: 'rgb(190 24 93)' },
-  { bg: 'rgb(154 113 23 / 0.15)', color: 'rgb(154 113 23)' },
+  { bg: 'rgba(30,90,171,0.14)',  color: 'rgb(30 90 171)' },
+  { bg: 'rgba(14,124,90,0.14)', color: 'rgb(14 124 90)' },
+  { bg: 'rgba(101,56,182,0.14)',color: 'rgb(101 56 182)' },
+  { bg: 'rgba(190,24,93,0.12)', color: 'rgb(190 24 93)' },
+  { bg: 'rgba(154,113,23,0.14)',color: 'rgb(154 113 23)' },
 ]
 
 function avatarStyle(name: string) {
-  const idx = name.charCodeAt(0) % AVATAR_PALETTES.length
-  return AVATAR_PALETTES[idx]
+  return AVATAR_PALETTES[name.charCodeAt(0) % AVATAR_PALETTES.length]
 }
 
 function initials(name: string) {
   return name.split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase()
 }
 
-function countryFlag(code: string): string {
-  const offset = 0x1f1e6 - 65
-  return [...code.toUpperCase()].map(c => String.fromCodePoint(c.charCodeAt(0) + offset)).join('')
-}
-
 interface LeadCardProps {
   lead: Lead
   dragging?: boolean
+  onClick?: () => void
+  onEdit?: () => void
+  onDelete?: () => void
 }
 
-export function LeadCard({ lead, dragging }: LeadCardProps) {
-  const hasDue   = (lead.pending_follow_ups_count ?? 0) > 0
-  const srcStyle = SOURCE_COLORS[lead.source] ?? SOURCE_COLORS.manual_entry
-  const av       = avatarStyle(lead.name)
+export function LeadCard({ lead, dragging, onClick, onEdit, onDelete }: LeadCardProps) {
+  const av           = avatarStyle(lead.name)
+  const srcStyle     = SOURCE_COLORS[lead.source ?? ''] ?? SOURCE_COLORS.manual_entry
+  const srcLabel     = SOURCE_LABELS[lead.source ?? ''] ?? lead.source ?? 'Manual'
+  const PlatformIcon = lead.platform ? (PLATFORM_ICONS[lead.platform] ?? Globe) : null
+  const platformColor = lead.platform ? (PLATFORM_COLORS[lead.platform] ?? 'rgb(90 100 112)') : 'rgb(90 100 112)'
+  const platformLabel = lead.platform
+    ? lead.platform.charAt(0).toUpperCase() + lead.platform.slice(1)
+    : null
+
+  const payloadPhones = (lead.payload as Record<string, unknown> | null)?.phones as Array<{ value: string }> | undefined
+  const displayPhone  = lead.phone || payloadPhones?.[0]?.value || null
 
   return (
-    <Link href={`/leads/${lead.id}`} draggable={false}>
-      <div
-        className="rounded-xl border p-3 hover:shadow-md transition-all cursor-pointer select-none"
-        style={{
-          background: '#fff',
-          borderColor: 'rgb(var(--border-default,229 233 240))',
-          boxShadow: '0 1px 3px rgb(11 31 58 / 0.05)',
-          opacity: dragging ? 0.4 : 1,
-        }}
+    <div
+      onClick={onClick}
+      className="group relative rounded-xl border overflow-hidden transition-all hover:shadow-md cursor-pointer select-none"
+      style={{
+        background: '#fff',
+        borderColor: 'rgb(229 233 240)',
+        boxShadow: '0 1px 3px rgba(11,31,58,0.05)',
+        opacity: dragging ? 0.35 : 1,
+        transform: dragging ? 'scale(0.97)' : undefined,
+      }}
+    >
+      {/* Gold top accent line */}
+      <div style={{ height: 1.5, background: 'linear-gradient(90deg, transparent 0%, #C9A24B44 50%, transparent 100%)' }} />
+
+      {/* Corner star watermark */}
+      <svg
+        className="absolute bottom-1.5 right-1.5 pointer-events-none select-none"
+        width="14" height="14" viewBox="0 0 100 100" aria-hidden
       >
-        {/* Row 1: Avatar + name + due badge */}
-        <div className="flex items-start gap-2.5 mb-2.5">
+        <path d={STAR} fill="#C9A24B" opacity="0.07" />
+      </svg>
+
+      {/* Hover action buttons */}
+      <div className="absolute top-2 right-2 z-10 hidden group-hover:flex items-center gap-0.5">
+        {onEdit && (
+          <button
+            type="button"
+            onClick={e => { e.stopPropagation(); onEdit() }}
+            title="Edit lead"
+            className="p-1.5 rounded-lg transition-all hover:scale-110"
+            style={{ background: 'rgba(11,31,58,0.07)', color: 'rgb(30 90 171)' }}
+            onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(30,90,171,0.15)' }}
+            onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(11,31,58,0.07)' }}
+          >
+            <Pencil size={11} />
+          </button>
+        )}
+        {onDelete && (
+          <button
+            type="button"
+            onClick={e => { e.stopPropagation(); onDelete() }}
+            title="Delete lead"
+            className="p-1.5 rounded-lg transition-all hover:scale-110"
+            style={{ background: 'rgba(11,31,58,0.07)', color: 'rgb(90 100 112)' }}
+            onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(192,57,43,0.15)'; (e.currentTarget as HTMLButtonElement).style.color = 'rgb(192 57 43)' }}
+            onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(11,31,58,0.07)'; (e.currentTarget as HTMLButtonElement).style.color = 'rgb(90 100 112)' }}
+          >
+            <Trash2 size={11} />
+          </button>
+        )}
+      </div>
+
+      <div className="p-3">
+        {/* Name + avatar */}
+        <div className="flex items-center gap-2 mb-2 pr-12">
           <div
-            className="shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-[11px] font-bold"
+            className="shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold"
             style={{ background: av.bg, color: av.color }}
           >
             {initials(lead.name)}
           </div>
-          <div className="flex-1 min-w-0">
-            <div className="flex items-start justify-between gap-1">
-              <p className="text-sm font-semibold leading-snug truncate" style={{ color: 'rgb(11 31 58)' }}>
-                {lead.name}
-              </p>
-              {hasDue && (
-                <span
-                  className="shrink-0 flex items-center gap-0.5 text-[9px] font-bold px-1.5 py-0.5 rounded-full"
-                  style={{ background: 'rgb(154 113 23 / 0.12)', color: 'rgb(154 113 23)' }}
-                  title="Follow-up due"
-                >
-                  <Clock size={8} />
-                  Due
-                </span>
-              )}
-            </div>
-            {lead.email && (
-              <p className="flex items-center gap-1 text-[10px] truncate mt-0.5" style={{ color: 'rgb(90 100 112)' }}>
-                <Mail size={9} className="shrink-0 opacity-60" />
-                <span className="truncate opacity-70">{lead.email}</span>
-              </p>
-            )}
-          </div>
+          <p className="text-[13px] font-semibold truncate leading-tight" style={{ color: '#0B1F3A' }}>
+            {lead.name}
+          </p>
         </div>
 
-        {/* Row 2: Phone + WhatsApp */}
-        {(lead.phone || lead.whatsapp) && (
-          <div className="flex items-center justify-between mb-2.5">
-            {lead.phone && (
-              <p className="flex items-center gap-1 text-[11px]" style={{ color: 'rgb(90 100 112)' }}>
-                <Phone size={9} className="opacity-60" />
-                <span>{lead.phone}</span>
-              </p>
-            )}
-            {lead.whatsapp && (
-              <span
-                className="flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-full ml-auto"
-                style={{ background: 'rgb(14 124 90 / 0.1)', color: 'rgb(14 124 90)' }}
-                title={lead.whatsapp}
-              >
-                <MessageCircle size={9} />
-                WA
-              </span>
-            )}
+        {/* Platform */}
+        {PlatformIcon && platformLabel && (
+          <div className="flex items-center gap-1.5 mb-1.5">
+            <PlatformIcon size={11} style={{ color: platformColor, flexShrink: 0 }} />
+            <span className="text-[11px]" style={{ color: 'rgb(90 100 112)' }}>{platformLabel}</span>
           </div>
         )}
 
-        {/* Row 3: Source badge + country flag + time */}
-        <div className="flex items-center gap-1.5">
-          <span
-            className="text-[10px] font-medium px-1.5 py-0.5 rounded-md shrink-0"
-            style={srcStyle}
-          >
-            {SOURCE_LABELS[lead.source] ?? lead.source}
-          </span>
-          {lead.country && (
-            <span className="text-sm leading-none" title={lead.country}>
-              {countryFlag(lead.country)}
+        {/* Phone */}
+        {displayPhone && (
+          <div className="flex items-center gap-1.5 mb-2">
+            <Phone size={10} className="shrink-0" style={{ color: 'rgb(90 100 112)', opacity: 0.6 }} />
+            <span className="text-[11px] tabular-nums" style={{ color: 'rgb(90 100 112)' }}>
+              {String(displayPhone)}
+            </span>
+          </div>
+        )}
+
+        {/* Footer: source badge + added by / time */}
+        <div className="flex items-center gap-1.5 flex-wrap">
+          {lead.source && (
+            <span
+              className="text-[10px] font-semibold px-1.5 py-0.5 rounded-md"
+              style={srcStyle}
+            >
+              {srcLabel}
             </span>
           )}
-          <span className="ml-auto text-[10px] whitespace-nowrap" style={{ color: 'rgb(203 211 222)' }}>
-            {formatDistanceToNow(new Date(lead.updated_at), { addSuffix: true })}
-          </span>
+          {lead.supervisor_name ? (
+            <span className="text-[10px] truncate ml-auto" style={{ color: 'rgb(90 100 112)' }}>
+              Added by: <span style={{ color: '#0B1F3A', fontWeight: 500 }}>{lead.supervisor_name}</span>
+            </span>
+          ) : (
+            <span className="text-[10px] ml-auto whitespace-nowrap" style={{ color: 'rgb(203 211 222)' }}>
+              {formatDistanceToNow(new Date(lead.created_at), { addSuffix: true })}
+            </span>
+          )}
         </div>
       </div>
-    </Link>
+    </div>
   )
 }

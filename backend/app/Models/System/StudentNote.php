@@ -14,6 +14,10 @@ class StudentNote extends Model
 
     protected $guarded = [];
 
+    protected $casts = [
+        'pinned' => 'boolean',
+    ];
+
     public function student() { return $this->belongsTo(Student::class, 'student_id'); }
     public function author()  { return $this->belongsTo(User::class, 'author_user_id'); }
 }
