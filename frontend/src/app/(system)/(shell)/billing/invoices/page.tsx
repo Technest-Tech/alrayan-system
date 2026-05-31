@@ -7,6 +7,7 @@ import {
   AlertTriangle, Receipt, Loader2,
   Mail, Phone, Clock, BookOpen, User, Send, Bell, BellRing,
   CreditCard, Eye, MoreHorizontal, Calendar,
+  RefreshCw, Zap, PenLine,
 } from 'lucide-react'
 import { PageHeader } from '@/components/system/primitives/PageHeader'
 import { useInvoices, type InvoiceFilters } from '@/hooks/system/useInvoices'
@@ -791,18 +792,63 @@ function InvoiceRow({
 
 // ─── Page ───────────────────────────────────────────────────────────────────
 
+// ─── Section tabs ─────────────────────────────────────────────────────────────
+
+type TabKey = 'automatic' | 'pro' | 'manual'
+
+const TABS: {
+  key: TabKey
+  label: string
+  types: string | string[]
+  Icon: React.ComponentType<{ size?: number; className?: string }>
+  color: { tab: string; activeTab: string; indicator: string; iconColor: string; activeAll: string }
+}[] = [
+  {
+    key: 'automatic', label: 'Automatic', types: 'monthly',
+    Icon: RefreshCw,
+    color: { tab: 'text-gray-500 hover:text-blue-600 hover:bg-blue-50', activeTab: 'text-blue-700', indicator: 'bg-blue-600', iconColor: 'text-blue-600', activeAll: 'bg-blue-700 text-white' },
+  },
+  {
+    key: 'pro', label: 'Pro', types: ['advance', 'reactivation'],
+    Icon: Zap,
+    color: { tab: 'text-gray-500 hover:text-purple-600 hover:bg-purple-50', activeTab: 'text-purple-700', indicator: 'bg-purple-600', iconColor: 'text-purple-600', activeAll: 'bg-purple-700 text-white' },
+  },
+  {
+    key: 'manual', label: 'Manual', types: 'manual',
+    Icon: PenLine,
+    color: { tab: 'text-gray-500 hover:text-amber-600 hover:bg-amber-50', activeTab: 'text-amber-700', indicator: 'bg-amber-500', iconColor: 'text-amber-600', activeAll: 'bg-amber-600 text-white' },
+  },
+]
+
 export default function InvoicesPage() {
   const router = useRouter()
+  const [activeTab, setActiveTab] = useState<TabKey>('automatic')
   const [filters, setFilters] = useState<InvoiceFilters>({})
   const [showNewModal, setShowNewModal] = useState(false)
   const [whatsApp, setWhatsApp] = useState<{ invoice: Invoice; kind: 'invoice' | 'reminder' } | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
 
-  const { data, isLoading, error } = useInvoices(filters)
-  const { data: allData } = useInvoices({})
-  const { data: paidData } = useInvoices({ 'filter[status]': 'paid' })
-  const { data: overdueData } = useInvoices({ 'filter[status]': 'overdue' })
-  const { data: sentData } = useInvoices({ 'filter[status]': 'sent' })
+  // Reset status filter + search when switching tabs
+  useEffect(() => { setFilters({}); setSearchTerm('') }, [activeTab])
+
+  const currentTab = TABS.find(t => t.key === activeTab)!
+  const typeFilter = { 'filter[type]': currentTab.types } as InvoiceFilters
+
+  const { data, isLoading, error } = useInvoices({ ...filters, ...typeFilter })
+  const { data: allData } = useInvoices(typeFilter)
+  const { data: paidData } = useInvoices({ ...typeFilter, 'filter[status]': 'paid' })
+  const { data: overdueData } = useInvoices({ ...typeFilter, 'filter[status]': 'overdue' })
+  const { data: sentData } = useInvoices({ ...typeFilter, 'filter[status]': 'sent' })
+
+  // Tab badge counts (independent of current tab's type filter)
+  const { data: autoCount }   = useInvoices({ 'filter[type]': 'monthly' })
+  const { data: proCount }    = useInvoices({ 'filter[type]': ['advance', 'reactivation'] })
+  const { data: manualCount } = useInvoices({ 'filter[type]': 'manual' })
+  const tabCounts: Record<TabKey, number | undefined> = {
+    automatic: autoCount?.meta?.total,
+    pro:       proCount?.meta?.total,
+    manual:    manualCount?.meta?.total,
+  }
 
   const rawInvoices = data?.data ?? []
   const meta = data?.meta ?? null
@@ -854,7 +900,7 @@ export default function InvoicesPage() {
     <>
       <PageHeader
         title="Invoices"
-        description="Each bill with full student details, total hours, costs, and direct WhatsApp send + reminder controls."
+        description="Automatic monthly bills, pro-rata advance/reactivation invoices, and custom manual charges — with full student details, total hours, costs, and direct WhatsApp send + reminder controls."
         actions={
           <button
             onClick={() => setShowNewModal(true)}
@@ -866,6 +912,30 @@ export default function InvoicesPage() {
           </button>
         }
       />
+
+      {/* Section tabs */}
+      <div className="flex items-center gap-1 border-b border-gray-200 mb-6 -mt-2">
+        {TABS.map(tab => {
+          const active = activeTab === tab.key
+          const count  = tabCounts[tab.key]
+          return (
+            <button
+              key={tab.key}
+              onClick={() => setActiveTab(tab.key)}
+              className={`relative flex items-center gap-2 px-4 py-3 text-sm font-medium rounded-t-lg transition-colors ${active ? tab.color.activeTab + ' bg-white' : tab.color.tab}`}
+            >
+              <tab.Icon size={15} className={active ? tab.color.iconColor : ''} />
+              {tab.label}
+              {count !== undefined && (
+                <span className="text-[11px] font-semibold px-1.5 py-0.5 rounded-full tabular-nums bg-gray-100 text-gray-600">
+                  {count}
+                </span>
+              )}
+              {active && <span className={`absolute bottom-0 left-0 right-0 h-0.5 rounded-t-full ${tab.color.indicator}`} />}
+            </button>
+          )
+        })}
+      </div>
 
       {/* Stat cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
