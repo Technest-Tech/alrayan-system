@@ -11,12 +11,15 @@ use App\Http\Resources\System\InvoiceResource;
 use App\Models\System\Invoice;
 use App\Models\System\InvoiceLine;
 use App\Models\System\Student;
+use App\Models\System\WassenderLog;
+use App\Services\Integrations\Wassender\WassenderClient;
 use App\Services\System\InvoiceGenerator;
 use App\Services\System\InvoiceNumberer;
 use App\Services\System\InvoicePdfRenderer;
 use App\Services\System\StudentBillingState;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 use Spatie\QueryBuilder\AllowedFilter;
 use Spatie\QueryBuilder\QueryBuilder;
 
@@ -129,6 +132,110 @@ class InvoiceController extends Controller
         $this->authorize('resendLink', $invoice);
         \App\Jobs\System\RegeneratePaymobPaymentLink::dispatch($invoice);
         return response()->json(['ok' => true, 'message' => 'Paymob link regeneration queued.']);
+    }
+
+    /**
+     * Flip an invoice to paid (manual reconciliation, e.g. cash/bank transfer).
+     */
+    public function markPaid(Invoice $invoice)
+    {
+        $this->authorize('update', $invoice);
+        if ($invoice->status === 'paid') {
+            return new InvoiceDetailResource($invoice);
+        }
+        $invoice->update(['status' => 'paid', 'paid_at' => now()]);
+        return new InvoiceDetailResource($invoice->fresh());
+    }
+
+    /**
+     * Render and send the bill message — with payment link — to the student's
+     * WhatsApp via Wassender. Works for any invoice type (monthly / advance /
+     * reactivation / manual).
+     */
+    public function sendWhatsApp(Invoice $invoice, WassenderClient $wassender)
+    {
+        $this->authorize('view', $invoice);
+
+        $invoice->load('student');
+        $student = $invoice->student;
+        if (!$student) {
+            return response()->json(['message' => 'Invoice has no student.'], 422);
+        }
+        $phone = $student->whatsapp ?: $student->phone;
+        if (!$phone) {
+            return response()->json(['message' => 'Student has no WhatsApp/phone on file.'], 422);
+        }
+        $cleanPhone = preg_replace('/\s|-/', '', $phone);
+
+        // Ensure a payment token exists so we can include a live pay link.
+        if (!$invoice->payment_token) {
+            $invoice->update(['payment_token' => Str::random(48)]);
+        }
+        $payUrl = rtrim(config('system.frontend_url', config('app.url')), '/')
+            . '/pay/' . $invoice->payment_token;
+
+        $totalFmt = number_format($invoice->total_minor / 100, 2) . ' ' . $invoice->currency;
+        $typeLabel = match ($invoice->type) {
+            'monthly'      => 'Monthly Bill',
+            'advance'      => 'Pro-rata Advance Bill',
+            'reactivation' => 'Reactivation Bill',
+            'manual'       => 'Bill',
+            default        => 'Bill',
+        };
+        $dueWhen = $invoice->due_at?->format('d M Y') ?? 'soon';
+
+        $msg = implode("\n", array_filter([
+            "🌙 *Al-Rayan Academy — {$typeLabel}*",
+            "━━━━━━━━━━━━━━━━━━━━━━",
+            '',
+            "Assalamu Alaikum,",
+            '',
+            "Invoice for *{$student->name}*",
+            "🧾 #{$invoice->invoice_number}",
+            "💰 Total: *{$totalFmt}*",
+            "📅 Due: {$dueWhen}",
+            '',
+            "💳 *Pay online:*",
+            $payUrl,
+            '',
+            "Jazakum Allahu Khayran 🌿",
+            "*Al-Rayan Academy Team*",
+        ]));
+
+        $result = $wassender->sendToPhone($cleanPhone, $msg);
+
+        WassenderLog::create([
+            'template_key'        => 'invoice.bill_sent',
+            'recipient_phone'     => $cleanPhone,
+            'rendered_message'    => $msg,
+            'status'              => $result->success ? 'sent' : 'failed',
+            'external_message_id' => $result->externalId,
+            'attempt_count'       => 1,
+            'error'               => $result->success ? null : $result->errorBody,
+            'payload'             => [
+                'invoice_id' => $invoice->id,
+                'student_id' => $student->id,
+                'type'       => $invoice->type,
+            ],
+            'sent_at'             => $result->success ? now() : null,
+        ]);
+
+        if (!$result->success) {
+            return response()->json([
+                'message' => 'WhatsApp send failed.',
+                'error'   => $result->errorBody,
+            ], 502);
+        }
+
+        // Bump status to 'sent' (if still draft) so the dashboard reflects it.
+        if ($invoice->status === 'draft') {
+            $invoice->update(['status' => 'sent', 'issued_at' => $invoice->issued_at ?? now()]);
+        }
+
+        return response()->json([
+            'message'   => 'Bill sent on WhatsApp.',
+            'recipient' => $cleanPhone,
+        ]);
     }
 
     public function studentInvoices(Request $request, Student $student)

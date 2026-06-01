@@ -12,6 +12,7 @@ use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 /**
  * Real-time "Automatic Billings" view.
@@ -280,6 +281,41 @@ class AutoBillingController extends Controller
 
         $periodLabel = $start->format('F Y');
 
+        // Ensure a draft invoice exists for this (student, period) so we
+        // can attach a payable link to the WhatsApp message. Existing
+        // invoices are reused (their payment_token survives).
+        $invoice = Invoice::firstOrNew([
+            'student_id'   => $student->id,
+            'type'         => 'monthly',
+            'period_year'  => $year,
+            'period_month' => $month,
+        ]);
+        if (!$invoice->exists) {
+            $invoice->invoice_number = 'AUTO-' . $student->id . '-' . $year . str_pad((string) $month, 2, '0', STR_PAD_LEFT);
+            $invoice->currency       = $student->currency;
+            $invoice->subtotal_minor = $totalMinor;
+            $invoice->total_minor    = $totalMinor;
+            $invoice->status         = 'sent';
+            $invoice->issued_at      = now();
+            $invoice->due_at         = $start->copy()->addDays(7);
+            $invoice->payment_token  = Str::random(48);
+            $invoice->created_by_user_id = auth()->id();
+            $invoice->snapshot       = [
+                'sessions_per_month'      => $student->sessions_per_month,
+                'monthly_price_minor'     => $student->monthly_price_minor,
+                'per_session_price_minor' => $perSessionMinor,
+                'counted_sessions'        => $counted,
+                'source'                  => 'auto_billing',
+            ];
+            $invoice->save();
+        } elseif (!$invoice->payment_token) {
+            $invoice->payment_token = Str::random(48);
+            $invoice->save();
+        }
+
+        $payUrl = rtrim(config('system.frontend_url', config('app.url')), '/')
+            . '/pay/' . $invoice->payment_token;
+
         $msg = implode("\n", [
             "🌙 *Al-Rayan Academy — Monthly Bill*",
             "━━━━━━━━━━━━━━━━━━━━━━",
@@ -291,6 +327,9 @@ class AutoBillingController extends Controller
             "📚 Sessions completed: *{$counted}*",
             "💵 Per session: {$perFmt}",
             "🧾 Total due: *{$totalFmt}*",
+            "",
+            "💳 *Pay online:*",
+            $payUrl,
             "",
             "Jazakum Allahu Khayran 🌿",
             "*Al-Rayan Academy Team*",

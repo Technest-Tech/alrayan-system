@@ -16,6 +16,7 @@ import { useSendInvoice } from '@/hooks/system/useInvoice'
 import { useStudents } from '@/hooks/system/useStudents'
 import { useStudentBillingState } from '@/hooks/system/useStudentBillingState'
 import { AutoBillingTable } from '@/components/system/billing/AutoBillingTable'
+import { InvoiceBillingTable } from '@/components/system/billing/InvoiceBillingTable'
 import { formatMinor } from '@/lib/money'
 import type { Invoice, InvoiceStatus } from '@/types/system/invoice'
 import type { Student } from '@/types/system/student'
@@ -976,8 +977,24 @@ export default function InvoicesPage() {
       {/* ── Automatic tab → live per-session billing table ── */}
       {activeTab === 'automatic' && <AutoBillingTable />}
 
-      {/* ── Pro / Manual tabs → existing invoice listing ── */}
-      {activeTab !== 'automatic' && <>
+      {/* ── Pro tab → advance + reactivation invoices ── */}
+      {activeTab === 'pro' && (
+        <InvoiceBillingTable
+          types={['advance', 'reactivation']}
+          emptyHint="Pro-rata advance and reactivation invoices appear here once created from a student profile."
+        />
+      )}
+
+      {/* ── Manual tab → manual invoices ── */}
+      {activeTab === 'manual' && (
+        <InvoiceBillingTable
+          types="manual"
+          emptyHint="One-off manual invoices appear here. Use “New invoice” above to create one."
+        />
+      )}
+
+      {/* Legacy code below is kept disabled — replaced by InvoiceBillingTable. */}
+      {false && <>
       {/* Stat cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
         {statCards.map(card => {

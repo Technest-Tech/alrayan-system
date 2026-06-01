@@ -1,7 +1,6 @@
 'use client'
 import { useState, useRef, useEffect } from 'react'
-import { toast } from 'sonner'
-import { CalendarDays, ChevronDown, Search, X, Clock, User, Users, CheckCircle2, AlertTriangle, Loader2, AlertCircle } from 'lucide-react'
+import { CalendarDays, ChevronDown, Search, X, Clock, User, Users, CheckCircle2, AlertTriangle, Loader2, AlertCircle, MessageCircle } from 'lucide-react'
 import { useCreateSession, useCheckTeacherAvailability } from '@/hooks/system/useSessions'
 import { useTeachers } from '@/hooks/system/useTeachers'
 import { ApiError } from '@/lib/system/api'
@@ -175,6 +174,10 @@ export function ScheduleTrialSheet({ student, open, onClose }: Props) {
   const [period,           setPeriod]           = useState<'AM' | 'PM'>('PM')
   const [duration,         setDuration]         = useState(student.session_duration_min ?? 60)
   const [includedSiblings, setIncludedSiblings] = useState<Set<number>>(new Set())
+  const [successData,      setSuccessData]      = useState<{
+    teacherName: string; dateDisplay: string; total: number
+  } | null>(null)
+  const [saveError,        setSaveError]        = useState<string | null>(null)
 
   const create = useCreateSession()
 
@@ -191,6 +194,7 @@ export function ScheduleTrialSheet({ student, open, onClose }: Props) {
       setTeacherId(student.assigned_teacher?.id)
       setDuration(student.session_duration_min ?? 60)
       setIncludedSiblings(new Set())
+      setSuccessData(null)
       const now = new Date()
       setDate(now.toISOString().split('T')[0])
       const nearestHalf = now.getMinutes() < 30 ? 30 : 0
@@ -227,7 +231,8 @@ export function ScheduleTrialSheet({ student, open, onClose }: Props) {
   if (!open) return null
 
   async function handleSave() {
-    if (!teacherId) { toast.error('Please select a teacher.'); return }
+    if (!teacherId) return
+    setSaveError(null)
 
     const scheduledStart = new Date(`${date}T${time24}:00`).toISOString()
 
@@ -246,16 +251,76 @@ export function ScheduleTrialSheet({ student, open, onClose }: Props) {
           duration_min:    duration,
         })
       }
-      const total = 1 + includedSiblings.size
-      toast.success(total > 1 ? `${total} trial classes scheduled.` : 'Trial class scheduled.')
-      onClose()
+      const total       = 1 + includedSiblings.size
+      const teacherName = selectedTeacher?.name ?? 'Teacher'
+      const dateDisplay = new Date(`${date}T${time24}`).toLocaleDateString('en-GB', {
+        weekday: 'long', day: 'numeric', month: 'long',
+      }) + ' · ' + formatDisplay(hour, minute, period)
+
+      setSuccessData({ teacherName, dateDisplay, total })
     } catch (e) {
-      toast.error(e instanceof ApiError ? e.message : 'Failed to schedule session.')
+      // surface error inside the sheet so user stays in context
+      const msg = e instanceof ApiError ? e.message : 'Failed to schedule session.'
+      setSaveError(msg)
     }
   }
 
   const summaryDate = new Date(`${date}T${time24}`)
   const isValidDate = !isNaN(summaryDate.getTime())
+
+  // ── Success overlay ───────────────────────────────────────────────
+  if (successData) {
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div className="absolute inset-0 bg-[rgb(11,31,58)]/50 backdrop-blur-sm" />
+        <div className="relative w-full max-w-sm rounded-2xl shadow-2xl overflow-hidden"
+          style={{ background: '#fff', border: '1px solid rgb(var(--border-default,229 233 240))' }}>
+
+          <div className="h-1 w-full" style={{ background: 'linear-gradient(90deg, rgb(14 124 90), rgb(22 163 74))' }} />
+
+          <div className="px-6 py-8 flex flex-col items-center text-center gap-5">
+            <div className="flex items-center justify-center w-16 h-16 rounded-full"
+              style={{ background: 'rgb(14 124 90 / 0.1)' }}>
+              <CheckCircle2 size={32} style={{ color: 'rgb(14 124 90)' }} />
+            </div>
+
+            <div className="space-y-1.5">
+              <h2 className="text-lg font-bold" style={{ color: 'rgb(11 31 58)' }}>
+                {successData.total > 1 ? `${successData.total} Trials Scheduled!` : 'Trial Class Scheduled!'}
+              </h2>
+              <p className="text-sm font-medium" style={{ color: 'rgb(90 100 112)' }}>
+                {successData.dateDisplay}
+              </p>
+              <p className="text-sm" style={{ color: 'rgb(90 100 112)' }}>
+                with <span className="font-semibold" style={{ color: 'rgb(11 31 58)' }}>{successData.teacherName}</span>
+              </p>
+            </div>
+
+            <div className="w-full rounded-xl px-4 py-3 flex items-start gap-3"
+              style={{ background: 'rgb(22 163 74 / 0.06)', border: '1px solid rgb(22 163 74 / 0.2)' }}>
+              <MessageCircle size={16} className="shrink-0 mt-0.5" style={{ color: 'rgb(22 163 74)' }} />
+              <div className="text-left">
+                <p className="text-sm font-semibold" style={{ color: 'rgb(22 163 74)' }}>
+                  WhatsApp confirmations sent
+                </p>
+                <p className="text-xs mt-0.5" style={{ color: 'rgb(90 100 112)' }}>
+                  Booking details dispatched to the student and teacher via WhatsApp.
+                  Reminders will be sent 2 hours and 5 minutes before the session.
+                </p>
+              </div>
+            </div>
+
+            <button
+              onClick={onClose}
+              className="w-full py-2.5 rounded-xl text-sm font-semibold text-white transition-all hover:opacity-90"
+              style={{ background: 'rgb(14 124 90)', boxShadow: '0 2px 8px rgb(14 124 90 / 0.3)' }}>
+              Done
+            </button>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -453,6 +518,12 @@ export function ScheduleTrialSheet({ student, open, onClose }: Props) {
             <p className="text-[11px] text-amber-700 mb-3 flex items-center gap-1.5">
               <AlertTriangle size={11} className="shrink-0" />
               Conflict found — you can still schedule, but consider picking another time.
+            </p>
+          )}
+          {saveError && (
+            <p className="text-[11px] text-red-600 mb-3 flex items-center gap-1.5">
+              <AlertCircle size={11} className="shrink-0" />
+              {saveError}
             </p>
           )}
           <div className="flex items-center justify-end gap-3">

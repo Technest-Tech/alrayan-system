@@ -3,7 +3,7 @@ import { useForm, Controller } from 'react-hook-form'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { User, CreditCard, BookOpen } from 'lucide-react'
+import { User, CreditCard, BookOpen, Video } from 'lucide-react'
 import type { Teacher } from '@/types/system/teacher'
 import { useCourses } from '@/hooks/system/useCourses'
 import { WhatsAppInput } from '@/components/system/students/WhatsAppInput'
@@ -13,6 +13,7 @@ const schema = z.object({
   email:                   z.string().email('Valid email required').optional().or(z.literal('')),
   whatsapp:                z.string().optional(),
   cv_url:                  z.string().url('Must be a valid URL').optional().or(z.literal('')),
+  zoom_link:               z.string().url('Must be a valid Zoom URL').optional().or(z.literal('')),
   teachable_course_ids:    z.array(z.number()).min(1, 'Select at least one course'),
   payment_method:          z.enum(['vodafone_cash', 'instapay', 'wallet_other']),
   payment_account_details: z.string().optional(),
@@ -64,6 +65,7 @@ export function TeacherForm({ defaultValues, onSubmit, isLoading, isEdit }: Teac
       email:                   defaultValues?.email ?? '',
       whatsapp:                defaultValues?.whatsapp ?? '+20',
       cv_url:                  defaultValues?.cv_url ?? '',
+      zoom_link:               defaultValues?.zoom_link ?? '',
       teachable_course_ids:    defaultValues?.teachable_course_ids ?? [],
       payment_method:          defaultValues?.payment_method ?? 'vodafone_cash',
       payment_account_details: defaultValues?.payment_account_details ?? '',
@@ -109,6 +111,23 @@ export function TeacherForm({ defaultValues, onSubmit, isLoading, isEdit }: Teac
               )}
             />
           </div>
+        </div>
+
+        {/* Zoom link — full row */}
+        <div>
+          <label className="block text-xs font-medium mb-1.5 opacity-60 uppercase tracking-wide flex items-center gap-1.5">
+            <Video size={11} />
+            Personal Zoom Link
+          </label>
+          <input
+            type="url"
+            className={inputCls}
+            style={inputStyle}
+            placeholder="https://zoom.us/j/..."
+            {...register('zoom_link')}
+          />
+          <FieldError message={errors.zoom_link?.message} />
+          <p className="text-[11px] mt-1 opacity-40">Used in trial reminders when session Zoom is not yet available.</p>
         </div>
       </section>
 

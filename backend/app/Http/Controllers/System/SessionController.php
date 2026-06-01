@@ -15,6 +15,7 @@ use App\Http\Resources\System\SessionDetailResource;
 use App\Http\Resources\System\SessionResource;
 use App\Jobs\System\CreateSessionZoomMeeting;
 use App\Jobs\System\DeleteSessionZoomMeeting;
+use App\Jobs\System\SendTrialConfirmationMessages;
 use App\Jobs\System\UpdateSessionZoomMeeting;
 use App\Models\System\Session;
 use App\Models\System\Student;
@@ -80,6 +81,10 @@ class SessionController extends Controller
         ]);
 
         CreateSessionZoomMeeting::dispatch($session);
+        // Delay 25s so Zoom meeting creation finishes before confirmation messages fire
+        SendTrialConfirmationMessages::dispatch($session->id)
+            ->onQueue('notifications')
+            ->delay(now()->addSeconds(25));
 
         return new SessionResource($session->load(['student', 'teacher']));
     }

@@ -8,6 +8,7 @@ use App\Console\Commands\System\CheckMissingWhatsAppGroups;
 use App\Console\Commands\System\CheckTrialFollowUpsNeeded;
 use App\Console\Commands\System\DispatchPaymentReminders;
 use App\Console\Commands\System\DispatchSessionReminders;
+use App\Console\Commands\System\DispatchTrialReminders;
 use App\Console\Commands\System\GenerateMonthlyInvoices;
 use App\Console\Commands\System\MarkInvoicesOverdue;
 use App\Console\Commands\System\MaterializeUpcomingSessions;
@@ -37,6 +38,7 @@ Schedule::command(RecomputeQualityScores::class)->weeklyOn(1, '02:00')->onOneSer
 
 // SYS-07 scheduled commands
 Schedule::command(DispatchSessionReminders::class)->everyMinute()->withoutOverlapping();
+Schedule::command(DispatchTrialReminders::class)->everyMinute()->withoutOverlapping();
 Schedule::command(DispatchPaymentReminders::class)->everyFiveMinutes()->withoutOverlapping();
 Schedule::command(SweepDueLeadFollowUps::class)->everyMinute()->withoutOverlapping();
 Schedule::command(CheckTrialFollowUpsNeeded::class)->dailyAt('08:00');

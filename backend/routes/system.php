@@ -223,8 +223,10 @@ Route::prefix('system')->name('system.')->group(function () {
         Route::middleware('system.can:invoices.create_advance')
             ->post('/students/{student}/invoices/advance', [InvoiceController::class, 'advanceInvoice'])->name('students.invoices.advance');
         Route::middleware('system.can:invoices.edit')->group(function () {
-            Route::patch('/invoices/{invoice}',       [InvoiceController::class, 'update'])->name('invoices.update');
-            Route::post('/invoices/{invoice}/send',   [InvoiceController::class, 'send'])->name('invoices.send');
+            Route::patch('/invoices/{invoice}',              [InvoiceController::class, 'update'])->name('invoices.update');
+            Route::post('/invoices/{invoice}/send',          [InvoiceController::class, 'send'])->name('invoices.send');
+            Route::post('/invoices/{invoice}/send-whatsapp', [InvoiceController::class, 'sendWhatsApp'])->name('invoices.send-whatsapp');
+            Route::post('/invoices/{invoice}/mark-paid',     [InvoiceController::class, 'markPaid'])->name('invoices.mark-paid');
         });
         Route::middleware('system.can:invoices.void')
             ->post('/invoices/{invoice}/void', [InvoiceController::class, 'void'])->name('invoices.void');
