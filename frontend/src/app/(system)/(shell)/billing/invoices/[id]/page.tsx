@@ -485,59 +485,30 @@ export default function InvoiceDetailPage() {
         ))}
       </div>
 
-      {/* Line items */}
-      <div className="rounded-xl border border-gray-200 overflow-hidden shadow-sm mb-5">
-        <div className="px-4 py-3 bg-gray-50/80 border-b border-gray-100">
-          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Line Items</p>
+      {/* ── Totals summary (Subtotal / Discount / Wallet credit / Total due) ── */}
+      <div className="rounded-xl border border-gray-200 bg-white shadow-sm mb-5 divide-y divide-gray-100">
+        {invoice.subtotal_minor > 0 && invoice.subtotal_minor !== invoice.total_minor && (
+          <div className="px-5 py-3 flex items-center justify-between text-sm">
+            <span className="text-gray-500">Subtotal</span>
+            <span className="text-gray-700 tabular-nums">{formatMinor(invoice.subtotal_minor, invoice.currency)}</span>
+          </div>
+        )}
+        {invoice.discount_minor > 0 && (
+          <div className="px-5 py-3 flex items-center justify-between text-sm">
+            <span className="text-gray-500">Discount</span>
+            <span className="font-medium text-red-600 tabular-nums">−{formatMinor(invoice.discount_minor, invoice.currency)}</span>
+          </div>
+        )}
+        {invoice.wallet_credit_minor > 0 && (
+          <div className="px-5 py-3 flex items-center justify-between text-sm">
+            <span className="text-gray-500">Wallet credit</span>
+            <span className="font-medium text-emerald-600 tabular-nums">−{formatMinor(invoice.wallet_credit_minor, invoice.currency)}</span>
+          </div>
+        )}
+        <div className="px-5 py-4 flex items-center justify-between bg-gray-50/60">
+          <span className="text-sm font-bold text-gray-700">Total due</span>
+          <span className="text-lg font-bold text-gray-900 tabular-nums">{formatMinor(invoice.total_minor, invoice.currency)}</span>
         </div>
-        <table className="min-w-full divide-y divide-gray-50">
-          <thead>
-            <tr className="bg-white">
-              <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-400">Description</th>
-              <th className="px-4 py-2.5 text-center text-xs font-medium text-gray-400">Qty</th>
-              <th className="px-4 py-2.5 text-right text-xs font-medium text-gray-400">Unit price</th>
-              <th className="px-4 py-2.5 text-right text-xs font-medium text-gray-400">Total</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-50 bg-white">
-            {(invoice.lines ?? []).map(line => (
-              <tr key={line.id}>
-                <td className="px-4 py-3 text-sm text-gray-800">{line.description}</td>
-                <td className="px-4 py-3 text-sm text-center text-gray-600">{line.quantity}</td>
-                <td className="px-4 py-3 text-sm text-right text-gray-600">
-                  {formatMinor(line.unit_price_minor, invoice.currency)}
-                </td>
-                <td className="px-4 py-3 text-sm text-right font-semibold text-gray-900">
-                  {formatMinor(line.line_total_minor, invoice.currency)}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-          <tfoot className="bg-gray-50/60 divide-y divide-gray-100">
-            {invoice.discount_minor > 0 && (
-              <tr>
-                <td colSpan={3} className="px-4 py-2.5 text-sm text-right text-gray-500">Discount</td>
-                <td className="px-4 py-2.5 text-sm text-right font-medium text-red-600">
-                  −{formatMinor(invoice.discount_minor, invoice.currency)}
-                </td>
-              </tr>
-            )}
-            {invoice.wallet_credit_minor > 0 && (
-              <tr>
-                <td colSpan={3} className="px-4 py-2.5 text-sm text-right text-gray-500">Wallet credit</td>
-                <td className="px-4 py-2.5 text-sm text-right font-medium text-emerald-600">
-                  −{formatMinor(invoice.wallet_credit_minor, invoice.currency)}
-                </td>
-              </tr>
-            )}
-            <tr>
-              <td colSpan={3} className="px-4 py-3.5 text-sm font-bold text-right text-gray-700">Total due</td>
-              <td className="px-4 py-3.5 text-base font-bold text-right text-gray-900">
-                {formatMinor(invoice.total_minor, invoice.currency)}
-              </td>
-            </tr>
-          </tfoot>
-        </table>
       </div>
 
       {/* ── Sessions in this period ── */}
