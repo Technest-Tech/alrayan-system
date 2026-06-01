@@ -3,13 +3,14 @@ import { useState, useEffect, useRef } from 'react'
 import {
   X, Star, CheckCircle2, ClipboardList, User, CalendarDays,
   Clock, Sparkles, Copy, Check, BookOpen, AlertCircle,
-  ImageDown, Download, Loader2, MessageSquare, Send,
+  ImageDown, Download, Loader2, MessageSquare, Send, ChevronDown,
 } from 'lucide-react'
 import { toPng } from 'html-to-image'
 import { toast } from 'sonner'
 import type { Session } from '@/types/system/session'
 import { useSubmitReport, useSessionReport } from '@/hooks/system/useSessionReports'
 import { useMarkAttendance, useSendSessionReportWhatsApp } from '@/hooks/system/useSessions'
+import { useTeacher } from '@/hooks/system/useTeachers'
 import { SessionReportCard } from './SessionReportCard'
 import type { SessionReportCardData } from './SessionReportCard'
 
@@ -210,6 +211,8 @@ export function SessionReportModal({ session, open, studentName, onClose, onSubm
   const sendWA         = useSendSessionReportWhatsApp()
   // Load existing report (if any) so opening "Report ✓" pre-fills the form.
   const { data: existingReport } = useSessionReport(open && session?.has_report ? session.id : null)
+  // Fetch teacher details for WhatsApp number
+  const { data: teacherData } = useTeacher(open ? (session?.teacher_id ?? 0) : 0)
 
   const [performance,      setPerformance]      = useState('good')
   const [covered,          setCovered]          = useState('')
@@ -221,6 +224,7 @@ export function SessionReportModal({ session, open, studentName, onClose, onSubm
   const [draftSaved,       setDraftSaved]       = useState(false)
   const [copied,           setCopied]           = useState(false)
   const [teacherMsgCopied, setTeacherMsgCopied] = useState(false)
+  const [teacherMsgOpen,   setTeacherMsgOpen]   = useState(false)
   const [previewUrl,       setPreviewUrl]       = useState<string | null>(null)
   const [isGenerating,     setIsGenerating]     = useState(false)
 
@@ -435,48 +439,110 @@ export function SessionReportModal({ session, open, studentName, onClose, onSubm
         {/* body */}
         <div className="flex-1 overflow-y-auto p-5 space-y-4">
 
-          {/* Teacher message template */}
-          <SectionCard title="Request from Teacher" icon={<MessageSquare size={14} />}>
-            <p className="text-xs" style={{ color: 'rgb(90 100 112)' }}>
-              Copy this message and send it to the teacher on WhatsApp. Paste their answers into the form below.
-            </p>
-            <div className="rounded-xl overflow-hidden" style={{ border: '1px solid rgb(30 90 171 / 0.2)' }}>
-              <div className="flex items-center justify-between px-3 py-2"
-                style={{ background: 'rgb(30 90 171 / 0.05)', borderBottom: '1px solid rgb(30 90 171 / 0.12)' }}>
-                <span className="text-[11px] font-semibold uppercase tracking-widest" style={{ color: 'rgb(30 90 171)' }}>
-                  WhatsApp Template
-                </span>
-                <button
-                  type="button"
-                  onClick={() => {
-                    navigator.clipboard.writeText(generateTeacherMessage(
-                      studentName,
-                      session.teacher?.name,
-                      session.scheduled_start,
-                      session.duration_min,
-                    ))
-                    setTeacherMsgCopied(true)
-                    setTimeout(() => setTeacherMsgCopied(false), 2000)
-                  }}
-                  className="inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1 rounded-lg transition-colors"
-                  style={{ background: 'rgb(30 90 171)', color: '#fff' }}>
-                  {teacherMsgCopied
-                    ? <><Check size={11} />Copied!</>
-                    : <><Copy size={11} />Copy to send</>}
+          {/* Teacher message template — collapsible */}
+          {(() => {
+            const msg = generateTeacherMessage(
+              studentName, session.teacher?.name, session.scheduled_start, session.duration_min,
+            )
+            const teacherRec = teacherData as { phone?: string | null; whatsapp?: string | null } | undefined
+            const teacherPhone = (teacherRec?.whatsapp || teacherRec?.phone || '').replace(/\D/g, '')
+
+            const sendTeacherTemplate = async () => {
+              if (!session) return
+              try {
+                const res = await sendWA.mutateAsync({
+                  sessionId: session.id,
+                  kind:      'text',
+                  text:      msg,
+                  target:    'teacher',
+                })
+                toast.success(`Template sent to teacher (${res.recipient}) ✓`)
+              } catch (e: unknown) {
+                const errMsg = e instanceof Error ? e.message : 'Failed to send to teacher.'
+                toast.error(errMsg)
+              }
+            }
+            const isSendingTeacher = sendWA.isPending
+              && sendWA.variables
+              && 'target' in sendWA.variables
+              && sendWA.variables.target === 'teacher'
+
+            return (
+              <div className="rounded-2xl overflow-hidden"
+                style={{ background: '#fff', border: '1px solid rgb(var(--border-default,229 233 240))' }}>
+
+                {/* toggle header */}
+                <button type="button"
+                  onClick={() => setTeacherMsgOpen(v => !v)}
+                  className="w-full flex items-center justify-between gap-3 px-4 py-3 text-left transition-colors hover:bg-black/[0.015]"
+                  style={{
+                    background: 'rgb(248 250 252)',
+                    borderBottom: teacherMsgOpen ? '1px solid rgb(var(--border-default,229 233 240))' : 'none',
+                  }}>
+                  <div className="flex items-center gap-2">
+                    <MessageSquare size={14} style={{ color: 'rgb(30 90 171)' }} />
+                    <span className="text-[11px] font-semibold uppercase tracking-widest" style={{ color: 'rgb(90 100 112)' }}>
+                      Request from Teacher
+                    </span>
+                  </div>
+                  <ChevronDown size={14} className="opacity-40 transition-transform duration-200"
+                    style={{ transform: teacherMsgOpen ? 'rotate(180deg)' : 'rotate(0deg)' }} />
                 </button>
+
+                {/* collapsible body */}
+                {teacherMsgOpen && (
+                  <div className="p-4 space-y-3">
+                    <p className="text-xs" style={{ color: 'rgb(90 100 112)' }}>
+                      Send this message to the teacher on WhatsApp — they fill in each answer and reply. Paste their response into the form below.
+                    </p>
+
+                    <div className="rounded-xl overflow-hidden" style={{ border: '1px solid rgb(30 90 171 / 0.2)' }}>
+                      {/* message toolbar */}
+                      <div className="flex items-center justify-between gap-2 px-3 py-2 flex-wrap"
+                        style={{ background: 'rgb(30 90 171 / 0.05)', borderBottom: '1px solid rgb(30 90 171 / 0.12)' }}>
+                        <span className="text-[11px] font-semibold uppercase tracking-widest" style={{ color: 'rgb(30 90 171)' }}>
+                          WhatsApp Template
+                        </span>
+                        <div className="flex items-center gap-1.5">
+                          {/* Copy */}
+                          <button type="button"
+                            onClick={() => {
+                              navigator.clipboard.writeText(msg)
+                              setTeacherMsgCopied(true)
+                              setTimeout(() => setTeacherMsgCopied(false), 2000)
+                            }}
+                            className="inline-flex items-center gap-1 text-[11px] font-semibold px-2.5 py-1 rounded-lg border transition-colors"
+                            style={{ background: '#fff', color: 'rgb(30 90 171)', borderColor: 'rgb(30 90 171 / 0.3)' }}>
+                            {teacherMsgCopied ? <><Check size={10} />Copied!</> : <><Copy size={10} />Copy</>}
+                          </button>
+                          {/* Send via Wassender (direct WhatsApp delivery, no manual click-through) */}
+                          <button type="button"
+                            onClick={sendTeacherTemplate}
+                            disabled={!teacherPhone || sendWA.isPending}
+                            title={teacherPhone
+                              ? `Send to teacher's WhatsApp (${teacherPhone}) via Wassender`
+                              : 'Teacher has no WhatsApp/phone on file'}
+                            className="inline-flex items-center gap-1 text-[11px] font-semibold px-2.5 py-1 rounded-lg transition-colors disabled:opacity-50"
+                            style={{ background: '#25D366', color: '#fff' }}>
+                            {isSendingTeacher
+                              ? <><Loader2 size={10} className="animate-spin" />Sending…</>
+                              : <><Send size={10} />Send to Teacher</>}
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* message preview */}
+                      <div className="px-3 py-3" style={{ background: '#fff' }}>
+                        <pre className="text-xs leading-relaxed whitespace-pre-wrap font-sans" style={{ color: 'rgb(11 31 58)' }}>
+                          {msg}
+                        </pre>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
-              <div className="px-3 py-3" style={{ background: '#fff' }}>
-                <pre className="text-xs leading-relaxed whitespace-pre-wrap font-sans" style={{ color: 'rgb(11 31 58)' }}>
-                  {generateTeacherMessage(
-                    studentName,
-                    session.teacher?.name,
-                    session.scheduled_start,
-                    session.duration_min,
-                  )}
-                </pre>
-              </div>
-            </div>
-          </SectionCard>
+            )
+          })()}
 
           {/* Performance */}
           <SectionCard title="Performance Assessment" icon={<Star size={14} />}>

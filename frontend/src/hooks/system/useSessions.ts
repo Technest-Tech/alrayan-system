@@ -73,13 +73,21 @@ export function useCancelSession() {
   })
 }
 
-/** Send a session report to the student's WhatsApp via Wassender (text OR image). */
+/**
+ * Send a session-related message via Wassender.
+ *
+ *   - kind=text   → sends raw text (parent report, teacher template, etc.)
+ *   - kind=image  → uploads base64 PNG to public storage and sends image
+ *
+ * Target defaults to 'student' (student's WhatsApp); pass 'teacher' to
+ * deliver the teacher template / request to the assigned teacher.
+ */
 export function useSendSessionReportWhatsApp() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: ({ sessionId, ...body }:
-      | { sessionId: number; kind: 'text'; text: string }
-      | { sessionId: number; kind: 'image'; image: string; caption?: string }
+      | { sessionId: number; kind: 'text';  text:  string; target?: 'student' | 'teacher' }
+      | { sessionId: number; kind: 'image'; image: string; target?: 'student' | 'teacher'; caption?: string }
     ) => api<{ message: string; external_message_id?: string; recipient: string }>(
       `/sessions/${sessionId}/send-report-whatsapp`,
       { method: 'POST', body: JSON.stringify(body) },

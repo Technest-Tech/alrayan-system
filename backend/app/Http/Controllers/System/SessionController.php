@@ -346,22 +346,41 @@ class SessionController extends Controller
 
         $data = $request->validate([
             'kind'    => ['required', 'in:text,image'],
+            'target'  => ['nullable', 'in:student,teacher'],   // defaults to student
             'text'    => ['required_if:kind,text', 'string', 'max:8000'],
             'image'   => ['required_if:kind,image', 'string'],  // base64 (data URL allowed)
             'caption' => ['nullable', 'string', 'max:1024'],
         ]);
 
-        $session->load('student');
-        $student = $session->student;
-        if (!$student) {
-            return response()->json(['message' => 'Session has no student.'], 422);
+        $target = $data['target'] ?? 'student';
+
+        // Resolve recipient + display name based on target.
+        if ($target === 'teacher') {
+            $session->load(['teacher.user']);
+            $teacher = $session->teacher;
+            if (!$teacher || !$teacher->user) {
+                return response()->json(['message' => 'Session has no teacher / user.'], 422);
+            }
+            $phone        = $teacher->user->whatsapp ?: $teacher->user->phone;
+            $recipientId  = $teacher->id;
+            $recipientKey = 'teacher_id';
+            $recipientNm  = $teacher->user->name;
+            $kind404msg   = 'Teacher has no WhatsApp/phone number on file.';
+        } else {
+            $session->load('student');
+            $student = $session->student;
+            if (!$student) {
+                return response()->json(['message' => 'Session has no student.'], 422);
+            }
+            $phone        = $student->whatsapp ?: $student->phone;
+            $recipientId  = $student->id;
+            $recipientKey = 'student_id';
+            $recipientNm  = $student->name;
+            $kind404msg   = 'Student has no WhatsApp/phone number on file.';
         }
 
-        $phone = $student->whatsapp ?: $student->phone;
         if (!$phone) {
-            return response()->json([
-                'message' => 'Student has no WhatsApp/phone number on file.',
-            ], 422);
+            return response()->json(['message' => $kind404msg], 422);
         }
         // Wassender's sendToPhone builds the JID; we just need a clean +country digits string.
         $cleanPhone = preg_replace('/\s|-/', '', $phone);
@@ -387,7 +406,7 @@ class SessionController extends Controller
             $url = Storage::disk('public')->url($filename);
 
             $caption  = $data['caption'] ?? null;
-            $rendered = $caption ?: "Session Report — {$student->name}";
+            $rendered = $caption ?: "Session Report — {$recipientNm}";
             $payload  = ['kind' => 'image', 'image_path' => $filename, 'image_url' => $url];
 
             $jid = ltrim($cleanPhone, '+') . '@s.whatsapp.net';
@@ -396,7 +415,7 @@ class SessionController extends Controller
 
         // Audit log — uses the existing sys_wassender_logs table.
         WassenderLog::create([
-            'template_key'         => 'session_report.' . $data['kind'],
+            'template_key'         => 'session_report.' . $target . '.' . $data['kind'],
             'recipient_phone'      => $cleanPhone,
             'rendered_message'     => $rendered,
             'status'               => $result->success ? 'sent' : 'failed',
@@ -404,8 +423,9 @@ class SessionController extends Controller
             'attempt_count'        => 1,
             'error'                => $result->success ? null : ($result->errorBody ?? 'send failed'),
             'payload'              => array_merge($payload, [
-                'session_id' => $session->id,
-                'student_id' => $student->id,
+                'session_id'  => $session->id,
+                $recipientKey => $recipientId,
+                'target'      => $target,
             ]),
             'sent_at'              => $result->success ? now() : null,
         ]);
