@@ -8,7 +8,7 @@ import {
 import { toPng } from 'html-to-image'
 import { toast } from 'sonner'
 import type { Session } from '@/types/system/session'
-import { useSubmitReport } from '@/hooks/system/useSessionReports'
+import { useSubmitReport, useSessionReport } from '@/hooks/system/useSessionReports'
 import { useMarkAttendance } from '@/hooks/system/useSessions'
 import { SessionReportCard } from './SessionReportCard'
 import type { SessionReportCardData } from './SessionReportCard'
@@ -163,6 +163,8 @@ interface Props {
 export function SessionReportModal({ session, open, studentName, onClose, onSubmitted }: Props) {
   const submit         = useSubmitReport()
   const markAttendance = useMarkAttendance()
+  // Load existing report (if any) so opening "Report ✓" pre-fills the form.
+  const { data: existingReport } = useSessionReport(open && session?.has_report ? session.id : null)
 
   const [performance,      setPerformance]      = useState('good')
   const [covered,          setCovered]          = useState('')
@@ -178,23 +180,35 @@ export function SessionReportModal({ session, open, studentName, onClose, onSubm
 
   const cardRef = useRef<HTMLDivElement>(null)
 
-  /* load draft */
+  /* load existing report (if any) first, then layer any newer local draft on top */
   useEffect(() => {
     if (!open || !session) return
+
+    // Step 1: seed from the saved server report
+    if (existingReport) {
+      setPerformance(existingReport.performance       ?? 'good')
+      setCovered(existingReport.covered_text          ?? '')
+      setHomework(existingReport.homework_text        ?? '')
+      // Server report only stores 4 fields; the rest of the form
+      // (strengths/weaknesses/recommendations/parent_report) are UI-side
+      // helpers that live in localStorage only.
+    }
+
+    // Step 2: overlay any local draft (more recent unsubmitted edits)
     const raw = localStorage.getItem(DRAFT_KEY(session.id))
     if (raw) {
       try {
         const d = JSON.parse(raw)
-        setPerformance(d.performance     ?? 'good')
-        setCovered(d.covered             ?? '')
-        setStrengths(d.strengths         ?? '')
-        setWeaknesses(d.weaknesses       ?? '')
-        setRecommendations(d.recommendations ?? '')
-        setHomework(d.homework           ?? '')
-        setParentReport(d.parentReport   ?? '')
+        if (d.performance)     setPerformance(d.performance)
+        if (d.covered)         setCovered(d.covered)
+        if (d.strengths)       setStrengths(d.strengths)
+        if (d.weaknesses)      setWeaknesses(d.weaknesses)
+        if (d.recommendations) setRecommendations(d.recommendations)
+        if (d.homework)        setHomework(d.homework)
+        if (d.parentReport)    setParentReport(d.parentReport)
       } catch {}
     }
-  }, [open, session?.id])
+  }, [open, session?.id, existingReport])
 
   /* autosave */
   useEffect(() => {

@@ -227,7 +227,8 @@ function SessionRow({
             </button>
           )}
           {isAttended && session.has_report && (
-            <button onClick={onView}
+            <button onClick={onAttendWithReport}
+              title="View / edit session report"
               className="h-7 px-2.5 rounded-lg text-[11px] font-semibold bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 transition-colors whitespace-nowrap">
               Report ✓
             </button>
