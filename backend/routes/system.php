@@ -98,6 +98,7 @@ Route::prefix('system')->name('system.')->group(function () {
         // Teachers
         Route::middleware('system.can:teachers.view')->group(function () {
             Route::get('/teachers',      [TeacherController::class, 'index'])->name('teachers.index');
+            Route::get('/teachers/availability-overview', [TeacherController::class, 'availabilityOverview'])->name('teachers.availability-overview');
             Route::get('/teachers/{teacher}/notes', [TeacherNoteController::class, 'index'])->name('teachers.notes.index');
         });
         Route::get('/teachers/{teacher}', [TeacherController::class, 'show'])->name('teachers.show');

@@ -3,7 +3,7 @@ import { useState, useMemo } from 'react'
 import {
   CalendarDays, Clock, AlertTriangle, FileText, Search, X,
   ChevronRight, CheckCircle2, XCircle, Ban,
-  Edit3, Video, GraduationCap, Loader2,
+  Edit3, Video, GraduationCap, Loader2, Sparkles,
 } from 'lucide-react'
 import { SessionDrawer } from '@/components/system/schedule/SessionDrawer'
 import { ConflictBanner } from '@/components/system/schedule/ConflictBanner'
@@ -12,6 +12,7 @@ import { AbsentModal } from '@/components/system/schedule/AbsentModal'
 import { RescheduleModal } from '@/components/system/schedule/RescheduleModal'
 import { CancelModal } from '@/components/system/schedule/CancelModal'
 import { SessionEventPopup } from '@/components/system/schedule/SessionEventPopup'
+import { TeacherAvailabilityModal } from '@/components/system/schedule/TeacherAvailabilityModal'
 import { SessionReportModal } from '@/components/system/students/SessionReportModal'
 import {
   useSessions,
@@ -360,6 +361,7 @@ export default function SchedulePage() {
   const [rescheduleTarget, setRescheduleTarget] = useState<Session | null>(null)
   const [cancelTarget,     setCancelTarget]     = useState<Session | null>(null)
   const [reportTarget,     setReportTarget]     = useState<Session | null>(null)
+  const [availabilityOpen, setAvailabilityOpen] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
   const [teacherId, setTeacherId] = useState<string>('')
   const [statusFilter, setStatusFilter] = useState<string>('')
@@ -429,11 +431,21 @@ export default function SchedulePage() {
   return (
     <>
       {/* Header */}
-      <div className="mb-5">
-        <h1 className="text-xl font-semibold" style={{ color: 'rgb(11 31 58)' }}>Schedule</h1>
-        <p className="text-sm mt-0.5" style={{ color: 'rgb(90 100 112)' }}>
-          Day-by-day list of sessions — mark attendance and write reports inline.
-        </p>
+      <div className="mb-5 flex items-start justify-between gap-3">
+        <div>
+          <h1 className="text-xl font-semibold" style={{ color: 'rgb(11 31 58)' }}>Schedule</h1>
+          <p className="text-sm mt-0.5" style={{ color: 'rgb(90 100 112)' }}>
+            Day-by-day list of sessions — mark attendance and write reports inline.
+          </p>
+        </div>
+        <button
+          onClick={() => setAvailabilityOpen(true)}
+          className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-semibold transition-opacity hover:opacity-90 shrink-0"
+          style={{ background: 'rgb(30 90 171)', color: '#fff' }}
+        >
+          <Sparkles size={14} />
+          Teacher availabilities
+        </button>
       </div>
 
       {/* Stat cards */}
@@ -638,6 +650,11 @@ export default function SchedulePage() {
         studentName={reportTarget?.student?.name ?? ''}
         onClose={() => setReportTarget(null)}
         onSubmitted={() => { setReportTarget(null); refetch() }}
+      />
+
+      <TeacherAvailabilityModal
+        open={availabilityOpen}
+        onClose={() => setAvailabilityOpen(false)}
       />
     </>
   )

@@ -362,7 +362,8 @@ function NewInvoiceModal({
               {billingPreview.pro_rata && (
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-500">
-                    Pro-rata ({billingPreview.pro_rata.remaining_days}/{billingPreview.pro_rata.days_in_month} days)
+                    Pro-rata ({billingPreview.pro_rata.remaining_sessions}/{billingPreview.pro_rata.sessions_in_month} sessions
+                    {' '}× {formatMinor(billingPreview.pro_rata.per_session_minor, billingPreview.currency)})
                   </span>
                   <span className="font-medium text-gray-800">
                     {formatMinor(billingPreview.pro_rata.amount_minor, billingPreview.currency)}

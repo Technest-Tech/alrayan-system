@@ -34,6 +34,64 @@ class TeacherController extends Controller
         return TeacherResource::collection($teachers);
     }
 
+    public function availabilityOverview(Request $request): array
+    {
+        $from = $request->filled('from')
+            ? \Carbon\CarbonImmutable::parse($request->string('from'))->startOfDay()
+            : \Carbon\CarbonImmutable::now()->startOfWeek();
+        $to = $request->filled('to')
+            ? \Carbon\CarbonImmutable::parse($request->string('to'))->endOfDay()
+            : $from->addDays(6)->endOfDay();
+
+        $teachers = Teacher::query()
+            ->where('is_active', true)
+            ->with(['user', 'availability'])
+            ->get();
+
+        $teacherIds = $teachers->pluck('id');
+
+        $sessions = \App\Models\System\Session::query()
+            ->whereIn('teacher_id', $teacherIds)
+            ->whereBetween('scheduled_start', [$from, $to])
+            ->whereNotIn('status', ['cancelled'])
+            ->with(['student:id,name,status'])
+            ->get()
+            ->groupBy('teacher_id');
+
+        return [
+            'data' => $teachers->map(function (Teacher $t) use ($sessions) {
+                $list = $sessions->get($t->id, collect());
+                return [
+                    'id'           => $t->id,
+                    'name'         => optional($t->user)->name,
+                    'email'        => optional($t->user)->email,
+                    'availability' => $t->availability->map(fn ($a) => [
+                        'day_of_week' => (int) $a->day_of_week,
+                        'start_time'  => $a->start_time,
+                        'end_time'    => $a->end_time,
+                        'timezone'    => $a->timezone,
+                    ])->values(),
+                    'sessions'     => $list->map(fn ($s) => [
+                        'id'              => $s->id,
+                        'scheduled_start' => $s->scheduled_start?->toIso8601String(),
+                        'scheduled_end'   => $s->scheduled_end?->toIso8601String(),
+                        'status'          => $s->status,
+                        'is_trial'        => optional($s->student)->status === 'trial',
+                        'student'         => $s->student ? [
+                            'id'     => $s->student->id,
+                            'name'   => $s->student->name,
+                            'status' => $s->student->status,
+                        ] : null,
+                    ])->values(),
+                ];
+            })->values(),
+            'range' => [
+                'from' => $from->toIso8601String(),
+                'to'   => $to->toIso8601String(),
+            ],
+        ];
+    }
+
     public function show(Teacher $teacher): TeacherDetailResource
     {
         $this->authorize('view', $teacher);
