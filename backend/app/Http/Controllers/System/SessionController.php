@@ -205,6 +205,20 @@ class SessionController extends Controller
                 if ($item['status'] === 'attended') {
                     $data['attended_marked_at']         = now();
                     $data['attended_marked_by_user_id'] = auth()->id();
+                    // Clear stale cancellation fields when flipping back to attended.
+                    $data['cancelled_by']        = null;
+                    $data['cancellation_reason'] = null;
+                    $data['apology_received']    = false;
+                    $data['apology_at']          = null;
+                } elseif ($item['status'] === 'absent') {
+                    // Bulk-absent defaults to teacher fault when no cancelled_by is sent —
+                    // safest for billing (won't accidentally consume student quotas).
+                    $data['cancelled_by']        = $item['cancelled_by'] ?? 'teacher';
+                    $data['cancellation_reason'] = $item['cancellation_reason'] ?? null;
+                    $apologized = ($data['cancelled_by'] === 'student')
+                        && ! empty($item['apology_received']);
+                    $data['apology_received'] = $apologized;
+                    $data['apology_at']       = $apologized ? now() : null;
                 } elseif ($item['status'] === 'cancelled') {
                     $data['cancelled_by']        = $item['cancelled_by'] ?? 'admin';
                     $data['cancellation_reason'] = $item['cancellation_reason'] ?? null;

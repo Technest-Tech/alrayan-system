@@ -7,10 +7,11 @@ import {
 } from 'lucide-react'
 import { PageHeader } from '@/components/system/primitives/PageHeader'
 import { useSessions, useBulkAttendance, useMarkAttendance } from '@/hooks/system/useSessions'
-import { RescheduleSheet } from '@/components/system/schedule/RescheduleSheet'
-import { CancelSessionDialog } from '@/components/system/schedule/CancelSessionDialog'
+import { RescheduleModal } from '@/components/system/schedule/RescheduleModal'
+import { CancelModal } from '@/components/system/schedule/CancelModal'
 import { SessionDrawer } from '@/components/system/schedule/SessionDrawer'
 import { SessionReportModal } from '@/components/system/students/SessionReportModal'
+import { AbsentModal } from '@/components/system/schedule/AbsentModal'
 import type { Session, SessionStatus } from '@/types/system/session'
 
 // ─── constants ────────────────────────────────────────────────────────────────
@@ -94,6 +95,26 @@ function StatusBadge({ status }: { status: string }) {
   )
 }
 
+/* Quota-impact pill — shown next to status for marked sessions. */
+function QuotaBadge({ session }: { session: Session }) {
+  if (session.status === 'scheduled' || session.status === 'rescheduled' || session.status === 'pending_substitute') return null
+  const map: Record<string, { label: string; bg: string; fg: string; tip: string }> = {
+    counted:         { label: 'Counted',        bg: 'rgb(220 252 231)', fg: 'rgb(21 128 61)',  tip: 'Consumed from monthly quota' },
+    counted_no_show: { label: 'No-show',        bg: 'rgb(254 226 226)', fg: 'rgb(153 27 27)',  tip: 'Student absent without apology — counted as used' },
+    free_teacher:    { label: 'Free (teacher)', bg: 'rgb(254 243 199)', fg: 'rgb(146 64 14)',  tip: 'Teacher absent — not counted from quota' },
+    free_excused:    { label: 'Free (excused)', bg: 'rgb(219 234 254)', fg: 'rgb(30 64 175)',  tip: 'Student apologized in time — not counted' },
+    free:            { label: 'Free',           bg: 'rgb(243 244 246)', fg: 'rgb(75 85 99)',   tip: 'Does not count against quota' },
+  }
+  const cfg = map[session.quota_impact] ?? map.free
+  return (
+    <span title={cfg.tip}
+      className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-semibold whitespace-nowrap"
+      style={{ background: cfg.bg, color: cfg.fg }}>
+      {cfg.label}
+    </span>
+  )
+}
+
 // ─── table row ────────────────────────────────────────────────────────────────
 
 function SessionRow({
@@ -156,7 +177,12 @@ function SessionRow({
           </span>
         </div>
       </td>
-      <td className="px-3 py-3 w-36"><StatusBadge status={session.status} /></td>
+      <td className="px-3 py-3 w-44">
+        <div className="flex flex-wrap items-center gap-1">
+          <StatusBadge status={session.status} />
+          <QuotaBadge session={session} />
+        </div>
+      </td>
       <td className="px-3 py-3 w-28 hidden md:table-cell">
         {isAttended ? (
           <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium border ${
@@ -262,7 +288,7 @@ function TableHead({ selectableInView, allInViewSelected, onToggleAll }: {
 function SessionSection({
   title, Icon: SectionIcon, accentColor, emptyLabel,
   sessions, isLoading, refetch,
-  onReschedule, onCancel, onView, onAttendWithReport,
+  onReschedule, onCancel, onView, onAttendWithReport, onMarkAbsent,
 }: {
   title: string
   Icon: React.ElementType
@@ -275,6 +301,7 @@ function SessionSection({
   onCancel: (s: Session) => void
   onView: (s: Session) => void
   onAttendWithReport: (s: Session) => void
+  onMarkAbsent: (s: Session) => void
 }) {
   const [activeTab, setActiveTab] = useState('all')
   const [selected,  setSelected]  = useState<number[]>([])
@@ -305,12 +332,19 @@ function SessionSection({
     else setSelected(p => [...new Set([...p, ...selectableInView])])
   }
   function bulkAction(status: 'attended' | 'absent') {
+    // For bulk-absent we default to teacher fault (safest billing-wise —
+    // doesn't accidentally consume student quotas in batch). Individual
+    // rows still go through the 2-step AbsentModal for granular control.
     bulkMark.mutate(
-      selected.map(id => ({ session_id: id, status })),
+      selected.map(id => ({
+        session_id: id,
+        status,
+        ...(status === 'absent' ? { cancelled_by: 'teacher' as const } : {}),
+      })),
       { onSuccess: () => { setSelected([]); refetch() } }
     )
   }
-  function markOne(session: Session, status: 'attended' | 'absent') {
+  function markOne(session: Session, status: 'attended') {
     markSingle.mutate({ id: session.id, status }, { onSuccess: () => refetch() })
   }
 
@@ -387,8 +421,9 @@ function SessionSection({
               {bulkMark.isPending ? 'Saving…' : '✓ Attended'}
             </button>
             <button onClick={() => bulkAction('absent')} disabled={bulkMark.isPending}
+              title="Bulk-absent assumes teacher was absent (not consumed from quota). For per-student detail use the row Absent button."
               className="h-8 px-3 rounded-lg text-xs font-semibold bg-red-50 text-red-600 hover:bg-red-100 border border-red-200 disabled:opacity-50 transition-colors">
-              ✗ Absent
+              ✗ Absent (teacher)
             </button>
             <button onClick={() => setSelected([])}
               className="h-8 px-3 rounded-lg text-xs text-muted-foreground hover:bg-gray-100 border border-gray-200 transition-colors">
@@ -437,7 +472,7 @@ function SessionSection({
                   markingId={markingId}
                   onToggle={() => toggle(session.id)}
                   onAttended={() => markOne(session, 'attended')}
-                  onAbsent={() => markOne(session, 'absent')}
+                  onAbsent={() => onMarkAbsent(session)}
                   onReschedule={() => onReschedule(session)}
                   onCancel={() => onCancel(session)}
                   onView={() => onView(session)}
@@ -475,6 +510,7 @@ export default function AttendancePage() {
   const [cancelTarget,     setCancelTarget]     = useState<Session | null>(null)
   const [drawerSession,    setDrawerSession]    = useState<Session | null>(null)
   const [reportTarget,     setReportTarget]     = useState<Session | null>(null)
+  const [absentTarget,     setAbsentTarget]     = useState<Session | null>(null)
 
   const dateStr = currentDate.toISOString().split('T')[0]
   const isToday = dateStr === new Date().toISOString().split('T')[0]
@@ -611,6 +647,7 @@ export default function AttendancePage() {
             onCancel={setCancelTarget}
             onView={setDrawerSession}
             onAttendWithReport={setReportTarget}
+            onMarkAbsent={setAbsentTarget}
           />
         )}
 
@@ -633,28 +670,23 @@ export default function AttendancePage() {
             onCancel={setCancelTarget}
             onView={setDrawerSession}
             onAttendWithReport={setReportTarget}
+            onMarkAbsent={setAbsentTarget}
           />
         )}
 
       </div>
 
-      {/* ── Panels ── */}
-      {rescheduleTarget && (
-        <RescheduleSheet
-          session={rescheduleTarget}
-          open
-          onClose={() => setRescheduleTarget(null)}
-          onSuccess={() => { setRescheduleTarget(null); refetch() }}
-        />
-      )}
-      {cancelTarget && (
-        <CancelSessionDialog
-          session={cancelTarget}
-          open
-          onClose={() => setCancelTarget(null)}
-          onSuccess={() => { setCancelTarget(null); refetch() }}
-        />
-      )}
+      {/* ── Popups ── */}
+      <RescheduleModal
+        session={rescheduleTarget}
+        onClose={() => setRescheduleTarget(null)}
+        onDone={() => { setRescheduleTarget(null); refetch() }}
+      />
+      <CancelModal
+        session={cancelTarget}
+        onClose={() => setCancelTarget(null)}
+        onDone={() => { setCancelTarget(null); refetch() }}
+      />
       <SessionDrawer
         session={drawerSession}
         open={drawerSession !== null}
@@ -668,6 +700,13 @@ export default function AttendancePage() {
         onClose={() => setReportTarget(null)}
         onSubmitted={() => { setReportTarget(null); refetch() }}
       />
+      {absentTarget && (
+        <AbsentModal
+          session={absentTarget}
+          onClose={() => setAbsentTarget(null)}
+          onSubmitted={refetch}
+        />
+      )}
     </>
   )
 }

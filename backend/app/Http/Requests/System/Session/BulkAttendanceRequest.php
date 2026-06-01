@@ -17,6 +17,7 @@ class BulkAttendanceRequest extends FormRequest
             'items.*.status'               => ['required', Rule::in(['attended', 'absent', 'cancelled'])],
             'items.*.cancelled_by'         => ['nullable', Rule::in(['student', 'teacher', 'admin'])],
             'items.*.cancellation_reason'  => ['nullable', 'string', 'max:500'],
+            'items.*.apology_received'     => ['nullable', 'boolean'],
         ];
     }
 }

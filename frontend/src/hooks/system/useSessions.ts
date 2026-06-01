@@ -76,7 +76,13 @@ export function useCancelSession() {
 export function useBulkAttendance() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: (items: Array<{ session_id: number; status: string; cancelled_by?: string }>) =>
+    mutationFn: (items: Array<{
+      session_id: number
+      status: 'attended' | 'absent' | 'cancelled'
+      cancelled_by?: 'student' | 'teacher' | 'admin'
+      cancellation_reason?: string
+      apology_received?: boolean
+    }>) =>
       api('/sessions/bulk-attendance', { method: 'POST', body: JSON.stringify({ items }) }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['system', 'sessions'] }),
   })
