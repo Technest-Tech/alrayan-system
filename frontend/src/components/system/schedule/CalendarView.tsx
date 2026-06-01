@@ -113,6 +113,9 @@ interface CalendarViewProps {
   onEventDrop?:  (session: Session, newStart: Date) => void
   editable?:     boolean
   initialView?:  'timeGridDay' | 'timeGridWeek' | 'dayGridMonth'
+  /** Controlled date (optional) — when provided, CalendarView reflects this date instead of its own. */
+  date?:         Date
+  onDateChange?: (d: Date) => void
 }
 
 export function CalendarView({
@@ -120,9 +123,13 @@ export function CalendarView({
   loading = false,
   onEventClick,
   initialView = 'timeGridDay',
+  date,
+  onDateChange,
 }: CalendarViewProps) {
-  const [view, setView]           = useState<View>(initialView === 'dayGridMonth' ? 'month' : 'day')
-  const [currentDate, setCurrentDate] = useState(new Date())
+  const [view, setView]                       = useState<View>(initialView === 'dayGridMonth' ? 'month' : 'day')
+  const [internalDate, setInternalDate]       = useState(new Date())
+  const currentDate                           = date ?? internalDate
+  const setCurrentDate = (d: Date) => { if (onDateChange) onDateChange(d); else setInternalDate(d) }
   const scrollRef = useRef<HTMLDivElement>(null)
   const now       = new Date()
 

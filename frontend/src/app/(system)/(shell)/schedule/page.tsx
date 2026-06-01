@@ -2,11 +2,12 @@
 import { useState, useMemo } from 'react'
 import {
   CalendarDays, Clock, AlertTriangle, FileText, Search, X,
-  ChevronLeft, ChevronRight, CheckCircle2, XCircle, Ban,
-  Edit3, MoreHorizontal, Video, User, GraduationCap, Loader2,
+  ChevronRight, CheckCircle2, XCircle, Ban,
+  Edit3, Video, GraduationCap, Loader2,
 } from 'lucide-react'
 import { SessionDrawer } from '@/components/system/schedule/SessionDrawer'
 import { ConflictBanner } from '@/components/system/schedule/ConflictBanner'
+import { CalendarView } from '@/components/system/schedule/CalendarView'
 import {
   useSessions,
   useSessionConflicts,
@@ -243,59 +244,6 @@ function ActionButton({ icon, label, color, bg, onClick, loading }: {
   )
 }
 
-/* ─── Date navigator ───────────────────────────────────────────────────── */
-function DateNav({ date, setDate }: { date: Date; setDate: (d: Date) => void }) {
-  const today = new Date(); today.setHours(0,0,0,0)
-  const tomorrow = new Date(today); tomorrow.setDate(tomorrow.getDate() + 1)
-  const isToday = isSameDay(date, today)
-  const isTomorrow = isSameDay(date, tomorrow)
-
-  function shift(days: number) {
-    const d = new Date(date); d.setDate(d.getDate() + days); setDate(d)
-  }
-
-  return (
-    <div className="flex items-center gap-2 flex-wrap">
-      <button
-        onClick={() => setDate(new Date())}
-        className="px-3 py-1.5 rounded-lg text-sm font-medium transition-colors"
-        style={isToday
-          ? { background: 'rgb(14 124 90)', color: '#fff' }
-          : { background: 'rgb(243 244 246)', color: 'rgb(75 85 99)' }}
-      >
-        Today
-      </button>
-      <button
-        onClick={() => { const d = new Date(); d.setDate(d.getDate() + 1); setDate(d) }}
-        className="px-3 py-1.5 rounded-lg text-sm font-medium transition-colors"
-        style={isTomorrow
-          ? { background: 'rgb(14 124 90)', color: '#fff' }
-          : { background: 'rgb(243 244 246)', color: 'rgb(75 85 99)' }}
-      >
-        Tomorrow
-      </button>
-      <div className="flex items-center gap-1 ml-1">
-        <button onClick={() => shift(-1)} className="p-1.5 rounded-lg hover:bg-gray-100" title="Previous day">
-          <ChevronLeft size={16} />
-        </button>
-        <input
-          type="date"
-          value={toYmd(date)}
-          onChange={e => e.target.value && setDate(new Date(e.target.value + 'T00:00:00'))}
-          className="px-2 py-1 text-sm rounded-lg border bg-white"
-          style={{ borderColor: 'rgb(var(--border-default,229 233 240))' }}
-        />
-        <button onClick={() => shift(1)} className="p-1.5 rounded-lg hover:bg-gray-100" title="Next day">
-          <ChevronRight size={16} />
-        </button>
-      </div>
-      <p className="text-sm ml-2 hidden sm:block" style={{ color: 'rgb(120 130 140)' }}>
-        {formatDay(date)}
-      </p>
-    </div>
-  )
-}
-
 /* ─── Section ──────────────────────────────────────────────────────────── */
 function Section({
   title, count, accent, icon, sessions, onOpen, defaultOpen = true, highlight = false,
@@ -421,11 +369,6 @@ export default function SchedulePage() {
         </p>
       </div>
 
-      {/* Date navigator */}
-      <div className="mb-4">
-        <DateNav date={date} setDate={setDate} />
-      </div>
-
       {/* Stat cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
         <StatCard icon={<CalendarDays size={16} />} label="Sessions on this day" value={todayCount} accent="rgb(30 90 171)" />
@@ -483,7 +426,25 @@ export default function SchedulePage() {
         </select>
       </div>
 
-      {/* List */}
+      {/* Calendar (visual day view — always rendered, even when empty) */}
+      <div className="mb-6">
+        <CalendarView
+          sessions={filtered}
+          loading={isLoading}
+          onEventClick={setSelected}
+          date={date}
+          onDateChange={setDate}
+          editable
+        />
+      </div>
+
+      {/* Action sections */}
+      <div className="mb-2">
+        <h2 className="text-sm font-bold uppercase tracking-wide mb-3" style={{ color: 'rgb(11 31 58)' }}>
+          Quick actions
+        </h2>
+      </div>
+
       {isLoading ? (
         <div className="py-20 flex flex-col items-center justify-center gap-3 text-gray-400">
           <Loader2 size={22} className="animate-spin" />
