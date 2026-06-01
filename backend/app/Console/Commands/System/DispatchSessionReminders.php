@@ -42,8 +42,13 @@ class DispatchSessionReminders extends Command
                 $window->copy()->addMinute(),
             ])
             ->with(['student.whatsappGroup', 'student.course', 'teacher.user', 'teacher.whatsappGroup'])
-            ->whereDoesntHave('wassenderLogs', function ($q) {
-                $q->where('template_key', 'like', 'session_reminder%')
+            // No FK between sys_sessions and sys_wassender_logs — session_id
+            // lives inside the JSON payload — so we filter via a NOT EXISTS
+            // subquery instead of a non-existent Eloquent relation.
+            ->whereNotExists(function ($q) {
+                $q->select(\DB::raw(1))
+                  ->from('sys_wassender_logs')
+                  ->where('template_key', 'like', 'session_reminder%')
                   ->whereRaw("JSON_EXTRACT(payload, '$.session_id') = sys_sessions.id");
             })
             ->limit(500)
@@ -92,8 +97,10 @@ class DispatchSessionReminders extends Command
                 ])
                 ->whereHas('student', fn ($q) => $q->whereIn('status', ['active', 'trial']))
                 ->with(['student', 'teacher.user'])
-                ->whereDoesntHave('wassenderLogs', function ($q) use ($key) {
-                    $q->where('template_key', 'like', "session_reminder_{$key}_%")
+                ->whereNotExists(function ($q) use ($key) {
+                    $q->select(\DB::raw(1))
+                      ->from('sys_wassender_logs')
+                      ->where('template_key', 'like', "session_reminder_{$key}_%")
                       ->whereRaw("JSON_EXTRACT(payload, '$.session_id') = sys_sessions.id");
                 })
                 ->limit(500)

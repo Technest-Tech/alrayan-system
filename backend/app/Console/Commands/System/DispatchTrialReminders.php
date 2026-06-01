@@ -39,8 +39,10 @@ class DispatchTrialReminders extends Command
             ])
             ->whereHas('student', fn ($q) => $q->where('status', 'trial'))
             ->with(['student', 'teacher.user'])
-            ->whereDoesntHave('wassenderLogs', function ($q) use ($key) {
-                $q->where('template_key', 'like', "trial_reminder_{$key}_%")
+            ->whereNotExists(function ($q) use ($key) {
+                $q->select(\DB::raw(1))
+                  ->from('sys_wassender_logs')
+                  ->where('template_key', 'like', "trial_reminder_{$key}_%")
                   ->whereRaw("JSON_EXTRACT(payload, '$.session_id') = sys_sessions.id");
             })
             ->limit(200)
