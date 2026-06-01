@@ -1,8 +1,9 @@
 'use client'
 import { useMemo, useState } from 'react'
 import {
-  Search, X, Loader2, CheckCircle2, Send, MoreHorizontal, RefreshCw,
+  Search, X, Loader2, CheckCircle2, RefreshCw,
   ChevronLeft, ChevronRight, MessageCircle, DollarSign, Users, FileText,
+  ExternalLink, User as UserIcon,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import Link from 'next/link'
@@ -64,7 +65,6 @@ function RowActions({ row, period, onRefetch }: {
 }) {
   const markPaid = useMarkBillPaid()
   const sendBill = useSendBillWhatsApp()
-  const [openMenu, setOpenMenu] = useState(false)
 
   async function doMarkPaid() {
     try {
@@ -89,7 +89,8 @@ function RowActions({ row, period, onRefetch }: {
   const isSending = sendBill.isPending
 
   return (
-    <div className="flex items-center justify-end gap-1.5">
+    <div className="flex items-center justify-end gap-1.5 flex-wrap">
+      {/* Send bill — visible until paid */}
       {!row.paid && (
         <button onClick={doSendBill} disabled={isSending || !row.whatsapp}
           title={row.whatsapp ? 'Send bill to student WhatsApp' : 'No WhatsApp on file'}
@@ -99,6 +100,8 @@ function RowActions({ row, period, onRefetch }: {
           Send bill
         </button>
       )}
+
+      {/* Mark paid — visible until paid */}
       {!row.paid && (
         <button onClick={doMarkPaid} disabled={isMarking}
           className="inline-flex items-center gap-1 h-7 px-2.5 rounded-lg text-[11px] font-semibold border bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border-emerald-200 disabled:opacity-50 transition-colors">
@@ -106,35 +109,29 @@ function RowActions({ row, period, onRefetch }: {
           Mark paid
         </button>
       )}
+
+      {/* Paid badge */}
       {row.paid && (
         <span className="inline-flex items-center gap-1 h-7 px-2.5 rounded-lg text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
           <CheckCircle2 size={11} />Paid
         </span>
       )}
-      <div className="relative">
-        <button onClick={() => setOpenMenu(o => !o)}
-          className="h-7 w-7 rounded-lg flex items-center justify-center hover:bg-gray-50 text-gray-500 border border-gray-200">
-          <MoreHorizontal size={13} />
-        </button>
-        {openMenu && (
-          <>
-            <div className="fixed inset-0 z-10" onClick={() => setOpenMenu(false)} />
-            <div className="absolute right-0 top-full mt-1 w-44 rounded-xl shadow-lg border z-20 py-1 text-xs bg-white"
-              style={{ borderColor: 'rgb(var(--border-default,229 233 240))' }}>
-              <Link href={`/students/${row.student_id}`} onClick={() => setOpenMenu(false)}
-                className="block w-full text-left px-3 py-2 hover:bg-gray-50 transition-colors">
-                Open student
-              </Link>
-              {row.invoice_id && (
-                <Link href={`/billing/invoices/${row.invoice_id}`} onClick={() => setOpenMenu(false)}
-                  className="block w-full text-left px-3 py-2 hover:bg-gray-50 transition-colors">
-                  View invoice
-                </Link>
-              )}
-            </div>
-          </>
-        )}
-      </div>
+
+      {/* Open student */}
+      <Link href={`/students/${row.student_id}`}
+        title="Open student profile"
+        className="inline-flex items-center gap-1 h-7 px-2.5 rounded-lg text-[11px] font-semibold border bg-white text-gray-600 hover:bg-gray-50 border-gray-200 transition-colors">
+        <UserIcon size={11} />Student
+      </Link>
+
+      {/* View invoice — only when one exists */}
+      {row.invoice_id && (
+        <Link href={`/billing/invoices/${row.invoice_id}`}
+          title="View linked invoice"
+          className="inline-flex items-center gap-1 h-7 px-2.5 rounded-lg text-[11px] font-semibold border bg-blue-50 text-blue-700 hover:bg-blue-100 border-blue-200 transition-colors">
+          <ExternalLink size={11} />Invoice
+        </Link>
+      )}
     </div>
   )
 }
