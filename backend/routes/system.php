@@ -170,6 +170,7 @@ Route::prefix('system')->name('system.')->group(function () {
         });
         Route::post('/sessions/{session}/cancel',     [SessionController::class, 'cancel'])->name('sessions.cancel');
         Route::post('/sessions/{session}/attendance', [SessionController::class, 'markAttendance'])->name('sessions.attendance');
+        Route::post('/sessions/{session}/send-report-whatsapp', [SessionController::class, 'sendReportWhatsApp'])->name('sessions.send-report-whatsapp');
         Route::middleware('system.can:attendance.edit')->post('/sessions/bulk-attendance', [SessionController::class, 'bulkAttendance'])->name('sessions.bulk-attendance');
 
         // Schedule patterns (on students)

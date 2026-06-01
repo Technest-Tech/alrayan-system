@@ -3,13 +3,13 @@ import { useState, useEffect, useRef } from 'react'
 import {
   X, Star, CheckCircle2, ClipboardList, User, CalendarDays,
   Clock, Sparkles, Copy, Check, BookOpen, AlertCircle,
-  ImageDown, Download, Loader2,
+  ImageDown, Download, Loader2, MessageSquare, Send,
 } from 'lucide-react'
 import { toPng } from 'html-to-image'
 import { toast } from 'sonner'
 import type { Session } from '@/types/system/session'
 import { useSubmitReport, useSessionReport } from '@/hooks/system/useSessionReports'
-import { useMarkAttendance } from '@/hooks/system/useSessions'
+import { useMarkAttendance, useSendSessionReportWhatsApp } from '@/hooks/system/useSessions'
 import { SessionReportCard } from './SessionReportCard'
 import type { SessionReportCardData } from './SessionReportCard'
 
@@ -114,6 +114,50 @@ function generateParentReport(
   return lines.join('\n')
 }
 
+function generateTeacherMessage(
+  studentName: string,
+  teacherName: string | null | undefined,
+  date: string,
+  duration: number,
+): string {
+  const lines: string[] = []
+  lines.push(`🎓 *Session Report Request — Al-Rayan Academy*`)
+  lines.push(`━━━━━━━━━━━━━━━━━━━━━━`)
+  lines.push(``)
+  lines.push(`Assalamu Alaikum${teacherName ? ` *${teacherName}*` : ''},`)
+  lines.push(``)
+  lines.push(`Please fill in the session report for:`)
+  lines.push(`👤 Student: *${studentName}*`)
+  lines.push(`📅 Date: *${new Date(date).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}*`)
+  lines.push(`🕐 Time: *${new Date(date).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}* · *${duration} min*`)
+  lines.push(``)
+  lines.push(`Please reply to each point below 👇`)
+  lines.push(``)
+  lines.push(`*1️⃣ What did you cover today?*`)
+  lines.push(`→ `)
+  lines.push(``)
+  lines.push(`*2️⃣ Overall performance:*`)
+  lines.push(`_(Exceptional / Excellent / Very Good / Good / Average / Needs Work)_`)
+  lines.push(`→ `)
+  lines.push(``)
+  lines.push(`*3️⃣ Student strengths:*`)
+  lines.push(`→ `)
+  lines.push(``)
+  lines.push(`*4️⃣ Areas to improve:*`)
+  lines.push(`→ `)
+  lines.push(``)
+  lines.push(`*5️⃣ Homework assigned:*`)
+  lines.push(`→ `)
+  lines.push(``)
+  lines.push(`*6️⃣ Notes for next session:*`)
+  lines.push(`→ `)
+  lines.push(``)
+  lines.push(`━━━━━━━━━━━━━━━━━━━━━━`)
+  lines.push(`Jazakum Allahu Khayran 🌿`)
+  lines.push(`*Al-Rayan Academy Admin*`)
+  return lines.join('\n')
+}
+
 /* ─── sub-components ─────────────────────────────────── */
 function SectionCard({ title, icon, children }: { title: string; icon: React.ReactNode; children: React.ReactNode }) {
   return (
@@ -163,6 +207,7 @@ interface Props {
 export function SessionReportModal({ session, open, studentName, onClose, onSubmitted }: Props) {
   const submit         = useSubmitReport()
   const markAttendance = useMarkAttendance()
+  const sendWA         = useSendSessionReportWhatsApp()
   // Load existing report (if any) so opening "Report ✓" pre-fills the form.
   const { data: existingReport } = useSessionReport(open && session?.has_report ? session.id : null)
 
@@ -175,6 +220,7 @@ export function SessionReportModal({ session, open, studentName, onClose, onSubm
   const [parentReport,     setParentReport]     = useState('')
   const [draftSaved,       setDraftSaved]       = useState(false)
   const [copied,           setCopied]           = useState(false)
+  const [teacherMsgCopied, setTeacherMsgCopied] = useState(false)
   const [previewUrl,       setPreviewUrl]       = useState<string | null>(null)
   const [isGenerating,     setIsGenerating]     = useState(false)
 
@@ -272,6 +318,49 @@ export function SessionReportModal({ session, open, studentName, onClose, onSubm
     a.click()
   }
 
+  /* ─── WhatsApp send: text ─────────────────────────── */
+  async function handleSendTextOnWhatsApp() {
+    if (!session) return
+    if (!parentReport.trim()) {
+      toast.error('Generate or write the parent report text first.')
+      return
+    }
+    try {
+      const res = await sendWA.mutateAsync({
+        sessionId: session.id,
+        kind:      'text',
+        text:      parentReport,
+      })
+      toast.success(`Sent to ${res.recipient} ✓`)
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : 'Failed to send via WhatsApp.'
+      toast.error(msg)
+    }
+  }
+
+  /* ─── WhatsApp send: image ────────────────────────── */
+  async function handleSendImageOnWhatsApp() {
+    if (!session) return
+    if (!cardRef.current) return
+    try {
+      // Generate fresh PNG (or reuse preview) right before sending so the
+      // image always matches the current form state.
+      const dataUrl = previewUrl ?? (await toPng(cardRef.current, { pixelRatio: 2, cacheBust: true }))
+      if (!previewUrl) setPreviewUrl(dataUrl)
+
+      const res = await sendWA.mutateAsync({
+        sessionId: session.id,
+        kind:      'image',
+        image:     dataUrl,
+        caption:   `Session Report — ${studentName}`,
+      })
+      toast.success(`Image sent to ${res.recipient} ✓`)
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : 'Failed to send image via WhatsApp.'
+      toast.error(msg)
+    }
+  }
+
   async function handleSubmit() {
     if (!covered.trim()) { toast.error('Please fill in what was covered.'); return }
 
@@ -345,6 +434,49 @@ export function SessionReportModal({ session, open, studentName, onClose, onSubm
 
         {/* body */}
         <div className="flex-1 overflow-y-auto p-5 space-y-4">
+
+          {/* Teacher message template */}
+          <SectionCard title="Request from Teacher" icon={<MessageSquare size={14} />}>
+            <p className="text-xs" style={{ color: 'rgb(90 100 112)' }}>
+              Copy this message and send it to the teacher on WhatsApp. Paste their answers into the form below.
+            </p>
+            <div className="rounded-xl overflow-hidden" style={{ border: '1px solid rgb(30 90 171 / 0.2)' }}>
+              <div className="flex items-center justify-between px-3 py-2"
+                style={{ background: 'rgb(30 90 171 / 0.05)', borderBottom: '1px solid rgb(30 90 171 / 0.12)' }}>
+                <span className="text-[11px] font-semibold uppercase tracking-widest" style={{ color: 'rgb(30 90 171)' }}>
+                  WhatsApp Template
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    navigator.clipboard.writeText(generateTeacherMessage(
+                      studentName,
+                      session.teacher?.name,
+                      session.scheduled_start,
+                      session.duration_min,
+                    ))
+                    setTeacherMsgCopied(true)
+                    setTimeout(() => setTeacherMsgCopied(false), 2000)
+                  }}
+                  className="inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1 rounded-lg transition-colors"
+                  style={{ background: 'rgb(30 90 171)', color: '#fff' }}>
+                  {teacherMsgCopied
+                    ? <><Check size={11} />Copied!</>
+                    : <><Copy size={11} />Copy to send</>}
+                </button>
+              </div>
+              <div className="px-3 py-3" style={{ background: '#fff' }}>
+                <pre className="text-xs leading-relaxed whitespace-pre-wrap font-sans" style={{ color: 'rgb(11 31 58)' }}>
+                  {generateTeacherMessage(
+                    studentName,
+                    session.teacher?.name,
+                    session.scheduled_start,
+                    session.duration_min,
+                  )}
+                </pre>
+              </div>
+            </div>
+          </SectionCard>
 
           {/* Performance */}
           <SectionCard title="Performance Assessment" icon={<Star size={14} />}>
@@ -432,6 +564,16 @@ export function SessionReportModal({ session, open, studentName, onClose, onSubm
                   <Download size={12} />Download PNG
                 </button>
               )}
+              <button type="button"
+                onClick={handleSendImageOnWhatsApp}
+                disabled={sendWA.isPending || isGenerating}
+                title="Send report image to student's WhatsApp via Wassender"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all disabled:opacity-50"
+                style={{ background: '#25D366', color: '#fff', boxShadow: '0 2px 8px rgb(37 211 102 / 0.3)' }}>
+                {sendWA.isPending && sendWA.variables && 'kind' in sendWA.variables && sendWA.variables.kind === 'image'
+                  ? <><Loader2 size={12} className="animate-spin" />Sending…</>
+                  : <><Send size={12} />Send Image on WhatsApp</>}
+              </button>
             </div>
             {previewUrl && (
               <div className="rounded-xl overflow-hidden" style={{ border: '1px solid rgb(var(--border-default,229 233 240))', background: 'rgb(244 246 250)' }}>
@@ -474,6 +616,18 @@ export function SessionReportModal({ session, open, studentName, onClose, onSubm
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors"
                   style={{ background: copied ? 'rgb(14 124 90 / 0.1)' : 'rgb(248 250 252)', color: copied ? 'rgb(14 124 90)' : 'rgb(90 100 112)', border: '1px solid rgb(var(--border-default,229 233 240))' }}>
                   {copied ? <><Check size={11} />Copied!</> : <><Copy size={11} />Copy</>}
+                </button>
+              )}
+              {parentReport && (
+                <button type="button"
+                  onClick={handleSendTextOnWhatsApp}
+                  disabled={sendWA.isPending}
+                  title="Send this text message to the student's WhatsApp via Wassender"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors disabled:opacity-50"
+                  style={{ background: '#25D366', color: '#fff', boxShadow: '0 2px 6px rgb(37 211 102 / 0.3)' }}>
+                  {sendWA.isPending && sendWA.variables && 'kind' in sendWA.variables && sendWA.variables.kind === 'text'
+                    ? <><Loader2 size={11} className="animate-spin" />Sending…</>
+                    : <><Send size={11} />Send Text on WhatsApp</>}
                 </button>
               )}
             </div>

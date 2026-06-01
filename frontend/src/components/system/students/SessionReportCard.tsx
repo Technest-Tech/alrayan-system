@@ -21,7 +21,6 @@ function formatDay(iso: string) {
     weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
   })
 }
-
 function initials(name: string) {
   return name.split(' ').slice(0, 2).map(n => n[0]?.toUpperCase() ?? '').join('')
 }
@@ -38,9 +37,9 @@ const PERF_CONFIG: Record<string, { label: string; emoji: string; stars: number;
 /* ─── sub-pieces ─────────────────────────────────────── */
 function Stars({ count, total = 5 }: { count: number; total?: number }) {
   return (
-    <div style={{ display: 'flex', gap: 4 }}>
+    <div style={{ display: 'flex', gap: 3 }}>
       {Array.from({ length: total }).map((_, i) => (
-        <span key={i} style={{ fontSize: 18, lineHeight: 1, opacity: i < count ? 1 : 0.18 }}>★</span>
+        <span key={i} style={{ fontSize: 16, lineHeight: 1, opacity: i < count ? 1 : 0.2 }}>★</span>
       ))}
     </div>
   )
@@ -50,15 +49,60 @@ function BulletList({ text, color }: { text: string; color: string }) {
   const items = text.split(/[,،;\n]+/).map(s => s.trim()).filter(Boolean)
   if (items.length === 0) return null
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
       {items.map((item, i) => (
         <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
-          <span style={{ width: 6, height: 6, borderRadius: '50%', background: color, marginTop: 5, flexShrink: 0 }} />
-          <span style={{ fontSize: 13, color: '#374151', lineHeight: 1.5 }}>{item}</span>
+          <span style={{ width: 5, height: 5, borderRadius: '50%', background: color, marginTop: 7, flexShrink: 0 }} />
+          <span style={{ fontSize: 13, color: '#374151', lineHeight: 1.55 }}>{item}</span>
         </div>
       ))}
     </div>
   )
+}
+
+/**
+ * A uniform block — every body section uses this shape so the card reads as
+ * a clean grid of equal panels rather than mixed-height containers.
+ */
+function Block({
+  title, accent, bg, icon, children,
+}: {
+  title: string
+  accent: string
+  bg:     string
+  icon:   string
+  children: React.ReactNode
+}) {
+  return (
+    <div style={{
+      background: bg,
+      borderRadius: 14,
+      padding: '18px 18px 16px',
+      border: `1px solid ${accent}30`,
+      display: 'flex',
+      flexDirection: 'column',
+      gap: 10,
+      minHeight: 130,
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <span style={{
+          width: 26, height: 26, borderRadius: 8,
+          background: `${accent}18`,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          fontSize: 14,
+        }}>{icon}</span>
+        <p style={{
+          fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em',
+          color: accent,
+        }}>{title}</p>
+      </div>
+      <div>{children}</div>
+    </div>
+  )
+}
+
+function Paragraph({ text, color = '#374151' }: { text: string; color?: string }) {
+  return <p style={{ fontSize: 13, color, lineHeight: 1.6 }}>{text}</p>
 }
 
 /* ─── main card ──────────────────────────────────────── */
@@ -76,7 +120,7 @@ export const SessionReportCard = forwardRef<HTMLDivElement, { data: SessionRepor
       <div ref={ref} style={{
         width: 720,
         fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
-        background: '#F8FAFC',
+        background: '#F4F6FA',
         borderRadius: 24,
         overflow: 'hidden',
         boxShadow: '0 25px 80px rgba(11,31,58,0.18)',
@@ -85,42 +129,37 @@ export const SessionReportCard = forwardRef<HTMLDivElement, { data: SessionRepor
         {/* ── header ── */}
         <div style={{
           background: 'linear-gradient(135deg, #0B1F3A 0%, #0B3154 45%, #1E5AAB 100%)',
-          padding: '40px 44px 36px',
+          padding: '32px 36px 28px',
           position: 'relative',
           overflow: 'hidden',
         }}>
-          {/* decorative circles */}
           <div style={{ position: 'absolute', top: -40, right: -40, width: 180, height: 180, borderRadius: '50%', background: 'rgba(255,255,255,0.04)' }} />
           <div style={{ position: 'absolute', bottom: -60, left: -30, width: 200, height: 200, borderRadius: '50%', background: 'rgba(30,90,171,0.15)' }} />
 
-          {/* academy name + report type */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 28 }}>
-            <div style={{ width: 40, height: 40, borderRadius: 12, background: 'rgba(255,255,255,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20 }}>
-              🌙
-            </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 22 }}>
+            <div style={{ width: 38, height: 38, borderRadius: 11, background: 'rgba(255,255,255,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18 }}>🌙</div>
             <div>
-              <p style={{ fontSize: 15, fontWeight: 800, color: '#fff', letterSpacing: '0.05em', textTransform: 'uppercase' }}>Al-Rayan Academy</p>
+              <p style={{ fontSize: 14, fontWeight: 800, color: '#fff', letterSpacing: '0.05em', textTransform: 'uppercase' }}>Al-Rayan Academy</p>
               <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.55)', fontWeight: 500, letterSpacing: '0.1em', textTransform: 'uppercase' }}>Quran · Tajweed · Islamic Studies</p>
             </div>
             <div style={{ marginLeft: 'auto', textAlign: 'right' }}>
-              <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.45)', fontWeight: 500, letterSpacing: '0.08em', textTransform: 'uppercase' }}>Session Report</p>
-              <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)', marginTop: 2 }}>{formatDay(data.date)}</p>
+              <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.45)', fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase' }}>Session Report</p>
+              <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.65)', marginTop: 3 }}>{formatDay(data.date)}</p>
             </div>
           </div>
 
-          {/* student */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 18 }}>
-            <div style={{ width: 64, height: 64, borderRadius: 18, background: 'linear-gradient(135deg, rgba(255,255,255,0.2), rgba(255,255,255,0.08))', border: '2px solid rgba(255,255,255,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, fontWeight: 800, color: '#fff', flexShrink: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+            <div style={{ width: 60, height: 60, borderRadius: 17, background: 'linear-gradient(135deg, rgba(255,255,255,0.2), rgba(255,255,255,0.08))', border: '2px solid rgba(255,255,255,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, fontWeight: 800, color: '#fff', flexShrink: 0 }}>
               {initials(data.studentName)}
             </div>
-            <div>
-              <p style={{ fontSize: 26, fontWeight: 800, color: '#fff', lineHeight: 1.2, letterSpacing: '-0.01em' }}>{data.studentName}</p>
+            <div style={{ flex: 1 }}>
+              <p style={{ fontSize: 24, fontWeight: 800, color: '#fff', lineHeight: 1.15, letterSpacing: '-0.01em' }}>{data.studentName}</p>
               <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.6)', marginTop: 4 }}>
                 with {data.teacherName || 'our teacher'} · {data.duration} min
               </p>
             </div>
-            <div style={{ marginLeft: 'auto', textAlign: 'right' }}>
-              <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: 99, padding: '6px 14px' }}>
+            <div style={{ textAlign: 'right' }}>
+              <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: 99, padding: '6px 13px' }}>
                 <span style={{ fontSize: 14 }}>{perf.emoji}</span>
                 <span style={{ fontSize: 12, fontWeight: 700, color: '#fff' }}>{perf.label}</span>
               </div>
@@ -132,62 +171,62 @@ export const SessionReportCard = forwardRef<HTMLDivElement, { data: SessionRepor
         </div>
 
         {/* ── performance phrase banner ── */}
-        <div style={{ background: perf.color, padding: '12px 44px', display: 'flex', alignItems: 'center', gap: 10 }}>
+        <div style={{ background: perf.color, padding: '11px 36px', display: 'flex', alignItems: 'center', gap: 10 }}>
           <span style={{ fontSize: 16 }}>{perf.emoji}</span>
           <p style={{ fontSize: 13, fontWeight: 600, color: '#fff', fontStyle: 'italic' }}>{perf.phrase}</p>
         </div>
 
-        {/* ── body ── */}
-        <div style={{ padding: '32px 44px', display: 'flex', flexDirection: 'column', gap: 20 }}>
-
-          {/* what was covered */}
+        {/* ── body: organized 2-column block grid ── */}
+        <div style={{
+          padding: '24px 28px 28px',
+          display: 'grid',
+          gridTemplateColumns: '1fr 1fr',
+          gap: 14,
+        }}>
           {hasCovered && (
-            <div style={{ background: '#fff', borderRadius: 16, padding: '20px 24px', border: '1px solid #E5E9F0' }}>
-              <p style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#6B7280', marginBottom: 10 }}>📚 What We Covered</p>
-              <p style={{ fontSize: 13, color: '#374151', lineHeight: 1.7 }}>{data.covered}</p>
+            <div style={{ gridColumn: '1 / span 2' }}>
+              <Block title="What We Covered" accent="#1E5AAB" bg="#fff" icon="📚">
+                <Paragraph text={data.covered} />
+              </Block>
             </div>
           )}
 
-          {/* strengths + weaknesses */}
-          {(hasStrengths || hasWeaknesses) && (
-            <div style={{ display: 'flex', gap: 16 }}>
-              {hasStrengths && (
-                <div style={{ flex: 1, background: '#F0FDF4', borderRadius: 16, padding: '20px 20px', border: '1px solid #BBF7D0' }}>
-                  <p style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#0E7C5A', marginBottom: 12 }}>💚 Strengths</p>
-                  <BulletList text={data.strengths} color="#0E7C5A" />
-                </div>
-              )}
-              {hasWeaknesses && (
-                <div style={{ flex: 1, background: '#FFFBEB', borderRadius: 16, padding: '20px 20px', border: '1px solid #FDE68A' }}>
-                  <p style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#B45309', marginBottom: 12 }}>🎯 Areas to Develop</p>
-                  <BulletList text={data.weaknesses} color="#B45309" />
-                </div>
-              )}
-            </div>
+          {hasStrengths && (
+            <Block title="Strengths" accent="#0E7C5A" bg="#F0FDF4" icon="💚">
+              <BulletList text={data.strengths} color="#0E7C5A" />
+            </Block>
           )}
 
-          {/* homework */}
+          {hasWeaknesses && (
+            <Block title="Areas to Develop" accent="#B45309" bg="#FFFBEB" icon="🎯">
+              <BulletList text={data.weaknesses} color="#B45309" />
+            </Block>
+          )}
+
+          {/* Auto-balance: if only one of strengths/weaknesses exists, let it span 2 cols */}
+          {(hasStrengths && !hasWeaknesses) || (!hasStrengths && hasWeaknesses)
+            ? <></> // (the rendered single one stays in col 1; nothing to add)
+            : null}
+
           {hasHomework && (
-            <div style={{ background: '#fff', borderRadius: 16, padding: '20px 24px', border: '1px solid #E5E9F0', display: 'flex', gap: 14, alignItems: 'flex-start' }}>
-              <span style={{ fontSize: 22, lineHeight: 1 }}>📝</span>
-              <div>
-                <p style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#6B7280', marginBottom: 6 }}>Homework / Practice</p>
-                <p style={{ fontSize: 13, color: '#374151', lineHeight: 1.7 }}>{data.homework}</p>
-              </div>
+            <div style={{ gridColumn: hasRecs ? 'auto' : '1 / span 2' }}>
+              <Block title="Homework / Practice" accent="#7C3AED" bg="#FAF5FF" icon="📝">
+                <Paragraph text={data.homework} />
+              </Block>
             </div>
           )}
 
-          {/* recommendations / next session */}
           {hasRecs && (
-            <div style={{ background: '#EFF6FF', borderRadius: 16, padding: '20px 24px', border: '1px solid #BFDBFE' }}>
-              <p style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#1E5AAB', marginBottom: 10 }}>📋 Plan for Next Session</p>
-              <p style={{ fontSize: 13, color: '#1E40AF', lineHeight: 1.7 }}>{data.recommendations}</p>
+            <div style={{ gridColumn: hasHomework ? 'auto' : '1 / span 2' }}>
+              <Block title="Plan for Next Session" accent="#1E40AF" bg="#EFF6FF" icon="📋">
+                <Paragraph text={data.recommendations} color="#1E40AF" />
+              </Block>
             </div>
           )}
         </div>
 
         {/* ── footer ── */}
-        <div style={{ background: '#0B1F3A', padding: '20px 44px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div style={{ background: '#0B1F3A', padding: '16px 36px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <span style={{ fontSize: 14 }}>🌙</span>
             <p style={{ fontSize: 12, fontWeight: 700, color: '#fff', letterSpacing: '0.05em' }}>Al-Rayan Academy</p>
@@ -198,7 +237,6 @@ export const SessionReportCard = forwardRef<HTMLDivElement, { data: SessionRepor
             <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)' }}>Session Report</p>
           </div>
         </div>
-
       </div>
     )
   }

@@ -73,6 +73,21 @@ export function useCancelSession() {
   })
 }
 
+/** Send a session report to the student's WhatsApp via Wassender (text OR image). */
+export function useSendSessionReportWhatsApp() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ sessionId, ...body }:
+      | { sessionId: number; kind: 'text'; text: string }
+      | { sessionId: number; kind: 'image'; image: string; caption?: string }
+    ) => api<{ message: string; external_message_id?: string; recipient: string }>(
+      `/sessions/${sessionId}/send-report-whatsapp`,
+      { method: 'POST', body: JSON.stringify(body) },
+    ),
+    onSuccess: (_d, vars) => qc.invalidateQueries({ queryKey: ['system', 'sessions', vars.sessionId] }),
+  })
+}
+
 export function useBulkAttendance() {
   const qc = useQueryClient()
   return useMutation({

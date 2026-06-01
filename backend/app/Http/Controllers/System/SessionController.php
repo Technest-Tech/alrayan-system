@@ -19,11 +19,15 @@ use App\Jobs\System\UpdateSessionZoomMeeting;
 use App\Models\System\Session;
 use App\Models\System\Student;
 use App\Models\System\Teacher;
+use App\Models\System\WassenderLog;
+use App\Services\Integrations\Wassender\WassenderClient;
 use App\Services\System\ScheduleConflictDetector;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class SessionController extends Controller
 {
@@ -324,5 +328,99 @@ class SessionController extends Controller
                 },
             ])->values(),
         ])->values());
+    }
+
+    /**
+     * Send the session report to the student/guardian via Wassender.
+     *
+     * Accepts:
+     *   kind=text   + text=<message>                → sendText
+     *   kind=image  + image=<base64 PNG (data URL ok)> + caption?=<string> → sendImage
+     *
+     * Resolves recipient from the student record (whatsapp → phone fallback).
+     * Logs every attempt to sys_wassender_logs for audit.
+     */
+    public function sendReportWhatsApp(Request $request, Session $session, WassenderClient $wassender): JsonResponse
+    {
+        $this->authorize('view', $session);
+
+        $data = $request->validate([
+            'kind'    => ['required', 'in:text,image'],
+            'text'    => ['required_if:kind,text', 'string', 'max:8000'],
+            'image'   => ['required_if:kind,image', 'string'],  // base64 (data URL allowed)
+            'caption' => ['nullable', 'string', 'max:1024'],
+        ]);
+
+        $session->load('student');
+        $student = $session->student;
+        if (!$student) {
+            return response()->json(['message' => 'Session has no student.'], 422);
+        }
+
+        $phone = $student->whatsapp ?: $student->phone;
+        if (!$phone) {
+            return response()->json([
+                'message' => 'Student has no WhatsApp/phone number on file.',
+            ], 422);
+        }
+        // Wassender's sendToPhone builds the JID; we just need a clean +country digits string.
+        $cleanPhone = preg_replace('/\s|-/', '', $phone);
+
+        // Build the rendered message + log payload depending on kind.
+        if ($data['kind'] === 'text') {
+            $rendered = $data['text'];
+            $payload  = ['kind' => 'text'];
+            $result   = $wassender->sendToPhone($cleanPhone, $rendered);
+        } else {
+            // Strip data: URL prefix if present and decode base64.
+            $raw = $data['image'];
+            if (str_contains($raw, ',')) {
+                $raw = substr($raw, strpos($raw, ',') + 1);
+            }
+            $bytes = base64_decode($raw, true);
+            if ($bytes === false) {
+                return response()->json(['message' => 'Invalid image payload (not base64).'], 422);
+            }
+
+            $filename = 'session-reports/session-' . $session->id . '-' . Str::random(8) . '.png';
+            Storage::disk('public')->put($filename, $bytes);
+            $url = Storage::disk('public')->url($filename);
+
+            $caption  = $data['caption'] ?? null;
+            $rendered = $caption ?: "Session Report — {$student->name}";
+            $payload  = ['kind' => 'image', 'image_path' => $filename, 'image_url' => $url];
+
+            $jid = ltrim($cleanPhone, '+') . '@s.whatsapp.net';
+            $result = $wassender->sendImage($jid, $url, $caption);
+        }
+
+        // Audit log — uses the existing sys_wassender_logs table.
+        WassenderLog::create([
+            'template_key'         => 'session_report.' . $data['kind'],
+            'recipient_phone'      => $cleanPhone,
+            'rendered_message'     => $rendered,
+            'status'               => $result->success ? 'sent' : 'failed',
+            'external_message_id'  => $result->externalId,
+            'attempt_count'        => 1,
+            'error'                => $result->success ? null : ($result->errorBody ?? 'send failed'),
+            'payload'              => array_merge($payload, [
+                'session_id' => $session->id,
+                'student_id' => $student->id,
+            ]),
+            'sent_at'              => $result->success ? now() : null,
+        ]);
+
+        if (!$result->success) {
+            return response()->json([
+                'message' => 'WhatsApp send failed.',
+                'error'   => $result->errorBody,
+            ], 502);
+        }
+
+        return response()->json([
+            'message'             => 'Report sent on WhatsApp.',
+            'external_message_id' => $result->externalId,
+            'recipient'           => $cleanPhone,
+        ]);
     }
 }
