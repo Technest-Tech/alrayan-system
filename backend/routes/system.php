@@ -14,6 +14,7 @@ use App\Http\Controllers\System\ExpenseController;
 use App\Http\Controllers\System\ExportController;
 use App\Http\Controllers\System\FxRatesController;
 use App\Http\Controllers\System\HealthController;
+use App\Http\Controllers\System\AutoBillingController;
 use App\Http\Controllers\System\InvoiceController;
 use App\Http\Controllers\System\LeadAnalyticsController;
 use App\Http\Controllers\System\LeadController;
@@ -208,6 +209,12 @@ Route::prefix('system')->name('system.')->group(function () {
             Route::get('/invoices/{invoice}',                        [InvoiceController::class, 'show'])->name('invoices.show');
             Route::get('/students/{student}/invoices',               [InvoiceController::class, 'studentInvoices'])->name('students.invoices');
             Route::get('/students/{student}/billing-state',          [InvoiceController::class, 'billingState'])->name('students.billing-state');
+            // Automatic billings — live per-session aggregation
+            Route::get('/billing/automatic', [AutoBillingController::class, 'index'])->name('billing.automatic.index');
+        });
+        Route::middleware('system.can:invoices.create')->group(function () {
+            Route::post('/billing/automatic/{student}/mark-paid',    [AutoBillingController::class, 'markPaid'])->name('billing.automatic.mark-paid');
+            Route::post('/billing/automatic/{student}/send-whatsapp',[AutoBillingController::class, 'sendWhatsApp'])->name('billing.automatic.send-whatsapp');
         });
         Route::middleware('system.can:invoices.create')->group(function () {
             Route::post('/invoices',                                          [InvoiceController::class, 'store'])->name('invoices.store');

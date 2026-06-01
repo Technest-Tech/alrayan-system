@@ -15,6 +15,7 @@ import { useCreateInvoice } from '@/hooks/system/useCreateInvoice'
 import { useSendInvoice } from '@/hooks/system/useInvoice'
 import { useStudents } from '@/hooks/system/useStudents'
 import { useStudentBillingState } from '@/hooks/system/useStudentBillingState'
+import { AutoBillingTable } from '@/components/system/billing/AutoBillingTable'
 import { formatMinor } from '@/lib/money'
 import type { Invoice, InvoiceStatus } from '@/types/system/invoice'
 import type { Student } from '@/types/system/student'
@@ -972,6 +973,11 @@ export default function InvoicesPage() {
         })}
       </div>
 
+      {/* ── Automatic tab → live per-session billing table ── */}
+      {activeTab === 'automatic' && <AutoBillingTable />}
+
+      {/* ── Pro / Manual tabs → existing invoice listing ── */}
+      {activeTab !== 'automatic' && <>
       {/* Stat cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
         {statCards.map(card => {
@@ -1097,6 +1103,7 @@ export default function InvoicesPage() {
           )}
         </>
       )}
+      </>}
 
       {showNewModal && (
         <NewInvoiceModal

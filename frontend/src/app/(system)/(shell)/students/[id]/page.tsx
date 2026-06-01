@@ -16,6 +16,7 @@ import { useStudentSessions } from '@/hooks/system/useSessions'
 import { StudentStatusBadge } from '@/components/system/students/StudentStatusBadge'
 import { StudentTimeline } from '@/components/system/students/StudentTimeline'
 import { FamilyTabContent } from '@/components/system/students/FamilyTabContent'
+import { AutoBillingTable } from '@/components/system/billing/AutoBillingTable'
 import { ActivateStudentDialog } from '@/components/system/students/ActivateStudentDialog'
 import { ScheduleTrialSheet } from '@/components/system/students/ScheduleTrialSheet'
 import { StudentSessionsTab } from '@/components/system/students/StudentSessionsTab'
@@ -922,7 +923,7 @@ export default function StudentDetailPage({ params }: { params: Promise<{ id: st
           />
         )}
         {tab === 'Reports'  && <EmptyState icon="BarChart2" title="Reports"  description="Coming soon." />}
-        {tab === 'Invoices' && <EmptyState icon="FileText"  title="Invoices" description="Coming soon." />}
+        {tab === 'Invoices' && <AutoBillingTable studentIdFilter={student.id} />}
         {tab === 'Wallet'   && <EmptyState icon="Wallet"    title="Wallet"   description="Coming soon." />}
         {tab === 'Family'   && <FamilyTabContent student={student} />}
         {tab === 'Timeline' && <StudentTimeline entries={student.timeline} isLoading={false} />}
