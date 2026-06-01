@@ -12,6 +12,7 @@ import { AvailabilityPicker } from '@/components/system/teachers/AvailabilityPic
 import { TeacherScheduleView } from '@/components/system/teachers/TeacherScheduleView'
 import { TeacherStudentCards } from '@/components/system/teachers/TeacherStudentCards'
 import { TeacherSalaryTab } from '@/components/system/teachers/TeacherSalaryTab'
+import { TeacherReportsTab } from '@/components/system/teachers/TeacherReportsTab'
 import { NotesList } from '@/components/system/notes/NotesList'
 import { NoteComposer } from '@/components/system/notes/NoteComposer'
 import { ApiError } from '@/lib/system/api'
@@ -208,7 +209,7 @@ export default function TeacherDetailPage({ params }: { params: Promise<{ id: st
         )}
 
         {tab === 'Reports' && (
-          <EmptyState icon="BarChart2" title="Reports" description="Coming soon." />
+          <TeacherReportsTab teacherId={teacher.id} />
         )}
 
         {tab === 'Salary' && (
