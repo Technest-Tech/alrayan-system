@@ -1,7 +1,7 @@
 import {
   LayoutDashboard, Users, GraduationCap, BookOpen, Calendar,
   ClipboardCheck, FileText, Award, DollarSign, Wallet, BarChart3,
-  Bell, MessageCircle, Settings, ScrollText, UserCheck,
+  Bell, MessageCircle, Settings, ScrollText, UserCheck, History,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 
@@ -44,8 +44,9 @@ export const SYSTEM_NAV: readonly NavSection[] = [
   {
     label: 'Communications',
     items: [
-      { label: 'Notifications',   href: '/notifications',   icon: Bell,          perm: 'notifications.view' },
-      { label: 'WhatsApp groups', href: '/whatsapp-groups', icon: MessageCircle, perm: 'whatsapp.view' },
+      { label: 'Notifications',   href: '/notifications',       icon: Bell,          perm: 'notifications.view' },
+      { label: 'WhatsApp groups', href: '/whatsapp-groups',     icon: MessageCircle, perm: 'whatsapp.view' },
+      { label: 'Reminders log',   href: '/whatsapp-reminders',  icon: History,       perm: 'notifications.view_delivery_log' },
     ],
   },
   {

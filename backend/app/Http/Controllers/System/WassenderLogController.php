@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\System\WassenderLogResource;
 use App\Jobs\System\SendWassenderMessage;
 use App\Models\System\WassenderLog;
+use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Spatie\QueryBuilder\AllowedFilter;
@@ -15,7 +16,7 @@ class WassenderLogController extends Controller
 {
     public function index(Request $request): \Illuminate\Http\Resources\Json\AnonymousResourceCollection
     {
-        $logs = QueryBuilder::for(WassenderLog::class)
+        $query = QueryBuilder::for(WassenderLog::class)
             ->allowedFilters([
                 AllowedFilter::exact('template_key'),
                 AllowedFilter::exact('status'),
@@ -23,10 +24,48 @@ class WassenderLogController extends Controller
             ])
             ->allowedSorts(['created_at', 'sent_at'])
             ->defaultSort('-created_at')
-            ->with(['whatsappGroup.linkedStudent', 'whatsappGroup.linkedTeacher.user'])
-            ->paginate($request->integer('per_page', 50));
+            ->with(['whatsappGroup.linkedStudent', 'whatsappGroup.linkedTeacher.user']);
 
-        return WassenderLogResource::collection($logs);
+        if ($request->filled('from')) {
+            $query->where('created_at', '>=', Carbon::parse($request->from)->startOfDay());
+        }
+        if ($request->filled('to')) {
+            $query->where('created_at', '<=', Carbon::parse($request->to)->endOfDay());
+        }
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(fn ($q) =>
+                $q->where('recipient_phone', 'like', "%{$search}%")
+                  ->orWhere('template_key', 'like', "%{$search}%")
+            );
+        }
+
+        return WassenderLogResource::collection($query->paginate($request->integer('per_page', 50)));
+    }
+
+    public function stats(Request $request): JsonResponse
+    {
+        $q = WassenderLog::query();
+
+        if ($request->filled('from')) {
+            $q->where('created_at', '>=', Carbon::parse($request->from)->startOfDay());
+        }
+        if ($request->filled('to')) {
+            $q->where('created_at', '<=', Carbon::parse($request->to)->endOfDay());
+        }
+
+        $counts = (clone $q)->selectRaw('status, COUNT(*) as total')
+            ->groupBy('status')
+            ->pluck('total', 'status');
+
+        return response()->json([
+            'sent'    => (int) ($counts['sent']    ?? 0),
+            'failed'  => (int) ($counts['failed']  ?? 0),
+            'dead'    => (int) ($counts['dead']     ?? 0),
+            'queued'  => (int) ($counts['queued']   ?? 0),
+            'sending' => (int) ($counts['sending']  ?? 0),
+            'total'   => (int) $q->count(),
+        ]);
     }
 
     public function show(WassenderLog $wassenderLog): WassenderLogResource

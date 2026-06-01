@@ -135,6 +135,83 @@ class InvoiceController extends Controller
     }
 
     /**
+     * Return the sessions covered by this invoice's period — with each
+     * session's quota impact (counted / no-show / free) and computed cost.
+     * Used by the invoice detail page to show actual consumption alongside
+     * the contracted-quantity line items.
+     */
+    public function sessions(Invoice $invoice)
+    {
+        $this->authorize('view', $invoice);
+
+        $invoice->load('student');
+        $student = $invoice->student;
+        if (!$student) {
+            return response()->json(['data' => [], 'meta' => ['counted' => 0, 'free' => 0, 'total_cost_minor' => 0]]);
+        }
+
+        // Resolve the period window. For non-monthly invoices fall back to
+        // the invoice's issued/created month so the panel always renders.
+        if ($invoice->period_year && $invoice->period_month) {
+            $start = Carbon::create($invoice->period_year, $invoice->period_month, 1)->startOfMonth();
+        } else {
+            $start = ($invoice->issued_at ?? $invoice->created_at ?? now())->copy()->startOfMonth();
+        }
+        $end = (clone $start)->endOfMonth();
+
+        $sessions = \App\Models\System\Session::with(['teacher.user'])
+            ->where('student_id', $student->id)
+            ->whereBetween('scheduled_start', [$start, $end])
+            ->orderBy('scheduled_start')
+            ->get();
+
+        // Per-session price: prefer (subtotal_minor / sessions_per_month) so
+        // it tracks the invoice's own pricing, otherwise compute from student.
+        $perSessionMinor = 0;
+        if ($student->sessions_per_month > 0) {
+            $perSessionMinor = (int) floor(
+                ($invoice->subtotal_minor > 0 ? $invoice->subtotal_minor : $student->monthly_price_minor)
+                / max($student->sessions_per_month, 1)
+            );
+        }
+
+        $counted = 0;
+        $free    = 0;
+        $rows    = $sessions->map(function ($s) use ($perSessionMinor, &$counted, &$free) {
+            $impact = $s->quota_impact;
+            $counts = $s->counts_against_quota;
+            if ($counts) $counted++; else $free++;
+            return [
+                'id'                   => $s->id,
+                'scheduled_start'      => $s->scheduled_start?->toIso8601String(),
+                'scheduled_end'        => $s->scheduled_end?->toIso8601String(),
+                'duration_min'         => $s->duration_min,
+                'status'               => $s->status,
+                'cancelled_by'         => $s->cancelled_by,
+                'apology_received'     => (bool) $s->apology_received,
+                'quota_impact'         => $impact,
+                'counts_against_quota' => $counts,
+                'has_report'           => $s->report !== null,
+                'teacher_name'         => optional($s->teacher?->user)->name,
+                'cost_minor'           => $counts ? $perSessionMinor : 0,
+            ];
+        });
+
+        return response()->json([
+            'data' => $rows,
+            'meta' => [
+                'counted'                 => $counted,
+                'free'                    => $free,
+                'per_session_price_minor' => $perSessionMinor,
+                'total_cost_minor'        => $counted * $perSessionMinor,
+                'currency'                => $invoice->currency,
+                'period_start'            => $start->toDateString(),
+                'period_end'              => $end->toDateString(),
+            ],
+        ]);
+    }
+
+    /**
      * Flip an invoice to paid (manual reconciliation, e.g. cash/bank transfer).
      */
     public function markPaid(Invoice $invoice)

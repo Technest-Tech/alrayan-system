@@ -5,11 +5,14 @@ import Link from 'next/link'
 import {
   ArrowLeft, X, Send, Ban, CreditCard,
   Copy, Check, Loader2, ExternalLink, Clock,
-  CheckCircle2, AlertTriangle, FileText,
+  CheckCircle2, AlertTriangle, FileText, Download, CalendarDays,
+  XCircle, GraduationCap,
 } from 'lucide-react'
+import { toast } from 'sonner'
 import { PageHeader } from '@/components/system/primitives/PageHeader'
-import { useInvoice, useVoidInvoice, useSendInvoice } from '@/hooks/system/useInvoice'
+import { useInvoice, useVoidInvoice, useSendInvoice, useInvoiceSessions } from '@/hooks/system/useInvoice'
 import { useRecordPayment } from '@/hooks/system/useRecordPayment'
+import { getToken } from '@/lib/system/api'
 import { formatMinor } from '@/lib/money'
 import type { Invoice, PaymentMethod } from '@/types/system/invoice'
 
@@ -262,6 +265,75 @@ function SendModal({
   )
 }
 
+/* Single session row inside the "Sessions in this period" panel */
+type SessRow = ReturnType<typeof useInvoiceSessions>['data'] extends { data: infer R } | undefined
+  ? R extends Array<infer X> ? X : never
+  : never
+
+const SESSION_STATUS_CFG: Record<string, { label: string; bg: string; fg: string; Icon: React.ElementType }> = {
+  scheduled:          { label: 'Scheduled', bg: 'rgb(219 234 254)', fg: 'rgb(30 64 175)',  Icon: Clock },
+  attended:           { label: 'Attended',  bg: 'rgb(220 252 231)', fg: 'rgb(21 128 61)',  Icon: CheckCircle2 },
+  absent:             { label: 'Absent',    bg: 'rgb(254 226 226)', fg: 'rgb(153 27 27)',  Icon: XCircle },
+  cancelled:          { label: 'Cancelled', bg: 'rgb(243 244 246)', fg: 'rgb(75 85 99)',   Icon: Ban },
+  rescheduled:        { label: 'Reschd',    bg: 'rgb(254 243 199)', fg: 'rgb(146 64 14)',  Icon: Clock },
+  pending_substitute: { label: 'Sub',       bg: 'rgb(255 237 213)', fg: 'rgb(154 52 18)',  Icon: AlertTriangle },
+}
+
+const QUOTA_CFG: Record<string, { label: string; bg: string; fg: string }> = {
+  counted:         { label: 'Counted',        bg: 'rgb(220 252 231)', fg: 'rgb(21 128 61)' },
+  counted_no_show: { label: 'No-show',        bg: 'rgb(254 226 226)', fg: 'rgb(153 27 27)' },
+  free_teacher:    { label: 'Free (teacher)', bg: 'rgb(254 243 199)', fg: 'rgb(146 64 14)' },
+  free_excused:    { label: 'Free (excused)', bg: 'rgb(219 234 254)', fg: 'rgb(30 64 175)' },
+  free:            { label: 'Free',           bg: 'rgb(243 244 246)', fg: 'rgb(75 85 99)'  },
+}
+
+function SessionRow({ s, currency }: { s: SessRow; currency: string }) {
+  const st = SESSION_STATUS_CFG[s.status] ?? SESSION_STATUS_CFG.cancelled
+  const q  = QUOTA_CFG[s.quota_impact] ?? QUOTA_CFG.free
+  const dt = s.scheduled_start ? new Date(s.scheduled_start) : null
+  return (
+    <tr>
+      <td className="px-4 py-3 text-sm">
+        <div className="flex items-center gap-2">
+          <CalendarDays size={12} className="text-gray-400 shrink-0" />
+          <div>
+            <p className="font-semibold" style={{ color: 'rgb(11 31 58)' }}>
+              {dt?.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' }) ?? '—'}
+            </p>
+            <p className="text-[11px]" style={{ color: 'rgb(120 130 140)' }}>
+              {dt?.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }) ?? '—'}
+              <span className="mx-1.5">·</span>{s.duration_min}m
+              {s.has_report && <> <span className="ml-1.5 text-blue-600">· Report ✓</span></>}
+            </p>
+          </div>
+        </div>
+      </td>
+      <td className="px-4 py-3 text-sm hidden sm:table-cell">
+        <span className="inline-flex items-center gap-1 text-xs text-gray-600">
+          <GraduationCap size={11} className="text-gray-400" />
+          {s.teacher_name ?? '—'}
+        </span>
+      </td>
+      <td className="px-4 py-3 text-center">
+        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold"
+          style={{ background: st.bg, color: st.fg }}>
+          <st.Icon size={10} />{st.label}
+        </span>
+      </td>
+      <td className="px-4 py-3 text-center">
+        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold"
+          style={{ background: q.bg, color: q.fg }}>
+          {q.label}
+        </span>
+      </td>
+      <td className="px-4 py-3 text-right tabular-nums text-sm font-semibold"
+          style={{ color: s.counts_against_quota ? 'rgb(11 31 58)' : 'rgb(156 163 175)' }}>
+        {s.counts_against_quota ? formatMinor(s.cost_minor, currency) : '—'}
+      </td>
+    </tr>
+  )
+}
+
 function CopyButton({ text }: { text: string }) {
   const [copied, setCopied] = useState(false)
   const copy = () => {
@@ -280,7 +352,39 @@ function CopyButton({ text }: { text: string }) {
 export default function InvoiceDetailPage() {
   const { id } = useParams<{ id: string }>()
   const { data: invoice, isLoading, error, refetch } = useInvoice(id)
+  const { data: sessionsRes } = useInvoiceSessions(id ?? null)
   const [modal, setModal] = useState<'payment' | 'void' | 'send' | null>(null)
+  const [downloadingPdf, setDownloadingPdf] = useState(false)
+
+  async function handleDownloadPdf() {
+    if (!invoice) return
+    setDownloadingPdf(true)
+    try {
+      // The shared api() helper forces JSON parsing, so fetch the PDF directly.
+      const base   = process.env.NEXT_PUBLIC_API_URL ?? ''
+      const prefix = process.env.NEXT_PUBLIC_SYSTEM_API_PREFIX ?? '/api/system'
+      const token  = getToken()
+      const res = await fetch(`${base}${prefix}/invoices/${invoice.id}/pdf`, {
+        headers: {
+          Accept: 'application/pdf',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+      })
+      if (!res.ok) throw new Error(`PDF download failed (${res.status})`)
+      const blob = await res.blob()
+      const url  = URL.createObjectURL(blob)
+      const a    = document.createElement('a')
+      a.href = url
+      a.download = `${invoice.invoice_number}.pdf`
+      document.body.appendChild(a); a.click(); a.remove()
+      setTimeout(() => URL.revokeObjectURL(url), 5000)
+      toast.success('PDF downloaded.')
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : 'Failed to download PDF.')
+    } finally {
+      setDownloadingPdf(false)
+    }
+  }
 
   if (isLoading) {
     return (
@@ -325,6 +429,15 @@ export default function InvoiceDetailPage() {
               <span className={`w-1.5 h-1.5 rounded-full ${cfg.dot}`} />
               {cfg.label}
             </span>
+            <button
+              onClick={handleDownloadPdf}
+              disabled={downloadingPdf}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-xl border border-gray-200 text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50"
+            >
+              {downloadingPdf
+                ? <><Loader2 size={13} className="animate-spin" />Preparing…</>
+                : <><Download size={13} />Download PDF</>}
+            </button>
             {canSend && (
               <button
                 onClick={() => setModal('send')}
@@ -426,6 +539,55 @@ export default function InvoiceDetailPage() {
           </tfoot>
         </table>
       </div>
+
+      {/* ── Sessions in this period ── */}
+      {sessionsRes && sessionsRes.data.length > 0 && (
+        <div className="rounded-xl border border-gray-200 overflow-hidden shadow-sm mb-5">
+          <div className="px-4 py-3 bg-gray-50/80 border-b border-gray-100 flex items-center justify-between flex-wrap gap-2">
+            <div className="flex items-center gap-2">
+              <CalendarDays size={13} className="text-gray-400" />
+              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                Sessions in this period
+              </p>
+            </div>
+            <div className="flex items-center gap-3 text-[11px] text-gray-500">
+              <span><strong className="text-emerald-700">{sessionsRes.meta.counted}</strong> counted</span>
+              <span><strong className="text-amber-700">{sessionsRes.meta.free}</strong> free</span>
+              <span>·</span>
+              <span>Total: <strong className="text-gray-900">{formatMinor(sessionsRes.meta.total_cost_minor, sessionsRes.meta.currency)}</strong></span>
+            </div>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-50">
+              <thead>
+                <tr className="bg-white">
+                  <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-400">Date · Time</th>
+                  <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-400 hidden sm:table-cell">Teacher</th>
+                  <th className="px-4 py-2.5 text-center text-xs font-medium text-gray-400">Status</th>
+                  <th className="px-4 py-2.5 text-center text-xs font-medium text-gray-400">Quota</th>
+                  <th className="px-4 py-2.5 text-right text-xs font-medium text-gray-400">Cost</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-50 bg-white">
+                {sessionsRes.data.map(s => (
+                  <SessionRow key={s.id} s={s} currency={sessionsRes.meta.currency} />
+                ))}
+              </tbody>
+              <tfoot className="bg-gray-50/60">
+                <tr>
+                  <td colSpan={4} className="px-4 py-2.5 text-sm text-right text-gray-500">
+                    Per session: {formatMinor(sessionsRes.meta.per_session_price_minor, sessionsRes.meta.currency)}
+                    {' · '}{sessionsRes.meta.counted} counted
+                  </td>
+                  <td className="px-4 py-2.5 text-sm text-right font-bold text-gray-900">
+                    {formatMinor(sessionsRes.meta.total_cost_minor, sessionsRes.meta.currency)}
+                  </td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        </div>
+      )}
 
       {/* Paymob link */}
       {invoice.paymob_link && (

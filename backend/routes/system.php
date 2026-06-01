@@ -207,6 +207,7 @@ Route::prefix('system')->name('system.')->group(function () {
         Route::middleware('system.can:invoices.view')->group(function () {
             Route::get('/invoices',                                  [InvoiceController::class, 'index'])->name('invoices.index');
             Route::get('/invoices/{invoice}',                        [InvoiceController::class, 'show'])->name('invoices.show');
+            Route::get('/invoices/{invoice}/sessions',               [InvoiceController::class, 'sessions'])->name('invoices.sessions');
             Route::get('/students/{student}/invoices',               [InvoiceController::class, 'studentInvoices'])->name('students.invoices');
             Route::get('/students/{student}/billing-state',          [InvoiceController::class, 'billingState'])->name('students.billing-state');
             // Automatic billings — live per-session aggregation
@@ -368,6 +369,7 @@ Route::prefix('system')->name('system.')->group(function () {
         // Wassender delivery logs
         Route::middleware('system.can:notifications.view_delivery_log')->group(function () {
             Route::get('/wassender-logs',                            [WassenderLogController::class, 'index'])->name('wassender-logs.index');
+            Route::get('/wassender-logs/stats',                      [WassenderLogController::class, 'stats'])->name('wassender-logs.stats');
             Route::get('/wassender-logs/{wassenderLog}',             [WassenderLogController::class, 'show'])->name('wassender-logs.show');
             Route::post('/wassender-logs/{wassenderLog}/retry',      [WassenderLogController::class, 'retry'])->name('wassender-logs.retry');
         });
