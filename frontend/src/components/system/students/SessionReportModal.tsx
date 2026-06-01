@@ -227,6 +227,9 @@ export function SessionReportModal({ session, open, studentName, onClose, onSubm
   const [teacherMsgOpen,   setTeacherMsgOpen]   = useState(false)
   const [previewUrl,       setPreviewUrl]       = useState<string | null>(null)
   const [isGenerating,     setIsGenerating]     = useState(false)
+  // Track which Wassender button is in-flight so only it shows the spinner.
+  // sendWA.isPending is shared across all 3 send actions, so we need local state.
+  const [activeSend,       setActiveSend]       = useState<null | 'image' | 'text' | 'teacher'>(null)
 
   const cardRef = useRef<HTMLDivElement>(null)
 
@@ -329,6 +332,7 @@ export function SessionReportModal({ session, open, studentName, onClose, onSubm
       toast.error('Generate or write the parent report text first.')
       return
     }
+    setActiveSend('text')
     try {
       const res = await sendWA.mutateAsync({
         sessionId: session.id,
@@ -339,6 +343,8 @@ export function SessionReportModal({ session, open, studentName, onClose, onSubm
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : 'Failed to send via WhatsApp.'
       toast.error(msg)
+    } finally {
+      setActiveSend(null)
     }
   }
 
@@ -346,6 +352,7 @@ export function SessionReportModal({ session, open, studentName, onClose, onSubm
   async function handleSendImageOnWhatsApp() {
     if (!session) return
     if (!cardRef.current) return
+    setActiveSend('image')
     try {
       // Generate fresh PNG (or reuse preview) right before sending so the
       // image always matches the current form state.
@@ -362,6 +369,8 @@ export function SessionReportModal({ session, open, studentName, onClose, onSubm
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : 'Failed to send image via WhatsApp.'
       toast.error(msg)
+    } finally {
+      setActiveSend(null)
     }
   }
 
@@ -449,6 +458,7 @@ export function SessionReportModal({ session, open, studentName, onClose, onSubm
 
             const sendTeacherTemplate = async () => {
               if (!session) return
+              setActiveSend('teacher')
               try {
                 const res = await sendWA.mutateAsync({
                   sessionId: session.id,
@@ -460,12 +470,11 @@ export function SessionReportModal({ session, open, studentName, onClose, onSubm
               } catch (e: unknown) {
                 const errMsg = e instanceof Error ? e.message : 'Failed to send to teacher.'
                 toast.error(errMsg)
+              } finally {
+                setActiveSend(null)
               }
             }
-            const isSendingTeacher = sendWA.isPending
-              && sendWA.variables
-              && 'target' in sendWA.variables
-              && sendWA.variables.target === 'teacher'
+            const isSendingTeacher = activeSend === 'teacher'
 
             return (
               <div className="rounded-2xl overflow-hidden"
@@ -518,7 +527,7 @@ export function SessionReportModal({ session, open, studentName, onClose, onSubm
                           {/* Send via Wassender (direct WhatsApp delivery, no manual click-through) */}
                           <button type="button"
                             onClick={sendTeacherTemplate}
-                            disabled={!teacherPhone || sendWA.isPending}
+                            disabled={!teacherPhone || activeSend !== null}
                             title={teacherPhone
                               ? `Send to teacher's WhatsApp (${teacherPhone}) via Wassender`
                               : 'Teacher has no WhatsApp/phone on file'}
@@ -632,11 +641,11 @@ export function SessionReportModal({ session, open, studentName, onClose, onSubm
               )}
               <button type="button"
                 onClick={handleSendImageOnWhatsApp}
-                disabled={sendWA.isPending || isGenerating}
+                disabled={activeSend !== null || isGenerating}
                 title="Send report image to student's WhatsApp via Wassender"
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all disabled:opacity-50"
                 style={{ background: '#25D366', color: '#fff', boxShadow: '0 2px 8px rgb(37 211 102 / 0.3)' }}>
-                {sendWA.isPending && sendWA.variables && 'kind' in sendWA.variables && sendWA.variables.kind === 'image'
+                {activeSend === 'image'
                   ? <><Loader2 size={12} className="animate-spin" />Sending…</>
                   : <><Send size={12} />Send Image on WhatsApp</>}
               </button>
@@ -687,11 +696,11 @@ export function SessionReportModal({ session, open, studentName, onClose, onSubm
               {parentReport && (
                 <button type="button"
                   onClick={handleSendTextOnWhatsApp}
-                  disabled={sendWA.isPending}
+                  disabled={activeSend !== null}
                   title="Send this text message to the student's WhatsApp via Wassender"
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors disabled:opacity-50"
                   style={{ background: '#25D366', color: '#fff', boxShadow: '0 2px 6px rgb(37 211 102 / 0.3)' }}>
-                  {sendWA.isPending && sendWA.variables && 'kind' in sendWA.variables && sendWA.variables.kind === 'text'
+                  {activeSend === 'text'
                     ? <><Loader2 size={11} className="animate-spin" />Sending…</>
                     : <><Send size={11} />Send Text on WhatsApp</>}
                 </button>
