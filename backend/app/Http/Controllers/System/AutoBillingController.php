@@ -112,6 +112,15 @@ class AutoBillingController extends Controller
             ->get()
             ->keyBy('student_id');
 
+        // ── Pull per-student session details for inline expansion ────────────
+        $sessionsByStudent = Session::query()
+            ->with(['teacher.user'])
+            ->whereIn('student_id', $studentIds)
+            ->whereBetween('scheduled_start', [$start, $end])
+            ->orderBy('scheduled_start')
+            ->get()
+            ->groupBy('student_id');
+
         // ── Build the response rows ──────────────────────────────────────────
         $data = [];
         $totalCostMinor = 0;
@@ -139,6 +148,27 @@ class AutoBillingController extends Controller
 
             $totalCostMinor += $totalCost;
 
+            // Per-session detail rows for the inline expansion in the UI.
+            $sessionRows = ($sessionsByStudent[$student->id] ?? collect())->map(function ($s) use ($perSessionMinor) {
+                $counts = $s->counts_against_quota;
+                return [
+                    'id'                   => $s->id,
+                    'scheduled_start'      => $s->scheduled_start?->toIso8601String(),
+                    'scheduled_end'        => $s->scheduled_end?->toIso8601String(),
+                    'duration_min'         => $s->duration_min,
+                    'status'               => $s->status,
+                    'cancelled_by'         => $s->cancelled_by,
+                    'apology_received'     => (bool) $s->apology_received,
+                    'quota_impact'         => $s->quota_impact,
+                    'counts_against_quota' => $counts,
+                    'teacher_name'         => optional($s->teacher?->user)->name,
+                    'cost_minor'           => $counts ? $perSessionMinor : 0,
+                ];
+            })->values();
+
+            // Last session (most recent in period) — for at-a-glance display.
+            $lastIso = $sessionRows->isNotEmpty() ? $sessionRows->last()['scheduled_start'] : null;
+
             $data[] = [
                 'student_id'              => $student->id,
                 'student_name'            => $student->name,
@@ -158,6 +188,8 @@ class AutoBillingController extends Controller
                 'invoice_id'              => $invoice?->id,
                 'invoice_status'          => $invoice?->status,
                 'course_name'             => $student->course?->name,
+                'last_session_at'         => $lastIso,
+                'sessions'                => $sessionRows->toArray(),
             ];
         }
 

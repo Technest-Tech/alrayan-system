@@ -11,6 +11,7 @@ import { CalendarView } from '@/components/system/schedule/CalendarView'
 import { AbsentModal } from '@/components/system/schedule/AbsentModal'
 import { RescheduleModal } from '@/components/system/schedule/RescheduleModal'
 import { CancelModal } from '@/components/system/schedule/CancelModal'
+import { SessionEventPopup } from '@/components/system/schedule/SessionEventPopup'
 import { SessionReportModal } from '@/components/system/students/SessionReportModal'
 import {
   useSessions,
@@ -354,6 +355,7 @@ function Section({
 export default function SchedulePage() {
   const [date, setDate] = useState(() => new Date())
   const [selected,         setSelected]         = useState<Session | null>(null)
+  const [calendarSession,  setCalendarSession]  = useState<Session | null>(null)
   const [absentTarget,     setAbsentTarget]     = useState<Session | null>(null)
   const [rescheduleTarget, setRescheduleTarget] = useState<Session | null>(null)
   const [cancelTarget,     setCancelTarget]     = useState<Session | null>(null)
@@ -496,7 +498,7 @@ export default function SchedulePage() {
         <CalendarView
           sessions={filtered}
           loading={isLoading}
-          onEventClick={setSelected}
+          onEventClick={setCalendarSession}
           date={date}
           onDateChange={setDate}
           editable
@@ -592,6 +594,16 @@ export default function SchedulePage() {
           />
         </>
       )}
+
+      <SessionEventPopup
+        session={calendarSession}
+        onClose={() => setCalendarSession(null)}
+        onReschedule={s => { setCalendarSession(null); setRescheduleTarget(s) }}
+        onCancel={s => { setCalendarSession(null); setCancelTarget(s) }}
+        onAbsent={s => { setCalendarSession(null); setAbsentTarget(s) }}
+        onAttendWithReport={s => { setCalendarSession(null); setReportTarget(s) }}
+        onViewDetails={s => { setCalendarSession(null); setSelected(s) }}
+      />
 
       <SessionDrawer
         session={selected}

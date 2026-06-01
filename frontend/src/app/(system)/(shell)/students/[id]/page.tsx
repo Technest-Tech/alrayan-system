@@ -486,14 +486,20 @@ export default function StudentDetailPage({ params }: { params: Promise<{ id: st
       sessions_per_month:   student.sessions_per_month,
       session_duration_min: student.session_duration_min,
       currency:             student.currency,
-      monthly_price_minor:  student.monthly_price_minor,
+      // DB stores minor units (cents); display as major units (dollars) in the input.
+      monthly_price_minor:  student.monthly_price_minor / 100,
       custom_discount_pct:  student.custom_discount_pct,
     } : undefined,
   })
 
   async function onProfileSave(values: ProfileValues) {
     try {
-      await update.mutateAsync(values as Record<string, unknown>)
+      // Convert dollars (form) → minor units (DB) before submit.
+      const payload = {
+        ...values,
+        monthly_price_minor: Math.round(Number(values.monthly_price_minor || 0) * 100),
+      }
+      await update.mutateAsync(payload as Record<string, unknown>)
       toast.success('Profile saved.')
     } catch (e) {
       toast.error(e instanceof ApiError ? e.message : 'Failed to save.')

@@ -1,16 +1,16 @@
 'use client'
-import { useMemo, useState } from 'react'
+import { Fragment, useMemo, useState } from 'react'
 import {
   Search, X, Loader2, CheckCircle2, RefreshCw,
   ChevronLeft, ChevronRight, MessageCircle, DollarSign, Users, FileText,
-  ExternalLink, User as UserIcon,
+  ExternalLink, User as UserIcon, ChevronDown, CalendarDays,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import Link from 'next/link'
 import { formatMinor } from '@/lib/money'
 import {
   useAutoBilling, useMarkBillPaid, useSendBillWhatsApp,
-  type AutoBillingRow, type AutoBillingFilters,
+  type AutoBillingRow, type AutoBillingFilters, type AutoBillingSessionRow,
 } from '@/hooks/system/useAutoBilling'
 
 /* ─── period helpers ─────────────────────────────────────── */
@@ -142,10 +142,45 @@ interface Props {
   studentIdFilter?: number
 }
 
+/* Compact quota-impact pill for the per-session detail rows */
+function MiniQuotaPill({ impact }: { impact: AutoBillingSessionRow['quota_impact'] }) {
+  const cfg = (() => {
+    switch (impact) {
+      case 'counted':         return { label: 'Counted',        bg: 'rgb(220 252 231)', fg: 'rgb(21 128 61)'  }
+      case 'counted_no_show': return { label: 'No-show',        bg: 'rgb(254 226 226)', fg: 'rgb(153 27 27)'  }
+      case 'free_teacher':    return { label: 'Free (teacher)', bg: 'rgb(254 243 199)', fg: 'rgb(146 64 14)'  }
+      case 'free_excused':    return { label: 'Free (excused)', bg: 'rgb(219 234 254)', fg: 'rgb(30 64 175)'  }
+      default:                return { label: 'Free',           bg: 'rgb(243 244 246)', fg: 'rgb(75 85 99)'   }
+    }
+  })()
+  return (
+    <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-semibold"
+      style={{ background: cfg.bg, color: cfg.fg }}>{cfg.label}</span>
+  )
+}
+
+function formatSessionDate(iso: string | null): { day: string; time: string } {
+  if (!iso) return { day: '—', time: '' }
+  const d = new Date(iso)
+  return {
+    day:  d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' }),
+    time: d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }),
+  }
+}
+
 export function AutoBillingTable({ studentIdFilter }: Props = {}) {
   const [period, setPeriod]   = useState(currentPeriod())
   const [search, setSearch]   = useState('')
   const [status, setStatus]   = useState<'paid' | 'unpaid' | undefined>()
+  const [expanded, setExpanded] = useState<Set<number>>(new Set())
+
+  function toggleExpand(id: number) {
+    setExpanded(prev => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id); else next.add(id)
+      return next
+    })
+  }
 
   const filters: AutoBillingFilters = { period, search: search || undefined, status }
   const { data, isLoading, refetch, isFetching } = useAutoBilling(filters)
@@ -262,6 +297,7 @@ export function AutoBillingTable({ studentIdFilter }: Props = {}) {
             <table className="w-full text-sm">
               <thead>
                 <tr style={{ background: 'rgb(248 250 252)', borderBottom: '1px solid rgb(var(--border-default,229 233 240))' }}>
+                  <th className="w-8 px-2 py-2.5" />
                   <th className="text-left text-[10px] font-bold uppercase tracking-wider px-4 py-2.5 text-gray-500">Student</th>
                   <th className="text-left text-[10px] font-bold uppercase tracking-wider px-3 py-2.5 text-gray-500 hidden md:table-cell">WhatsApp</th>
                   <th className="text-center text-[10px] font-bold uppercase tracking-wider px-3 py-2.5 text-gray-500">Sessions</th>
@@ -271,17 +307,41 @@ export function AutoBillingTable({ studentIdFilter }: Props = {}) {
                 </tr>
               </thead>
               <tbody>
-                {rows.map((r, i) => (
-                  <tr key={r.student_id}
+                {rows.map((r, i) => {
+                  const isOpen = expanded.has(r.student_id)
+                  const last   = formatSessionDate(r.last_session_at)
+                  const isLastRow = i === rows.length - 1
+                  return (
+                  <Fragment key={r.student_id}>
+                  <tr
                     className="transition-colors hover:bg-gray-50/70"
-                    style={{ borderBottom: i < rows.length - 1 ? '1px solid rgb(var(--border-default,229 233 240))' : 'none' }}>
+                    style={{ borderBottom: !isOpen && !isLastRow ? '1px solid rgb(var(--border-default,229 233 240))' : 'none' }}>
+                    <td className="px-2 py-3 text-center">
+                      <button
+                        onClick={() => toggleExpand(r.student_id)}
+                        disabled={r.sessions.length === 0}
+                        title={r.sessions.length === 0 ? 'No sessions' : (isOpen ? 'Hide sessions' : 'Show sessions')}
+                        className="w-6 h-6 inline-flex items-center justify-center rounded-md hover:bg-gray-100 transition-colors disabled:opacity-30">
+                        <ChevronDown size={14} className="transition-transform"
+                          style={{ transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)', color: 'rgb(90 100 112)' }} />
+                      </button>
+                    </td>
                     <td className="px-4 py-3">
                       <Link href={`/students/${r.student_id}`}
                         className="font-semibold hover:underline" style={{ color: 'rgb(11 31 58)' }}>
                         {r.student_name}
                       </Link>
-                      <p className="text-[11px] mt-0.5" style={{ color: 'rgb(120 130 140)' }}>
-                        {r.course_name ?? `${r.sessions_per_month}/mo · ${r.session_duration_min}m`}
+                      <p className="text-[11px] mt-0.5 flex items-center gap-1 flex-wrap" style={{ color: 'rgb(120 130 140)' }}>
+                        <span>{r.course_name ?? `${r.sessions_per_month}/mo · ${r.session_duration_min}m`}</span>
+                        {r.last_session_at && (
+                          <>
+                            <span className="opacity-50">·</span>
+                            <span className="inline-flex items-center gap-1">
+                              <CalendarDays size={10} className="opacity-60" />
+                              last: {last.day}{last.time && <> · {last.time}</>}
+                            </span>
+                          </>
+                        )}
                       </p>
                     </td>
                     <td className="px-3 py-3 hidden md:table-cell">
@@ -313,7 +373,53 @@ export function AutoBillingTable({ studentIdFilter }: Props = {}) {
                       <RowActions row={r} period={period} onRefetch={refetch} />
                     </td>
                   </tr>
-                ))}
+                  {isOpen && (
+                    <tr style={{ borderBottom: !isLastRow ? '1px solid rgb(var(--border-default,229 233 240))' : 'none' }}>
+                      <td></td>
+                      <td colSpan={6} className="px-4 pt-1 pb-4">
+                        <div className="rounded-lg overflow-hidden" style={{ background: 'rgb(248 250 252)', border: '1px solid rgb(var(--border-default,229 233 240))' }}>
+                          <table className="w-full text-xs">
+                            <thead>
+                              <tr style={{ background: '#fff' }}>
+                                <th className="text-left text-[10px] uppercase tracking-wider px-3 py-2 text-gray-500">Date</th>
+                                <th className="text-left text-[10px] uppercase tracking-wider px-3 py-2 text-gray-500">Duration</th>
+                                <th className="text-left text-[10px] uppercase tracking-wider px-3 py-2 text-gray-500 hidden sm:table-cell">Teacher</th>
+                                <th className="text-center text-[10px] uppercase tracking-wider px-3 py-2 text-gray-500">Status</th>
+                                <th className="text-center text-[10px] uppercase tracking-wider px-3 py-2 text-gray-500">Quota</th>
+                                <th className="text-right text-[10px] uppercase tracking-wider px-3 py-2 text-gray-500">Cost</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {r.sessions.map((s: AutoBillingSessionRow) => {
+                                const d = formatSessionDate(s.scheduled_start)
+                                return (
+                                <tr key={s.id} className="border-t" style={{ borderColor: 'rgb(var(--border-default,229 233 240))' }}>
+                                  <td className="px-3 py-2">
+                                    <p className="font-semibold" style={{ color: 'rgb(11 31 58)' }}>{d.day}</p>
+                                    <p className="text-[10px]" style={{ color: 'rgb(120 130 140)' }}>{d.time}</p>
+                                  </td>
+                                  <td className="px-3 py-2 text-gray-700">{s.duration_min}m</td>
+                                  <td className="px-3 py-2 text-gray-700 hidden sm:table-cell">{s.teacher_name ?? '—'}</td>
+                                  <td className="px-3 py-2 text-center capitalize text-gray-700">{s.status.replace('_', ' ')}</td>
+                                  <td className="px-3 py-2 text-center">
+                                    <MiniQuotaPill impact={s.quota_impact} />
+                                  </td>
+                                  <td className="px-3 py-2 text-right tabular-nums font-semibold"
+                                    style={{ color: s.counts_against_quota ? 'rgb(11 31 58)' : 'rgb(156 163 175)' }}>
+                                    {s.counts_against_quota ? formatMinor(s.cost_minor, r.currency) : '—'}
+                                  </td>
+                                </tr>
+                                )
+                              })}
+                            </tbody>
+                          </table>
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                  </Fragment>
+                  )
+                })}
               </tbody>
             </table>
           </div>

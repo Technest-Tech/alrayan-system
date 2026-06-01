@@ -80,7 +80,13 @@ export default function NewStudentPage() {
 
   async function onSubmit(values: FormValues) {
     try {
-      const student = await create.mutateAsync(values as Record<string, unknown>)
+      // User enters monthly price in dollars (e.g. 25); DB column stores minor
+      // units (cents). Convert here so the math downstream is correct.
+      const payload = {
+        ...values,
+        monthly_price_minor: Math.round(Number(values.monthly_price_minor || 0) * 100),
+      }
+      const student = await create.mutateAsync(payload as Record<string, unknown>)
       toast.success('Student created.')
       router.push(`/students/${student.id}`)
     } catch (e) {

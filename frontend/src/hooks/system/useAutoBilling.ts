@@ -2,6 +2,20 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from '@/lib/system/api'
 
+export interface AutoBillingSessionRow {
+  id:                   number
+  scheduled_start:      string | null
+  scheduled_end:        string | null
+  duration_min:         number
+  status:               string
+  cancelled_by:         string | null
+  apology_received:     boolean
+  quota_impact:         'counted' | 'counted_no_show' | 'free_teacher' | 'free_excused' | 'free'
+  counts_against_quota: boolean
+  teacher_name:         string | null
+  cost_minor:           number
+}
+
 export interface AutoBillingRow {
   student_id:              number
   student_name:            string
@@ -21,6 +35,8 @@ export interface AutoBillingRow {
   invoice_id:              number | null
   invoice_status:          string | null
   course_name:             string | null
+  last_session_at:         string | null
+  sessions:                AutoBillingSessionRow[]
 }
 
 export interface AutoBillingMeta {
