@@ -9,6 +9,9 @@ import { SessionDrawer } from '@/components/system/schedule/SessionDrawer'
 import { ConflictBanner } from '@/components/system/schedule/ConflictBanner'
 import { CalendarView } from '@/components/system/schedule/CalendarView'
 import { AbsentModal } from '@/components/system/schedule/AbsentModal'
+import { RescheduleModal } from '@/components/system/schedule/RescheduleModal'
+import { CancelModal } from '@/components/system/schedule/CancelModal'
+import { SessionReportModal } from '@/components/system/students/SessionReportModal'
 import {
   useSessions,
   useSessionConflicts,
@@ -113,12 +116,18 @@ function SessionCard({
   session,
   onOpen,
   onRequestAbsent,
+  onReschedule,
+  onCancel,
+  onAttendWithReport,
   accentColor,
   highlight,
 }: {
   session: Session
   onOpen: () => void
   onRequestAbsent: (s: Session) => void
+  onReschedule: (s: Session) => void
+  onCancel: (s: Session) => void
+  onAttendWithReport: (s: Session) => void
   accentColor?: string
   highlight?: boolean
 }) {
@@ -129,16 +138,13 @@ function SessionCard({
   const studentName = session.student?.name ?? '—'
   const teacherName = session.teacher?.name ?? 'Unassigned'
 
+  const canAct     = session.status === 'scheduled' || session.status === 'pending_substitute'
   const needsReport = session.status === 'attended' && !session.has_report
 
-  async function doMark(status: 'attended' | 'cancelled') {
+  async function doAttend() {
     try {
-      await mark.mutateAsync({
-        id: session.id,
-        status,
-        cancelled_by: status === 'cancelled' ? 'admin' : undefined,
-      })
-      toast.success(`Marked ${STATUS_META[status].label.toLowerCase()}.`)
+      await mark.mutateAsync({ id: session.id, status: 'attended' })
+      toast.success('Marked attended.')
     } catch (e: any) {
       toast.error(e?.message ?? 'Failed to update.')
     }
@@ -207,7 +213,7 @@ function SessionCard({
 
           {/* Actions */}
           <div className="flex items-center gap-1.5 flex-wrap mt-2">
-            {session.status === 'scheduled' && (
+            {canAct && (
               <>
                 <ActionButton
                   icon={<CheckCircle2 size={13} />}
@@ -215,7 +221,15 @@ function SessionCard({
                   color="rgb(21 128 61)"
                   bg="rgb(220 252 231)"
                   loading={mark.isPending}
-                  onClick={() => doMark('attended')}
+                  onClick={doAttend}
+                />
+                <ActionButton
+                  icon={<FileText size={13} />}
+                  label="+ Report"
+                  color="rgb(21 128 61)"
+                  bg="rgb(187 247 208)"
+                  loading={mark.isPending}
+                  onClick={() => onAttendWithReport(session)}
                 />
                 <ActionButton
                   icon={<XCircle size={13} />}
@@ -226,22 +240,28 @@ function SessionCard({
                   onClick={() => onRequestAbsent(session)}
                 />
                 <ActionButton
+                  icon={<AlertTriangle size={13} />}
+                  label="Reschedule"
+                  color="rgb(146 64 14)"
+                  bg="rgb(254 243 199)"
+                  onClick={() => onReschedule(session)}
+                />
+                <ActionButton
                   icon={<Ban size={13} />}
                   label="Cancel"
                   color="rgb(75 85 99)"
                   bg="rgb(243 244 246)"
-                  loading={mark.isPending}
-                  onClick={() => doMark('cancelled')}
+                  onClick={() => onCancel(session)}
                 />
               </>
             )}
             {needsReport && (
               <ActionButton
                 icon={<FileText size={13} />}
-                label="Write Report"
+                label="Fill Report"
                 color="#fff"
                 bg="rgb(146 64 14)"
-                onClick={onOpen}
+                onClick={() => onAttendWithReport(session)}
               />
             )}
             <button
@@ -276,7 +296,9 @@ function ActionButton({ icon, label, color, bg, onClick, loading }: {
 
 /* ─── Section ──────────────────────────────────────────────────────────── */
 function Section({
-  title, count, accent, icon, sessions, onOpen, onRequestAbsent, defaultOpen = true, highlight = false,
+  title, count, accent, icon, sessions, onOpen, onRequestAbsent,
+  onReschedule, onCancel, onAttendWithReport,
+  defaultOpen = true, highlight = false,
 }: {
   title: string
   count: number
@@ -285,6 +307,9 @@ function Section({
   sessions: Session[]
   onOpen: (s: Session) => void
   onRequestAbsent: (s: Session) => void
+  onReschedule: (s: Session) => void
+  onCancel: (s: Session) => void
+  onAttendWithReport: (s: Session) => void
   defaultOpen?: boolean
   highlight?: boolean
 }) {
@@ -312,6 +337,9 @@ function Section({
           {sessions.map(s => (
             <SessionCard key={s.id} session={s}
               onOpen={() => onOpen(s)}
+              onReschedule={onReschedule}
+              onCancel={onCancel}
+              onAttendWithReport={onAttendWithReport}
               onRequestAbsent={onRequestAbsent}
               accentColor={highlight ? accent : undefined} highlight={highlight} />
           ))}
@@ -325,18 +353,20 @@ function Section({
 /* ─── Page ─────────────────────────────────────────────────────────────── */
 export default function SchedulePage() {
   const [date, setDate] = useState(() => new Date())
-  const [selected, setSelected] = useState<Session | null>(null)
-  const [absentTarget, setAbsentTarget] = useState<Session | null>(null)
+  const [selected,         setSelected]         = useState<Session | null>(null)
+  const [absentTarget,     setAbsentTarget]     = useState<Session | null>(null)
+  const [rescheduleTarget, setRescheduleTarget] = useState<Session | null>(null)
+  const [cancelTarget,     setCancelTarget]     = useState<Session | null>(null)
+  const [reportTarget,     setReportTarget]     = useState<Session | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
   const [teacherId, setTeacherId] = useState<string>('')
   const [statusFilter, setStatusFilter] = useState<string>('')
 
-  const dayStart = new Date(date); dayStart.setHours(0,0,0,0)
-  const dayEnd   = new Date(date); dayEnd.setHours(23,59,59,999)
+  const dateStr = toYmd(date)
 
   const { data: result, isLoading, refetch } = useSessions({
-    from: toYmd(dayStart),
-    to:   toYmd(dayEnd),
+    from: `${dateStr}T00:00:00Z`,
+    to:   `${dateStr}T23:59:59Z`,
     teacher_id: teacherId || undefined,
     status: statusFilter || undefined,
     per_page: 200,
@@ -506,6 +536,9 @@ export default function SchedulePage() {
             sessions={groups.live}
             onOpen={setSelected}
             onRequestAbsent={setAbsentTarget}
+            onReschedule={setRescheduleTarget}
+            onCancel={setCancelTarget}
+            onAttendWithReport={setReportTarget}
             highlight
           />
           <Section
@@ -516,6 +549,9 @@ export default function SchedulePage() {
             sessions={groups.next2h}
             onOpen={setSelected}
             onRequestAbsent={setAbsentTarget}
+            onReschedule={setRescheduleTarget}
+            onCancel={setCancelTarget}
+            onAttendWithReport={setReportTarget}
           />
           <Section
             title="Needs action"
@@ -525,6 +561,9 @@ export default function SchedulePage() {
             sessions={groups.needs}
             onOpen={setSelected}
             onRequestAbsent={setAbsentTarget}
+            onReschedule={setRescheduleTarget}
+            onCancel={setCancelTarget}
+            onAttendWithReport={setReportTarget}
           />
           <Section
             title="Later"
@@ -534,6 +573,9 @@ export default function SchedulePage() {
             sessions={groups.later}
             onOpen={setSelected}
             onRequestAbsent={setAbsentTarget}
+            onReschedule={setRescheduleTarget}
+            onCancel={setCancelTarget}
+            onAttendWithReport={setReportTarget}
           />
           <Section
             title="Done"
@@ -543,6 +585,9 @@ export default function SchedulePage() {
             sessions={groups.done}
             onOpen={setSelected}
             onRequestAbsent={setAbsentTarget}
+            onReschedule={setRescheduleTarget}
+            onCancel={setCancelTarget}
+            onAttendWithReport={setReportTarget}
             defaultOpen={false}
           />
         </>
@@ -562,6 +607,26 @@ export default function SchedulePage() {
           onSubmitted={refetch}
         />
       )}
+
+      <RescheduleModal
+        session={rescheduleTarget}
+        onClose={() => setRescheduleTarget(null)}
+        onDone={() => { setRescheduleTarget(null); refetch() }}
+      />
+
+      <CancelModal
+        session={cancelTarget}
+        onClose={() => setCancelTarget(null)}
+        onDone={() => { setCancelTarget(null); refetch() }}
+      />
+
+      <SessionReportModal
+        session={reportTarget}
+        open={reportTarget !== null}
+        studentName={reportTarget?.student?.name ?? ''}
+        onClose={() => setReportTarget(null)}
+        onSubmitted={() => { setReportTarget(null); refetch() }}
+      />
     </>
   )
 }
