@@ -10,6 +10,7 @@ import { useSessions, useBulkAttendance, useMarkAttendance } from '@/hooks/syste
 import { RescheduleSheet } from '@/components/system/schedule/RescheduleSheet'
 import { CancelSessionDialog } from '@/components/system/schedule/CancelSessionDialog'
 import { SessionDrawer } from '@/components/system/schedule/SessionDrawer'
+import { SessionReportModal } from '@/components/system/students/SessionReportModal'
 import type { Session, SessionStatus } from '@/types/system/session'
 
 // ─── constants ────────────────────────────────────────────────────────────────
@@ -97,7 +98,7 @@ function StatusBadge({ status }: { status: string }) {
 
 function SessionRow({
   session, selected, markingId,
-  onToggle, onAttended, onAbsent, onReschedule, onCancel, onView,
+  onToggle, onAttended, onAbsent, onReschedule, onCancel, onView, onAttendWithReport,
 }: {
   session: Session
   selected: boolean
@@ -108,6 +109,7 @@ function SessionRow({
   onReschedule: () => void
   onCancel: () => void
   onView: () => void
+  onAttendWithReport: () => void
 }) {
   const cfg        = STATUS_CFG[session.status] ?? STATUS_CFG.cancelled
   const canMark    = session.status === 'scheduled' || session.status === 'pending_substitute'
@@ -182,16 +184,26 @@ function SessionRow({
                 className="h-7 px-2.5 rounded-lg text-[11px] font-semibold bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 disabled:opacity-40 transition-colors whitespace-nowrap">
                 ✓ Attended
               </button>
+              <button onClick={onAttendWithReport} disabled={isPending} title="Mark attended and fill report"
+                className="h-7 w-7 rounded-lg flex items-center justify-center bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 disabled:opacity-40 transition-colors">
+                <FileText size={12} />
+              </button>
               <button onClick={onAbsent} disabled={isPending}
                 className="h-7 px-2.5 rounded-lg text-[11px] font-semibold bg-red-50 text-red-600 hover:bg-red-100 border border-red-200 disabled:opacity-40 transition-colors whitespace-nowrap">
                 ✗ Absent
               </button>
             </>
           )}
-          {isAttended && (
+          {isAttended && !session.has_report && (
+            <button onClick={onAttendWithReport}
+              className="h-7 px-2.5 rounded-lg text-[11px] font-semibold bg-amber-50 text-amber-700 hover:bg-amber-100 border border-amber-200 transition-colors whitespace-nowrap">
+              Fill Report
+            </button>
+          )}
+          {isAttended && session.has_report && (
             <button onClick={onView}
               className="h-7 px-2.5 rounded-lg text-[11px] font-semibold bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 transition-colors whitespace-nowrap">
-              Report
+              Report ✓
             </button>
           )}
           {canResched && (
@@ -250,7 +262,7 @@ function TableHead({ selectableInView, allInViewSelected, onToggleAll }: {
 function SessionSection({
   title, Icon: SectionIcon, accentColor, emptyLabel,
   sessions, isLoading, refetch,
-  onReschedule, onCancel, onView,
+  onReschedule, onCancel, onView, onAttendWithReport,
 }: {
   title: string
   Icon: React.ElementType
@@ -262,6 +274,7 @@ function SessionSection({
   onReschedule: (s: Session) => void
   onCancel: (s: Session) => void
   onView: (s: Session) => void
+  onAttendWithReport: (s: Session) => void
 }) {
   const [activeTab, setActiveTab] = useState('all')
   const [selected,  setSelected]  = useState<number[]>([])
@@ -428,6 +441,7 @@ function SessionSection({
                   onReschedule={() => onReschedule(session)}
                   onCancel={() => onCancel(session)}
                   onView={() => onView(session)}
+                  onAttendWithReport={() => onAttendWithReport(session)}
                 />
               ))}
             </tbody>
@@ -460,6 +474,7 @@ export default function AttendancePage() {
   const [rescheduleTarget, setRescheduleTarget] = useState<Session | null>(null)
   const [cancelTarget,     setCancelTarget]     = useState<Session | null>(null)
   const [drawerSession,    setDrawerSession]    = useState<Session | null>(null)
+  const [reportTarget,     setReportTarget]     = useState<Session | null>(null)
 
   const dateStr = currentDate.toISOString().split('T')[0]
   const isToday = dateStr === new Date().toISOString().split('T')[0]
@@ -595,6 +610,7 @@ export default function AttendancePage() {
             onReschedule={setRescheduleTarget}
             onCancel={setCancelTarget}
             onView={setDrawerSession}
+            onAttendWithReport={setReportTarget}
           />
         )}
 
@@ -616,6 +632,7 @@ export default function AttendancePage() {
             onReschedule={setRescheduleTarget}
             onCancel={setCancelTarget}
             onView={setDrawerSession}
+            onAttendWithReport={setReportTarget}
           />
         )}
 
@@ -643,6 +660,13 @@ export default function AttendancePage() {
         open={drawerSession !== null}
         onClose={() => setDrawerSession(null)}
         onUpdate={refetch}
+      />
+      <SessionReportModal
+        session={reportTarget}
+        open={reportTarget !== null}
+        studentName={reportTarget?.student?.name ?? ''}
+        onClose={() => setReportTarget(null)}
+        onSubmitted={() => { setReportTarget(null); refetch() }}
       />
     </>
   )

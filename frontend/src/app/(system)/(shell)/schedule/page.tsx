@@ -8,14 +8,39 @@ import {
 import { SessionDrawer } from '@/components/system/schedule/SessionDrawer'
 import { ConflictBanner } from '@/components/system/schedule/ConflictBanner'
 import { CalendarView } from '@/components/system/schedule/CalendarView'
+import { AbsentModal } from '@/components/system/schedule/AbsentModal'
 import {
   useSessions,
   useSessionConflicts,
   useMarkAttendance,
 } from '@/hooks/system/useSessions'
 import { useTeachers } from '@/hooks/system/useTeachers'
-import type { Session, SessionStatus } from '@/types/system/session'
+import type { Session, SessionStatus, QuotaImpact } from '@/types/system/session'
 import { toast } from 'sonner'
+
+/* ─── Quota-impact label config ───────────────────────────────────────── */
+const QUOTA_META: Record<QuotaImpact, { label: string; bg: string; fg: string; tip: string }> = {
+  counted:          { label: 'Counted',          bg: 'rgb(220 252 231)', fg: 'rgb(21 128 61)',  tip: 'Consumed from monthly quota' },
+  counted_no_show:  { label: 'Counted (no-show)',bg: 'rgb(254 226 226)', fg: 'rgb(153 27 27)',  tip: 'Student absent without apology — counted as used' },
+  free_teacher:     { label: 'Free (teacher)',   bg: 'rgb(254 243 199)', fg: 'rgb(146 64 14)',  tip: 'Teacher absent — not counted from quota' },
+  free_excused:     { label: 'Free (excused)',   bg: 'rgb(219 234 254)', fg: 'rgb(30 64 175)',  tip: 'Student apologized in time — not counted' },
+  free:             { label: 'Free',             bg: 'rgb(243 244 246)', fg: 'rgb(75 85 99)',   tip: 'Does not count against quota' },
+}
+
+function QuotaBadge({ impact, status }: { impact: QuotaImpact; status: SessionStatus }) {
+  // Don't show a billing badge for sessions that haven't been marked yet
+  if (status === 'scheduled' || status === 'rescheduled' || status === 'pending_substitute') return null
+  const m = QUOTA_META[impact]
+  return (
+    <span
+      title={m.tip}
+      className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold"
+      style={{ background: m.bg, color: m.fg }}
+    >
+      {m.label}
+    </span>
+  )
+}
 
 /* ─── Utils ────────────────────────────────────────────────────────────── */
 function toYmd(d: Date) {
@@ -87,11 +112,13 @@ function StatusBadge({ status }: { status: SessionStatus }) {
 function SessionCard({
   session,
   onOpen,
+  onRequestAbsent,
   accentColor,
   highlight,
 }: {
   session: Session
   onOpen: () => void
+  onRequestAbsent: (s: Session) => void
   accentColor?: string
   highlight?: boolean
 }) {
@@ -102,13 +129,15 @@ function SessionCard({
   const studentName = session.student?.name ?? '—'
   const teacherName = session.teacher?.name ?? 'Unassigned'
 
-  const isPast = new Date(end).getTime() < Date.now()
-  const isFuture = new Date(start).getTime() > Date.now()
   const needsReport = session.status === 'attended' && !session.has_report
 
-  async function doMark(status: 'attended' | 'absent' | 'cancelled') {
+  async function doMark(status: 'attended' | 'cancelled') {
     try {
-      await mark.mutateAsync({ id: session.id, status, cancelled_by: status === 'cancelled' ? 'admin' : undefined })
+      await mark.mutateAsync({
+        id: session.id,
+        status,
+        cancelled_by: status === 'cancelled' ? 'admin' : undefined,
+      })
       toast.success(`Marked ${STATUS_META[status].label.toLowerCase()}.`)
     } catch (e: any) {
       toast.error(e?.message ?? 'Failed to update.')
@@ -151,6 +180,7 @@ function SessionCard({
                   {studentName}
                 </p>
                 <StatusBadge status={session.status} />
+                <QuotaBadge impact={session.quota_impact} status={session.status} />
                 {needsReport && (
                   <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-semibold"
                     style={{ background: 'rgb(254 243 199)', color: 'rgb(146 64 14)' }}>
@@ -193,7 +223,7 @@ function SessionCard({
                   color="rgb(153 27 27)"
                   bg="rgb(254 226 226)"
                   loading={mark.isPending}
-                  onClick={() => doMark('absent')}
+                  onClick={() => onRequestAbsent(session)}
                 />
                 <ActionButton
                   icon={<Ban size={13} />}
@@ -246,7 +276,7 @@ function ActionButton({ icon, label, color, bg, onClick, loading }: {
 
 /* ─── Section ──────────────────────────────────────────────────────────── */
 function Section({
-  title, count, accent, icon, sessions, onOpen, defaultOpen = true, highlight = false,
+  title, count, accent, icon, sessions, onOpen, onRequestAbsent, defaultOpen = true, highlight = false,
 }: {
   title: string
   count: number
@@ -254,6 +284,7 @@ function Section({
   icon: React.ReactNode
   sessions: Session[]
   onOpen: (s: Session) => void
+  onRequestAbsent: (s: Session) => void
   defaultOpen?: boolean
   highlight?: boolean
 }) {
@@ -279,7 +310,9 @@ function Section({
       {open && (
         <div className="space-y-2">
           {sessions.map(s => (
-            <SessionCard key={s.id} session={s} onOpen={() => onOpen(s)}
+            <SessionCard key={s.id} session={s}
+              onOpen={() => onOpen(s)}
+              onRequestAbsent={onRequestAbsent}
               accentColor={highlight ? accent : undefined} highlight={highlight} />
           ))}
         </div>
@@ -288,10 +321,12 @@ function Section({
   )
 }
 
+
 /* ─── Page ─────────────────────────────────────────────────────────────── */
 export default function SchedulePage() {
   const [date, setDate] = useState(() => new Date())
   const [selected, setSelected] = useState<Session | null>(null)
+  const [absentTarget, setAbsentTarget] = useState<Session | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
   const [teacherId, setTeacherId] = useState<string>('')
   const [statusFilter, setStatusFilter] = useState<string>('')
@@ -470,6 +505,7 @@ export default function SchedulePage() {
             icon={<Clock size={13} />}
             sessions={groups.live}
             onOpen={setSelected}
+            onRequestAbsent={setAbsentTarget}
             highlight
           />
           <Section
@@ -479,6 +515,7 @@ export default function SchedulePage() {
             icon={<Clock size={13} />}
             sessions={groups.next2h}
             onOpen={setSelected}
+            onRequestAbsent={setAbsentTarget}
           />
           <Section
             title="Needs action"
@@ -487,6 +524,7 @@ export default function SchedulePage() {
             icon={<AlertTriangle size={13} />}
             sessions={groups.needs}
             onOpen={setSelected}
+            onRequestAbsent={setAbsentTarget}
           />
           <Section
             title="Later"
@@ -495,6 +533,7 @@ export default function SchedulePage() {
             icon={<CalendarDays size={13} />}
             sessions={groups.later}
             onOpen={setSelected}
+            onRequestAbsent={setAbsentTarget}
           />
           <Section
             title="Done"
@@ -503,6 +542,7 @@ export default function SchedulePage() {
             icon={<CheckCircle2 size={13} />}
             sessions={groups.done}
             onOpen={setSelected}
+            onRequestAbsent={setAbsentTarget}
             defaultOpen={false}
           />
         </>
@@ -514,6 +554,14 @@ export default function SchedulePage() {
         onClose={() => setSelected(null)}
         onUpdate={refetch}
       />
+
+      {absentTarget && (
+        <AbsentModal
+          session={absentTarget}
+          onClose={() => setAbsentTarget(null)}
+          onSubmitted={refetch}
+        />
+      )}
     </>
   )
 }

@@ -20,6 +20,12 @@ export interface Session {
   status: SessionStatus
   cancelled_by: CancelledBy | null
   cancellation_reason: string | null
+  apology_received: boolean
+  apology_at: string | null
+  /** Whether this session is consumed from the student's monthly quota */
+  counts_against_quota: boolean
+  /** Granular billing-impact label: 'counted' | 'counted_no_show' | 'free_teacher' | 'free_excused' | 'free' */
+  quota_impact: QuotaImpact
   zoom_meeting_id: string | null
   zoom_join_url: string | null
   attended_marked_at: string | null
@@ -29,6 +35,8 @@ export interface Session {
   teacher?: SessionRef
   report?: SessionReport | null
 }
+
+export type QuotaImpact = 'counted' | 'counted_no_show' | 'free_teacher' | 'free_excused' | 'free'
 
 export interface SessionDetail extends Session {
   zoom_start_url: string | null

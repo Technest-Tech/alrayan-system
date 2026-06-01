@@ -34,12 +34,17 @@ export function useSession(id: number | null) {
 export function useMarkAttendance() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: ({ id, status, cancelled_by, cancellation_reason }: {
+    mutationFn: ({ id, status, cancelled_by, cancellation_reason, apology_received }: {
       id: number
       status: 'attended' | 'absent' | 'cancelled'
-      cancelled_by?: string
+      cancelled_by?: 'student' | 'teacher' | 'admin'
       cancellation_reason?: string
-    }) => api(`/sessions/${id}/attendance`, { method: 'POST', body: JSON.stringify({ status, cancelled_by, cancellation_reason }) }),
+      /** Only meaningful when status='absent' and cancelled_by='student'. */
+      apology_received?: boolean
+    }) => api(`/sessions/${id}/attendance`, {
+      method: 'POST',
+      body:   JSON.stringify({ status, cancelled_by, cancellation_reason, apology_received }),
+    }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['system', 'sessions'] }),
   })
 }

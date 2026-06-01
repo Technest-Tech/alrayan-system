@@ -13,8 +13,16 @@ class AttendanceRequest extends FormRequest
     {
         return [
             'status'              => ['required', Rule::in(['attended', 'absent', 'cancelled'])],
-            'cancelled_by'        => ['required_if:status,cancelled', Rule::in(['student', 'teacher', 'admin'])],
+            // Required for both cancelled and absent — UI must specify whose fault it was.
+            'cancelled_by'        => [
+                'required_if:status,cancelled',
+                'required_if:status,absent',
+                'nullable',
+                Rule::in(['student', 'teacher', 'admin']),
+            ],
             'cancellation_reason' => ['nullable', 'string', 'max:500'],
+            // Only meaningful when status=absent + cancelled_by=student.
+            'apology_received'    => ['nullable', 'boolean'],
         ];
     }
 }

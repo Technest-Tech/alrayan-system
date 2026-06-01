@@ -154,8 +154,25 @@ class SessionController extends Controller
         $data = ['status' => $request->status];
 
         if ($request->status === 'attended') {
-            $data['attended_marked_at']       = now();
+            $data['attended_marked_at']         = now();
             $data['attended_marked_by_user_id'] = auth()->id();
+            // Clear any stale cancellation fields when flipping back to attended.
+            $data['cancelled_by']        = null;
+            $data['cancellation_reason'] = null;
+            $data['apology_received']    = false;
+            $data['apology_at']          = null;
+        } elseif ($request->status === 'absent') {
+            // Capture WHOSE fault — required by UI for billing/quota rules.
+            $data['cancelled_by']        = $request->cancelled_by;
+            $data['cancellation_reason'] = $request->cancellation_reason;
+            // Apology only meaningful when student is the absent party.
+            if ($request->cancelled_by === 'student' && $request->boolean('apology_received')) {
+                $data['apology_received'] = true;
+                $data['apology_at']       = now();
+            } else {
+                $data['apology_received'] = false;
+                $data['apology_at']       = null;
+            }
         } elseif ($request->status === 'cancelled') {
             $data['cancelled_by']        = $request->cancelled_by;
             $data['cancellation_reason'] = $request->cancellation_reason;
