@@ -5,6 +5,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { ChevronDown, Loader2, Sparkles } from 'lucide-react'
+import { sendGAEvent } from '@next/third-parties/google'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { FormField } from './FormField'
@@ -108,6 +109,11 @@ export function TrialBookingForm() {
       const json = (await res.json()) as { reference: string }
       setReference(json.reference)
       setStatus('success')
+      sendGAEvent('event', 'book_trial', {
+        reference: json.reference,
+        course: data.course,
+        country: data.country,
+      })
     } catch (e) {
       setStatus('error')
       setErrorMsg(e instanceof Error ? e.message : 'Something went wrong. Please try again.')
