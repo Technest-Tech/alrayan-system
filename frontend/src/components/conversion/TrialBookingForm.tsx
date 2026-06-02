@@ -34,6 +34,10 @@ const AGE_GROUPS = [
   { value: 'adult', label: 'Adult (18+)' },
 ] as const
 
+// Empty-string → undefined so an opened-then-closed optional section doesn't
+// block submission (z.enum(...).optional() rejects "" but accepts undefined).
+const emptyToUndef = (v: unknown) => (v === '' ? undefined : v)
+
 const schema = z.object({
   name: z.string().min(2, 'Please enter your name'),
   phone: z
@@ -41,12 +45,12 @@ const schema = z.object({
     .min(6, 'A valid WhatsApp number is required')
     .max(30, 'Number is too long'),
   email: z.string().email('Please enter a valid email').max(255),
-  country: z.string().max(100).optional().or(z.literal('')),
-  ageGroup: z.enum(['kid-5-8', 'kid-9-12', 'teen', 'adult']).optional(),
-  courseInterest: z.string().max(100).optional().or(z.literal('')),
-  preferredTime: z.string().max(50).optional().or(z.literal('')),
-  timezone: z.string().max(100).optional().or(z.literal('')),
-  message: z.string().max(500, 'Max 500 characters').optional().or(z.literal('')),
+  country:        z.preprocess(emptyToUndef, z.string().max(100).optional()),
+  ageGroup:       z.preprocess(emptyToUndef, z.enum(['kid-5-8', 'kid-9-12', 'teen', 'adult']).optional()),
+  courseInterest: z.preprocess(emptyToUndef, z.string().max(100).optional()),
+  preferredTime:  z.preprocess(emptyToUndef, z.string().max(50).optional()),
+  timezone:       z.preprocess(emptyToUndef, z.string().max(100).optional()),
+  message:        z.preprocess(emptyToUndef, z.string().max(500, 'Max 500 characters').optional()),
 })
 
 type FormValues = z.infer<typeof schema>
