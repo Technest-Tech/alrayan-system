@@ -5,6 +5,7 @@ namespace App\Models\System;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Str;
 use Spatie\Activitylog\LogOptions;
 use Spatie\Activitylog\Traits\LogsActivity;
 
@@ -25,6 +26,16 @@ class Invoice extends Model
         'wallet_credit_minor' => 'integer',
         'total_minor'         => 'integer',
     ];
+
+    protected static function boot(): void
+    {
+        parent::boot();
+        static::creating(function (Invoice $invoice) {
+            if (empty($invoice->payment_token)) {
+                $invoice->payment_token = Str::random(48);
+            }
+        });
+    }
 
     public function student()
     {

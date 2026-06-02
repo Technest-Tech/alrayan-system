@@ -5,10 +5,11 @@ import { api } from '@/lib/system/api'
 export interface BillingPreview {
   outstanding: Array<{ number: string; amount_minor: number }>
   pro_rata: {
-    amount_minor: number
-    days_in_month: number
-    remaining_days: number
-    monthly_minor: number
+    amount_minor:        number
+    sessions_in_month:   number
+    remaining_sessions:  number
+    per_session_minor:   number
+    monthly_minor:       number
   }
   total_minor: number
   currency: string

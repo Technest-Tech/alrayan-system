@@ -1,4 +1,5 @@
 'use client'
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -8,6 +9,8 @@ import Link from 'next/link'
 import { ChevronLeft } from 'lucide-react'
 import { PageHeader } from '@/components/system/primitives/PageHeader'
 import { ParentGuardianFields } from '@/components/system/students/ParentGuardianFields'
+import { CountryCombobox } from '@/components/system/students/CountryCombobox'
+import { WhatsAppInput } from '@/components/system/students/WhatsAppInput'
 import { useCreateStudent } from '@/hooks/system/useStudents'
 import { useCourses } from '@/hooks/system/useCourses'
 import { useTeachers } from '@/hooks/system/useTeachers'
@@ -15,12 +18,13 @@ import { ApiError } from '@/lib/system/api'
 
 const schema = z.object({
   name:                  z.string().min(1, 'Name is required'),
-  email:                 z.string().email().optional().or(z.literal('')),
-  phone:                 z.string().optional(),
   whatsapp:              z.string().optional(),
   country:               z.string().min(1, 'Country is required'),
   timezone:              z.string().min(1, 'Timezone is required'),
-  age_category:          z.enum(['child', 'adult']),
+  student_type:          z.enum(['child', 'adult']),
+  guardian_id:           z.number().optional(),
+  guardian_name:         z.string().optional(),
+  guardian_whatsapp:     z.string().optional(),
   course_id:             z.coerce.number().optional(),
   assigned_teacher_id:   z.coerce.number().optional(),
   sessions_per_month:    z.coerce.number().min(1),
@@ -29,12 +33,13 @@ const schema = z.object({
   monthly_price_minor:   z.coerce.number().min(0),
   custom_discount_pct:   z.coerce.number().min(0).max(100),
   whatsapp_group_link:   z.string().optional(),
-  source:                z.enum(['lead', 'manual', 'referral', 'trial_booking']),
-  internal_note:         z.string().optional(),
-  parent_name:           z.string().optional(),
-  parent_phone:          z.string().optional(),
-  parent_whatsapp:       z.string().optional(),
-  parent_email:          z.string().optional(),
+}).superRefine((data, ctx) => {
+  if (data.student_type === 'child' && !data.guardian_id && !data.guardian_name) {
+    ctx.addIssue({ code: 'custom', message: 'Parent name is required', path: ['guardian_name'] })
+  }
+  if (data.student_type === 'child' && !data.guardian_id && !data.guardian_whatsapp) {
+    ctx.addIssue({ code: 'custom', message: 'Parent WhatsApp is required', path: ['guardian_whatsapp'] })
+  }
 })
 
 type FormValues = z.infer<typeof schema>
@@ -42,16 +47,9 @@ type FormValues = z.infer<typeof schema>
 const inputCls   = 'w-full px-3 py-2 rounded-xl border text-sm outline-none focus:ring-2 focus:ring-[rgb(14,124,90)]'
 const inputStyle = { borderColor: 'rgb(var(--border-default, 229 233 240))', background: 'rgb(var(--surface-card, 255 255 255))' }
 
-const SECTION_CLS = 'rounded-2xl p-6 space-y-4'
+const SECTION_CLS   = 'rounded-2xl p-6 space-y-4'
 const SECTION_STYLE = { background: 'rgb(var(--surface-card, 255 255 255))', border: '1px solid rgb(var(--border-default, 229 233 240))' }
-const SECTION_TITLE_CLS = 'text-sm font-semibold opacity-60 uppercase tracking-wide mb-4'
-
-const SOURCE_OPTIONS = [
-  { value: 'manual',        label: 'Manual entry' },
-  { value: 'lead',          label: 'Lead' },
-  { value: 'referral',      label: 'Referral' },
-  { value: 'trial_booking', label: 'Trial booking' },
-] as const
+const SECTION_TITLE = 'text-sm font-semibold opacity-60 uppercase tracking-wide mb-4'
 
 const CURRENCIES = ['USD', 'EGP', 'GBP', 'EUR', 'SAR', 'AED']
 const DURATIONS  = [30, 45, 60]
@@ -63,25 +61,32 @@ export default function NewStudentPage() {
   const { data: teachersData }  = useTeachers()
   const teachers = teachersData?.data ?? []
 
+  const [waDialCode, setWaDialCode] = useState<string | undefined>(undefined)
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { register, handleSubmit, control, watch, formState: { errors, isSubmitting } } = useForm<any>({
+  const { register, handleSubmit, control, watch, setValue, formState: { errors, isSubmitting } } = useForm<any>({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     resolver: zodResolver(schema) as any,
     defaultValues: {
-      age_category:         'adult',
+      student_type:         'adult',
       sessions_per_month:   4,
       session_duration_min: 60,
       currency:             'USD',
       custom_discount_pct:  0,
-      source:               'manual',
     },
   })
 
-  const ageCategory = watch('age_category')
+  const studentType = watch('student_type')
 
   async function onSubmit(values: FormValues) {
     try {
-      const student = await create.mutateAsync(values as Record<string, unknown>)
+      // User enters monthly price in dollars (e.g. 25); DB column stores minor
+      // units (cents). Convert here so the math downstream is correct.
+      const payload = {
+        ...values,
+        monthly_price_minor: Math.round(Number(values.monthly_price_minor || 0) * 100),
+      }
+      const student = await create.mutateAsync(payload as Record<string, unknown>)
       toast.success('Student created.')
       router.push(`/students/${student.id}`)
     } catch (e) {
@@ -108,57 +113,92 @@ export default function NewStudentPage() {
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-5 max-w-3xl">
         <div className={SECTION_CLS} style={SECTION_STYLE}>
-          <p className={SECTION_TITLE_CLS}>Identity</p>
+          <p className={SECTION_TITLE}>Identity</p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium mb-1.5">Full name *</label>
               <input className={inputCls} style={inputStyle} {...register('name')} />
               {errors.name && <p className="text-red-500 text-xs mt-1">{String(errors.name.message)}</p>}
             </div>
+
             <div>
-              <label className="block text-sm font-medium mb-1.5">Email</label>
-              <input type="email" className={inputCls} style={inputStyle} {...register('email')} />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1.5">Phone</label>
-              <input className={inputCls} style={inputStyle} {...register('phone')} />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1.5">WhatsApp</label>
-              <input className={inputCls} style={inputStyle} {...register('whatsapp')} />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1.5">Country *</label>
-              <input className={inputCls} style={inputStyle} placeholder="e.g. EG" {...register('country')} />
-              {errors.country && <p className="text-red-500 text-xs mt-1">{String(errors.country.message)}</p>}
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1.5">Timezone *</label>
-              <input className={inputCls} style={inputStyle} placeholder="e.g. Africa/Cairo" {...register('timezone')} />
-              {errors.timezone && <p className="text-red-500 text-xs mt-1">{String(errors.timezone.message)}</p>}
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1.5">Age category *</label>
-              <div className="flex gap-4">
-                {(['child', 'adult'] as const).map((v) => (
-                  <label key={v} className="flex items-center gap-2 text-sm cursor-pointer capitalize">
-                    <input type="radio" value={v} {...register('age_category')} className="accent-[rgb(14,124,90)]" />
-                    {v}
+              <label className="block text-sm font-medium mb-1.5">Student type *</label>
+              <div className="flex gap-4 pt-1.5">
+                {(['adult', 'child'] as const).map((v) => (
+                  <label key={v} className="flex items-center gap-2 text-sm cursor-pointer">
+                    <input type="radio" value={v} {...register('student_type')} className="accent-[rgb(14,124,90)]" />
+                    {v === 'adult' ? 'Adult (self)' : 'Child (has parent)'}
                   </label>
                 ))}
               </div>
             </div>
+
+            {studentType === 'adult' && (
+              <div>
+                <label className="block text-sm font-medium mb-1.5">WhatsApp</label>
+                <Controller
+                  name="whatsapp"
+                  control={control}
+                  render={({ field }) => (
+                    <WhatsAppInput
+                      value={field.value ?? ''}
+                      onChange={field.onChange}
+                      syncDialCode={waDialCode}
+                      inputStyle={inputStyle}
+                    />
+                  )}
+                />
+              </div>
+            )}
+
+            <div>
+              <label className="block text-sm font-medium mb-1.5">Country *</label>
+              <Controller
+                name="country"
+                control={control}
+                render={({ field }) => (
+                  <CountryCombobox
+                    value={field.value ?? ''}
+                    onChange={(code, timezone, dialCode) => {
+                      field.onChange(code)
+                      setValue('timezone', timezone, { shouldValidate: true })
+                      setWaDialCode(dialCode)
+                    }}
+                  />
+                )}
+              />
+              {errors.country && <p className="text-red-500 text-xs mt-1">{String(errors.country.message)}</p>}
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-1.5">Timezone *</label>
+              <Controller
+                name="timezone"
+                control={control}
+                render={({ field }) => (
+                  <input
+                    className={inputCls}
+                    style={inputStyle}
+                    placeholder="e.g. Africa/Cairo"
+                    {...field}
+                    value={field.value ?? ''}
+                  />
+                )}
+              />
+              {errors.timezone && <p className="text-red-500 text-xs mt-1">{String(errors.timezone.message)}</p>}
+            </div>
+
           </div>
         </div>
 
-        {ageCategory === 'child' && (
+        {studentType === 'child' && (
           <div className={SECTION_CLS} style={SECTION_STYLE}>
-            <ParentGuardianFields control={control} />
+            <ParentGuardianFields control={control} setValue={setValue} syncDialCode={waDialCode} />
           </div>
         )}
 
         <div className={SECTION_CLS} style={SECTION_STYLE}>
-          <p className={SECTION_TITLE_CLS}>Enrollment</p>
+          <p className={SECTION_TITLE}>Enrollment</p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium mb-1.5">Course</label>
@@ -188,7 +228,7 @@ export default function NewStudentPage() {
         </div>
 
         <div className={SECTION_CLS} style={SECTION_STYLE}>
-          <p className={SECTION_TITLE_CLS}>Pricing</p>
+          <p className={SECTION_TITLE}>Pricing</p>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div>
               <label className="block text-sm font-medium mb-1.5">Currency</label>
@@ -208,26 +248,10 @@ export default function NewStudentPage() {
         </div>
 
         <div className={SECTION_CLS} style={SECTION_STYLE}>
-          <p className={SECTION_TITLE_CLS}>WhatsApp group</p>
+          <p className={SECTION_TITLE}>WhatsApp group</p>
           <div>
             <label className="block text-sm font-medium mb-1.5">Group link</label>
             <input className={inputCls} style={inputStyle} placeholder="https://chat.whatsapp.com/…" {...register('whatsapp_group_link')} />
-          </div>
-        </div>
-
-        <div className={SECTION_CLS} style={SECTION_STYLE}>
-          <p className={SECTION_TITLE_CLS}>Source & notes</p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium mb-1.5">Source</label>
-              <select className={inputCls} style={inputStyle} {...register('source')}>
-                {SOURCE_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-              </select>
-            </div>
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1.5">Internal note</label>
-            <textarea rows={3} className={inputCls} style={inputStyle} placeholder="Visible only to staff…" {...register('internal_note')} />
           </div>
         </div>
 

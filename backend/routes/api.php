@@ -25,12 +25,13 @@ Route::prefix('v1')->group(function () {
     Route::get('/pricing',        [\App\Http\Controllers\Api\PublicPricingController::class, 'show'])->name('api.pricing');
 });
 
-Route::prefix('v1')
-    ->middleware(['throttle:form', 'turnstile'])
-    ->group(function () {
-        Route::post('/trial-bookings', [TrialBookingController::class, 'store']);
-        Route::post('/contacts',       [ContactController::class, 'store']);
-    });
+Route::prefix('v1')->middleware(['throttle:form'])->group(function () {
+    Route::post('/trial-bookings', [TrialBookingController::class, 'store']);
+});
+
+Route::prefix('v1')->middleware(['throttle:form', 'turnstile'])->group(function () {
+    Route::post('/contacts', [ContactController::class, 'store']);
+});
 
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();

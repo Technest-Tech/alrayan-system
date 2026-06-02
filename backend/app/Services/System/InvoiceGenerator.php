@@ -75,8 +75,7 @@ class InvoiceGenerator
 
     public function generateAdvance(Student $s, ?Carbon $effectiveFrom = null): Invoice
     {
-        $monthly   = $this->price->monthly($s);
-        $result    = $this->proRata->forCurrentMonth($monthly, now(), $effectiveFrom ?? now());
+        $result    = $this->proRata->forCurrentMonth($s, now(), $effectiveFrom ?? now());
         $year      = now()->year;
 
         return DB::transaction(function () use ($s, $result, $year) {
@@ -97,9 +96,9 @@ class InvoiceGenerator
             InvoiceLine::create([
                 'invoice_id'       => $inv->id,
                 'kind'             => 'pro_rata',
-                'description'      => "Pro-rata: {$result->remainingDays} of {$result->daysInMonth} days in " . now()->format('F Y'),
-                'quantity'         => 1,
-                'unit_price_minor' => $result->amountMinor,
+                'description'      => "Pro-rata: {$result->remainingSessions} of {$result->sessionsInMonth} sessions in " . now()->format('F Y'),
+                'quantity'         => max(1, $result->remainingSessions),
+                'unit_price_minor' => $result->perSessionPriceMinor,
                 'line_total_minor' => $result->amountMinor,
             ]);
             $this->wallet->applyToInvoice($inv->fresh());
@@ -114,8 +113,7 @@ class InvoiceGenerator
     public function generateReactivation(Student $s): Invoice
     {
         $outstanding = Invoice::where('student_id', $s->id)->open()->get();
-        $monthly     = $this->price->monthly($s);
-        $proResult   = $this->proRata->forCurrentMonth($monthly, now());
+        $proResult   = $this->proRata->forCurrentMonth($s, now());
         $year        = now()->year;
 
         return DB::transaction(function () use ($s, $outstanding, $proResult, $year) {
@@ -153,9 +151,9 @@ class InvoiceGenerator
             InvoiceLine::create([
                 'invoice_id'       => $inv->id,
                 'kind'             => 'pro_rata',
-                'description'      => "Pro-rata: {$proResult->remainingDays} of {$proResult->daysInMonth} days in " . now()->format('F Y'),
-                'quantity'         => 1,
-                'unit_price_minor' => $proResult->amountMinor,
+                'description'      => "Pro-rata: {$proResult->remainingSessions} of {$proResult->sessionsInMonth} sessions in " . now()->format('F Y'),
+                'quantity'         => max(1, $proResult->remainingSessions),
+                'unit_price_minor' => $proResult->perSessionPriceMinor,
                 'line_total_minor' => $proResult->amountMinor,
             ]);
             $this->wallet->applyToInvoice($inv->fresh());

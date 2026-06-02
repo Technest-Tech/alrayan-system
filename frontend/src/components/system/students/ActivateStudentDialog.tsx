@@ -291,7 +291,12 @@ export function ActivateStudentDialog({ student, open, onOpenChange }: ActivateS
   async function activateAndClose(skipSchedule = false) {
     if (!step1Values) return
     try {
-      await activate.mutateAsync(step1Values as Record<string, unknown>)
+      // User enters monthly price in dollars; DB stores minor units (cents).
+      const payload = {
+        ...step1Values,
+        monthly_price_minor: Math.round(Number(step1Values.monthly_price_minor || 0) * 100),
+      }
+      await activate.mutateAsync(payload as Record<string, unknown>)
 
       if (!skipSchedule && patterns.length > 0) {
         await replace.mutateAsync({

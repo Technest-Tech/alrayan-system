@@ -15,15 +15,20 @@ use App\Http\Resources\System\SessionDetailResource;
 use App\Http\Resources\System\SessionResource;
 use App\Jobs\System\CreateSessionZoomMeeting;
 use App\Jobs\System\DeleteSessionZoomMeeting;
+use App\Jobs\System\SendTrialConfirmationMessages;
 use App\Jobs\System\UpdateSessionZoomMeeting;
 use App\Models\System\Session;
 use App\Models\System\Student;
 use App\Models\System\Teacher;
+use App\Models\System\WassenderLog;
+use App\Services\Integrations\Wassender\WassenderClient;
 use App\Services\System\ScheduleConflictDetector;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class SessionController extends Controller
 {
@@ -76,6 +81,10 @@ class SessionController extends Controller
         ]);
 
         CreateSessionZoomMeeting::dispatch($session);
+        // Delay 25s so Zoom meeting creation finishes before confirmation messages fire
+        SendTrialConfirmationMessages::dispatch($session->id)
+            ->onQueue('notifications')
+            ->delay(now()->addSeconds(25));
 
         return new SessionResource($session->load(['student', 'teacher']));
     }
@@ -151,11 +160,36 @@ class SessionController extends Controller
     {
         $this->authorize('markAttendance', $session);
 
+        // Enforce: cannot mark attended until a report has been submitted for this session.
+        if ($request->status === 'attended' && ! $session->report()->exists()) {
+            return response()->json([
+                'message' => 'Submit a session report before marking this session as attended.',
+                'errors'  => ['status' => ['A session report is required before marking as attended.']],
+            ], 422);
+        }
+
         $data = ['status' => $request->status];
 
         if ($request->status === 'attended') {
-            $data['attended_marked_at']       = now();
+            $data['attended_marked_at']         = now();
             $data['attended_marked_by_user_id'] = auth()->id();
+            // Clear any stale cancellation fields when flipping back to attended.
+            $data['cancelled_by']        = null;
+            $data['cancellation_reason'] = null;
+            $data['apology_received']    = false;
+            $data['apology_at']          = null;
+        } elseif ($request->status === 'absent') {
+            // Capture WHOSE fault — required by UI for billing/quota rules.
+            $data['cancelled_by']        = $request->cancelled_by;
+            $data['cancellation_reason'] = $request->cancellation_reason;
+            // Apology only meaningful when student is the absent party.
+            if ($request->cancelled_by === 'student' && $request->boolean('apology_received')) {
+                $data['apology_received'] = true;
+                $data['apology_at']       = now();
+            } else {
+                $data['apology_received'] = false;
+                $data['apology_at']       = null;
+            }
         } elseif ($request->status === 'cancelled') {
             $data['cancelled_by']        = $request->cancelled_by;
             $data['cancellation_reason'] = $request->cancellation_reason;
@@ -183,11 +217,30 @@ class SessionController extends Controller
                 $session = Session::findOrFail($item['session_id']);
                 $this->authorize('markAttendance', $session);
 
+                // Enforce: cannot mark attended until a report has been submitted.
+                if ($item['status'] === 'attended' && ! $session->report()->exists()) {
+                    abort(422, "Session #{$session->id} cannot be marked attended without a submitted report.");
+                }
+
                 $data = ['status' => $item['status']];
 
                 if ($item['status'] === 'attended') {
                     $data['attended_marked_at']         = now();
                     $data['attended_marked_by_user_id'] = auth()->id();
+                    // Clear stale cancellation fields when flipping back to attended.
+                    $data['cancelled_by']        = null;
+                    $data['cancellation_reason'] = null;
+                    $data['apology_received']    = false;
+                    $data['apology_at']          = null;
+                } elseif ($item['status'] === 'absent') {
+                    // Bulk-absent defaults to teacher fault when no cancelled_by is sent —
+                    // safest for billing (won't accidentally consume student quotas).
+                    $data['cancelled_by']        = $item['cancelled_by'] ?? 'teacher';
+                    $data['cancellation_reason'] = $item['cancellation_reason'] ?? null;
+                    $apologized = ($data['cancelled_by'] === 'student')
+                        && ! empty($item['apology_received']);
+                    $data['apology_received'] = $apologized;
+                    $data['apology_at']       = $apologized ? now() : null;
                 } elseif ($item['status'] === 'cancelled') {
                     $data['cancelled_by']        = $item['cancelled_by'] ?? 'admin';
                     $data['cancellation_reason'] = $item['cancellation_reason'] ?? null;
@@ -216,6 +269,40 @@ class SessionController extends Controller
             ->paginate(30);
 
         return response()->json(SessionResource::collection($sessions));
+    }
+
+    public function checkAvailability(Request $request, Teacher $teacher): JsonResponse
+    {
+        $request->validate([
+            'scheduled_start' => ['required', 'date'],
+            'duration_min'    => ['required', 'integer', 'min:1'],
+        ]);
+
+        $start     = Carbon::parse($request->scheduled_start);
+        $end       = $start->copy()->addMinutes($request->duration_min);
+        $conflicts = $this->detector->check($teacher->id, $start, $end);
+
+        return response()->json([
+            'available' => empty($conflicts),
+            'conflicts' => collect($conflicts)->map(fn ($c) => [
+                'type'    => $c->type,
+                'related' => match ($c->type) {
+                    'teacher_double_booking' => $c->related ? [
+                        'session_id'      => $c->related->id,
+                        'scheduled_start' => $c->related->scheduled_start?->toIso8601String(),
+                        'scheduled_end'   => $c->related->scheduled_end?->toIso8601String(),
+                        'student'         => $c->related->student
+                            ? ['id' => $c->related->student->id, 'name' => $c->related->student->name]
+                            : null,
+                    ] : null,
+                    'teacher_on_leave' => $c->related ? [
+                        'start_date' => $c->related->start_date?->toDateString(),
+                        'end_date'   => $c->related->end_date?->toDateString(),
+                    ] : null,
+                    default => null,
+                },
+            ])->values(),
+        ]);
     }
 
     public function forTeacher(Teacher $teacher): JsonResponse
@@ -259,5 +346,119 @@ class SessionController extends Controller
                 },
             ])->values(),
         ])->values());
+    }
+
+    /**
+     * Send the session report to the student/guardian via Wassender.
+     *
+     * Accepts:
+     *   kind=text   + text=<message>                → sendText
+     *   kind=image  + image=<base64 PNG (data URL ok)> + caption?=<string> → sendImage
+     *
+     * Resolves recipient from the student record (whatsapp → phone fallback).
+     * Logs every attempt to sys_wassender_logs for audit.
+     */
+    public function sendReportWhatsApp(Request $request, Session $session, WassenderClient $wassender): JsonResponse
+    {
+        $this->authorize('view', $session);
+
+        $data = $request->validate([
+            'kind'    => ['required', 'in:text,image'],
+            'target'  => ['nullable', 'in:student,teacher'],   // defaults to student
+            'text'    => ['required_if:kind,text', 'string', 'max:8000'],
+            'image'   => ['required_if:kind,image', 'string'],  // base64 (data URL allowed)
+            'caption' => ['nullable', 'string', 'max:1024'],
+        ]);
+
+        $target = $data['target'] ?? 'student';
+
+        // Resolve recipient + display name based on target.
+        if ($target === 'teacher') {
+            $session->load(['teacher.user']);
+            $teacher = $session->teacher;
+            if (!$teacher || !$teacher->user) {
+                return response()->json(['message' => 'Session has no teacher / user.'], 422);
+            }
+            $phone        = $teacher->user->whatsapp ?: $teacher->user->phone;
+            $recipientId  = $teacher->id;
+            $recipientKey = 'teacher_id';
+            $recipientNm  = $teacher->user->name;
+            $kind404msg   = 'Teacher has no WhatsApp/phone number on file.';
+        } else {
+            $session->load('student');
+            $student = $session->student;
+            if (!$student) {
+                return response()->json(['message' => 'Session has no student.'], 422);
+            }
+            $phone        = $student->whatsapp ?: $student->phone;
+            $recipientId  = $student->id;
+            $recipientKey = 'student_id';
+            $recipientNm  = $student->name;
+            $kind404msg   = 'Student has no WhatsApp/phone number on file.';
+        }
+
+        if (!$phone) {
+            return response()->json(['message' => $kind404msg], 422);
+        }
+        // Wassender's sendToPhone builds the JID; we just need a clean +country digits string.
+        $cleanPhone = preg_replace('/\s|-/', '', $phone);
+
+        // Build the rendered message + log payload depending on kind.
+        if ($data['kind'] === 'text') {
+            $rendered = $data['text'];
+            $payload  = ['kind' => 'text'];
+            $result   = $wassender->sendToPhone($cleanPhone, $rendered);
+        } else {
+            // Strip data: URL prefix if present and decode base64.
+            $raw = $data['image'];
+            if (str_contains($raw, ',')) {
+                $raw = substr($raw, strpos($raw, ',') + 1);
+            }
+            $bytes = base64_decode($raw, true);
+            if ($bytes === false) {
+                return response()->json(['message' => 'Invalid image payload (not base64).'], 422);
+            }
+
+            $filename = 'session-reports/session-' . $session->id . '-' . Str::random(8) . '.png';
+            Storage::disk('public')->put($filename, $bytes);
+            $url = Storage::disk('public')->url($filename);
+
+            $caption  = $data['caption'] ?? null;
+            $rendered = $caption ?: "Session Report — {$recipientNm}";
+            $payload  = ['kind' => 'image', 'image_path' => $filename, 'image_url' => $url];
+
+            $jid = ltrim($cleanPhone, '+') . '@s.whatsapp.net';
+            $result = $wassender->sendImage($jid, $url, $caption);
+        }
+
+        // Audit log — uses the existing sys_wassender_logs table.
+        WassenderLog::create([
+            'template_key'         => 'session_report.' . $target . '.' . $data['kind'],
+            'recipient_phone'      => $cleanPhone,
+            'rendered_message'     => $rendered,
+            'status'               => $result->success ? 'sent' : 'failed',
+            'external_message_id'  => $result->externalId,
+            'attempt_count'        => 1,
+            'error'                => $result->success ? null : ($result->errorBody ?? 'send failed'),
+            'payload'              => array_merge($payload, [
+                'session_id'  => $session->id,
+                $recipientKey => $recipientId,
+                'target'      => $target,
+            ]),
+            'sent_at'              => $result->success ? now() : null,
+        ]);
+
+        if (!$result->success) {
+            return response()->json([
+                'message' => 'WhatsApp send failed.',
+                'error'   => $result->errorBody,
+            ], 502);
+        }
+
+        return response()->json([
+            'message'             => 'Report sent on WhatsApp.',
+            'external_message_id' => $result->externalId,
+            'recipient'           => $cleanPhone,
+        ]);
     }
 }

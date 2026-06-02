@@ -34,12 +34,17 @@ export function useSession(id: number | null) {
 export function useMarkAttendance() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: ({ id, status, cancelled_by, cancellation_reason }: {
+    mutationFn: ({ id, status, cancelled_by, cancellation_reason, apology_received }: {
       id: number
       status: 'attended' | 'absent' | 'cancelled'
-      cancelled_by?: string
+      cancelled_by?: 'student' | 'teacher' | 'admin'
       cancellation_reason?: string
-    }) => api(`/sessions/${id}/attendance`, { method: 'POST', body: JSON.stringify({ status, cancelled_by, cancellation_reason }) }),
+      /** Only meaningful when status='absent' and cancelled_by='student'. */
+      apology_received?: boolean
+    }) => api(`/sessions/${id}/attendance`, {
+      method: 'POST',
+      body:   JSON.stringify({ status, cancelled_by, cancellation_reason, apology_received }),
+    }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['system', 'sessions'] }),
   })
 }
@@ -68,10 +73,39 @@ export function useCancelSession() {
   })
 }
 
+/**
+ * Send a session-related message via Wassender.
+ *
+ *   - kind=text   → sends raw text (parent report, teacher template, etc.)
+ *   - kind=image  → uploads base64 PNG to public storage and sends image
+ *
+ * Target defaults to 'student' (student's WhatsApp); pass 'teacher' to
+ * deliver the teacher template / request to the assigned teacher.
+ */
+export function useSendSessionReportWhatsApp() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ sessionId, ...body }:
+      | { sessionId: number; kind: 'text';  text:  string; target?: 'student' | 'teacher' }
+      | { sessionId: number; kind: 'image'; image: string; target?: 'student' | 'teacher'; caption?: string }
+    ) => api<{ message: string; external_message_id?: string; recipient: string }>(
+      `/sessions/${sessionId}/send-report-whatsapp`,
+      { method: 'POST', body: JSON.stringify(body) },
+    ),
+    onSuccess: (_d, vars) => qc.invalidateQueries({ queryKey: ['system', 'sessions', vars.sessionId] }),
+  })
+}
+
 export function useBulkAttendance() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: (items: Array<{ session_id: number; status: string; cancelled_by?: string }>) =>
+    mutationFn: (items: Array<{
+      session_id: number
+      status: 'attended' | 'absent' | 'cancelled'
+      cancelled_by?: 'student' | 'teacher' | 'admin'
+      cancellation_reason?: string
+      apology_received?: boolean
+    }>) =>
       api('/sessions/bulk-attendance', { method: 'POST', body: JSON.stringify({ items }) }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['system', 'sessions'] }),
   })
@@ -105,5 +139,39 @@ export function useSessionConflicts() {
   return useQuery({
     queryKey: ['system', 'sessions', 'conflicts'],
     queryFn:  () => api<Array<{ session: Session; conflicts: Array<{ type: string }> }>>('/sessions/conflicts'),
+  })
+}
+
+interface AvailabilityConflict {
+  type: 'teacher_double_booking' | 'teacher_on_leave' | 'teacher_unavailable'
+  related?: {
+    session_id?: number
+    scheduled_start?: string
+    scheduled_end?: string
+    student?: { id: number; name: string }
+    start_date?: string
+    end_date?: string
+  } | null
+}
+
+interface AvailabilityResult {
+  available: boolean
+  conflicts: AvailabilityConflict[]
+}
+
+export function useCheckTeacherAvailability(params: {
+  teacher_id: number
+  scheduled_start: string
+  duration_min: number
+} | null) {
+  return useQuery({
+    queryKey: ['system', 'teacher-availability', params],
+    queryFn:  () => api<AvailabilityResult>(
+      `/teachers/${params!.teacher_id}/check-availability`,
+      { method: 'POST', body: JSON.stringify({ scheduled_start: params!.scheduled_start, duration_min: params!.duration_min }) },
+    ),
+    enabled:   !!(params?.teacher_id && params?.scheduled_start),
+    staleTime: 20_000,
+    retry:     false,
   })
 }

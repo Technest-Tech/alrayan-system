@@ -8,11 +8,17 @@ import { Hero } from '@/components/home/Hero'
 import { StatsSection } from '@/components/home/StatsSection'
 import { CoursesCarousel } from '@/components/home/CoursesCarousel'
 import { TestimonialsMarquee } from '@/components/home/TestimonialsMarquee'
+import { TeachersRecitation } from '@/components/home/TeachersRecitation'
+import { VideoTestimonials } from '@/components/home/VideoTestimonials'
+import { StickyMobileCTA } from '@/components/media/StickyMobileCTA'
+import { YouTubeEmbed } from '@/components/media/YouTubeEmbed'
+import { mediaConfig, youtubeEmbedUrl } from '@/config/media'
 import { whatsappLink } from '@/config/site'
 import { homeContent } from '@/content/home'
 import { stats } from '@/content/stats'
 import Image from 'next/image'
 import { courses } from '@/content/courses'
+import { featuredTeachers } from '@/content/teachers'
 import { testimonials } from '@/content/testimonials'
 import {
   BookOpen,
@@ -189,6 +195,12 @@ export default function HomePage() {
         </Container>
       </Section>
 
+      {/* ── Meet & hear our teachers ── */}
+      <TeachersRecitation teachers={featuredTeachers} />
+
+      {/* ── Video testimonials (renders only if videos are configured) ── */}
+      <VideoTestimonials />
+
       {/* ── Testimonials ── */}
       <Section bg="cream" aria-labelledby="testimonials-heading">
         <div id="testimonials-heading" className="sr-only">Student Stories</div>
@@ -238,6 +250,9 @@ export default function HomePage() {
           </div>
         </Container>
       </section>
+
+      {/* ── Sticky mobile CTA ── */}
+      <StickyMobileCTA />
     </>
   )
 }

@@ -31,6 +31,7 @@ export interface Teacher {
   whatsapp: string | null
   qualifications: string | null
   cv_url: string | null
+  zoom_link: string | null
   teachable_course_ids: number[]
   payment_method: 'vodafone_cash' | 'instapay' | 'wallet_other'
   payment_account_details?: string | null

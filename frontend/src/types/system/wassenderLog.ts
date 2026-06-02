@@ -20,3 +20,12 @@ export interface WassenderLog {
   sent_at: string | null
   created_at: string
 }
+
+export interface WassenderStats {
+  sent: number
+  failed: number
+  dead: number
+  queued: number
+  sending: number
+  total: number
+}

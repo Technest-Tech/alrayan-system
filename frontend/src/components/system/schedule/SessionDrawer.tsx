@@ -3,7 +3,7 @@ import { useState } from 'react'
 import { X, Video, CalendarDays, Clock, User, FileText, AlertTriangle } from 'lucide-react'
 import type { Session } from '@/types/system/session'
 import { useMarkAttendance } from '@/hooks/system/useSessions'
-import { SessionReportForm } from '@/components/system/session-reports/SessionReportForm'
+import { SessionReportModal } from '@/components/system/students/SessionReportModal'
 import { RescheduleSheet } from './RescheduleSheet'
 import { CancelSessionDialog } from './CancelSessionDialog'
 
@@ -35,6 +35,7 @@ const border = { borderColor: 'rgb(var(--border-default,229 233 240))' }
 export function SessionDrawer({ session, open, onClose, onUpdate }: Props) {
   const [rescheduleOpen, setRescheduleOpen] = useState(false)
   const [cancelOpen,     setCancelOpen]     = useState(false)
+  const [reportOpen,     setReportOpen]     = useState(false)
   const markAttendance = useMarkAttendance()
 
   if (!open || !session) return null
@@ -183,10 +184,14 @@ export function SessionDrawer({ session, open, onClose, onUpdate }: Props) {
             </div>
 
             {showReport ? (
-              <SessionReportForm
-                session={session}
-                onSubmitted={() => { onUpdate?.() }}
-              />
+              <button
+                onClick={() => setReportOpen(true)}
+                className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-white transition-opacity hover:opacity-90"
+                style={{ background: session.has_report ? 'rgb(30 90 171)' : 'rgb(14 124 90)' }}
+              >
+                <FileText size={14} />
+                {session.has_report ? 'View / edit report' : 'Write session report'}
+              </button>
             ) : (
               <p className="text-xs" style={{ color: 'rgb(156 163 175)' }}>
                 {session.status === 'scheduled' || session.status === 'pending_substitute'
@@ -210,6 +215,13 @@ export function SessionDrawer({ session, open, onClose, onUpdate }: Props) {
         open={cancelOpen}
         onClose={() => setCancelOpen(false)}
         onSuccess={() => { setCancelOpen(false); onUpdate?.(); onClose() }}
+      />
+      <SessionReportModal
+        session={session}
+        open={reportOpen}
+        studentName={session.student?.name ?? ''}
+        onClose={() => setReportOpen(false)}
+        onSubmitted={() => { setReportOpen(false); onUpdate?.() }}
       />
     </>
   )

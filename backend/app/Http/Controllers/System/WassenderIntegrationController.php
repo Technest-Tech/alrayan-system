@@ -14,22 +14,18 @@ class WassenderIntegrationController extends Controller
     public function show(): JsonResponse
     {
         return response()->json([
-            'api_key'     => Setting::get('wassender.api_key') ? '***' : '',
-            'instance_id' => Setting::get('wassender.instance_id', ''),
-            'webhook_url' => Setting::get('wassender.webhook_url', ''),
-            'configured'  => (bool) Setting::get('wassender.api_key'),
+            'api_key'    => Setting::get('wassender.api_key') ? '***' : '',
+            'configured' => (bool) Setting::get('wassender.api_key'),
         ]);
     }
 
     public function update(Request $request): JsonResponse
     {
         $request->validate([
-            'api_key'     => 'sometimes|string|max:200',
-            'instance_id' => 'sometimes|string|max:100',
+            'api_key' => 'required|string|max:200',
         ]);
 
-        if ($request->has('api_key'))     Setting::set('wassender.api_key', $request->api_key);
-        if ($request->has('instance_id')) Setting::set('wassender.instance_id', $request->instance_id);
+        Setting::set('wassender.api_key', $request->api_key);
 
         return response()->json(['message' => 'Wassender settings updated.']);
     }

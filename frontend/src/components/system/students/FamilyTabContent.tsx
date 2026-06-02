@@ -1,6 +1,7 @@
 'use client'
 import { useState } from 'react'
-import { Plus, X, Unlink } from 'lucide-react'
+import Link from 'next/link'
+import { Plus, X, Unlink, ExternalLink } from 'lucide-react'
 import { toast } from 'sonner'
 import type { StudentDetail } from '@/types/system/student'
 import { useLinkSibling, useUnlinkSibling, useStudents } from '@/hooks/system/useStudents'
@@ -177,7 +178,16 @@ export function FamilyTabContent({ student }: FamilyTabContentProps) {
                   className="border-b last:border-0"
                   style={{ borderColor: 'rgb(var(--border-default, 229 233 240))' }}
                 >
-                  <td className="px-5 py-3 font-medium">{sib.name}</td>
+                  <td className="px-5 py-3">
+                    <Link
+                      href={`/students/${sib.id}`}
+                      className="inline-flex items-center gap-1.5 font-medium hover:text-[rgb(14,124,90)] transition-colors group"
+                      style={{ color: 'rgb(11 31 58)' }}
+                    >
+                      {sib.name}
+                      <ExternalLink size={12} className="opacity-0 group-hover:opacity-40 transition-opacity" />
+                    </Link>
+                  </td>
                   <td className="px-5 py-3 opacity-70">{sib.course ?? '—'}</td>
                   <td className="px-5 py-3 opacity-70">{sib.teacher_name ?? '—'}</td>
                   <td className="px-5 py-3 tabular-nums">{sib.discount_pct}%</td>

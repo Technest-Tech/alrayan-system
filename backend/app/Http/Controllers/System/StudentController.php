@@ -7,6 +7,7 @@ use App\Http\Requests\System\Student\StoreStudentRequest;
 use App\Http\Requests\System\Student\UpdateStudentRequest;
 use App\Http\Resources\System\StudentDetailResource;
 use App\Http\Resources\System\StudentResource;
+use App\Models\System\Guardian;
 use App\Models\System\Student;
 use App\Models\System\StudentNote;
 use App\Models\System\StudentTimelineEntry;
@@ -15,6 +16,7 @@ use App\Services\System\AuditLog;
 use App\Services\System\StudentTimelineRecorder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Spatie\QueryBuilder\AllowedFilter;
 use Spatie\QueryBuilder\QueryBuilder;
 
@@ -30,13 +32,13 @@ class StudentController extends Controller
                 AllowedFilter::exact('course_id'),
                 AllowedFilter::exact('assigned_teacher_id'),
                 AllowedFilter::exact('country'),
-                AllowedFilter::exact('age_category'),
+                AllowedFilter::exact('student_type'),
                 AllowedFilter::scope('no_whatsapp'),
                 AllowedFilter::scope('q', 'search'),
             ])
             ->allowedSorts(['created_at', 'enrolled_at', 'name'])
             ->defaultSort('-created_at')
-            ->with(['course', 'assignedTeacher.user'])
+            ->with(['course', 'assignedTeacher.user', 'guardian'])
             ->paginate($request->integer('per_page', 25));
 
         return StudentResource::collection($students);
@@ -47,6 +49,7 @@ class StudentController extends Controller
         $this->authorize('view', $student);
 
         $student->load([
+            'guardian.students',
             'course',
             'assignedTeacher.user',
             'siblings.course',
@@ -63,18 +66,28 @@ class StudentController extends Controller
         $this->authorize('create', Student::class);
 
         $student = DB::transaction(function () use ($request) {
+            // Resolve or create guardian for child students
+            $guardianId = null;
+            if ($request->student_type === 'child') {
+                if ($request->filled('guardian_id')) {
+                    $guardianId = $request->guardian_id;
+                } else {
+                    $guardian   = Guardian::create([
+                        'name'     => $request->guardian_name,
+                        'whatsapp' => $request->guardian_whatsapp,
+                    ]);
+                    $guardianId = $guardian->id;
+                }
+            }
+
             $student = Student::create([
                 'name'                  => $request->name,
-                'email'                 => $request->email,
-                'phone'                 => $request->phone,
+                'email'                 => $this->generateStudentEmail($request->name),
                 'whatsapp'              => $request->whatsapp,
                 'country'               => $request->country,
                 'timezone'              => $request->timezone,
-                'age_category'          => $request->age_category,
-                'parent_name'           => $request->parent_name,
-                'parent_phone'          => $request->parent_phone,
-                'parent_whatsapp'       => $request->parent_whatsapp,
-                'parent_email'          => $request->parent_email,
+                'student_type'          => $request->student_type,
+                'guardian_id'           => $guardianId,
                 'course_id'             => $request->course_id,
                 'assigned_teacher_id'   => $request->assigned_teacher_id,
                 'sessions_per_month'    => $request->sessions_per_month ?? 0,
@@ -112,7 +125,7 @@ class StudentController extends Controller
             return $student;
         });
 
-        return new StudentDetailResource($student->load(['course', 'assignedTeacher.user']));
+        return new StudentDetailResource($student->load(['guardian.students', 'course', 'assignedTeacher.user']));
     }
 
     public function update(UpdateStudentRequest $request, Student $student): StudentDetailResource
@@ -140,6 +153,21 @@ class StudentController extends Controller
         }
 
         return new StudentDetailResource($student->fresh()->load(['course', 'assignedTeacher.user']));
+    }
+
+    private function generateStudentEmail(string $name): string
+    {
+        $domain  = config('app.student_email_domain', 'students.alrayanquran.com');
+        $slug    = Str::slug($name, '.');
+        $email   = "{$slug}@{$domain}";
+        $counter = 2;
+
+        while (Student::where('email', $email)->exists()) {
+            $email = "{$slug}.{$counter}@{$domain}";
+            $counter++;
+        }
+
+        return $email;
     }
 
     public function destroy(int $student): \Illuminate\Http\JsonResponse

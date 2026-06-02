@@ -29,6 +29,7 @@ class Student extends Model
         'cancelled_at'          => 'datetime',
     ];
 
+    public function guardian()        { return $this->belongsTo(Guardian::class, 'guardian_id'); }
     public function course()          { return $this->belongsTo(Course::class); }
     public function assignedTeacher() { return $this->belongsTo(Teacher::class, 'assigned_teacher_id'); }
     public function whatsappGroup()   { return $this->belongsTo(WhatsAppGroup::class, 'whatsapp_group_id'); }
@@ -61,10 +62,11 @@ class Student extends Model
         $query->where(fn($q) => $q
             ->where('name', 'like', $like)
             ->orWhere('email', 'like', $like)
-            ->orWhere('phone', 'like', $like)
             ->orWhere('whatsapp', 'like', $like)
-            ->orWhere('parent_name', 'like', $like)
-            ->orWhere('parent_phone', 'like', $like)
+            ->orWhereHas('guardian', fn($g) => $g
+                ->where('name', 'like', $like)
+                ->orWhere('whatsapp', 'like', $like)
+            )
         );
     }
 
@@ -79,8 +81,8 @@ class Student extends Model
     {
         return LogOptions::defaults()
             ->logOnly([
-                'name', 'email', 'phone', 'whatsapp', 'country', 'timezone',
-                'age_category', 'course_id', 'assigned_teacher_id',
+                'name', 'email', 'whatsapp', 'country', 'timezone',
+                'student_type', 'guardian_id', 'course_id', 'assigned_teacher_id',
                 'sessions_per_month', 'session_duration_min',
                 'monthly_price_minor', 'currency', 'custom_discount_pct',
                 'status', 'whatsapp_group_id',

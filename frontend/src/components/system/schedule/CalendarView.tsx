@@ -3,9 +3,9 @@ import { useRef, useEffect, useState } from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import type { Session } from '@/types/system/session'
 
-const HOUR_HEIGHT = 72            // px per hour — taller for better readability in single-day view
-const START_HOUR  = 6             // 6 AM
-const END_HOUR    = 22            // 10 PM
+const HOUR_HEIGHT = 56            // px per hour — slightly shorter so full 24h fits without huge scroll
+const START_HOUR  = 0             // 12 AM (midnight)
+const END_HOUR    = 24            // next 12 AM — full 24-hour day
 const TOTAL_HOURS = END_HOUR - START_HOUR
 
 const LINE  = 'rgb(11 31 58 / 0.07)'   // hour grid lines
@@ -113,6 +113,9 @@ interface CalendarViewProps {
   onEventDrop?:  (session: Session, newStart: Date) => void
   editable?:     boolean
   initialView?:  'timeGridDay' | 'timeGridWeek' | 'dayGridMonth'
+  /** Controlled date (optional) — when provided, CalendarView reflects this date instead of its own. */
+  date?:         Date
+  onDateChange?: (d: Date) => void
 }
 
 export function CalendarView({
@@ -120,9 +123,13 @@ export function CalendarView({
   loading = false,
   onEventClick,
   initialView = 'timeGridDay',
+  date,
+  onDateChange,
 }: CalendarViewProps) {
-  const [view, setView]           = useState<View>(initialView === 'dayGridMonth' ? 'month' : 'day')
-  const [currentDate, setCurrentDate] = useState(new Date())
+  const [view, setView]                       = useState<View>(initialView === 'dayGridMonth' ? 'month' : 'day')
+  const [internalDate, setInternalDate]       = useState(new Date())
+  const currentDate                           = date ?? internalDate
+  const setCurrentDate = (d: Date) => { if (onDateChange) onDateChange(d); else setInternalDate(d) }
   const scrollRef = useRef<HTMLDivElement>(null)
   const now       = new Date()
 

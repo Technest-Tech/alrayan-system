@@ -57,12 +57,9 @@ class ScheduleConflictDetector
             $out[] = new Conflict('teacher_on_leave', $leave);
         }
 
-        // 3. Outside availability
-        $durationMin = $endUtc->diffInMinutes($startUtc);
-        $teacher = Teacher::with('availability')->findOrFail($teacherId);
-        if (!$this->availability->isAvailable($teacher, $startUtc, $durationMin)) {
-            $out[] = new Conflict('teacher_unavailable', null);
-        }
+        // 3. Outside availability — disabled (was generating false positives
+        //    because most teachers don't have availability set yet, and the
+        //    schedule patterns are the source of truth in this system).
 
         return $out;
     }

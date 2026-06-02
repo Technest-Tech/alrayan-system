@@ -13,6 +13,7 @@ class UpdateTeacherRequest extends FormRequest
         return [
             'qualifications'          => ['nullable', 'string'],
             'cv_url'                  => ['nullable', 'url', 'max:2048'],
+            'zoom_link'               => ['nullable', 'url', 'max:500'],
             'teachable_course_ids'    => ['nullable', 'array'],
             'teachable_course_ids.*'  => ['integer', 'exists:courses,id'],
             'payment_method'          => ['sometimes', 'in:vodafone_cash,instapay,wallet_other'],

@@ -15,10 +15,13 @@ import {
   Layers,
   Heart,
   ArrowRight,
+  Play,
+  X,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { LinkButton } from '@/components/ui/link-button'
 import type { Course } from '@/content/courses'
+import { mediaConfig, youtubeEmbedUrl } from '@/config/media'
 
 const iconMap: Record<string, LucideIcon> = {
   BookOpen, Star, Mic, Brain, Award, Globe, Lightbulb, BookMarked, Layers, Heart,
@@ -42,6 +45,7 @@ export function CoursesCarousel({ courses }: { courses: Course[] }) {
   const trackRef = useRef<HTMLDivElement>(null)
   const [canLeft, setCanLeft]   = useState(false)
   const [canRight, setCanRight] = useState(true)
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
 
   const sync = useCallback(() => {
     const el = trackRef.current
@@ -113,22 +117,40 @@ export function CoursesCarousel({ courses }: { courses: Course[] }) {
           const Icon   = iconMap[course.icon] ?? BookOpen
           const iconCls = iconAccent[course.level]
           const badgeCls = levelBadge[course.level]
+          const preview = mediaConfig.coursePreviews[course.slug]
+          const hasPreview = !!youtubeEmbedUrl(preview ?? '')
           return (
             <a
               key={course.slug}
               href={`/courses/${course.slug}`}
               data-card
-              className="group shrink-0 w-[272px] md:w-[300px] bg-white rounded-2xl p-6 border border-border-soft shadow-soft hover:shadow-md hover:border-secondary/30 transition-all duration-200 flex flex-col"
+              className="group shrink-0 w-[272px] md:w-[300px] bg-white rounded-2xl p-6 border border-border-soft shadow-soft hover:shadow-md hover:border-secondary/30 transition-all duration-200 flex flex-col relative"
               style={{ scrollSnapAlign: 'start' }}
             >
-              {/* Icon + level */}
-              <div className="flex items-start justify-between mb-5">
+              {/* Icon + level + optional preview play */}
+              <div className="flex items-start justify-between mb-5 gap-2">
                 <div className={`size-11 rounded-xl flex items-center justify-center ${iconCls}`}>
                   <Icon className="size-5" aria-hidden="true" />
                 </div>
-                <span className={`text-[11px] font-semibold px-2.5 py-1 rounded-full ${badgeCls}`}>
-                  {course.level}
-                </span>
+                <div className="flex items-center gap-1.5">
+                  {hasPreview && (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.preventDefault()
+                        setPreviewUrl(preview!)
+                      }}
+                      aria-label={`Watch preview of ${course.title}`}
+                      className="inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wider px-2.5 py-1 rounded-full bg-primary text-white hover:bg-secondary transition-colors cursor-pointer"
+                    >
+                      <Play className="size-3 fill-current" aria-hidden="true" />
+                      Preview
+                    </button>
+                  )}
+                  <span className={`text-[11px] font-semibold px-2.5 py-1 rounded-full ${badgeCls}`}>
+                    {course.level}
+                  </span>
+                </div>
               </div>
 
               {/* Title */}
@@ -168,6 +190,38 @@ export function CoursesCarousel({ courses }: { courses: Course[] }) {
           View All Courses
         </LinkButton>
       </div>
+
+      {/* ── Course preview modal ── */}
+      {previewUrl && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="Course preview"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
+          onClick={() => setPreviewUrl(null)}
+        >
+          <button
+            type="button"
+            onClick={() => setPreviewUrl(null)}
+            aria-label="Close preview"
+            className="absolute top-5 right-5 size-11 rounded-full bg-white/10 text-white flex items-center justify-center hover:bg-white/20 transition-colors cursor-pointer"
+          >
+            <X className="size-5" />
+          </button>
+          <div
+            className="w-full max-w-4xl aspect-video rounded-2xl overflow-hidden shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <iframe
+              src={`${youtubeEmbedUrl(previewUrl)}&autoplay=1`}
+              title="Course preview"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+              className="w-full h-full"
+            />
+          </div>
+        </div>
+      )}
     </div>
   )
 }

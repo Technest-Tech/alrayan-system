@@ -1,39 +1,39 @@
 'use client'
 import { use, useState } from 'react'
-import { useRouter } from 'next/navigation'
 import { MoreHorizontal, ChevronLeft } from 'lucide-react'
 import { toast } from 'sonner'
 import Link from 'next/link'
 import { useTeacher, useUpdateTeacher, useActivateTeacher, useDeactivateTeacher } from '@/hooks/system/useTeachers'
-import { useTeacherLeaves } from '@/hooks/system/useTeacherLeaves'
+import { useStudents } from '@/hooks/system/useStudents'
 import { StatusBadge } from '@/components/system/primitives/StatusBadge'
 import { EmptyState } from '@/components/system/primitives/EmptyState'
 import { TeacherForm, type TeacherFormValues } from '@/components/system/teachers/TeacherForm'
 import { AvailabilityPicker } from '@/components/system/teachers/AvailabilityPicker'
-import { LeaveRequestForm } from '@/components/system/teachers/LeaveRequestForm'
-import { ReviewLeaveSheet } from '@/components/system/teachers/ReviewLeaveSheet'
+import { TeacherScheduleView } from '@/components/system/teachers/TeacherScheduleView'
+import { TeacherStudentCards } from '@/components/system/teachers/TeacherStudentCards'
+import { TeacherSalaryTab } from '@/components/system/teachers/TeacherSalaryTab'
+import { TeacherReportsTab } from '@/components/system/teachers/TeacherReportsTab'
 import { NotesList } from '@/components/system/notes/NotesList'
 import { NoteComposer } from '@/components/system/notes/NoteComposer'
 import { ApiError } from '@/lib/system/api'
-import type { TeacherLeave } from '@/types/system/teacher'
 
-const TABS = ['Profile', 'Availability', 'Leave', 'Students', 'Schedule', 'Reports', 'Salary', 'Notes'] as const
+const TABS = ['Profile', 'Availability', 'Students', 'Schedule', 'Reports', 'Salary', 'Notes'] as const
 type Tab = typeof TABS[number]
 
 export default function TeacherDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
-  const router  = useRouter()
-  const [tab, setTab]               = useState<Tab>('Profile')
-  const [menuOpen, setMenuOpen]     = useState(false)
-  const [reviewLeave, setReviewLeave] = useState<TeacherLeave | null>(null)
+  const [tab, setTab]           = useState<Tab>('Profile')
+  const [menuOpen, setMenuOpen] = useState(false)
 
   const { data: teacher, isLoading } = useTeacher(id)
   const updateTeacher  = useUpdateTeacher(id)
   const activateTeacher   = useActivateTeacher()
   const deactivateTeacher = useDeactivateTeacher()
 
-  const { data: leavesData } = useTeacherLeaves({ teacher_id: id })
-  const leaves = leavesData?.data ?? []
+  const { data: studentsData, isLoading: studentsLoading } = useStudents({
+    assigned_teacher_id: id,
+  })
+  const students = studentsData?.data ?? []
 
   async function handleProfileSave(data: TeacherFormValues) {
     try {
@@ -142,6 +142,7 @@ export default function TeacherDetailPage({ params }: { params: Promise<{ id: st
         </div>
       </div>
 
+      {/* ── Tab bar ── */}
       <div
         className="flex gap-1 border-b mb-6 overflow-x-auto"
         style={{ borderColor: 'rgb(var(--border-default, 229 233 240))' }}
@@ -157,10 +158,22 @@ export default function TeacherDetailPage({ params }: { params: Promise<{ id: st
             }}
           >
             {t}
+            {t === 'Students' && students.length > 0 && (
+              <span
+                className="ml-1.5 px-1.5 py-0.5 rounded-full text-[10px] font-bold"
+                style={tab === t
+                  ? { background: 'rgb(14 124 90)', color: '#fff' }
+                  : { background: 'rgb(var(--border-default, 229 233 240))', color: 'rgb(90 100 112)' }
+                }
+              >
+                {students.length}
+              </span>
+            )}
           </button>
         ))}
       </div>
 
+      {/* ── Tab content ── */}
       <div>
         {tab === 'Profile' && (
           <div
@@ -184,63 +197,23 @@ export default function TeacherDetailPage({ params }: { params: Promise<{ id: st
           />
         )}
 
-        {tab === 'Leave' && (
-          <div className="space-y-6">
-            <div
-              className="rounded-2xl p-5"
-              style={{ background: 'rgb(var(--surface-card, 255 255 255))', border: '1px solid rgb(var(--border-default, 229 233 240))' }}
-            >
-              <h3 className="font-semibold mb-4">Request leave</h3>
-              <LeaveRequestForm teacherId={teacher.id} onSuccess={() => {}} />
-            </div>
-
-            {leaves.length > 0 && (
-              <div
-                className="rounded-2xl overflow-hidden border"
-                style={{ borderColor: 'rgb(var(--border-default, 229 233 240))', background: 'rgb(var(--surface-card, 255 255 255))' }}
-              >
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b text-xs font-semibold uppercase tracking-wide opacity-50" style={{ borderColor: 'rgb(var(--border-default, 229 233 240))' }}>
-                      <th className="text-left px-5 py-3">Period</th>
-                      <th className="text-left px-5 py-3">Reason</th>
-                      <th className="text-left px-5 py-3">Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {leaves.map((leave) => (
-                      <tr
-                        key={leave.id}
-                        onClick={() => setReviewLeave(leave)}
-                        className="border-b last:border-0 hover:bg-black/5 transition-colors cursor-pointer"
-                        style={{ borderColor: 'rgb(var(--border-default, 229 233 240))' }}
-                      >
-                        <td className="px-5 py-3">{leave.start_date} – {leave.end_date}</td>
-                        <td className="px-5 py-3 opacity-70 max-w-xs truncate">{leave.reason}</td>
-                        <td className="px-5 py-3"><StatusBadge value={leave.status} /></td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
-        )}
-
         {tab === 'Students' && (
-          <EmptyState icon="Users" title="Students" description="Student assignments will appear here." />
+          <TeacherStudentCards students={students} isLoading={studentsLoading} />
         )}
 
         {tab === 'Schedule' && (
-          <EmptyState icon="Calendar" title="Schedule" description="Coming soon." />
+          <TeacherScheduleView
+            teacherId={teacher.id}
+            availability={teacher.availability}
+          />
         )}
 
         {tab === 'Reports' && (
-          <EmptyState icon="BarChart2" title="Reports" description="Coming soon." />
+          <TeacherReportsTab teacherId={teacher.id} />
         )}
 
         {tab === 'Salary' && (
-          <EmptyState icon="DollarSign" title="Salary" description="Coming soon." />
+          <TeacherSalaryTab teacherId={teacher.id} teacher={teacher} />
         )}
 
         {tab === 'Notes' && (
@@ -250,8 +223,6 @@ export default function TeacherDetailPage({ params }: { params: Promise<{ id: st
           </div>
         )}
       </div>
-
-      <ReviewLeaveSheet leave={reviewLeave} onClose={() => setReviewLeave(null)} />
     </div>
   )
 }

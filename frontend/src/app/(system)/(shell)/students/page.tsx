@@ -31,7 +31,7 @@ const selStyle = { borderColor: 'rgb(var(--border-default,229 233 240))', backgr
 export default function StudentsPage() {
   const router  = useRouter()
   const [dialogOpen, setDialogOpen] = useState(false)
-  const { filters, setFilter, resetFilters } = useUrlFilters(['q', 'status', 'course_id', 'assigned_teacher_id', 'country', 'age_category'])
+  const { filters, setFilter, resetFilters } = useUrlFilters(['q', 'status', 'course_id', 'assigned_teacher_id', 'country', 'student_type'])
 
   const { data, isLoading } = useStudents({
     q:                   filters.q || undefined,
@@ -39,7 +39,7 @@ export default function StudentsPage() {
     course_id:           filters.course_id || undefined,
     assigned_teacher_id: filters.assigned_teacher_id || undefined,
     country:             filters.country || undefined,
-    age_category:        filters.age_category || undefined,
+    student_type:        filters.student_type || undefined,
   })
 
   const { data: courses = [] }  = useCourses()
@@ -171,12 +171,12 @@ export default function StudentsPage() {
             </SelectContent>
           </Select>
 
-          <Select value={toSelect(filters.age_category)} onValueChange={v => setFilter('age_category', toFilter(v))}>
+          <Select value={toSelect(filters.student_type)} onValueChange={v => setFilter('student_type', toFilter(v))}>
             <SelectTrigger className="w-32">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value={ALL}>All ages</SelectItem>
+              <SelectItem value={ALL}>All types</SelectItem>
               <SelectItem value="child">Child</SelectItem>
               <SelectItem value="adult">Adult</SelectItem>
             </SelectContent>

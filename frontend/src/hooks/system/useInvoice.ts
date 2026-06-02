@@ -37,3 +37,63 @@ export function useSendInvoice(id: number | string) {
     },
   })
 }
+
+/** Send the invoice bill (+ payment link) to the student's WhatsApp via Wassender. */
+export function useSendInvoiceWhatsApp(id: number | string) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: () =>
+      api<{ message: string; recipient: string }>(`/invoices/${id}/send-whatsapp`, { method: 'POST' }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['system', 'invoices'] })
+      qc.invalidateQueries({ queryKey: ['system', 'invoices', id] })
+    },
+  })
+}
+
+export interface InvoiceSessionRow {
+  id: number
+  scheduled_start: string | null
+  scheduled_end:   string | null
+  duration_min:    number
+  status:          string
+  cancelled_by:    string | null
+  apology_received: boolean
+  quota_impact:    'counted' | 'counted_no_show' | 'free_teacher' | 'free_excused' | 'free'
+  counts_against_quota: boolean
+  has_report:      boolean
+  teacher_name:    string | null
+  cost_minor:      number
+}
+
+export interface InvoiceSessionsMeta {
+  counted:                 number
+  free:                    number
+  per_session_price_minor: number
+  total_cost_minor:        number
+  currency:                string
+  period_start:            string
+  period_end:              string
+}
+
+/** Sessions covered by an invoice's period — for the detail page panel. */
+export function useInvoiceSessions(id: number | string | null) {
+  return useQuery({
+    queryKey: ['system', 'invoices', id, 'sessions'],
+    queryFn: () => api<{ data: InvoiceSessionRow[]; meta: InvoiceSessionsMeta }>(`/invoices/${id}/sessions`),
+    enabled: !!id,
+  })
+}
+
+/** Manually flip an invoice to paid (cash / bank transfer reconciliation). */
+export function useMarkInvoicePaid(id: number | string) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: () =>
+      api<{ data: Invoice }>(`/invoices/${id}/mark-paid`, { method: 'POST' }).then(r => r.data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['system', 'invoices'] })
+      qc.invalidateQueries({ queryKey: ['system', 'invoices', id] })
+    },
+  })
+}

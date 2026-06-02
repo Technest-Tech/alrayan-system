@@ -1,5 +1,5 @@
 'use client'
-import { createContext, useContext, useState, useEffect } from 'react'
+import { createContext, useContext, useState, useEffect, useMemo } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import { Sidebar } from './Sidebar'
 import { Topbar } from './Topbar'
@@ -7,8 +7,10 @@ import { useUser } from '@/lib/system/auth'
 import { ApiError } from '@/lib/system/api'
 import { can } from '@/lib/system/permissions'
 import { SYSTEM_NAV } from '@/lib/system/nav'
+import { useSessions } from '@/hooks/system/useSessions'
 import type { AuthUser } from '@/types/system/auth'
 import type { NavSection } from '@/lib/system/nav'
+import type { Session } from '@/types/system/session'
 
 const UserContext = createContext<AuthUser | null>(null)
 export const useSystemUser = () => useContext(UserContext)
@@ -95,11 +97,31 @@ export function SystemShell({ children }: { children: React.ReactNode }) {
     })
   }
 
+  // Today's pending attendance count for sidebar badge
+  const todayStr = new Date().toISOString().split('T')[0]
+  const { data: todayData } = useSessions({
+    from:     `${todayStr}T00:00:00Z`,
+    to:       `${todayStr}T23:59:59Z`,
+    per_page: 200,
+  })
+  const pendingCount = useMemo(() => {
+    const list = (todayData as { data?: Session[] } | undefined)?.data ?? []
+    return list.filter(s => s.status === 'scheduled' || s.status === 'pending_substitute').length
+  }, [todayData])
+
   if (!mounted) return null
   if (isLoading) return <FullPageSpinner />
   if (!user) return isUnauthorized ? <FullPageSpinner /> : <FullPageError error={error} />
 
-  const nav = navForUser(user)
+  const baseNav = navForUser(user)
+  const nav: NavSection[] = pendingCount > 0
+    ? baseNav.map(section => ({
+        ...section,
+        items: section.items.map(item =>
+          item.href === '/attendance' ? { ...item, badge: pendingCount } : item
+        ),
+      }))
+    : baseNav
 
   return (
     <UserContext.Provider value={user}>
@@ -113,12 +135,12 @@ export function SystemShell({ children }: { children: React.ReactNode }) {
         />
         {/* On mobile: no margin (sidebar is an overlay). On desktop: margin matches sidebar width. */}
         <div
-          className={`flex-1 flex flex-col transition-all duration-300 ${
+          className={`flex-1 min-w-0 flex flex-col transition-all duration-300 ${
             collapsed ? 'lg:ml-[72px]' : 'lg:ml-[260px]'
           }`}
         >
           <Topbar onToggleSidebar={() => setMobileOpen(true)} />
-          <main className="flex-1 px-4 py-4 lg:px-6 lg:py-6">
+          <main className="flex-1 min-w-0 px-4 py-4 lg:px-6 lg:py-6 overflow-x-hidden">
             <div className="max-w-[1600px] mx-auto">{children}</div>
           </main>
         </div>

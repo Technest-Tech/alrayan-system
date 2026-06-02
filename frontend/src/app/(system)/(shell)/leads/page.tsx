@@ -1,109 +1,146 @@
 'use client'
-import { useState, useMemo } from 'react'
-import { Plus, LayoutGrid, List, Users, CalendarCheck, GraduationCap } from 'lucide-react'
+import { useState } from 'react'
+import { Plus, RefreshCw, BarChart2 } from 'lucide-react'
 import { LeadKanban } from '@/components/system/leads/LeadKanban'
-import { LeadTable } from '@/components/system/leads/LeadTable'
 import { AddLeadDialog } from '@/components/system/leads/AddLeadDialog'
 import { useLeads } from '@/hooks/system/useLeads'
+import { useQueryClient } from '@tanstack/react-query'
 
-export default function LeadsPage() {
-  const [view,       setView]       = useState<'kanban' | 'table'>('kanban')
-  const [dialogOpen, setDialogOpen] = useState(false)
-  const [filters,    setFilters]    = useState<Record<string, string>>({})
+/* ── Islamic 8-point star ──────────────────────── */
+const STAR_PATH = 'M50,5 L57.65,31.52 L81.82,18.18 L68.48,42.35 L95,50 L68.48,57.65 L81.82,81.82 L57.65,68.48 L50,95 L42.35,68.48 L18.18,81.82 L31.52,57.65 L5,50 L31.52,42.35 L18.18,18.18 L42.35,31.52 Z'
 
-  const { data, isLoading } = useLeads({ ...filters, per_page: 200 })
-  const leads = data?.data ?? []
-
-  const stats = useMemo(() => {
-    const list = data?.data ?? []
-    return {
-      total:        list.length,
-      newCount:     list.filter(l => l.status === 'new').length,
-      trialBooked:  list.filter(l => l.status === 'trial_booked' || l.status === 'trial_completed').length,
-      enrolled:     list.filter(l => l.status === 'enrolled').length,
-      lost:         list.filter(l => l.status === 'lost').length,
-    }
-  }, [data])
-
+function KhatamStar({ size = 18, color = '#C9A24B', opacity = 1 }: { size?: number; color?: string; opacity?: number }) {
   return (
-    <>
-      {/* ── Header ── */}
-      <div className="flex items-start justify-between mb-6">
-        <div>
-          <h1 className="text-xl font-semibold" style={{ color: 'rgb(11 31 58)' }}>Leads</h1>
-          <p className="text-sm mt-0.5" style={{ color: 'rgb(90 100 112)' }}>
-            Track prospective students through the enrollment pipeline.
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          {/* View toggle */}
-          <div
-            className="flex items-center gap-0.5 rounded-lg p-0.5 border"
-            style={{ background: 'rgb(244 246 250)', borderColor: 'rgb(var(--border-default,229 233 240))' }}
-          >
-            {(['kanban', 'table'] as const).map(v => (
-              <button
-                key={v}
-                onClick={() => setView(v)}
-                className="p-1.5 rounded-md transition-all"
-                title={v === 'kanban' ? 'Kanban view' : 'Table view'}
-                style={view === v ? {
-                  background: '#fff',
-                  color: 'rgb(14 124 90)',
-                  boxShadow: '0 1px 3px rgb(11 31 58 / 0.08)',
-                } : { color: 'rgb(90 100 112)' }}
-              >
-                {v === 'kanban' ? <LayoutGrid size={15} /> : <List size={15} />}
-              </button>
-            ))}
-          </div>
-
-          <button
-            onClick={() => setDialogOpen(true)}
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-white shadow-sm hover:opacity-90 transition-opacity"
-            style={{ background: 'rgb(30 90 171)' }}
-          >
-            <Plus size={15} />
-            New Lead
-          </button>
-        </div>
-      </div>
-
-      {/* ── Stat cards ── */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
-        <StatCard icon={<Users size={15} />}        label="Total"      value={stats.total}       accent="#0B1F3A" />
-        <StatCard icon={<List size={15} />}         label="New"        value={stats.newCount}    accent="rgb(30 90 171)" />
-        <StatCard icon={<CalendarCheck size={15} />} label="In Trial"  value={stats.trialBooked} accent="rgb(101 56 182)" />
-        <StatCard icon={<GraduationCap size={15} />} label="Enrolled"  value={stats.enrolled}    accent="rgb(14 124 90)" />
-      </div>
-
-      {view === 'kanban' ? (
-        <LeadKanban leads={leads} isLoading={isLoading} filters={filters} onFiltersChange={setFilters} />
-      ) : (
-        <LeadTable leads={leads} isLoading={isLoading} filters={filters} onFiltersChange={setFilters} />
-      )}
-
-      <AddLeadDialog open={dialogOpen} onOpenChange={setDialogOpen} />
-    </>
+    <svg width={size} height={size} viewBox="0 0 100 100" style={{ opacity }}>
+      <path d={STAR_PATH} fill={color} />
+    </svg>
   )
 }
 
-function StatCard({ icon, label, value, accent }: { icon: React.ReactNode; label: string; value: number; accent: string }) {
+function GoldDivider() {
   return (
-    <div
-      className="flex items-center gap-3 px-4 py-3.5 rounded-xl border"
-      style={{ background: '#fff', borderColor: 'rgb(var(--border-default,229 233 240))' }}
-    >
+    <div className="flex items-center gap-0" style={{ height: 2 }}>
+      <div style={{ flex: 1, height: 1, background: 'linear-gradient(90deg, transparent, #C9A24B88)' }} />
+      <div style={{ width: 6, height: 6, background: '#C9A24B', transform: 'rotate(45deg)', margin: '0 4px', opacity: 0.7 }} />
+      <div style={{ flex: 1, height: 1, background: 'linear-gradient(90deg, #C9A24B88, transparent)' }} />
+    </div>
+  )
+}
+
+export default function CrmPage() {
+  const [dialogOpen, setDialogOpen] = useState(false)
+  const [filters,    setFilters]    = useState<Record<string, string>>({})
+  const qc = useQueryClient()
+
+  const { data, isLoading, isFetching } = useLeads({ ...filters, per_page: 500 })
+  const leads = data?.data ?? []
+
+  return (
+    <div className="min-w-0">
+      {/* ── Header card ── */}
       <div
-        className="flex items-center justify-center w-8 h-8 rounded-lg shrink-0"
-        style={{ background: `color-mix(in srgb, ${accent} 10%, transparent)`, color: accent }}
+        className="rounded-2xl mb-5 overflow-hidden"
+        style={{
+          background: 'linear-gradient(135deg, #0d2548 0%, #0B1F3A 60%, #071528 100%)',
+          boxShadow: '0 4px 24px rgb(11 31 58 / 0.18)',
+        }}
       >
-        {icon}
+        {/* Top gold accent */}
+        <div style={{ height: 2, background: 'linear-gradient(90deg, transparent 0%, #C9A24B 30%, #C9A24B 70%, transparent 100%)' }} />
+
+        {/* Background star watermarks */}
+        <div className="relative px-5 py-4" style={{ overflow: 'hidden' }}>
+          <svg className="absolute right-0 top-0 pointer-events-none select-none" width="220" height="90" aria-hidden>
+            <g transform="translate(140, -20) scale(1.8)" opacity="0.04">
+              <path d={STAR_PATH} fill="#C9A24B" />
+            </g>
+            <g transform="translate(60, 30) scale(1.1)" opacity="0.03">
+              <path d={STAR_PATH} fill="#C9A24B" />
+            </g>
+          </svg>
+          {/* Dot grid */}
+          <svg className="absolute inset-0 w-full h-full pointer-events-none" aria-hidden>
+            <pattern id="crm-dots" x="0" y="0" width="28" height="28" patternUnits="userSpaceOnUse">
+              <circle cx="1" cy="1" r="0.8" fill="#C9A24B" opacity="0.08" />
+            </pattern>
+            <rect width="100%" height="100%" fill="url(#crm-dots)" />
+          </svg>
+
+          <div className="relative z-10 flex items-center justify-between gap-4">
+            {/* Left: title */}
+            <div className="flex items-center gap-3 min-w-0">
+              <KhatamStar size={22} color="#C9A24B" opacity={0.9} />
+              <div>
+                <h1
+                  className="text-2xl font-bold text-white leading-none"
+                  style={{ fontFamily: "'Cormorant Garamond', Georgia, serif", letterSpacing: '-0.01em' }}
+                >
+                  CRM
+                </h1>
+                <p className="text-xs mt-0.5" style={{ color: 'rgba(201,162,75,0.7)' }}>
+                  Lead Management Pipeline
+                </p>
+              </div>
+            </div>
+
+            {/* Right: actions */}
+            <div className="flex items-center gap-2 shrink-0">
+              <button
+                onClick={() => qc.invalidateQueries({ queryKey: ['system', 'leads'] })}
+                disabled={isFetching}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
+                style={{
+                  background: 'rgba(255,255,255,0.08)',
+                  color: 'rgba(255,255,255,0.75)',
+                  border: '1px solid rgba(255,255,255,0.12)',
+                }}
+              >
+                <RefreshCw size={12} className={isFetching ? 'animate-spin' : ''} />
+                Refresh
+              </button>
+
+              <button
+                disabled
+                title="Statistics coming soon"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium cursor-not-allowed"
+                style={{
+                  background: 'rgba(201,162,75,0.1)',
+                  color: 'rgba(201,162,75,0.5)',
+                  border: '1px solid rgba(201,162,75,0.2)',
+                }}
+              >
+                <BarChart2 size={12} />
+                Statistics
+              </button>
+
+              <button
+                onClick={() => setDialogOpen(true)}
+                className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-xs font-semibold text-white transition-all hover:opacity-90 shadow-sm"
+                style={{
+                  background: 'rgb(14 124 90)',
+                  border: '1px solid rgba(255,255,255,0.15)',
+                }}
+              >
+                <Plus size={13} />
+                Add Lead
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Bottom gold divider */}
+        <GoldDivider />
       </div>
-      <div>
-        <p className="text-xl font-semibold leading-none" style={{ color: 'rgb(11 31 58)' }}>{value}</p>
-        <p className="text-xs mt-0.5" style={{ color: 'rgb(90 100 112)' }}>{label}</p>
-      </div>
+
+      {/* Kanban */}
+      <LeadKanban
+        leads={leads}
+        isLoading={isLoading}
+        filters={filters}
+        onFiltersChange={setFilters}
+      />
+
+      <AddLeadDialog open={dialogOpen} onOpenChange={setDialogOpen} />
     </div>
   )
 }

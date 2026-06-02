@@ -3,8 +3,10 @@
 namespace App\Services\System;
 
 use App\Events\System\StudentStatusChanged;
+use App\Models\System\Session;
 use App\Models\System\Student;
 use App\Models\System\StudentTimelineEntry;
+use App\Models\System\WassenderLog;
 use Illuminate\Support\Facades\DB;
 
 class StudentLifecycle
@@ -25,6 +27,27 @@ class StudentLifecycle
     public function transition(Student $student, string $next, array $context = []): Student
     {
         abort_unless($this->can($student, $next), 422, "Invalid transition from {$student->status} to {$next}");
+
+        // Enforce: when graduating a student out of trial (trial → active),
+        // require that at least one of their session reports has been sent
+        // successfully via WhatsApp.
+        if ($student->status === 'trial' && $next === 'active') {
+            $sessionIds = Session::where('student_id', $student->id)
+                ->whereHas('report')
+                ->pluck('id');
+
+            $reportSent = $sessionIds->isNotEmpty()
+                && WassenderLog::where('status', 'sent')
+                    ->where('template_key', 'like', 'session_report.%')
+                    ->whereIn('payload->session_id', $sessionIds->all())
+                    ->exists();
+
+            abort_unless(
+                $reportSent,
+                422,
+                'Cannot move this student out of trial until the trial session report has been sent successfully on WhatsApp.'
+            );
+        }
 
         DB::transaction(function () use ($student, $next, $context) {
             $old = $student->status;

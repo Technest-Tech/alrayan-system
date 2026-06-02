@@ -1,5 +1,7 @@
+import type { Guardian } from './guardian'
+
+export type StudentType   = 'child' | 'adult'
 export type StudentStatus = 'trial' | 'active' | 'paused' | 'suspended' | 'cancelled'
-export type AgeCategory = 'child' | 'adult'
 export type StudentSource = 'lead' | 'manual' | 'referral' | 'trial_booking'
 
 export interface StudentCourseRef {
@@ -41,15 +43,21 @@ export interface StudentNote {
   deleted_at: string | null
 }
 
+export interface GuardianRef {
+  id: number
+  name: string
+  whatsapp: string
+}
+
 export interface Student {
   id: number
   name: string
   email: string | null
-  phone: string | null
   whatsapp: string | null
   country: string
   timezone: string
-  age_category: AgeCategory
+  student_type: StudentType
+  guardian: GuardianRef | null
   course: StudentCourseRef | null
   assigned_teacher: StudentTeacherRef | null
   status: StudentStatus
@@ -66,11 +74,12 @@ export interface Student {
   created_at: string
 }
 
-export interface StudentDetail extends Student {
-  parent_name: string | null
-  parent_phone: string | null
-  parent_whatsapp: string | null
-  parent_email: string | null
+export interface StudentDetailGuardian extends GuardianRef {
+  students: Array<{ id: number; name: string; status: string }>
+}
+
+export interface StudentDetail extends Omit<Student, 'guardian'> {
+  guardian: StudentDetailGuardian | null
   wallet_balance_minor: number
   wallet_currency: string
   trial_booking_id: number | null
@@ -84,3 +93,5 @@ export interface StudentDetail extends Student {
   notes: StudentNote[]
   updated_at: string
 }
+
+export type { Guardian }

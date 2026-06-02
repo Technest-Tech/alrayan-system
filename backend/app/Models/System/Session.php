@@ -22,7 +22,51 @@ class Session extends Model
         'scheduled_end'      => 'datetime',
         'attended_marked_at' => 'datetime',
         'report_overdue_at'  => 'datetime',
+        'apology_received'   => 'boolean',
+        'apology_at'         => 'datetime',
     ];
+
+    /**
+     * Does this session count against the student's monthly quota?
+     *
+     * - attended                                       → consumed
+     * - absent + cancelled_by=student + no apology    → consumed (no-show)
+     * - absent + cancelled_by=student + apologized    → NOT consumed (excused)
+     * - absent + cancelled_by=teacher / admin          → NOT consumed (teacher fault)
+     * - cancelled / rescheduled / pending_substitute   → NOT consumed
+     */
+    public function getCountsAgainstQuotaAttribute(): bool
+    {
+        if ($this->status === 'attended') {
+            return true;
+        }
+
+        if ($this->status === 'absent'
+            && $this->cancelled_by === 'student'
+            && ! $this->apology_received) {
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Human label describing the billing impact — used by the UI badge.
+     */
+    public function getQuotaImpactAttribute(): string
+    {
+        if ($this->status === 'attended') {
+            return 'counted';            // green: normal consumption
+        }
+        if ($this->status === 'absent') {
+            if ($this->cancelled_by === 'teacher') return 'free_teacher';   // not counted, teacher fault
+            if ($this->cancelled_by === 'student') {
+                return $this->apology_received ? 'free_excused' : 'counted_no_show';
+            }
+            return 'free';
+        }
+        return 'free';
+    }
 
     public function student()         { return $this->belongsTo(Student::class); }
     public function teacher()         { return $this->belongsTo(Teacher::class); }

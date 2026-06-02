@@ -104,12 +104,11 @@ class AppServiceProvider extends ServiceProvider
             return new FakePaymobClient();
         });
 
-        // Wassender: real client when configured, fake otherwise
+        // Wassender: DB setting takes priority, env var as fallback
         $this->app->bind(WassenderClient::class, function ($app) {
-            $apiKey     = Setting::get('wassender.api_key', '');
-            $instanceId = Setting::get('wassender.instance_id', '');
-            if ($apiKey && $instanceId && config('system.features.wassender', false)) {
-                return new WassenderClient($apiKey, $instanceId, $app->make(HttpClient::class));
+            $apiKey = Setting::get('wassender.api_key', '') ?: env('WASSENDER_API_KEY', '');
+            if ($apiKey && config('system.features.wassender', false)) {
+                return new WassenderClient($apiKey, $app->make(HttpClient::class));
             }
             return new FakeWassenderClient();
         });

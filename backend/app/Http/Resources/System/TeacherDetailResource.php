@@ -16,6 +16,7 @@ class TeacherDetailResource extends JsonResource
             'phone'                 => optional($this->user)->phone,
             'whatsapp'              => optional($this->user)->whatsapp,
             'qualifications'        => $this->qualifications,
+            'zoom_link'             => $this->zoom_link,
             'teachable_course_ids'  => $this->teachable_course_ids ?? [],
             'payment_method'        => $this->payment_method,
             'per_minute_rate_30'    => $this->per_minute_rate_30,

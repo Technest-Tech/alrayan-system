@@ -14,6 +14,7 @@ use App\Http\Controllers\System\ExpenseController;
 use App\Http\Controllers\System\ExportController;
 use App\Http\Controllers\System\FxRatesController;
 use App\Http\Controllers\System\HealthController;
+use App\Http\Controllers\System\AutoBillingController;
 use App\Http\Controllers\System\InvoiceController;
 use App\Http\Controllers\System\LeadAnalyticsController;
 use App\Http\Controllers\System\LeadController;
@@ -31,6 +32,7 @@ use App\Http\Controllers\System\SavedViewController;
 use App\Http\Controllers\System\SchedulePatternController;
 use App\Http\Controllers\System\SessionController;
 use App\Http\Controllers\System\SessionReportController;
+use App\Http\Controllers\System\GuardianController;
 use App\Http\Controllers\System\StudentController;
 use App\Http\Controllers\System\StudentFamilyController;
 use App\Http\Controllers\System\StudentNoteController;
@@ -40,6 +42,7 @@ use App\Http\Controllers\System\TeacherAvailabilityController;
 use App\Http\Controllers\System\TeacherController;
 use App\Http\Controllers\System\TeacherLeaveController;
 use App\Http\Controllers\System\TeacherNoteController;
+use App\Http\Controllers\System\TeacherReportController;
 use App\Http\Controllers\System\UserController;
 use App\Http\Controllers\System\WalletController;
 use App\Http\Controllers\System\WassenderIntegrationController;
@@ -95,6 +98,7 @@ Route::prefix('system')->name('system.')->group(function () {
         // Teachers
         Route::middleware('system.can:teachers.view')->group(function () {
             Route::get('/teachers',      [TeacherController::class, 'index'])->name('teachers.index');
+            Route::get('/teachers/availability-overview', [TeacherController::class, 'availabilityOverview'])->name('teachers.availability-overview');
             Route::get('/teachers/{teacher}/notes', [TeacherNoteController::class, 'index'])->name('teachers.notes.index');
         });
         Route::get('/teachers/{teacher}', [TeacherController::class, 'show'])->name('teachers.show');
@@ -105,9 +109,10 @@ Route::prefix('system')->name('system.')->group(function () {
             Route::post('/teachers/{teacher}/activate',      [TeacherController::class, 'activate'])->name('teachers.activate');
             Route::post('/teachers/{teacher}/deactivate',    [TeacherController::class, 'deactivate'])->name('teachers.deactivate');
         });
-        Route::post('/teachers/{teacher}/notes', [TeacherNoteController::class, 'store'])->name('teachers.notes.store');
-        Route::patch('/teacher-notes/{note}',    [TeacherNoteController::class, 'update'])->name('teacher-notes.update');
-        Route::delete('/teacher-notes/{note}',   [TeacherNoteController::class, 'destroy'])->name('teacher-notes.destroy');
+        Route::post('/teachers/{teacher}/notes',          [TeacherNoteController::class, 'store'])->name('teachers.notes.store');
+        Route::patch('/teacher-notes/{note}',             [TeacherNoteController::class, 'update'])->name('teacher-notes.update');
+        Route::delete('/teacher-notes/{note}',            [TeacherNoteController::class, 'destroy'])->name('teacher-notes.destroy');
+        Route::get('/teachers/{teacher}/report-summary',  [TeacherReportController::class, 'summary'])->name('teachers.report-summary');
 
         // Teacher leaves
         Route::get('/teacher-leaves',                        [TeacherLeaveController::class, 'index'])->name('teacher-leaves.index');
@@ -117,13 +122,21 @@ Route::prefix('system')->name('system.')->group(function () {
             Route::post('/teacher-leaves/{leave}/reject',    [TeacherLeaveController::class, 'reject'])->name('teacher-leaves.reject');
         });
 
+        // Guardians
+        Route::middleware('system.can:students.view')->get('/guardians', [GuardianController::class, 'index'])->name('guardians.index');
+        Route::middleware('system.can:students.create')->post('/guardians', [GuardianController::class, 'store'])->name('guardians.store');
+
         // Students
         Route::middleware('system.can:students.view')->group(function () {
+            Route::get('/guardians',          [GuardianController::class, 'index'])->name('guardians.index');
             Route::get('/students',           [StudentController::class, 'index'])->name('students.index');
             Route::get('/students/{student}', [StudentController::class, 'show'])->name('students.show');
             Route::get('/students/{student}/notes', [StudentNoteController::class, 'index'])->name('students.notes.index');
         });
-        Route::middleware('system.can:students.create')->post('/students', [StudentController::class, 'store'])->name('students.store');
+        Route::middleware('system.can:students.create')->group(function () {
+            Route::post('/guardians', [GuardianController::class, 'store'])->name('guardians.store');
+            Route::post('/students', [StudentController::class, 'store'])->name('students.store');
+        });
         Route::middleware('system.can:students.edit')->group(function () {
             Route::patch('/students/{student}',                          [StudentController::class, 'update'])->name('students.update');
             Route::post('/students/{student}/siblings',                  [StudentFamilyController::class, 'store'])->name('students.siblings.store');
@@ -159,6 +172,7 @@ Route::prefix('system')->name('system.')->group(function () {
         });
         Route::post('/sessions/{session}/cancel',     [SessionController::class, 'cancel'])->name('sessions.cancel');
         Route::post('/sessions/{session}/attendance', [SessionController::class, 'markAttendance'])->name('sessions.attendance');
+        Route::post('/sessions/{session}/send-report-whatsapp', [SessionController::class, 'sendReportWhatsApp'])->name('sessions.send-report-whatsapp');
         Route::middleware('system.can:attendance.edit')->post('/sessions/bulk-attendance', [SessionController::class, 'bulkAttendance'])->name('sessions.bulk-attendance');
 
         // Schedule patterns (on students)
@@ -171,8 +185,10 @@ Route::prefix('system')->name('system.')->group(function () {
         Route::middleware('system.can:schedule.edit')->put('/students/{student}/schedule-patterns', [SchedulePatternController::class, 'replace'])->name('schedule-patterns.replace');
 
         // Teacher sessions + reports
-        Route::get('/teachers/{teacher}/sessions', [SessionController::class, 'forTeacher'])->name('teachers.sessions');
-        Route::get('/teachers/{teacher}/reports',  [SessionReportController::class, 'forTeacher'])->name('teachers.reports');
+        Route::get('/teachers/{teacher}/sessions',             [SessionController::class, 'forTeacher'])->name('teachers.sessions');
+        Route::post('/teachers/{teacher}/check-availability',  [SessionController::class, 'checkAvailability'])->name('teachers.check-availability');
+        Route::get('/teachers/{teacher}/reports',              [SessionReportController::class, 'forTeacher'])->name('teachers.reports');
+        Route::get('/teachers/{teacher}/report-summary',       [TeacherReportController::class, 'summary'])->name('teachers.report-summary');
 
         // Session reports
         Route::middleware('system.can:reports.view_any')->get('/session-reports', [SessionReportController::class, 'index'])->name('session-reports.index');
@@ -192,8 +208,15 @@ Route::prefix('system')->name('system.')->group(function () {
         Route::middleware('system.can:invoices.view')->group(function () {
             Route::get('/invoices',                                  [InvoiceController::class, 'index'])->name('invoices.index');
             Route::get('/invoices/{invoice}',                        [InvoiceController::class, 'show'])->name('invoices.show');
+            Route::get('/invoices/{invoice}/sessions',               [InvoiceController::class, 'sessions'])->name('invoices.sessions');
             Route::get('/students/{student}/invoices',               [InvoiceController::class, 'studentInvoices'])->name('students.invoices');
             Route::get('/students/{student}/billing-state',          [InvoiceController::class, 'billingState'])->name('students.billing-state');
+            // Automatic billings — live per-session aggregation
+            Route::get('/billing/automatic', [AutoBillingController::class, 'index'])->name('billing.automatic.index');
+        });
+        Route::middleware('system.can:invoices.create')->group(function () {
+            Route::post('/billing/automatic/{student}/mark-paid',    [AutoBillingController::class, 'markPaid'])->name('billing.automatic.mark-paid');
+            Route::post('/billing/automatic/{student}/send-whatsapp',[AutoBillingController::class, 'sendWhatsApp'])->name('billing.automatic.send-whatsapp');
         });
         Route::middleware('system.can:invoices.create')->group(function () {
             Route::post('/invoices',                                          [InvoiceController::class, 'store'])->name('invoices.store');
@@ -202,8 +225,10 @@ Route::prefix('system')->name('system.')->group(function () {
         Route::middleware('system.can:invoices.create_advance')
             ->post('/students/{student}/invoices/advance', [InvoiceController::class, 'advanceInvoice'])->name('students.invoices.advance');
         Route::middleware('system.can:invoices.edit')->group(function () {
-            Route::patch('/invoices/{invoice}',       [InvoiceController::class, 'update'])->name('invoices.update');
-            Route::post('/invoices/{invoice}/send',   [InvoiceController::class, 'send'])->name('invoices.send');
+            Route::patch('/invoices/{invoice}',              [InvoiceController::class, 'update'])->name('invoices.update');
+            Route::post('/invoices/{invoice}/send',          [InvoiceController::class, 'send'])->name('invoices.send');
+            Route::post('/invoices/{invoice}/send-whatsapp', [InvoiceController::class, 'sendWhatsApp'])->name('invoices.send-whatsapp');
+            Route::post('/invoices/{invoice}/mark-paid',     [InvoiceController::class, 'markPaid'])->name('invoices.mark-paid');
         });
         Route::middleware('system.can:invoices.void')
             ->post('/invoices/{invoice}/void', [InvoiceController::class, 'void'])->name('invoices.void');
@@ -345,6 +370,7 @@ Route::prefix('system')->name('system.')->group(function () {
         // Wassender delivery logs
         Route::middleware('system.can:notifications.view_delivery_log')->group(function () {
             Route::get('/wassender-logs',                            [WassenderLogController::class, 'index'])->name('wassender-logs.index');
+            Route::get('/wassender-logs/stats',                      [WassenderLogController::class, 'stats'])->name('wassender-logs.stats');
             Route::get('/wassender-logs/{wassenderLog}',             [WassenderLogController::class, 'show'])->name('wassender-logs.show');
             Route::post('/wassender-logs/{wassenderLog}/retry',      [WassenderLogController::class, 'retry'])->name('wassender-logs.retry');
         });
@@ -453,4 +479,8 @@ Route::prefix('system')->name('system.')->group(function () {
 
     // Paymob webhook — no Sanctum, HMAC-verified
     Route::post('/system/webhooks/paymob', [PaymobWebhookController::class, 'handle'])->name('system.webhooks.paymob');
+
+    // Public invoice payment page — no auth, token-gated
+    Route::get('/pay/{token}',      [\App\Http\Controllers\System\PublicInvoiceController::class, 'show'])->name('pay.show');
+    Route::get('/pay/{token}/pdf',  [\App\Http\Controllers\System\PublicInvoiceController::class, 'pdf'])->name('pay.pdf');
 });
