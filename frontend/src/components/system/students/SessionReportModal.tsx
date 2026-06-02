@@ -380,9 +380,7 @@ export function SessionReportModal({ session, open, studentName, onClose, onSubm
     const extras: SessionExtras = { strengths, weaknesses, recommendations, parent_report: parentReport }
 
     try {
-      if (session!.status !== 'attended') {
-        await markAttendance.mutateAsync({ id: session!.id, status: 'attended' })
-      }
+      // Submit the report FIRST — backend now blocks "attended" without a report.
       await submit.mutateAsync({
         sessionId: session!.id,
         data: {
@@ -392,12 +390,16 @@ export function SessionReportModal({ session, open, studentName, onClose, onSubm
           next_session_notes: JSON.stringify(extras),
         },
       })
+      if (session!.status !== 'attended') {
+        await markAttendance.mutateAsync({ id: session!.id, status: 'attended' })
+      }
       localStorage.removeItem(DRAFT_KEY(session!.id))
       toast.success('Session report submitted.')
       onSubmitted?.()
       onClose()
-    } catch {
-      toast.error('Failed to submit report.')
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : 'Failed to submit report.'
+      toast.error(msg)
     }
   }
 

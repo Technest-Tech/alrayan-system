@@ -7,11 +7,17 @@ import { LinkButton } from '@/components/ui/link-button'
 import { StatsSection } from '@/components/home/StatsSection'
 import { CoursesCarousel } from '@/components/home/CoursesCarousel'
 import { TestimonialsMarquee } from '@/components/home/TestimonialsMarquee'
+import { TeachersRecitation } from '@/components/home/TeachersRecitation'
+import { VideoTestimonials } from '@/components/home/VideoTestimonials'
+import { StickyMobileCTA } from '@/components/media/StickyMobileCTA'
+import { YouTubeEmbed } from '@/components/media/YouTubeEmbed'
+import { mediaConfig, youtubeEmbedUrl } from '@/config/media'
 import { whatsappLink } from '@/config/site'
 import { homeContent } from '@/content/home'
 import { stats } from '@/content/stats'
 import Image from 'next/image'
 import { courses } from '@/content/courses'
+import { featuredTeachers } from '@/content/teachers'
 import { testimonials } from '@/content/testimonials'
 import {
   BookOpen,
@@ -183,26 +189,37 @@ export default function HomePage() {
               </div>
             </div>
 
-            {/* ── Right: Hero image ── */}
-            <div className="hidden lg:block" aria-hidden="true">
+            {/* ── Right: Hero video (or image fallback) ── */}
+            <div className="hidden lg:block">
               <div className="relative py-6">
 
-                {/* Ambient glow behind the image card */}
+                {/* Ambient glow behind the media card */}
                 <div
                   className="absolute inset-[8%] rounded-full blur-3xl z-0"
                   style={{ background: 'radial-gradient(ellipse, rgba(14,124,90,0.32) 0%, transparent 70%)' }}
+                  aria-hidden="true"
                 />
 
-                {/* Image — wrapped in a rounded card so the studio background looks intentional */}
-                <div className="relative z-10 rounded-3xl overflow-hidden shadow-[0_20px_56px_rgba(0,0,0,0.45)]">
-                  <Image
-                    src="/hero/2children-learn-quran-online.png"
-                    alt="Two children learning Quran online with a certified teacher"
-                    width={1536}
-                    height={1024}
-                    className="w-full h-auto block"
-                    priority
-                  />
+                {/* Media — video if configured, otherwise the studio image */}
+                <div className="relative z-10">
+                  {youtubeEmbedUrl(mediaConfig.hero.youtubeUrl) ? (
+                    <YouTubeEmbed
+                      url={mediaConfig.hero.youtubeUrl}
+                      poster={mediaConfig.hero.posterImage}
+                      label="Watch: a real Alrayan lesson"
+                    />
+                  ) : (
+                    <div className="rounded-3xl overflow-hidden shadow-[0_20px_56px_rgba(0,0,0,0.45)]" aria-hidden="true">
+                      <Image
+                        src="/hero/2children-learn-quran-online.png"
+                        alt="Two children learning Quran online with a certified teacher"
+                        width={1536}
+                        height={1024}
+                        className="w-full h-auto block"
+                        priority
+                      />
+                    </div>
+                  )}
                 </div>
 
                 {/* ── Rating badge — floats above the image card (top-right) ── */}
@@ -385,6 +402,12 @@ export default function HomePage() {
         </Container>
       </Section>
 
+      {/* ── Meet & hear our teachers ── */}
+      <TeachersRecitation teachers={featuredTeachers} />
+
+      {/* ── Video testimonials (renders only if videos are configured) ── */}
+      <VideoTestimonials />
+
       {/* ── Testimonials ── */}
       <Section bg="cream" aria-labelledby="testimonials-heading">
         <div id="testimonials-heading" className="sr-only">Student Stories</div>
@@ -434,6 +457,9 @@ export default function HomePage() {
           </div>
         </Container>
       </section>
+
+      {/* ── Sticky mobile CTA ── */}
+      <StickyMobileCTA />
     </>
   )
 }

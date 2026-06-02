@@ -160,6 +160,14 @@ class SessionController extends Controller
     {
         $this->authorize('markAttendance', $session);
 
+        // Enforce: cannot mark attended until a report has been submitted for this session.
+        if ($request->status === 'attended' && ! $session->report()->exists()) {
+            return response()->json([
+                'message' => 'Submit a session report before marking this session as attended.',
+                'errors'  => ['status' => ['A session report is required before marking as attended.']],
+            ], 422);
+        }
+
         $data = ['status' => $request->status];
 
         if ($request->status === 'attended') {
@@ -208,6 +216,11 @@ class SessionController extends Controller
             foreach ($request->items as $item) {
                 $session = Session::findOrFail($item['session_id']);
                 $this->authorize('markAttendance', $session);
+
+                // Enforce: cannot mark attended until a report has been submitted.
+                if ($item['status'] === 'attended' && ! $session->report()->exists()) {
+                    abort(422, "Session #{$session->id} cannot be marked attended without a submitted report.");
+                }
 
                 $data = ['status' => $item['status']];
 

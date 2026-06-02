@@ -18,26 +18,26 @@ class TrialBookingController extends Controller
     {
         $validated = $request->validate([
             'name'           => 'required|string|max:100',
+            'phone'          => 'required|string|max:30',
             'email'          => 'required|email|max:255',
-            'country'        => 'required|string|max:100',
-            'phone'          => 'nullable|string|max:30',
-            'ageGroup'       => 'required|in:kid-5-8,kid-9-12,teen,adult',
-            'courseInterest' => 'required|string|max:100',
-            'preferredTime'  => 'required|string|max:50',
-            'timezone'       => 'required|string|max:100',
+            'country'        => 'nullable|string|max:100',
+            'ageGroup'       => 'nullable|in:kid-5-8,kid-9-12,teen,adult',
+            'courseInterest' => 'nullable|string|max:100',
+            'preferredTime'  => 'nullable|string|max:50',
+            'timezone'       => 'nullable|string|max:100',
             'message'        => 'nullable|string|max:500',
         ]);
 
         $booking = TrialBooking::create([
             'reference'       => $refs->forTrialBooking(),
             'name'            => $validated['name'],
-            'email'           => $validated['email'],
-            'country'         => $validated['country'],
-            'phone'           => $validated['phone'] ?? null,
-            'age_group'       => $validated['ageGroup'],
-            'course_interest' => $validated['courseInterest'],
-            'preferred_time'  => $validated['preferredTime'],
-            'timezone'        => $validated['timezone'],
+            'phone'           => $validated['phone'],
+            'email'           => $validated['email'] ?? null,
+            'country'         => $validated['country'] ?? null,
+            'age_group'       => $validated['ageGroup'] ?? null,
+            'course_interest' => $validated['courseInterest'] ?? null,
+            'preferred_time'  => $validated['preferredTime'] ?? null,
+            'timezone'        => $validated['timezone'] ?? null,
             'message'         => $validated['message'] ?? null,
         ]);
 

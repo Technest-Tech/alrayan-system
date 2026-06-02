@@ -1,14 +1,15 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { Loader2 } from 'lucide-react'
+import { ChevronDown, Loader2, Sparkles } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { Label } from '@/components/ui/label'
 import { FormField } from './FormField'
+import { PhoneWithCountry } from './PhoneWithCountry'
 import { SuccessState } from './SuccessState'
-import { TurnstileWidget } from './TurnstileWidget'
 import { courses } from '@/content/courses'
 
 const COUNTRIES = [
@@ -26,43 +27,58 @@ const PREFERRED_TIMES = [
   { value: 'night', label: 'Night (8 PM+)' },
 ]
 
+const AGE_GROUPS = [
+  { value: 'kid-5-8', label: 'Child (5–8)' },
+  { value: 'kid-9-12', label: 'Child (9–12)' },
+  { value: 'teen', label: 'Teen (13–17)' },
+  { value: 'adult', label: 'Adult (18+)' },
+] as const
+
 const schema = z.object({
-  name: z.string().min(2, 'Full name required'),
-  email: z.string().email('Valid email required'),
-  country: z.string().min(1, 'Please select your country'),
-  phone: z.string().optional(),
-  ageGroup: z.enum(['kid-5-8', 'kid-9-12', 'teen', 'adult'], {
-    error: 'Please select an age group',
-  }),
-  courseInterest: z.string().min(1, 'Please select a course'),
-  preferredTime: z.string().min(1, 'Please select a preferred time'),
-  timezone: z.string().min(1, 'Timezone required'),
-  message: z.string().max(500, 'Max 500 characters').optional(),
-  turnstileToken: z.string().min(1, 'Please complete the security check'),
+  name: z.string().min(2, 'Please enter your name'),
+  phone: z
+    .string()
+    .min(6, 'A valid WhatsApp number is required')
+    .max(30, 'Number is too long'),
+  email: z.string().email('Please enter a valid email').max(255),
+  country: z.string().max(100).optional().or(z.literal('')),
+  ageGroup: z.enum(['kid-5-8', 'kid-9-12', 'teen', 'adult']).optional(),
+  courseInterest: z.string().max(100).optional().or(z.literal('')),
+  preferredTime: z.string().max(50).optional().or(z.literal('')),
+  timezone: z.string().max(100).optional().or(z.literal('')),
+  message: z.string().max(500, 'Max 500 characters').optional().or(z.literal('')),
 })
 
 type FormValues = z.infer<typeof schema>
 
 type Status = 'idle' | 'loading' | 'success' | 'error'
 
-const SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY ?? '1x00000000000000000000AA'
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000'
 
 export function TrialBookingForm() {
   const [status, setStatus] = useState<Status>('idle')
   const [reference, setReference] = useState('')
   const [errorMsg, setErrorMsg] = useState('')
+  const [showDetails, setShowDetails] = useState(false)
 
   const {
     register,
     handleSubmit,
     setValue,
+    watch,
     formState: { errors },
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
+    defaultValues: { phone: '' },
   })
 
-  // Pre-fill timezone on mount
+  // Register the phone field so RHF tracks it (the custom component sets the value).
+  useEffect(() => {
+    register('phone')
+  }, [register])
+
+  const phoneValue = watch('phone') ?? ''
+
   useEffect(() => {
     try {
       const tz = Intl.DateTimeFormat().resolvedOptions().timeZone
@@ -71,11 +87,6 @@ export function TrialBookingForm() {
       // Intl not available — leave blank
     }
   }, [setValue])
-
-  const handleTurnstileSuccess = useCallback(
-    (token: string) => setValue('turnstileToken', token),
-    [setValue],
-  )
 
   const onSubmit = async (data: FormValues) => {
     setStatus('loading')
@@ -106,22 +117,53 @@ export function TrialBookingForm() {
   const isLoading = status === 'loading'
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-5">
+    <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-6">
+      <div className="flex items-center gap-2 rounded-2xl border border-secondary/20 bg-gradient-to-r from-secondary/5 via-secondary/10 to-secondary/5 px-4 py-2.5">
+        <Sparkles className="size-4 text-secondary" aria-hidden="true" />
+        <p className="text-xs sm:text-sm text-primary/80">
+          Just <span className="font-semibold text-primary">name, WhatsApp & email</span> — we&apos;ll handle the rest on a call.
+        </p>
+      </div>
+
+      <FormField
+        id="name"
+        label="Full Name"
+        required
+        autoComplete="name"
+        placeholder="Your full name"
+        error={errors.name?.message}
+        disabled={isLoading}
+        {...register('name')}
+      />
+
       <div className="grid sm:grid-cols-2 gap-5">
-        <FormField
-          id="name"
-          label="Full Name"
-          required
-          placeholder="Your full name"
-          error={errors.name?.message}
-          disabled={isLoading}
-          {...register('name')}
-        />
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="phone" className="text-primary">
+            WhatsApp Number
+            <span className="text-destructive ml-1" aria-hidden="true">*</span>
+          </Label>
+          <PhoneWithCountry
+            id="phone"
+            value={phoneValue}
+            onChange={(combined) =>
+              setValue('phone', combined, { shouldValidate: true, shouldDirty: true })
+            }
+            disabled={isLoading}
+            invalid={!!errors.phone}
+            placeholder="12 345 6789"
+          />
+          {errors.phone && (
+            <p role="alert" aria-live="polite" className="text-destructive text-sm">
+              {errors.phone.message}
+            </p>
+          )}
+        </div>
         <FormField
           id="email"
           label="Email Address"
           type="email"
           required
+          autoComplete="email"
           placeholder="you@example.com"
           error={errors.email?.message}
           disabled={isLoading}
@@ -129,138 +171,109 @@ export function TrialBookingForm() {
         />
       </div>
 
-      <div className="grid sm:grid-cols-2 gap-5">
-        <FormField
-          id="country"
-          label="Country"
-          as="select"
-          required
-          error={errors.country?.message}
-          disabled={isLoading}
-          {...register('country')}
-        >
-          <option value="">Select your country…</option>
-          {COUNTRIES.map((c) => (
-            <option key={c} value={c}>
-              {c}
-            </option>
-          ))}
-        </FormField>
-        <FormField
-          id="phone"
-          label="Phone (optional)"
-          type="tel"
-          placeholder="+1 555 000 0000"
-          error={errors.phone?.message}
-          disabled={isLoading}
-          {...register('phone')}
+      <button
+        type="button"
+        onClick={() => setShowDetails((v) => !v)}
+        aria-expanded={showDetails}
+        className="flex w-full items-center justify-between rounded-xl border border-border-soft bg-white/50 px-4 py-3 text-sm font-medium text-primary transition-colors hover:bg-white"
+      >
+        <span className="flex items-center gap-2">
+          <span className="inline-flex size-5 items-center justify-center rounded-full bg-secondary/15 text-[10px] font-bold text-secondary">+</span>
+          Add details to speed up scheduling <span className="text-muted-foreground font-normal">(optional)</span>
+        </span>
+        <ChevronDown
+          className={`size-4 text-muted-foreground transition-transform ${showDetails ? 'rotate-180' : ''}`}
+          aria-hidden="true"
         />
-      </div>
+      </button>
 
-      {/* Age Group — radio buttons */}
-      <fieldset>
-        <legend className="text-sm font-medium text-primary mb-2">
-          Age Group <span className="text-destructive ml-1" aria-hidden="true">*</span>
-        </legend>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          {[
-            { value: 'kid-5-8', label: 'Child (5–8)' },
-            { value: 'kid-9-12', label: 'Child (9–12)' },
-            { value: 'teen', label: 'Teen (13–17)' },
-            { value: 'adult', label: 'Adult (18+)' },
-          ].map(({ value, label }) => (
-            <label
-              key={value}
-              className="flex items-center gap-2.5 cursor-pointer rounded-xl border border-border-soft bg-white px-4 py-3 text-sm text-primary has-[:checked]:border-secondary has-[:checked]:bg-secondary/5 hover:border-secondary/50 transition-colors"
+      {showDetails && (
+        <div className="space-y-5 rounded-2xl border border-border-soft bg-white/40 p-4 sm:p-5">
+          <div className="grid sm:grid-cols-2 gap-5">
+            <FormField
+              id="country"
+              label="Country"
+              as="select"
+              error={errors.country?.message}
+              disabled={isLoading}
+              {...register('country')}
             >
-              <input
-                type="radio"
-                value={value}
-                disabled={isLoading}
-                className="accent-secondary"
-                {...register('ageGroup')}
-              />
-              {label}
-            </label>
-          ))}
+              <option value="">Select your country…</option>
+              {COUNTRIES.map((c) => (
+                <option key={c} value={c}>
+                  {c}
+                </option>
+              ))}
+            </FormField>
+            <FormField
+              id="courseInterest"
+              label="Course of Interest"
+              as="select"
+              error={errors.courseInterest?.message}
+              disabled={isLoading}
+              {...register('courseInterest')}
+            >
+              <option value="">Select a course…</option>
+              {courses.map((c) => (
+                <option key={c.slug} value={c.title}>
+                  {c.title}
+                </option>
+              ))}
+            </FormField>
+          </div>
+
+          <fieldset>
+            <legend className="text-sm font-medium text-primary mb-2">Age Group</legend>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+              {AGE_GROUPS.map(({ value, label }) => (
+                <label
+                  key={value}
+                  className="flex items-center justify-center gap-2 cursor-pointer rounded-xl border border-border-soft bg-white px-3 py-2.5 text-xs sm:text-sm text-primary has-[:checked]:border-secondary has-[:checked]:bg-secondary/5 has-[:checked]:shadow-sm hover:border-secondary/50 transition-all"
+                >
+                  <input
+                    type="radio"
+                    value={value}
+                    disabled={isLoading}
+                    className="accent-secondary"
+                    {...register('ageGroup')}
+                  />
+                  {label}
+                </label>
+              ))}
+            </div>
+          </fieldset>
+
+          <FormField
+            id="preferredTime"
+            label="Preferred Class Time"
+            as="select"
+            error={errors.preferredTime?.message}
+            disabled={isLoading}
+            {...register('preferredTime')}
+          >
+            <option value="">Any time works</option>
+            {PREFERRED_TIMES.map(({ value, label }) => (
+              <option key={value} value={value}>
+                {label}
+              </option>
+            ))}
+          </FormField>
+
+          <FormField
+            id="message"
+            label="Anything you'd like us to know?"
+            as="textarea"
+            placeholder="Current level, goals, scheduling constraints…"
+            rows={3}
+            error={errors.message?.message}
+            disabled={isLoading}
+            {...register('message')}
+          />
+
+          <input type="hidden" {...register('timezone')} />
         </div>
-        {errors.ageGroup && (
-          <p role="alert" aria-live="polite" className="text-destructive text-sm mt-1.5">
-            {errors.ageGroup.message}
-          </p>
-        )}
-      </fieldset>
+      )}
 
-      <div className="grid sm:grid-cols-2 gap-5">
-        <FormField
-          id="courseInterest"
-          label="Course of Interest"
-          as="select"
-          required
-          error={errors.courseInterest?.message}
-          disabled={isLoading}
-          {...register('courseInterest')}
-        >
-          <option value="">Select a course…</option>
-          {courses.map((c) => (
-            <option key={c.slug} value={c.title}>
-              {c.title}
-            </option>
-          ))}
-        </FormField>
-        <FormField
-          id="preferredTime"
-          label="Preferred Class Time"
-          as="select"
-          required
-          error={errors.preferredTime?.message}
-          disabled={isLoading}
-          {...register('preferredTime')}
-        >
-          <option value="">Select a time…</option>
-          {PREFERRED_TIMES.map(({ value, label }) => (
-            <option key={value} value={value}>
-              {label}
-            </option>
-          ))}
-        </FormField>
-      </div>
-
-      <FormField
-        id="timezone"
-        label="Your Timezone"
-        required
-        placeholder="e.g. America/New_York"
-        error={errors.timezone?.message}
-        disabled={isLoading}
-        {...register('timezone')}
-      />
-
-      <FormField
-        id="message"
-        label="Additional Notes (optional)"
-        as="textarea"
-        placeholder="Anything else you'd like us to know — current level, specific goals, scheduling constraints…"
-        rows={3}
-        error={errors.message?.message}
-        disabled={isLoading}
-        {...register('message')}
-      />
-
-      {/* Turnstile */}
-      <div>
-        <TurnstileWidget
-          siteKey={SITE_KEY}
-          onSuccess={handleTurnstileSuccess}
-        />
-        {errors.turnstileToken && (
-          <p role="alert" aria-live="polite" className="text-destructive text-sm mt-1">
-            {errors.turnstileToken.message}
-          </p>
-        )}
-      </div>
-
-      {/* Error alert */}
       {status === 'error' && (
         <div
           role="alert"
@@ -274,21 +287,24 @@ export function TrialBookingForm() {
         type="submit"
         variant="gold"
         size="lg"
-        className="w-full justify-center"
+        className="w-full justify-center group relative overflow-hidden"
         disabled={isLoading}
       >
         {isLoading ? (
           <>
             <Loader2 className="size-4 animate-spin" aria-hidden="true" />
-            Submitting…
+            Sending…
           </>
         ) : (
-          'Book My Free Trial Class →'
+          <>
+            Book My Free Trial Class
+            <span aria-hidden="true" className="ml-1 transition-transform group-hover:translate-x-1">→</span>
+          </>
         )}
       </Button>
 
       <p className="text-center text-xs text-muted-foreground">
-        ✓ Free first class &middot; ✓ No credit card required &middot; ✓ Cancel anytime
+        ✓ Free first class &middot; ✓ Instant WhatsApp confirmation &middot; ✓ No credit card
       </p>
     </form>
   )

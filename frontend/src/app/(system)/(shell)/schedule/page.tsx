@@ -142,13 +142,20 @@ function SessionCard({
 
   const canAct     = session.status === 'scheduled' || session.status === 'pending_substitute'
   const needsReport = session.status === 'attended' && !session.has_report
+  const hasReport  = !!session.has_report
 
   async function doAttend() {
+    // Backend requires a submitted report before allowing "attended".
+    // If no report exists yet, route the user to the report modal instead.
+    if (!hasReport) {
+      onAttendWithReport(session)
+      return
+    }
     try {
       await mark.mutateAsync({ id: session.id, status: 'attended' })
       toast.success('Marked attended.')
     } catch (e: any) {
-      toast.error(e?.message ?? 'Failed to update.')
+      toast.error(e?.message ?? 'Submit a session report before marking attended.')
     }
   }
 
