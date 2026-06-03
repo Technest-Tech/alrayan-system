@@ -25,7 +25,7 @@ class TrialBookingController extends Controller
             'courseInterest' => 'nullable|string|max:100',
             'preferredTime'  => 'nullable|string|max:50',
             'timezone'       => 'nullable|string|max:100',
-            'message'        => 'nullable|string|max:500',
+            'message'        => 'nullable|string|max:1000',
         ]);
 
         $booking = TrialBooking::create([
