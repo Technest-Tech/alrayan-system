@@ -10,7 +10,7 @@ export const siteConfig = {
   whatsapp: process.env.NEXT_PUBLIC_WHATSAPP ?? '201279193105',
   whatsappDefaultMessage:
     'Assalamu alaikum, I would like to learn more about your Quran classes.',
-  address: 'Online — Serving students worldwide',
+  address: 'Atfih, Giza',
   social: {
     facebook: 'https://www.facebook.com/alrayanaquran/',
     instagram: 'https://www.instagram.com/rayan_academyy/',

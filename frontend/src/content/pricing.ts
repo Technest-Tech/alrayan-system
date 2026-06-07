@@ -1,7 +1,7 @@
 export type PricingTier = {
   id: 'starter' | 'growth' | 'premium'
   name: string
-  priceUsd: number
+  priceEgp: number
   sessionsPerMonth: number
   minutesPerSession: number
   highlighted: boolean
@@ -14,7 +14,7 @@ export const pricingTiers: PricingTier[] = [
   {
     id: 'starter',
     name: 'Starter',
-    priceUsd: 30,
+    priceEgp: 1500,
     sessionsPerMonth: 8,
     minutesPerSession: 30,
     highlighted: false,
@@ -36,7 +36,7 @@ export const pricingTiers: PricingTier[] = [
   {
     id: 'growth',
     name: 'Growth',
-    priceUsd: 50,
+    priceEgp: 2500,
     sessionsPerMonth: 12,
     minutesPerSession: 45,
     highlighted: true,
@@ -58,7 +58,7 @@ export const pricingTiers: PricingTier[] = [
   {
     id: 'premium',
     name: 'Premium',
-    priceUsd: 70,
+    priceEgp: 3500,
     sessionsPerMonth: 20,
     minutesPerSession: 60,
     highlighted: false,
@@ -121,7 +121,7 @@ export const pricingFaqs: PricingFaqItem[] = [
   },
   {
     q: 'Which payment methods do you accept?',
-    a: 'We accept all major credit and debit cards (Visa, Mastercard, Amex) as well as PayPal. All payments are in USD and processed securely.',
+    a: 'We accept all major credit and debit cards (Visa, Mastercard, Amex), Fawry, Vodafone Cash, and bank transfer. Prices are in EGP and processed securely.',
   },
 ]
 

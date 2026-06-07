@@ -22,7 +22,7 @@ import { CheckCircle2, XCircle, Minus, Users } from 'lucide-react'
 export const metadata: Metadata = buildMetadata({
   title: 'Quran Class Pricing | Transparent Plans | Alrayan Academy',
   description:
-    'Simple, transparent pricing for online Quran classes. Plans from $30/month. Free first class, no contracts, cancel anytime.',
+    'Simple, transparent pricing for online Quran classes. Plans from 1,500 EGP/month. Free first class, no contracts, cancel anytime.',
   path: '/pricing',
 })
 
@@ -105,9 +105,9 @@ export default function PricingPage() {
                   <h2 className="text-lg font-semibold text-primary mb-1">{tier.name}</h2>
                   <div className="flex items-end gap-1">
                     <span className="text-5xl font-display font-semibold text-primary">
-                      ${tier.priceUsd}
+                      {tier.priceEgp.toLocaleString('en-EG')}
                     </span>
-                    <span className="text-muted-foreground text-base pb-1">/mo</span>
+                    <span className="text-muted-foreground text-base pb-1"> EGP/mo</span>
                   </div>
                   <p className="text-muted-foreground text-sm mt-1">
                     {tier.sessionsPerMonth} classes &middot; {tier.minutesPerSession} min each
@@ -228,7 +228,7 @@ export default function PricingPage() {
                 className="bg-white rounded-2xl border border-border-soft p-6 shadow-soft"
               >
                 <h3 className="font-display font-semibold text-primary text-lg mb-4">
-                  {tier.name} — ${tier.priceUsd}/mo
+                  {tier.name} — {tier.priceEgp.toLocaleString('en-EG')} EGP/mo
                 </h3>
                 <ul className="space-y-2.5">
                   {comparisonRows.map((row) => {
