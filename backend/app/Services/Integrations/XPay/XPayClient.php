@@ -9,12 +9,14 @@ use Illuminate\Support\Facades\Http;
 
 class XPayClient
 {
-    private const STAGING = 'https://staging.xpay.app/api/v1';
-    private const STAGING_ORDERS = 'https://staging.xpay.app/api';
+    private const PRODUCTION = 'https://xpay.app/api/v1';
+    private const STAGING    = 'https://staging.xpay.app/api/v1';
 
     private function base(): string
     {
-        return self::STAGING;
+        return app()->environment('production')
+            ? self::PRODUCTION
+            : self::STAGING;
     }
 
     private function headers(): array
