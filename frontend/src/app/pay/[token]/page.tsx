@@ -1,11 +1,11 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { useParams } from 'next/navigation'
+import { useCallback, useEffect, useState } from 'react'
+import { useParams, useRouter } from 'next/navigation'
 import {
-  CheckCircle2, AlertTriangle, Clock, XCircle,
+  AlertTriangle, Clock, XCircle,
   Download, MessageCircle, Check,
-  Shield, Lock, ChevronDown, ChevronUp,
+  Shield, Lock, ChevronDown, ChevronUp, Loader2, X,
 } from 'lucide-react'
 import { siteConfig } from '@/config/site'
 
@@ -90,23 +90,16 @@ function computeTotalHours(invoice: PublicInvoice): number | null {
 function IslamicBackground() {
   return (
     <div className="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden>
-      {/* Geometric star tessellation */}
       <svg className="absolute inset-0 w-full h-full" xmlns="http://www.w3.org/2000/svg">
         <defs>
           <pattern id="islamic-bg" x="0" y="0" width="100" height="100" patternUnits="userSpaceOnUse">
-            {/* 8-pointed star at (50,50), outer r=30, inner r=12.5 */}
             <polygon
               points="50,20 54.8,37.5 67.2,27.9 59.3,43.4 77.5,43.4 63.4,52 72.1,67.2 55.7,60.7 50,80 44.3,60.7 27.9,67.2 36.6,52 22.5,43.4 40.7,43.4 32.8,27.9 45.2,37.5"
-              fill="none"
-              stroke="rgba(201,169,64,0.35)"
-              strokeWidth="0.7"
+              fill="none" stroke="rgba(201,169,64,0.35)" strokeWidth="0.7"
             />
-            {/* Rotated square (diamond) overlay */}
             <rect x="29" y="29" width="42" height="42" transform="rotate(45 50 50)"
               fill="none" stroke="rgba(201,169,64,0.1)" strokeWidth="0.5" />
-            {/* Centre dot */}
             <circle cx="50" cy="50" r="1.5" fill="rgba(201,169,64,0.2)" />
-            {/* Corner quarter-star connectors */}
             <line x1="20" y1="0" x2="22.5" y2="43.4" stroke="rgba(201,169,64,0.12)" strokeWidth="0.5" />
             <line x1="80" y1="0" x2="77.5" y2="43.4" stroke="rgba(201,169,64,0.12)" strokeWidth="0.5" />
             <line x1="20" y1="100" x2="22.5" y2="56.6" stroke="rgba(201,169,64,0.12)" strokeWidth="0.5" />
@@ -119,10 +112,8 @@ function IslamicBackground() {
         </defs>
         <rect width="100%" height="100%" fill="url(#islamic-bg)" />
       </svg>
-      {/* Soft radial glow at top-center */}
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[500px] h-72 opacity-15 rounded-full"
         style={{ background: 'radial-gradient(ellipse, #c9a940 0%, transparent 70%)' }} />
-      {/* Subtle vignette at edges */}
       <div className="absolute inset-0"
         style={{ background: 'radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.3) 100%)' }} />
     </div>
@@ -171,67 +162,46 @@ function VisaMastercardIcons() {
   )
 }
 
-// ── Coming-soon payment button ─────────────────────────────────────────────
-
-function ComingSoonMethod({ emoji, label, brands, onSelect }: {
-  emoji: string; label: string; brands: React.ReactNode; onSelect: () => void
-}) {
-  return (
-    <button
-      onClick={onSelect}
-      className="w-full flex items-center gap-3 px-5 py-4 rounded-2xl text-left transition-all hover:bg-amber-50/40"
-      style={{ border: '1px solid #e8d5a0' }}
-    >
-      <div className="w-9 h-9 rounded-xl flex items-center justify-center text-base shrink-0"
-        style={{ background: '#f7f1e3', border: '1px solid #e8d5a0' }}>
-        {emoji}
-      </div>
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2">
-          <span className="text-sm font-semibold text-gray-900">{label}</span>
-          <span className="px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wide"
-            style={{ background: '#fef3c7', color: '#92400e' }}>Soon</span>
-        </div>
-      </div>
-      <div className="shrink-0">{brands}</div>
-    </button>
-  )
-}
-
 // ── WhatsApp / manual payment ──────────────────────────────────────────────
 
 function ManualMethods({ whatsappText }: { whatsappText: string }) {
   const [open, setOpen] = useState(false)
   return (
-    <div className="rounded-2xl overflow-hidden" style={{ border: '1px solid #e8d5a0' }}>
+    <div className="rounded-2xl overflow-hidden transition-all"
+      style={{ border: open ? '1.5px solid #25D366' : '1.5px solid #e8d5a0', background: open ? '#f0fdf4' : 'white' }}>
       <button
         onClick={() => setOpen(o => !o)}
-        className="w-full flex items-center justify-between px-5 py-4 text-left transition-colors hover:bg-amber-50/40"
+        className="w-full flex items-center justify-between px-5 py-4 text-left transition-colors"
       >
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl flex items-center justify-center text-base"
-            style={{ background: '#f7f1e3', border: '1px solid #e8d5a0' }}>
+          <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl shrink-0 transition-colors"
+            style={{ background: open ? '#dcfce7' : '#f7f1e3', border: open ? '1px solid #86efac' : '1px solid #e8d5a0' }}>
             💬
           </div>
           <div>
-            <p className="text-sm font-semibold text-gray-900">WhatsApp / Bank Transfer</p>
-            <p className="text-xs text-gray-400 mt-0.5">Send payment and confirm with us</p>
+            <p className="text-sm font-bold text-gray-900">WhatsApp / Bank Transfer</p>
+            <p className="text-xs text-gray-400 mt-0.5">Send payment & confirm with us</p>
           </div>
         </div>
-        {open ? <ChevronUp size={15} className="text-gray-400" /> : <ChevronDown size={15} className="text-gray-400" />}
+        <div className="w-7 h-7 rounded-full flex items-center justify-center transition-colors shrink-0"
+          style={{ background: open ? '#dcfce7' : '#f5f5f5' }}>
+          {open
+            ? <ChevronUp size={14} className="text-green-600" />
+            : <ChevronDown size={14} className="text-gray-400" />}
+        </div>
       </button>
 
       {open && (
-        <div className="px-5 pb-5 border-t space-y-4" style={{ borderColor: '#f0e8d0' }}>
+        <div className="px-5 pb-5 border-t space-y-4" style={{ borderColor: '#bbf7d0' }}>
           <div className="space-y-3 pt-4">
             {[
-              'Send payment via bank transfer, Vodafone Cash, or InstaPay.',
-              'Take a screenshot of your transfer confirmation.',
+              'Send via bank transfer, Vodafone Cash, or InstaPay.',
+              'Screenshot the transfer confirmation.',
               'Send the screenshot on WhatsApp — we confirm within minutes.',
             ].map((step, i) => (
               <div key={i} className="flex gap-3">
                 <span className="w-5 h-5 rounded-full text-[11px] font-bold flex items-center justify-center shrink-0 mt-0.5"
-                  style={{ background: '#f0e8ce', color: '#8a6a20' }}>
+                  style={{ background: '#dcfce7', color: '#15803d' }}>
                   {i + 1}
                 </span>
                 <p className="text-sm text-gray-600 leading-relaxed">{step}</p>
@@ -241,8 +211,8 @@ function ManualMethods({ whatsappText }: { whatsappText: string }) {
           <a
             href={`https://wa.me/${siteConfig.whatsapp}?text=${whatsappText}`}
             target="_blank" rel="noopener noreferrer"
-            className="flex items-center justify-center gap-2 w-full py-3 rounded-xl text-sm font-semibold text-white hover:opacity-90 transition-opacity"
-            style={{ background: '#25D366' }}
+            className="flex items-center justify-center gap-2 w-full py-3 rounded-xl text-sm font-bold text-white transition-transform active:scale-[0.98]"
+            style={{ background: 'linear-gradient(135deg, #128C7E, #25D366)', boxShadow: '0 4px 14px rgba(37,211,102,0.35)' }}
           >
             <MessageCircle size={15} />
             Open WhatsApp
@@ -253,26 +223,118 @@ function ManualMethods({ whatsappText }: { whatsappText: string }) {
   )
 }
 
+// ── XPay iframe overlay ───────────────────────────────────────────────────
+
+function XPayOverlay({
+  iframeUrl,
+  onClose,
+}: {
+  iframeUrl: string
+  onClose: () => void
+}) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      style={{ background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(4px)' }}>
+      <div className="relative w-full max-w-lg bg-white rounded-3xl overflow-hidden shadow-2xl"
+        style={{ maxHeight: '90vh' }}>
+        {/* Header */}
+        <div className="flex items-center justify-between px-5 py-3 border-b border-gray-100">
+          <div className="flex items-center gap-2">
+            <Lock size={13} className="text-green-600" />
+            <span className="text-xs font-semibold text-gray-600">Secure Payment — XPay</span>
+          </div>
+          <button
+            onClick={onClose}
+            className="w-7 h-7 rounded-full flex items-center justify-center hover:bg-gray-100 transition-colors"
+            aria-label="Close payment"
+          >
+            <X size={14} className="text-gray-500" />
+          </button>
+        </div>
+        {/* Iframe */}
+        <iframe
+          src={iframeUrl}
+          title="XPay Payment"
+          className="w-full"
+          style={{ height: '520px', border: 'none' }}
+          allow="payment"
+        />
+      </div>
+    </div>
+  )
+}
+
 // ── Page ───────────────────────────────────────────────────────────────────
 
 export default function PublicPaymentPage() {
   const params   = useParams()
+  const router   = useRouter()
   const token    = params?.token as string
   const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? ''
 
-  const [invoice,     setInvoice]     = useState<PublicInvoice | null>(null)
-  const [loading,     setLoading]     = useState(true)
-  const [error,       setError]       = useState(false)
-  const [downloading, setDownloading] = useState(false)
-  const [toast,       setToast]       = useState<string | null>(null)
+  const [invoice,      setInvoice]      = useState<PublicInvoice | null>(null)
+  const [loading,      setLoading]      = useState(true)
+  const [error,        setError]        = useState(false)
+  const [downloading,  setDownloading]  = useState(false)
 
-  useEffect(() => {
+  // XPay card payment state
+  const [initiating,   setInitiating]   = useState(false)
+  const [iframeUrl,    setIframeUrl]    = useState<string | null>(null)
+  const [payError,     setPayError]     = useState<string | null>(null)
+
+  const fetchInvoice = useCallback(() => {
     if (!token) return
     fetch(`${API_BASE}/api/system/pay/${token}`, { headers: { Accept: 'application/json' } })
-      .then(async r => { if (!r.ok) throw new Error(); setInvoice((await r.json()).data) })
+      .then(async r => {
+        if (!r.ok) throw new Error()
+        const data = (await r.json()).data as PublicInvoice
+        if (data.status === 'paid') {
+          router.replace(`/pay/${token}/success`)
+          return
+        }
+        setInvoice(data)
+      })
       .catch(() => setError(true))
       .finally(() => setLoading(false))
-  }, [token, API_BASE])
+  }, [token, API_BASE, router])
+
+  useEffect(() => {
+    fetchInvoice()
+  }, [fetchInvoice])
+
+  // Listen for postMessage from /xpay-return page loaded inside the iframe
+  useEffect(() => {
+    const handler = (e: MessageEvent) => {
+      if (e.data?.type !== 'xpay_result') return
+      setIframeUrl(null)
+      if (e.data.status === 'SUCCESSFUL') {
+        router.replace(`/pay/${token}/success`)
+      }
+    }
+    window.addEventListener('message', handler)
+    return () => window.removeEventListener('message', handler)
+  }, [token, router])
+
+  const handlePayByCard = async () => {
+    setPayError(null)
+    setInitiating(true)
+    try {
+      const res = await fetch(`${API_BASE}/api/system/pay/${token}/initiate`, {
+        method: 'POST',
+        headers: { Accept: 'application/json' },
+      })
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}))
+        throw new Error(body.message ?? 'Could not start payment. Please try again.')
+      }
+      const data = await res.json()
+      setIframeUrl(data.iframe_url)
+    } catch (err) {
+      setPayError(err instanceof Error ? err.message : 'Something went wrong.')
+    } finally {
+      setInitiating(false)
+    }
+  }
 
   const handleDownload = async () => {
     setDownloading(true)
@@ -285,8 +347,6 @@ export default function PublicPaymentPage() {
     } catch { /* silent */ }
     finally { setDownloading(false) }
   }
-
-  const showToast = (msg: string) => { setToast(msg); setTimeout(() => setToast(null), 3500) }
 
   // ── Loading ───────────────────────────────────────────────────────────────
   if (loading) return (
@@ -321,9 +381,8 @@ export default function PublicPaymentPage() {
     </div>
   )
 
-  const isPaid       = invoice.status === 'paid'
   const isVoid       = invoice.status === 'void'
-  const isActionable = !isPaid && !isVoid
+  const isActionable = !isVoid
   const dueDays      = daysUntil(invoice.due_at)
   const isOverdue    = dueDays !== null && dueDays < 0
   const totalHours   = computeTotalHours(invoice)
@@ -335,7 +394,7 @@ export default function PublicPaymentPage() {
   const statusConfig = {
     draft:   { label: 'Draft',        bg: '#f3f4f6', color: '#374151', icon: <Clock size={11} /> },
     sent:    { label: 'Payment Due',  bg: '#fef3c7', color: '#92400e', icon: <Clock size={11} /> },
-    paid:    { label: 'Paid',         bg: '#dcfce7', color: '#166534', icon: <CheckCircle2 size={11} /> },
+    paid:    { label: 'Paid',         bg: '#dcfce7', color: '#166534', icon: <Clock size={11} /> },
     overdue: { label: 'Overdue',      bg: '#fee2e2', color: '#991b1b', icon: <AlertTriangle size={11} /> },
     void:    { label: 'Cancelled',    bg: '#f3f4f6', color: '#6b7280', icon: <XCircle size={11} /> },
   }
@@ -347,11 +406,9 @@ export default function PublicPaymentPage() {
     <div className="min-h-screen relative flex flex-col" style={{ backgroundColor: '#0b3222' }}>
       <IslamicBackground />
 
-      {/* Toast */}
-      {toast && (
-        <div className="fixed top-5 left-1/2 -translate-x-1/2 z-50 px-5 py-3 rounded-2xl bg-gray-900 text-white text-sm font-medium shadow-2xl flex items-center gap-2.5">
-          <span>🚧</span> {toast}
-        </div>
+      {/* XPay iframe overlay */}
+      {iframeUrl && (
+        <XPayOverlay iframeUrl={iframeUrl} onClose={() => setIframeUrl(null)} />
       )}
 
       <div className="relative z-10 flex-1 flex items-start justify-center px-4 py-10">
@@ -359,7 +416,6 @@ export default function PublicPaymentPage() {
 
           {/* ── Academy header ──────────────────────────────────────────── */}
           <div className="text-center mb-8">
-            {/* Bismillah — prominent */}
             <div className="mb-5">
               <p
                 className="text-xl leading-relaxed"
@@ -378,8 +434,6 @@ export default function PublicPaymentPage() {
                 <div className="flex-1 h-px max-w-[80px]" style={{ background: 'linear-gradient(to left, transparent, rgba(201,169,64,0.4))' }} />
               </div>
             </div>
-
-            {/* Wordmark */}
             <div className="flex flex-col items-center leading-none">
               <span
                 className="font-display font-semibold tracking-tight text-white"
@@ -403,48 +457,40 @@ export default function PublicPaymentPage() {
             {/* ── Hero — student name + amount ─────────────────────────── */}
             <div className="relative px-8 pt-9 pb-10 text-center overflow-hidden"
               style={{ background: 'linear-gradient(155deg, #0b3222 0%, #155235 55%, #1a6040 100%)' }}>
-
-              {/* Decorative concentric circles (top-right) */}
               <div className="absolute top-3 right-4 opacity-10">
                 {[36, 56, 76].map(s => (
                   <div key={s} className="absolute rounded-full" style={{ width: s, height: s, border: '1px solid #c9a940', top: (76-s)/2, left: (76-s)/2 }} />
                 ))}
               </div>
-              {/* Decorative concentric circles (bottom-left) */}
               <div className="absolute bottom-8 left-4 opacity-10">
                 {[28, 44, 60].map(s => (
                   <div key={s} className="absolute rounded-full" style={{ width: s, height: s, border: '1px solid #c9a940', top: (60-s)/2, left: (60-s)/2 }} />
                 ))}
               </div>
 
-              {/* Status badge */}
               <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold mb-5"
                 style={{ background: st.bg, color: st.color }}>
                 {st.icon}
                 {st.label}
               </div>
 
-              {/* Student name */}
               {invoice.student_name && (
                 <h1 className="text-2xl font-bold text-white mb-1 leading-snug">
                   {invoice.student_name}
                 </h1>
               )}
 
-              {/* Course */}
               {invoice.course_name && (
                 <p className="text-sm mb-5" style={{ color: 'rgba(201,169,64,0.65)' }}>
                   {invoice.course_name}
                 </p>
               )}
 
-              {/* Amount */}
               <p className="text-[3.25rem] font-black tracking-tight leading-none"
                 style={{ color: '#f0d070', textShadow: '0 2px 20px rgba(201,169,64,0.3)' }}>
                 {formatMinor(invoice.total_minor, invoice.currency)}
               </p>
 
-              {/* Due / paid */}
               {isActionable && invoice.due_at && (
                 <p className={`text-sm font-medium mt-3 ${isOverdue ? 'text-red-300' : dueDays === 0 ? 'text-amber-300' : ''}`}
                   style={!isOverdue && dueDays !== 0 ? { color: 'rgba(255,255,255,0.45)' } : {}}>
@@ -454,13 +500,7 @@ export default function PublicPaymentPage() {
                     : `Due ${fmtDate(invoice.due_at)}`}
                 </p>
               )}
-              {isPaid && invoice.paid_at && (
-                <p className="text-sm font-medium mt-3" style={{ color: 'rgba(134,239,172,0.8)' }}>
-                  ✓ Paid on {fmtDate(invoice.paid_at)}
-                </p>
-              )}
 
-              {/* Curved bottom */}
               <div className="absolute -bottom-px left-[-3%] right-[-3%] h-8 rounded-t-[50%]"
                 style={{ background: '#faf8f2' }} />
             </div>
@@ -468,25 +508,14 @@ export default function PublicPaymentPage() {
             {/* ── Quick-detail pills ───────────────────────────────────── */}
             <div className="px-7 pt-4 pb-5">
               <div className={`grid gap-4 ${totalHours !== null ? 'grid-cols-3' : 'grid-cols-2'}`}>
-                <DetailCell
-                  label="Due Date"
-                  value={fmtDate(invoice.due_at)}
-                  warning={isOverdue}
-                />
-                <DetailCell
-                  label="Currency"
-                  value={invoice.currency}
-                />
+                <DetailCell label="Due Date" value={fmtDate(invoice.due_at)} warning={isOverdue} />
+                <DetailCell label="Currency" value={invoice.currency} />
                 {totalHours !== null && (
-                  <DetailCell
-                    label="Total Hours"
-                    value={`${totalHours} hr${totalHours !== 1 ? 's' : ''}`}
-                  />
+                  <DetailCell label="Total Hours" value={`${totalHours} hr${totalHours !== 1 ? 's' : ''}`} />
                 )}
               </div>
             </div>
 
-            {/* ── Ornamental divider ───────────────────────────────────── */}
             <OrnamentDivider />
 
             {/* ── Line items ───────────────────────────────────────────── */}
@@ -508,7 +537,6 @@ export default function PublicPaymentPage() {
                   </div>
                 ))}
 
-                {/* Discount / credit rows */}
                 {(invoice.discount_minor > 0 || invoice.wallet_credit_minor > 0) && (
                   <div className="pt-2 space-y-1.5 border-t" style={{ borderColor: '#f0e8d0' }}>
                     {invoice.discount_minor > 0 && (
@@ -526,7 +554,6 @@ export default function PublicPaymentPage() {
                   </div>
                 )}
 
-                {/* Total row */}
                 <div className="flex justify-between items-center pt-3 border-t" style={{ borderColor: '#e8d5a0' }}>
                   <span className="text-sm font-bold text-gray-900">Total</span>
                   <span className="text-base font-bold tabular-nums" style={{ color: '#6b4e10' }}>
@@ -536,44 +563,113 @@ export default function PublicPaymentPage() {
               </div>
             )}
 
-            {/* ── Paid confirmation banner ─────────────────────────────── */}
-            {isPaid && (
-              <>
-                <OrnamentDivider gold={false} />
-                <div className="mx-6 mb-5 rounded-2xl px-5 py-4 flex items-center gap-4"
-                  style={{ background: 'linear-gradient(135deg, #052e16, #14532d)', border: '1px solid rgba(22,163,74,0.25)' }}>
-                  <div className="w-10 h-10 rounded-full flex items-center justify-center shrink-0"
-                    style={{ background: 'rgba(255,255,255,0.08)' }}>
-                    <CheckCircle2 size={20} className="text-green-300" />
-                  </div>
-                  <div>
-                    <p className="text-white font-bold text-sm">Payment Confirmed</p>
-                    <p className="text-xs mt-0.5" style={{ color: 'rgba(134,239,172,0.75)' }}>
-                      Jazak Allahu khairan{invoice.student_name ? `, ${invoice.student_name.split(' ')[0]}` : ''}!
-                    </p>
-                  </div>
-                </div>
-              </>
-            )}
 
             {/* ── Payment methods ──────────────────────────────────────── */}
             {isActionable && (
               <>
-                {/* Labeled section divider */}
-                <div className="flex items-center gap-3 px-6 py-3">
+                <style>{`
+                  @keyframes pay-shimmer {
+                    0%   { left: -80%; }
+                    60%, 100% { left: 130%; }
+                  }
+                  @keyframes pay-glow {
+                    0%, 100% { box-shadow: 0 0 0 0 rgba(21,128,61,0), 0 8px 28px rgba(0,0,0,0.3); }
+                    50%      { box-shadow: 0 0 0 7px rgba(21,128,61,0.12), 0 8px 28px rgba(0,0,0,0.3); }
+                  }
+                  @keyframes pay-ring {
+                    0%   { opacity: 0.55; transform: scale(1); }
+                    100% { opacity: 0; transform: scale(1.065); }
+                  }
+                  @keyframes pay-bounce-x {
+                    0%, 100% { transform: translateX(0); }
+                    50%      { transform: translateX(3px); }
+                  }
+                `}</style>
+
+                <div className="flex items-center gap-3 px-6 pt-1 pb-4">
                   <div className="flex-1 h-px" style={{ background: 'linear-gradient(to right, transparent, rgba(201,169,64,0.45))' }} />
                   <span className="text-[9px] font-bold uppercase tracking-[0.18em] shrink-0" style={{ color: '#a08c65' }}>
                     Choose Payment Method
                   </span>
                   <div className="flex-1 h-px" style={{ background: 'linear-gradient(to left, transparent, rgba(201,169,64,0.45))' }} />
                 </div>
+
                 <div className="px-6 pb-6 space-y-3">
-                  <ComingSoonMethod
-                    emoji="💳"
-                    label="Credit or Debit Card"
-                    brands={<VisaMastercardIcons />}
-                    onSelect={() => showToast('Card payments coming soon — use WhatsApp for now')}
-                  />
+
+                  {/* ── XPay card button ─────────────────────────────────── */}
+                  <div className="relative">
+                    {/* Pulsing ring — shown only when idle */}
+                    {!initiating && (
+                      <div className="absolute inset-0 rounded-2xl pointer-events-none"
+                        style={{ animation: 'pay-ring 2.4s ease-out infinite', background: 'rgba(21,128,61,0.18)' }} />
+                    )}
+
+                    <button
+                      onClick={handlePayByCard}
+                      disabled={initiating}
+                      className="relative w-full overflow-hidden rounded-2xl flex items-center gap-4 px-5 py-[18px] text-left disabled:opacity-75 transition-transform active:scale-[0.985]"
+                      style={{
+                        background: 'linear-gradient(130deg, #064e25 0%, #166534 45%, #15803d 80%, #186b36 100%)',
+                        boxShadow: '0 8px 28px rgba(0,0,0,0.32), inset 0 1px 0 rgba(255,255,255,0.08)',
+                        animation: initiating ? 'none' : 'pay-glow 2.8s ease-in-out infinite',
+                        border: '1.5px solid rgba(201,169,64,0.3)',
+                      }}
+                    >
+                      {/* Shimmer sweep */}
+                      {!initiating && (
+                        <div className="absolute inset-y-0 w-24 pointer-events-none"
+                          style={{
+                            background: 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.13) 50%, transparent 100%)',
+                            transform: 'skewX(-18deg)',
+                            animation: 'pay-shimmer 3.2s ease-in-out infinite',
+                          }} />
+                      )}
+
+                      {/* Icon */}
+                      <div className="relative w-12 h-12 rounded-xl flex items-center justify-center shrink-0"
+                        style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.15)' }}>
+                        {initiating
+                          ? <Loader2 size={22} className="text-white animate-spin" />
+                          : <Lock size={20} className="text-white" />}
+                      </div>
+
+                      {/* Text */}
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[15px] font-bold text-white leading-snug">
+                          {initiating ? 'Opening secure payment…' : 'Pay by Card'}
+                        </p>
+                        {!initiating && (
+                          <p className="text-xs mt-0.5" style={{ color: 'rgba(201,169,64,0.85)' }}>
+                            Visa · Mastercard · Secured by XPay
+                          </p>
+                        )}
+                      </div>
+
+                      {/* Right: card badges + arrow */}
+                      {!initiating && (
+                        <div className="flex flex-col items-end gap-2 shrink-0">
+                          <VisaMastercardIcons />
+                          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"
+                            style={{ animation: 'pay-bounce-x 1.6s ease-in-out infinite', color: 'rgba(201,169,64,0.7)' }}>
+                            <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                          </svg>
+                        </div>
+                      )}
+                    </button>
+                  </div>
+
+                  {/* Pay error */}
+                  {payError && (
+                    <p className="text-xs text-red-600 px-1">{payError}</p>
+                  )}
+
+                  {/* Separator */}
+                  <div className="flex items-center gap-3">
+                    <div className="flex-1 h-px bg-gray-200" />
+                    <span className="text-[11px] font-medium text-gray-400">or</span>
+                    <div className="flex-1 h-px bg-gray-200" />
+                  </div>
+
                   <ManualMethods whatsappText={whatsappText} />
                 </div>
               </>

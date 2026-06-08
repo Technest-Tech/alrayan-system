@@ -24,7 +24,7 @@ class SendInvoiceLinkOnInvoiceCreated implements ShouldQueue
             'invoice_number'       => $invoice->invoice_number,
             'amount_with_currency' => number_format($invoice->total_minor / 100, 2) . ' ' . $invoice->currency,
             'due_date'             => $invoice->due_at?->toDateString() ?? '',
-            'payment_link'         => optional($invoice->paymobLink)->payment_url ?? '',
+            'payment_link'         => optional($invoice->xpayLink)->iframe_url ?? '',
             'days_until_due'       => (string) max(0, now()->diffInDays($invoice->due_at, false)),
         ]);
 

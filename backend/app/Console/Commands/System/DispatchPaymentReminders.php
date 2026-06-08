@@ -68,7 +68,7 @@ class DispatchPaymentReminders extends Command
                 'invoice_number'       => $inv->invoice_number,
                 'amount_with_currency' => number_format($inv->total_minor / 100, 2) . ' ' . $inv->currency,
                 'due_date'             => $inv->due_at?->toDateString() ?? '',
-                'payment_link'         => optional($inv->paymobLink)->payment_url ?? '',
+                'payment_link'         => optional($inv->xpayLink)->iframe_url ?? '',
             ], $extra));
 
             $log->update(['payload' => array_merge($log->payload ?? [], ['invoice_id' => $inv->id])]);

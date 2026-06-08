@@ -7,7 +7,7 @@ return [
     'default_currency' => env('SYSTEM_DEFAULT_CURRENCY', 'USD'),
     'default_base_currency' => 'EGP',
     'features' => [
-        'paymob'    => env('PAYMOB_ENABLED', false),
+        'xpay'      => env('XPAY_ENABLED', false),
         'zoom'      => env('ZOOM_ENABLED', false),
         'wassender' => env('WASSENDER_ENABLED', false),
     ],

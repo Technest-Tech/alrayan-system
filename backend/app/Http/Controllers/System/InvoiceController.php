@@ -47,7 +47,7 @@ class InvoiceController extends Controller
     public function show(Invoice $invoice)
     {
         $this->authorize('view', $invoice);
-        $invoice->load(['student', 'lines', 'payments.recordedBy', 'paymobLink', 'createdBy']);
+        $invoice->load(['student', 'lines', 'payments.recordedBy', 'xpayLink', 'createdBy']);
         return new InvoiceDetailResource($invoice);
     }
 
@@ -127,11 +127,11 @@ class InvoiceController extends Controller
         ]);
     }
 
-    public function resendPaymobLink(Invoice $invoice)
+    public function resendXPayLink(Invoice $invoice)
     {
         $this->authorize('resendLink', $invoice);
-        \App\Jobs\System\RegeneratePaymobPaymentLink::dispatch($invoice);
-        return response()->json(['ok' => true, 'message' => 'Paymob link regeneration queued.']);
+        \App\Jobs\System\RegenerateXPayPaymentLink::dispatch($invoice);
+        return response()->json(['ok' => true, 'message' => 'XPay link regeneration queued.']);
     }
 
     /**

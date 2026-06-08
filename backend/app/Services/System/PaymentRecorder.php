@@ -18,15 +18,15 @@ class PaymentRecorder
 
         return DB::transaction(function () use ($inv, $data) {
             $p = Payment::create([
-                'invoice_id'            => $inv->id,
-                'amount_minor'          => $data['amount_minor'],
-                'currency'              => $data['currency'],
-                'method'                => $data['method'],
-                'reference'             => $data['reference'] ?? null,
-                'paymob_transaction_id' => $data['paymob_transaction_id'] ?? null,
-                'paid_at'               => $data['paid_at'] ?? now(),
-                'recorded_by_user_id'   => auth()->id(),
-                'payload'               => $data['payload'] ?? null,
+                'invoice_id'             => $inv->id,
+                'amount_minor'           => $data['amount_minor'],
+                'currency'               => $data['currency'],
+                'method'                 => $data['method'],
+                'reference'              => $data['reference'] ?? null,
+                'gateway_transaction_id' => $data['gateway_transaction_id'] ?? null,
+                'paid_at'                => $data['paid_at'] ?? now(),
+                'recorded_by_user_id'    => auth()->id(),
+                'payload'                => $data['payload'] ?? null,
             ]);
 
             $totalPaid = $inv->payments()->sum('amount_minor');

@@ -3,7 +3,6 @@
 namespace App\Services\System;
 
 use App\Events\System\InvoiceCreated;
-use App\Jobs\System\CreatePaymobPaymentLink;
 use App\Models\System\Invoice;
 use App\Models\System\InvoiceLine;
 use App\Models\System\Student;
@@ -65,9 +64,6 @@ class InvoiceGenerator
                 'line_total_minor'     => $sub,
             ]);
             $this->wallet->applyToInvoice($inv->fresh());
-            if (config('system.features.paymob', false) && $inv->fresh()->total_minor > 0) {
-                CreatePaymobPaymentLink::dispatch($inv);
-            }
             event(new InvoiceCreated($inv->fresh()));
             return $inv->fresh();
         });
@@ -102,9 +98,6 @@ class InvoiceGenerator
                 'line_total_minor' => $result->amountMinor,
             ]);
             $this->wallet->applyToInvoice($inv->fresh());
-            if (config('system.features.paymob', false) && $inv->fresh()->total_minor > 0) {
-                CreatePaymobPaymentLink::dispatch($inv);
-            }
             event(new InvoiceCreated($inv->fresh()));
             return $inv->fresh();
         });
@@ -157,9 +150,6 @@ class InvoiceGenerator
                 'line_total_minor' => $proResult->amountMinor,
             ]);
             $this->wallet->applyToInvoice($inv->fresh());
-            if (config('system.features.paymob', false) && $inv->fresh()->total_minor > 0) {
-                CreatePaymobPaymentLink::dispatch($inv);
-            }
             event(new InvoiceCreated($inv->fresh()));
             return $inv->fresh();
         });

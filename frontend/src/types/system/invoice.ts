@@ -1,6 +1,6 @@
 export type InvoiceStatus = 'draft' | 'sent' | 'paid' | 'overdue' | 'void'
 export type InvoiceType = 'advance' | 'monthly' | 'reactivation' | 'manual'
-export type PaymentMethod = 'paymob' | 'bank_transfer' | 'paypal' | 'vodafone_cash' | 'instapay' | 'wallet' | 'other'
+export type PaymentMethod = 'xpay' | 'bank_transfer' | 'paypal' | 'vodafone_cash' | 'instapay' | 'wallet' | 'other'
 
 export interface InvoiceSnapshot {
   student_name?: string | null
@@ -65,7 +65,7 @@ export interface Invoice {
   }
   lines?: InvoiceLine[]
   payments?: Payment[]
-  paymob_link?: { url: string; expires_at: string | null; is_active: boolean } | null
+  xpay_link?: { iframe_url: string; transaction_uuid: string | null; expires_at: string | null; is_active: boolean } | null
 }
 
 export interface Payment {

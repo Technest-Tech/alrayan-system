@@ -25,8 +25,8 @@ use App\Http\Controllers\System\MonthlyReportController;
 use App\Http\Controllers\System\NotificationController;
 use App\Http\Controllers\System\NotificationPreferencesController;
 use App\Http\Controllers\System\PaymentController;
-use App\Http\Controllers\System\PaymobIntegrationController;
-use App\Http\Controllers\System\PaymobWebhookController;
+use App\Http\Controllers\System\XPayIntegrationController;
+use App\Http\Controllers\System\XPayWebhookController;
 use App\Http\Controllers\System\PricingSettingsController;
 use App\Http\Controllers\System\SavedViewController;
 use App\Http\Controllers\System\SchedulePatternController;
@@ -235,7 +235,7 @@ Route::prefix('system')->name('system.')->group(function () {
         Route::middleware('system.can:invoices.download_pdf')
             ->get('/invoices/{invoice}/pdf', [InvoiceController::class, 'pdf'])->name('invoices.pdf');
         Route::middleware('system.can:invoices.resend_link')
-            ->post('/invoices/{invoice}/resend-paymob-link', [InvoiceController::class, 'resendPaymobLink'])->name('invoices.resend-paymob-link');
+            ->post('/invoices/{invoice}/resend-xpay-link', [InvoiceController::class, 'resendXPayLink'])->name('invoices.resend-xpay-link');
         Route::middleware('system.can:invoices.export')
             ->post('/invoices/export', [BillingExportController::class, '__invoke'])->name('invoices.export');
         Route::middleware('system.can:invoices.record_payment')
@@ -266,9 +266,9 @@ Route::prefix('system')->name('system.')->group(function () {
         });
         Route::middleware('system.can:settings.edit')->group(function () {
             Route::put('/settings/pricing',              [PricingSettingsController::class, 'update'])->name('settings.pricing.update');
-            Route::get('/integrations/paymob',           [PaymobIntegrationController::class, 'show'])->name('integrations.paymob');
-            Route::put('/integrations/paymob',           [PaymobIntegrationController::class, 'update'])->name('integrations.paymob.update');
-            Route::post('/integrations/paymob/test',     [PaymobIntegrationController::class, 'test'])->name('integrations.paymob.test');
+            Route::get('/integrations/xpay',           [XPayIntegrationController::class, 'show'])->name('integrations.xpay');
+            Route::put('/integrations/xpay',           [XPayIntegrationController::class, 'update'])->name('integrations.xpay.update');
+            Route::post('/integrations/xpay/test',     [XPayIntegrationController::class, 'test'])->name('integrations.xpay.test');
         });
 
         // ── SYS-06: Payroll, Bonuses & Quality ──────────────────────────────────
@@ -477,10 +477,11 @@ Route::prefix('system')->name('system.')->group(function () {
 
     }); // end auth:sanctum + system.active
 
-    // Paymob webhook — no Sanctum, HMAC-verified
-    Route::post('/system/webhooks/paymob', [PaymobWebhookController::class, 'handle'])->name('system.webhooks.paymob');
+    // XPay webhook — no Sanctum, verified by transaction lookup
+    Route::post('/system/webhooks/xpay', [XPayWebhookController::class, 'handle'])->name('system.webhooks.xpay');
 
     // Public invoice payment page — no auth, token-gated
-    Route::get('/pay/{token}',      [\App\Http\Controllers\System\PublicInvoiceController::class, 'show'])->name('pay.show');
-    Route::get('/pay/{token}/pdf',  [\App\Http\Controllers\System\PublicInvoiceController::class, 'pdf'])->name('pay.pdf');
+    Route::get('/pay/{token}',          [\App\Http\Controllers\System\PublicInvoiceController::class, 'show'])->name('pay.show');
+    Route::get('/pay/{token}/pdf',      [\App\Http\Controllers\System\PublicInvoiceController::class, 'pdf'])->name('pay.pdf');
+    Route::post('/pay/{token}/initiate', [\App\Http\Controllers\System\PublicInvoiceController::class, 'initiate'])->name('pay.initiate');
 });

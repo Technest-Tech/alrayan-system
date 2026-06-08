@@ -26,7 +26,7 @@ const STATUS_CONFIG: Record<string, { label: string; classes: string; dot: strin
 
 const PAYMENT_METHODS: { value: PaymentMethod; label: string }[] = [
   { value: 'bank_transfer', label: 'Bank Transfer' },
-  { value: 'paymob',        label: 'Paymob' },
+  { value: 'xpay',          label: 'XPay' },
   { value: 'paypal',        label: 'PayPal' },
   { value: 'vodafone_cash', label: 'Vodafone Cash' },
   { value: 'instapay',      label: 'InstaPay' },
@@ -560,22 +560,22 @@ export default function InvoiceDetailPage() {
         </div>
       )}
 
-      {/* Paymob link */}
-      {invoice.paymob_link && (
+      {/* XPay link */}
+      {invoice.xpay_link && (
         <div className="rounded-xl border border-gray-200 bg-white p-4 mb-5">
           <div className="flex items-center justify-between mb-2">
-            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Payment Link (Paymob)</p>
-            {invoice.paymob_link.is_active && (
+            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Payment Link (XPay)</p>
+            {invoice.xpay_link.is_active && (
               <span className="text-[10px] font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">Active</span>
             )}
           </div>
           <div className="flex items-center gap-2">
             <code className="text-xs text-gray-600 truncate flex-1 bg-gray-50 rounded-lg px-3 py-2 border border-gray-100">
-              {invoice.paymob_link.url}
+              {invoice.xpay_link.iframe_url}
             </code>
-            <CopyButton text={invoice.paymob_link.url} />
+            <CopyButton text={invoice.xpay_link.iframe_url} />
             <a
-              href={invoice.paymob_link.url}
+              href={invoice.xpay_link.iframe_url}
               target="_blank"
               rel="noreferrer"
               className="text-gray-400 hover:text-gray-600 transition-colors"
@@ -583,9 +583,9 @@ export default function InvoiceDetailPage() {
               <ExternalLink size={14} />
             </a>
           </div>
-          {invoice.paymob_link.expires_at && (
+          {invoice.xpay_link.expires_at && (
             <p className="text-xs text-gray-400 mt-1.5">
-              Expires {new Date(invoice.paymob_link.expires_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+              Expires {new Date(invoice.xpay_link.expires_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
             </p>
           )}
         </div>

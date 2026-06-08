@@ -9,7 +9,7 @@ import type { Payment, PaymentMethod } from '@/types/system/invoice'
 
 const METHOD_CONFIG: Record<PaymentMethod, { label: string; classes: string }> = {
   bank_transfer: { label: 'Bank Transfer',  classes: 'bg-blue-50 text-blue-700' },
-  paymob:        { label: 'Paymob',         classes: 'bg-purple-50 text-purple-700' },
+  xpay:          { label: 'XPay',           classes: 'bg-purple-50 text-purple-700' },
   paypal:        { label: 'PayPal',         classes: 'bg-indigo-50 text-indigo-700' },
   vodafone_cash: { label: 'Vodafone Cash',  classes: 'bg-red-50 text-red-700' },
   instapay:      { label: 'InstaPay',       classes: 'bg-emerald-50 text-emerald-700' },

@@ -3,38 +3,38 @@ import { useState, useEffect } from 'react'
 import { useQuery, useMutation } from '@tanstack/react-query'
 import { api } from '@/lib/system/api'
 import { PageHeader } from '@/components/system/primitives/PageHeader'
-import type { PaymobSettings } from '@/types/system/paymob'
+import type { XPaySettings } from '@/types/system/xpay'
 
-interface PaymobFormState {
+interface XPayFormState {
   api_key: string
-  integration_id: string
-  public_iframe_id: string
-  webhook_hmac_secret: string
+  community_id: string
+  variable_amount_id: string
+  redirect_url: string
 }
 
-export default function PaymobSettingsPage() {
+export default function XPaySettingsPage() {
   const { data: settings, isLoading } = useQuery({
-    queryKey: ['system', 'integrations', 'paymob'],
-    queryFn: () => api<PaymobSettings>('/integrations/paymob'),
+    queryKey: ['system', 'integrations', 'xpay'],
+    queryFn: () => api<XPaySettings>('/integrations/xpay'),
   })
 
   const { mutateAsync: save, isPending: saving } = useMutation({
-    mutationFn: (data: Partial<PaymobFormState & { integration_id: string; public_iframe_id: string }>) =>
-      api<PaymobSettings>('/integrations/paymob', {
+    mutationFn: (data: Partial<XPayFormState>) =>
+      api<XPaySettings>('/integrations/xpay', {
         method: 'PUT',
         body: JSON.stringify(data),
       }),
   })
 
   const { mutateAsync: testConnection, isPending: testing } = useMutation({
-    mutationFn: () => api<{ ok: boolean; message: string }>('/integrations/paymob/test', { method: 'POST' }),
+    mutationFn: () => api<{ ok: boolean; message: string }>('/integrations/xpay/test', { method: 'POST' }),
   })
 
-  const [form, setForm] = useState<PaymobFormState>({
+  const [form, setForm] = useState<XPayFormState>({
     api_key: '',
-    integration_id: '',
-    public_iframe_id: '',
-    webhook_hmac_secret: '',
+    community_id: '',
+    variable_amount_id: '',
+    redirect_url: '',
   })
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
   const [testResult, setTestResult] = useState<{ ok: boolean; message: string } | null>(null)
@@ -43,8 +43,9 @@ export default function PaymobSettingsPage() {
     if (settings) {
       setForm(f => ({
         ...f,
-        integration_id: settings.integration_id ?? '',
-        public_iframe_id: settings.public_iframe_id ?? '',
+        community_id:       settings.community_id ?? '',
+        variable_amount_id: settings.variable_amount_id ?? '',
+        redirect_url:       settings.redirect_url ?? '',
       }))
     }
   }, [settings])
@@ -52,17 +53,15 @@ export default function PaymobSettingsPage() {
   const handleSave = async () => {
     setMessage(null)
     try {
-      const payload: Record<string, string> = {
-        integration_id: form.integration_id,
-        public_iframe_id: form.public_iframe_id,
+      const payload: Partial<XPayFormState> = {
+        community_id:       form.community_id,
+        variable_amount_id: form.variable_amount_id,
+        redirect_url:       form.redirect_url || undefined,
       }
       if (form.api_key) payload.api_key = form.api_key
-      if (form.webhook_hmac_secret) payload.webhook_hmac_secret = form.webhook_hmac_secret
-
       await save(payload)
-      setMessage({ type: 'success', text: 'Paymob settings saved.' })
-      // Clear secret fields after save
-      setForm(f => ({ ...f, api_key: '', webhook_hmac_secret: '' }))
+      setMessage({ type: 'success', text: 'XPay settings saved.' })
+      setForm(f => ({ ...f, api_key: '' }))
     } catch (e: unknown) {
       setMessage({ type: 'error', text: e instanceof Error ? e.message : 'Failed to save.' })
     }
@@ -85,8 +84,8 @@ export default function PaymobSettingsPage() {
   return (
     <>
       <PageHeader
-        title="Paymob"
-        description="Online payment gateway integration. Webhook is verified by HMAC-SHA512."
+        title="XPay"
+        description="Online card payment gateway. Students pay from their invoice link — no HMAC secret required."
       />
       <div className="max-w-lg space-y-6">
         {message && (
@@ -111,38 +110,39 @@ export default function PaymobSettingsPage() {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Integration ID</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Community ID</label>
           <input
-            value={form.integration_id}
-            onChange={e => setForm(f => ({ ...f, integration_id: e.target.value }))}
+            value={form.community_id}
+            onChange={e => setForm(f => ({ ...f, community_id: e.target.value }))}
             className="w-full rounded-xl border border-gray-300 px-3 py-2 text-sm"
-            placeholder="e.g. 1234567"
+            placeholder="e.g. 52XDO2m"
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Iframe ID</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Variable Amount ID</label>
           <input
-            value={form.public_iframe_id}
-            onChange={e => setForm(f => ({ ...f, public_iframe_id: e.target.value }))}
+            value={form.variable_amount_id}
+            onChange={e => setForm(f => ({ ...f, variable_amount_id: e.target.value }))}
             className="w-full rounded-xl border border-gray-300 px-3 py-2 text-sm"
-            placeholder="e.g. 890123"
+            placeholder="e.g. 2674"
           />
         </div>
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
-            Webhook HMAC secret
-            <span className="ml-1 text-xs font-normal text-gray-400">(leave blank to keep current)</span>
+            Redirect URL
+            <span className="ml-1 text-xs font-normal text-gray-400">(optional override)</span>
           </label>
           <input
-            type="password"
-            value={form.webhook_hmac_secret}
-            onChange={e => setForm(f => ({ ...f, webhook_hmac_secret: e.target.value }))}
+            value={form.redirect_url}
+            onChange={e => setForm(f => ({ ...f, redirect_url: e.target.value }))}
             className="w-full rounded-xl border border-gray-300 px-3 py-2 text-sm"
-            placeholder="Paste new HMAC secret to update"
-            autoComplete="off"
+            placeholder="https://alrayan-academy.com/xpay-return"
           />
+          <p className="mt-1 text-xs text-gray-400">
+            Configure this same URL in your XPay dashboard under the API Payment template.
+          </p>
         </div>
 
         {settings?.webhook_url && (
@@ -161,7 +161,7 @@ export default function PaymobSettingsPage() {
               </button>
             </div>
             <p className="mt-1 text-xs text-gray-400">
-              Configure this URL in your Paymob dashboard under Transaction Notifications.
+              Configure this URL in your XPay dashboard under the API Payment template → Callback URL.
             </p>
           </div>
         )}
