@@ -1,21 +1,13 @@
 'use client'
 
-import { useEffect } from 'react'
+import { Suspense, useEffect } from 'react'
 import { useSearchParams } from 'next/navigation'
 
-/**
- * XPay redirects to this page inside the payment iframe after the user
- * completes (or cancels) a card payment.
- *
- * It immediately fires a postMessage to the parent window so the
- * /pay/[token] page can close the overlay and refresh the invoice.
- */
-export default function XPayReturnPage() {
+function XPayReturnContent() {
   const params = useSearchParams()
 
   useEffect(() => {
     const status = params.get('transaction_status') ?? params.get('status') ?? 'UNKNOWN'
-
     if (window.parent && window.parent !== window) {
       window.parent.postMessage({ type: 'xpay_result', status }, '*')
     }
@@ -50,5 +42,13 @@ export default function XPayReturnPage() {
         )}
       </div>
     </div>
+  )
+}
+
+export default function XPayReturnPage() {
+  return (
+    <Suspense>
+      <XPayReturnContent />
+    </Suspense>
   )
 }
