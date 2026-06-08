@@ -34,10 +34,11 @@ class InvoiceDetailResource extends JsonResource
             ]),
             'lines'       => InvoiceLineResource::collection($this->whenLoaded('lines')),
             'payments'    => PaymentResource::collection($this->whenLoaded('payments')),
-            'paymob_link' => $this->whenLoaded('paymobLink', fn() => $this->paymobLink ? [
-                'url'        => $this->paymobLink->payment_url,
-                'expires_at' => $this->paymobLink->expires_at?->toISOString(),
-                'is_active'  => $this->paymobLink->is_active,
+            'xpay_link' => $this->whenLoaded('xpayLink', fn() => $this->xpayLink ? [
+                'iframe_url'       => $this->xpayLink->iframe_url,
+                'transaction_uuid' => $this->xpayLink->transaction_uuid,
+                'expires_at'       => $this->xpayLink->expires_at?->toISOString(),
+                'is_active'        => $this->xpayLink->is_active,
             ] : null),
         ];
     }

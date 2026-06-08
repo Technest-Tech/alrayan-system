@@ -4,35 +4,15 @@ import { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { ChevronDown, Loader2, Sparkles } from 'lucide-react'
+import { Loader2, Sparkles } from 'lucide-react'
+import { sendGAEvent } from '@next/third-parties/google'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { FormField } from './FormField'
 import { PhoneWithCountry } from './PhoneWithCountry'
 import { SuccessState } from './SuccessState'
-import { courses } from '@/content/courses'
 
-const COUNTRIES = [
-  'United States', 'United Kingdom', 'Canada', 'Australia', 'Germany',
-  'France', 'Netherlands', 'Belgium', 'Sweden', 'Norway', 'Denmark',
-  'UAE', 'Saudi Arabia', 'Qatar', 'Kuwait', 'Bahrain', 'Malaysia',
-  'Pakistan', 'Egypt', 'Turkey', 'South Africa', 'Other',
-]
-
-const PREFERRED_TIMES = [
-  { value: 'early-morning', label: 'Early Morning (6–9 AM)' },
-  { value: 'morning', label: 'Morning (9 AM–12 PM)' },
-  { value: 'afternoon', label: 'Afternoon (12–4 PM)' },
-  { value: 'evening', label: 'Evening (4–8 PM)' },
-  { value: 'night', label: 'Night (8 PM+)' },
-]
-
-const AGE_GROUPS = [
-  { value: 'kid-5-8', label: 'Child (5–8)' },
-  { value: 'kid-9-12', label: 'Child (9–12)' },
-  { value: 'teen', label: 'Teen (13–17)' },
-  { value: 'adult', label: 'Adult (18+)' },
-] as const
+const emptyToUndef = (v: unknown) => (v === '' ? undefined : v)
 
 // Empty-string → undefined so an opened-then-closed optional section doesn't
 // block submission (z.enum(...).optional() rejects "" but accepts undefined).
@@ -63,7 +43,6 @@ export function TrialBookingForm() {
   const [status, setStatus] = useState<Status>('idle')
   const [reference, setReference] = useState('')
   const [errorMsg, setErrorMsg] = useState('')
-  const [showDetails, setShowDetails] = useState(false)
 
   const {
     register,
@@ -108,6 +87,9 @@ export function TrialBookingForm() {
       const json = (await res.json()) as { reference: string }
       setReference(json.reference)
       setStatus('success')
+      sendGAEvent('event', 'book_trial', {
+        reference: json.reference,
+      })
     } catch (e) {
       setStatus('error')
       setErrorMsg(e instanceof Error ? e.message : 'Something went wrong. Please try again.')
@@ -175,108 +157,18 @@ export function TrialBookingForm() {
         />
       </div>
 
-      <button
-        type="button"
-        onClick={() => setShowDetails((v) => !v)}
-        aria-expanded={showDetails}
-        className="flex w-full items-center justify-between rounded-xl border border-border-soft bg-white/50 px-4 py-3 text-sm font-medium text-primary transition-colors hover:bg-white"
-      >
-        <span className="flex items-center gap-2">
-          <span className="inline-flex size-5 items-center justify-center rounded-full bg-secondary/15 text-[10px] font-bold text-secondary">+</span>
-          Add details to speed up scheduling <span className="text-muted-foreground font-normal">(optional)</span>
-        </span>
-        <ChevronDown
-          className={`size-4 text-muted-foreground transition-transform ${showDetails ? 'rotate-180' : ''}`}
-          aria-hidden="true"
-        />
-      </button>
+      <FormField
+        id="message"
+        label="Tell us a bit about what you’re looking for"
+        as="textarea"
+        placeholder="e.g. course interest (Tajweed / Hifz / Arabic…), age group, preferred class time, current level, goals…"
+        rows={5}
+        error={errors.message?.message}
+        disabled={isLoading}
+        {...register('message')}
+      />
 
-      {showDetails && (
-        <div className="space-y-5 rounded-2xl border border-border-soft bg-white/40 p-4 sm:p-5">
-          <div className="grid sm:grid-cols-2 gap-5">
-            <FormField
-              id="country"
-              label="Country"
-              as="select"
-              error={errors.country?.message}
-              disabled={isLoading}
-              {...register('country')}
-            >
-              <option value="">Select your country…</option>
-              {COUNTRIES.map((c) => (
-                <option key={c} value={c}>
-                  {c}
-                </option>
-              ))}
-            </FormField>
-            <FormField
-              id="courseInterest"
-              label="Course of Interest"
-              as="select"
-              error={errors.courseInterest?.message}
-              disabled={isLoading}
-              {...register('courseInterest')}
-            >
-              <option value="">Select a course…</option>
-              {courses.map((c) => (
-                <option key={c.slug} value={c.title}>
-                  {c.title}
-                </option>
-              ))}
-            </FormField>
-          </div>
-
-          <fieldset>
-            <legend className="text-sm font-medium text-primary mb-2">Age Group</legend>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-              {AGE_GROUPS.map(({ value, label }) => (
-                <label
-                  key={value}
-                  className="flex items-center justify-center gap-2 cursor-pointer rounded-xl border border-border-soft bg-white px-3 py-2.5 text-xs sm:text-sm text-primary has-[:checked]:border-secondary has-[:checked]:bg-secondary/5 has-[:checked]:shadow-sm hover:border-secondary/50 transition-all"
-                >
-                  <input
-                    type="radio"
-                    value={value}
-                    disabled={isLoading}
-                    className="accent-secondary"
-                    {...register('ageGroup')}
-                  />
-                  {label}
-                </label>
-              ))}
-            </div>
-          </fieldset>
-
-          <FormField
-            id="preferredTime"
-            label="Preferred Class Time"
-            as="select"
-            error={errors.preferredTime?.message}
-            disabled={isLoading}
-            {...register('preferredTime')}
-          >
-            <option value="">Any time works</option>
-            {PREFERRED_TIMES.map(({ value, label }) => (
-              <option key={value} value={value}>
-                {label}
-              </option>
-            ))}
-          </FormField>
-
-          <FormField
-            id="message"
-            label="Anything you'd like us to know?"
-            as="textarea"
-            placeholder="Current level, goals, scheduling constraints…"
-            rows={3}
-            error={errors.message?.message}
-            disabled={isLoading}
-            {...register('message')}
-          />
-
-          <input type="hidden" {...register('timezone')} />
-        </div>
-      )}
+      <input type="hidden" {...register('timezone')} />
 
       {status === 'error' && (
         <div

@@ -109,7 +109,7 @@ export function Footer() {
                 </li>
                 <li className="flex items-center gap-2.5">
                   <MapPin className="size-4 shrink-0" aria-hidden="true" />
-                  Online — Worldwide
+                  {siteConfig.address}
                 </li>
               </ul>
 

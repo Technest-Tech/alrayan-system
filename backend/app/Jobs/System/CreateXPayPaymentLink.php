@@ -3,16 +3,16 @@
 namespace App\Jobs\System;
 
 use App\Models\System\Invoice;
-use App\Models\System\PaymobPaymentLink;
-use App\Services\Integrations\Paymob\FakePaymobClient;
-use App\Services\Integrations\Paymob\PaymobClient;
+use App\Models\System\XPayPaymentLink;
+use App\Services\Integrations\XPay\FakeXPayClient;
+use App\Services\Integrations\XPay\XPayClient;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 
-class CreatePaymobPaymentLink implements ShouldQueue
+class CreateXPayPaymentLink implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
@@ -23,12 +23,14 @@ class CreatePaymobPaymentLink implements ShouldQueue
 
     public function handle(): void
     {
-        if (PaymobPaymentLink::where('invoice_id', $this->invoice->id)->where('is_active', true)->exists()) {
+        if (XPayPaymentLink::where('invoice_id', $this->invoice->id)->where('is_active', true)->exists()) {
             return; // idempotent
         }
-        $client = config('system.features.paymob', false)
-            ? app(PaymobClient::class)
-            : app(FakePaymobClient::class);
+
+        $client = config('system.features.xpay', false)
+            ? app(XPayClient::class)
+            : app(FakeXPayClient::class);
+
         $client->createPaymentLink($this->invoice);
     }
 }

@@ -60,8 +60,8 @@ use App\Policies\System\TeacherNotePolicy;
 use App\Policies\System\TeacherPolicy;
 use App\Policies\System\WhatsAppGroupPolicy;
 use App\Services\BookingReferenceGenerator;
-use App\Services\Integrations\Paymob\FakePaymobClient;
-use App\Services\Integrations\Paymob\PaymobClient;
+use App\Services\Integrations\XPay\FakeXPayClient;
+use App\Services\Integrations\XPay\XPayClient;
 use App\Services\Integrations\Wassender\FakeWassenderClient;
 use App\Services\Integrations\Wassender\WassenderClient;
 use App\Services\Integrations\Zoom\FakeZoomClient;
@@ -96,12 +96,12 @@ class AppServiceProvider extends ServiceProvider
             return new FakeZoomClient();
         });
 
-        // Paymob: real client in production, fake otherwise
-        $this->app->bind(PaymobClient::class, function ($app) {
-            if (config('system.features.paymob', false)) {
-                return new PaymobClient();
+        // XPay: real client when enabled, fake otherwise
+        $this->app->bind(XPayClient::class, function ($app) {
+            if (config('system.features.xpay', false)) {
+                return new XPayClient();
             }
-            return new FakePaymobClient();
+            return new FakeXPayClient();
         });
 
         // Wassender: DB setting takes priority, env var as fallback

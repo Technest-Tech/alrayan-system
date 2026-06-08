@@ -52,9 +52,9 @@ class Invoice extends Model
         return $this->hasMany(Payment::class);
     }
 
-    public function paymobLink()
+    public function xpayLink()
     {
-        return $this->hasOne(PaymobPaymentLink::class)->where('is_active', true)->latest();
+        return $this->hasOne(XPayPaymentLink::class)->where('is_active', true)->latest();
     }
 
     public function createdBy()
