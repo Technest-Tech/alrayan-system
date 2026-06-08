@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Http;
 
 class XPayClient
 {
-    private const PRODUCTION = 'https://xpay.app/api/v1';
+    private const PRODUCTION = 'https://community.xpay.app/api/v1';
     private const STAGING    = 'https://staging.xpay.app/api/v1';
 
     private function base(): string

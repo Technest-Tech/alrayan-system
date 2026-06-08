@@ -478,7 +478,7 @@ Route::prefix('system')->name('system.')->group(function () {
     }); // end auth:sanctum + system.active
 
     // XPay webhook — no Sanctum, verified by transaction lookup
-    Route::post('/system/webhooks/xpay', [XPayWebhookController::class, 'handle'])->name('system.webhooks.xpay');
+    Route::post('/webhooks/xpay', [XPayWebhookController::class, 'handle'])->name('webhooks.xpay');
 
     // Public invoice payment page — no auth, token-gated
     Route::get('/pay/{token}',          [\App\Http\Controllers\System\PublicInvoiceController::class, 'show'])->name('pay.show');
