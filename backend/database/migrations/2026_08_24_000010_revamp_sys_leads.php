@@ -31,6 +31,11 @@ return new class extends Migration
         // Step 1: Expand ENUM to include both old and new values so updates won't be rejected
         if ($driver === 'mysql' || $driver === 'mariadb') {
             DB::statement("ALTER TABLE sys_leads MODIFY COLUMN status ENUM('new','contacted','trial_booked','trial_completed','enrolled','lost','new_lead','interested','waiting_for_trial','waiting_for_payment','closed','not_interested') NOT NULL DEFAULT 'new'");
+        } elseif ($driver === 'sqlite') {
+            // SQLite enforces enums via a CHECK constraint and cannot ALTER it in place.
+            // Relax the column to a plain string so the new status values are accepted,
+            // keeping the test schema in parity with production.
+            Schema::table('sys_leads', fn (Blueprint $t) => $t->string('status')->default('new_lead')->change());
         }
 
         // Step 2: Migrate old status values to new names

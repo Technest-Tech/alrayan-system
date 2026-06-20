@@ -146,7 +146,7 @@ export default async function CountryPage({ params }: Props) {
               Why {country.shortName} Families Choose Us
             </p>
             <h2 id="why-heading" className="heading-xl font-heading text-primary">
-              The Alrayan Difference
+              The Azhary Difference
             </h2>
           </div>
 

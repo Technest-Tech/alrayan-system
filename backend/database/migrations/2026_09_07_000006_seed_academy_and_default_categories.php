@@ -32,14 +32,14 @@ return new class extends Migration
 
         // Academy info settings
         $academySettings = [
-            'academy.name'             => 'Alrayan Academy',
+            'academy.name'             => 'Azhary',
             'academy.logo_path'        => null,
             'academy.support_email'    => '',
             'academy.support_phone'    => '',
             'academy.support_whatsapp' => '',
             'academy.address'          => '',
             'academy.default_timezone' => 'Africa/Cairo',
-            'academy.footer_text'      => 'Thank you for choosing Alrayan Academy.',
+            'academy.footer_text'      => 'Thank you for choosing Azhary.',
             'certificate.prefix'       => 'CRT',
             'reports.base_currency'    => 'EGP',
             'sentry.dsn'               => '',

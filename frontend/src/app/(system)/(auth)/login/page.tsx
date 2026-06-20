@@ -2,7 +2,7 @@ import { Suspense } from 'react'
 import Image from 'next/image'
 import { LoginForm } from '@/components/system/auth/LoginForm'
 
-export const metadata = { title: 'Sign in — Alrayan Academy' }
+export const metadata = { title: 'Sign in — Azhary' }
 
 export default function LoginPage() {
   return (
@@ -55,7 +55,7 @@ export default function LoginPage() {
           <div>
             <Image
               src="/logo/alrayan-white.svg"
-              alt="Alrayan Academy"
+              alt="Azhary"
               width={200}
               height={52}
               priority
@@ -104,7 +104,7 @@ export default function LoginPage() {
 
           {/* Bottom badge */}
           <div className="text-xs" style={{ color: 'rgba(255,255,255,0.25)' }}>
-            © {new Date().getFullYear()} Alrayan Academy · All rights reserved
+            © {new Date().getFullYear()} Azhary · All rights reserved
           </div>
         </div>
       </div>
@@ -128,7 +128,7 @@ export default function LoginPage() {
             <div className="flex justify-center mb-8">
               <Image
                 src="/logo/alrayan-full.svg"
-                alt="Alrayan Academy"
+                alt="Azhary"
                 width={180}
                 height={47}
                 priority

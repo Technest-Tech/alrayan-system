@@ -13,6 +13,7 @@ import { useCourses } from '@/hooks/system/useCourses'
 import { useTeachers } from '@/hooks/system/useTeachers'
 import { ApiError } from '@/lib/system/api'
 import type { Student } from '@/types/system/student'
+import { useI18n } from '@/lib/system/i18n'
 
 /* ─── EntityCombobox ───────────────────────────────── */
 function EntityCombobox({
@@ -29,6 +30,7 @@ function EntityCombobox({
   const containerRef        = useRef<HTMLDivElement>(null)
   const searchRef           = useRef<HTMLInputElement>(null)
 
+  const { t } = useI18n()
   const selected = items.find((i) => i.id === value)
   const filtered = items.filter((i) => i.name.toLowerCase().includes(search.toLowerCase()))
 
@@ -63,7 +65,7 @@ function EntityCombobox({
             style={{ borderColor: 'rgb(var(--border-default,229 233 240))' }}>
             <Search size={13} className="opacity-40 shrink-0" />
             <input ref={searchRef} value={search} onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search…" className="flex-1 bg-transparent text-sm outline-none" />
+              placeholder={t('common.search')} className="flex-1 bg-transparent text-sm outline-none" />
           </div>
           <ul className="max-h-52 overflow-y-auto py-1">
             <li onMouseDown={(e) => { e.preventDefault(); onChange(undefined); setOpen(false) }}
@@ -72,7 +74,7 @@ function EntityCombobox({
               {noneLabel}
             </li>
             {filtered.length === 0 && items.length > 0 && (
-              <li className="px-3 py-2 text-sm opacity-40">No results</li>
+              <li className="px-3 py-2 text-sm opacity-40">{t('common.noResults')}</li>
             )}
             {filtered.map((item) => (
               <li key={item.id}
@@ -106,7 +108,6 @@ type EnrollmentValues = z.infer<typeof enrollmentSchema>
 
 const CURRENCIES = ['USD', 'EGP', 'GBP', 'EUR', 'SAR', 'AED']
 const DURATIONS  = [30, 45, 60]
-const DAY_NAMES  = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
 const TIME_OPTIONS = Array.from({ length: 48 }, (_, i) => {
   const h = Math.floor(i / 2).toString().padStart(2, '0')
@@ -154,6 +155,11 @@ function TimetableStep({
   onPatternsChange: (p: PatternEntry[]) => void
   onEffectiveDateChange: (d: string) => void
 }) {
+  const { t } = useI18n()
+  const DAY_NAMES = [
+    t('days.sun'), t('days.mon'), t('days.tue'), t('days.wed'),
+    t('days.thu'), t('days.fri'), t('days.sat'),
+  ]
   const targetPerWeek = Math.round(sessionsPerMonth / 4)
   const countOk = patterns.length === targetPerWeek
 
@@ -176,11 +182,11 @@ function TimetableStep({
     <div className="space-y-4">
       <div className="rounded-xl p-4 space-y-4"
         style={{ background: '#fff', border: '1px solid rgb(var(--border-default,229 233 240))' }}>
-        <p className="text-[11px] font-semibold uppercase tracking-widest opacity-40">Weekly schedule</p>
+        <p className="text-[11px] font-semibold uppercase tracking-widest opacity-40">{t('students.weeklySchedule')}</p>
 
         {/* Effective from */}
         <div>
-          <label className="block text-xs font-medium mb-1.5 opacity-70">Start from</label>
+          <label className="block text-xs font-medium mb-1.5 opacity-70">{t('students.startFrom')}</label>
           <input type="date" className={inp} style={inpStyle}
             value={effectiveDate}
             min={new Date().toISOString().split('T')[0]}
@@ -189,7 +195,7 @@ function TimetableStep({
 
         {/* Day chips */}
         <div>
-          <label className="block text-xs font-medium mb-2 opacity-70">Days of the week</label>
+          <label className="block text-xs font-medium mb-2 opacity-70">{t('students.daysOfWeek')}</label>
           <div className="flex gap-1.5 flex-wrap">
             {DAY_NAMES.map((name, i) => {
               const active = patterns.some(p => p.day_of_week === i)
@@ -232,14 +238,14 @@ function TimetableStep({
         )}
 
         {patterns.length === 0 && (
-          <p className="text-xs text-center py-2 opacity-40">Select days above to set class times</p>
+          <p className="text-xs text-center py-2 opacity-40">{t('students.selectDaysHint')}</p>
         )}
       </div>
 
       {/* Count hint */}
       <div className="text-xs px-1" style={{ color: countOk ? 'rgb(14 124 90)' : 'rgb(180 83 9)' }}>
         {patterns.length} day{patterns.length !== 1 ? 's' : ''}/week × 4 = {patterns.length * 4} sessions/month
-        {countOk ? ' ✓' : ` (target: ~${sessionsPerMonth})`}
+        {countOk ? ' ✓' : ` (${t('students.sessionsTarget')} ~${sessionsPerMonth})`}
       </div>
     </div>
   )
@@ -253,6 +259,7 @@ interface ActivateStudentDialogProps {
 }
 
 export function ActivateStudentDialog({ student, open, onOpenChange }: ActivateStudentDialogProps) {
+  const { t } = useI18n()
   const activate  = useActivateStudent(student.id)
   const replace   = useReplaceSchedulePatterns()
   const { data: courses  = [] } = useCourses()
@@ -345,12 +352,12 @@ export function ActivateStudentDialog({ student, open, onOpenChange }: ActivateS
               </div>
               <div className="flex-1">
                 <DialogPrimitive.Title className="font-semibold text-[rgb(11,31,58)] leading-none">
-                  {step === 1 ? `Activate ${student.name}` : 'Set Weekly Timetable'}
+                  {step === 1 ? `${t('common.activate')} ${student.name}` : t('students.weeklySchedule')}
                 </DialogPrimitive.Title>
                 <DialogPrimitive.Description className="text-xs mt-0.5" style={{ color: 'rgb(90 100 112)' }}>
                   {step === 1
-                    ? 'Step 1 of 2 — enrollment & pricing'
-                    : 'Step 2 of 2 — recurring class schedule'}
+                    ? t('students.activateStep1')
+                    : t('students.activateStep2')}
                 </DialogPrimitive.Description>
               </div>
               <StepDots step={step} />
@@ -367,42 +374,42 @@ export function ActivateStudentDialog({ student, open, onOpenChange }: ActivateS
                 <form id="activate-step1" onSubmit={handleSubmit(onStep1Next)}
                   className="flex-1 overflow-y-auto px-6 py-5 space-y-4">
 
-                  <Section title="Enrollment">
+                  <Section title={t('students.sectionEnrollment')}>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      <Field label="Course">
+                      <Field label={t('common.course')}>
                         <Controller name="course_id" control={control} render={({ field }) => (
                           <EntityCombobox
                             items={courses.map((c) => ({ id: c.id, name: c.name }))}
                             value={field.value as number | undefined}
                             onChange={field.onChange}
-                            placeholder="Select course…"
-                            noneLabel="No course"
+                            placeholder={t('students.selectCourse')}
+                            noneLabel={t('students.noCourse')}
                           />
                         )} />
                       </Field>
 
-                      <Field label="Teacher">
+                      <Field label={t('common.teacher')}>
                         <Controller name="assigned_teacher_id" control={control} render={({ field }) => (
                           <EntityCombobox
-                            items={teachers.map((t) => ({ id: t.id, name: t.name ?? `Teacher #${t.id}` }))}
+                            items={teachers.map((tc) => ({ id: tc.id, name: tc.name ?? `Teacher #${tc.id}` }))}
                             value={field.value as number | undefined}
                             onChange={field.onChange}
-                            placeholder="Assign teacher…"
-                            noneLabel="Assign later"
+                            placeholder={t('students.assignTeacher')}
+                            noneLabel={t('students.assignLater')}
                           />
                         )} />
                       </Field>
 
-                      <Field label="Sessions / month" required error={errors.sessions_per_month}>
+                      <Field label={t('students.sessionsPerMonth')} required error={errors.sessions_per_month}>
                         <input type="number" min="1" className={inp} style={inpStyle} {...register('sessions_per_month')} />
                       </Field>
 
-                      <Field label="Session duration" required error={errors.session_duration_min}>
+                      <Field label={t('students.sessionDuration')} required error={errors.session_duration_min}>
                         <Controller name="session_duration_min" control={control} render={({ field }) => (
                           <Select value={String(field.value ?? 60)} onValueChange={(v) => field.onChange(Number(v))}>
                             <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
                             <SelectContent>
-                              {DURATIONS.map((d) => <SelectItem key={d} value={String(d)}>{d} minutes</SelectItem>)}
+                              {DURATIONS.map((d) => <SelectItem key={d} value={String(d)}>{d} {t('common.minutes')}</SelectItem>)}
                             </SelectContent>
                           </Select>
                         )} />
@@ -410,9 +417,9 @@ export function ActivateStudentDialog({ student, open, onOpenChange }: ActivateS
                     </div>
                   </Section>
 
-                  <Section title="Pricing">
+                  <Section title={t('students.sectionPricing')}>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      <Field label="Currency" required error={errors.currency}>
+                      <Field label={t('common.currency')} required error={errors.currency}>
                         <Controller name="currency" control={control} render={({ field }) => (
                           <Select value={field.value ?? 'USD'} onValueChange={field.onChange}>
                             <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
@@ -422,15 +429,15 @@ export function ActivateStudentDialog({ student, open, onOpenChange }: ActivateS
                           </Select>
                         )} />
                       </Field>
-                      <Field label="Monthly price" error={errors.monthly_price_minor}>
+                      <Field label={t('students.monthlyPrice')} error={errors.monthly_price_minor}>
                         <input type="number" min="0" className={inp} style={inpStyle} {...register('monthly_price_minor')} />
                       </Field>
                     </div>
                   </Section>
 
                   <Section title="Note">
-                    <Field label="Activation note">
-                      <textarea rows={2} className={inp} style={inpStyle} placeholder="Optional…" {...register('note')} />
+                    <Field label={t('students.activationNote')}>
+                      <textarea rows={2} className={inp} style={inpStyle} placeholder={t('common.optional')} {...register('note')} />
                     </Field>
                   </Section>
                 </form>
@@ -440,12 +447,12 @@ export function ActivateStudentDialog({ student, open, onOpenChange }: ActivateS
                   <DialogPrimitive.Close
                     className="px-4 py-2 rounded-lg text-sm font-medium border hover:bg-black/5 transition-colors"
                     style={{ borderColor: 'rgb(var(--border-default,229 233 240))' }}>
-                    Cancel
+                    {t('common.cancel')}
                   </DialogPrimitive.Close>
                   <button type="submit" form="activate-step1"
                     className="inline-flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-semibold text-white transition-opacity hover:opacity-90"
                     style={{ background: 'rgb(14 124 90)' }}>
-                    Next
+                    {t('common.next')}
                     <ChevronRight size={14} />
                   </button>
                 </div>
@@ -471,20 +478,20 @@ export function ActivateStudentDialog({ student, open, onOpenChange }: ActivateS
                   <button onClick={() => setStep(1)} disabled={isBusy}
                     className="px-4 py-2 rounded-lg text-sm font-medium border hover:bg-black/5 transition-colors disabled:opacity-50"
                     style={{ borderColor: 'rgb(var(--border-default,229 233 240))' }}>
-                    ← Back
+                    ← {t('common.back')}
                   </button>
                   <div className="flex-1" />
                   <button onClick={() => activateAndClose(true)} disabled={isBusy}
                     className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium border hover:bg-black/5 transition-colors disabled:opacity-50"
                     style={{ borderColor: 'rgb(var(--border-default,229 233 240))', color: 'rgb(90 100 112)' }}>
                     <SkipForward size={13} />
-                    Set later
+                    {t('students.setLater')}
                   </button>
                   <button onClick={() => activateAndClose(false)} disabled={isBusy || patterns.length === 0}
                     className="inline-flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-semibold text-white disabled:opacity-60 transition-opacity hover:opacity-90"
                     style={{ background: 'rgb(14 124 90)' }}>
                     <PlayCircle size={14} />
-                    {isBusy ? 'Activating…' : 'Activate & Set Schedule'}
+                    {isBusy ? t('students.activating') : t('students.activateAndSetSchedule')}
                   </button>
                 </div>
               </>

@@ -5,6 +5,7 @@ import { Controller } from 'react-hook-form'
 import { CheckCircle2, Loader2, UserRound, PlusCircle } from 'lucide-react'
 import { WhatsAppInput } from './WhatsAppInput'
 import { useSearchGuardians } from '@/hooks/system/useGuardians'
+import { useI18n } from '@/lib/system/i18n'
 import type { Guardian } from '@/types/system/guardian'
 
 const STATUS_COLOUR: Record<string, string> = {
@@ -27,6 +28,7 @@ const inp      = 'w-full px-3 py-2 rounded-lg border text-sm outline-none focus:
 const inpStyle = { borderColor: 'rgb(var(--border-default,229 233 240))', background: '#fff' }
 
 export function GuardianSelector({ control, setValue, syncDialCode }: GuardianSelectorProps) {
+  const { t } = useI18n()
   const [waValue, setWaValue]               = useState('')
   const [debouncedWa, setDebouncedWa]       = useState('')
   const [linkedGuardian, setLinkedGuardian] = useState<Guardian | null>(null)
@@ -34,8 +36,8 @@ export function GuardianSelector({ control, setValue, syncDialCode }: GuardianSe
   const [inputKey, setInputKey]             = useState(0)
 
   useEffect(() => {
-    const t = setTimeout(() => setDebouncedWa(waValue.trim()), 450)
-    return () => clearTimeout(t)
+    const tc = setTimeout(() => setDebouncedWa(waValue.trim()), 450)
+    return () => clearTimeout(tc)
   }, [waValue])
 
   const { data: results = [], isFetching } = useSearchGuardians(debouncedWa)
@@ -99,7 +101,7 @@ export function GuardianSelector({ control, setValue, syncDialCode }: GuardianSe
             onClick={unlinkGuardian}
             className="text-xs opacity-40 hover:opacity-100 underline shrink-0"
           >
-            change
+            {t('students.change')}
           </button>
         </div>
       ) : (
@@ -107,7 +109,7 @@ export function GuardianSelector({ control, setValue, syncDialCode }: GuardianSe
           {/* ── Parent WhatsApp — identical to adult WhatsApp field ── */}
           <div>
             <label className="block text-xs font-medium mb-1.5 opacity-70">
-              Parent WhatsApp <span className="text-red-500">*</span>
+              {t('students.parentWhatsApp')} <span className="text-red-500">*</span>
             </label>
             <WhatsAppInput
               key={inputKey}
@@ -119,7 +121,7 @@ export function GuardianSelector({ control, setValue, syncDialCode }: GuardianSe
             {isFetching && (
               <p className="flex items-center gap-1.5 text-[11px] opacity-40 mt-1.5">
                 <Loader2 size={11} className="animate-spin" />
-                Searching…
+                {t('common.searching')}
               </p>
             )}
           </div>
@@ -130,7 +132,7 @@ export function GuardianSelector({ control, setValue, syncDialCode }: GuardianSe
               className="rounded-xl border p-3 space-y-2"
               style={{ borderColor: 'rgb(var(--border-default,229 233 240))', background: '#fafafa' }}
             >
-              <p className="text-[11px] font-semibold opacity-40 uppercase tracking-widest">Existing parent found</p>
+              <p className="text-[11px] font-semibold opacity-40 uppercase tracking-widest">{t('students.existingParentFound')}</p>
               <div className="flex items-start gap-3">
                 <div
                   className="flex items-center justify-center w-8 h-8 rounded-lg shrink-0"
@@ -163,7 +165,7 @@ export function GuardianSelector({ control, setValue, syncDialCode }: GuardianSe
                   style={{ background: 'rgb(14 124 90)' }}
                 >
                   <CheckCircle2 size={12} />
-                  Use this parent
+                  {t('students.useThisParent')}
                 </button>
                 <button
                   type="button"
@@ -172,7 +174,7 @@ export function GuardianSelector({ control, setValue, syncDialCode }: GuardianSe
                   style={{ borderColor: 'rgb(var(--border-default,229 233 240))' }}
                 >
                   <PlusCircle size={12} />
-                  Create new instead
+                  {t('students.createNewInstead')}
                 </button>
               </div>
             </div>
@@ -207,7 +209,7 @@ export function GuardianSelector({ control, setValue, syncDialCode }: GuardianSe
                 className="w-full flex items-center gap-2 px-3 py-2.5 hover:bg-black/[0.03] transition-colors text-left text-xs opacity-50"
               >
                 <PlusCircle size={13} />
-                Create new parent
+                {t('students.createNewParent')}
               </button>
             </div>
           )}
@@ -216,7 +218,7 @@ export function GuardianSelector({ control, setValue, syncDialCode }: GuardianSe
           {(forceNew || (debouncedWa.length >= 5 && results.length === 0 && !isFetching)) && (
             <div>
               <label className="block text-xs font-medium mb-1.5 opacity-70">
-                Parent name <span className="text-red-500">*</span>
+                {t('students.parentName')} <span className="text-red-500">*</span>
               </label>
               <Controller
                 name="guardian_name"
@@ -227,7 +229,7 @@ export function GuardianSelector({ control, setValue, syncDialCode }: GuardianSe
                       type="text"
                       className={inp}
                       style={inpStyle}
-                      placeholder="e.g. Ahmed Khalid"
+                      placeholder={t('students.parentNameExample')}
                       {...field}
                       value={field.value ?? ''}
                     />

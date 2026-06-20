@@ -4,12 +4,12 @@ import { ChevronLeft, ChevronRight, Clock, LayoutGrid } from 'lucide-react'
 import { useSessions } from '@/hooks/system/useSessions'
 import type { TeacherAvailabilitySlot } from '@/types/system/teacher'
 import type { Session, SessionStatus } from '@/types/system/session'
+import { useI18n } from '@/lib/system/i18n'
 
 // ── Grid config ───────────────────────────────────────────────
 const GRID_START = 7   // 7 AM
 const GRID_END   = 23  // 11 PM
 const HOUR_H     = 64  // px per hour
-const DAYS       = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] as const
 
 // ── Helpers ───────────────────────────────────────────────────
 
@@ -53,63 +53,10 @@ function fmtDuration(min: number): string {
 
 type SessionKind = 'trial' | 'regular' | 'makeup'
 
-const KIND_CFG: Record<SessionKind, { label: string; bg: string; color: string }> = {
-  trial:   { label: 'Trial',   bg: 'rgb(99 102 241 / 0.15)',  color: 'rgb(67 56 202)'  },
-  regular: { label: 'Regular', bg: 'rgb(14 124 90 / 0.15)',   color: 'rgb(14 124 90)'  },
-  makeup:  { label: 'Makeup',  bg: 'rgb(245 158 11 / 0.15)',  color: 'rgb(180 83 9)'   },
-}
-
 function sessionKind(s: Session): SessionKind {
   if (s.original_session_id !== null) return 'makeup'
   if (s.schedule_pattern_id !== null) return 'regular'
   return 'trial'
-}
-
-// ── Status styles ─────────────────────────────────────────────
-
-const STATUS_CFG: Record<string, { bg: string; border: string; text: string; accent: string; label: string }> = {
-  scheduled: {
-    bg:     'rgb(14 124 90 / 0.09)',
-    border: 'rgb(14 124 90 / 0.55)',
-    text:   'rgb(6 54 39)',
-    accent: 'rgb(14 124 90)',
-    label:  'Confirmed',
-  },
-  attended: {
-    bg:     'rgb(34 197 94 / 0.10)',
-    border: 'rgb(22 163 74 / 0.50)',
-    text:   'rgb(15 118 54)',
-    accent: 'rgb(22 163 74)',
-    label:  'Attended',
-  },
-  absent: {
-    bg:     'rgb(245 158 11 / 0.10)',
-    border: 'rgb(245 158 11 / 0.55)',
-    text:   'rgb(120 53 15)',
-    accent: 'rgb(245 158 11)',
-    label:  'Absent',
-  },
-  cancelled: {
-    bg:     'rgb(148 163 184 / 0.10)',
-    border: 'rgb(148 163 184 / 0.45)',
-    text:   'rgb(71 85 105)',
-    accent: 'rgb(148 163 184)',
-    label:  'Cancelled',
-  },
-  rescheduled: {
-    bg:     'rgb(148 163 184 / 0.10)',
-    border: 'rgb(148 163 184 / 0.45)',
-    text:   'rgb(71 85 105)',
-    accent: 'rgb(148 163 184)',
-    label:  'Rescheduled',
-  },
-  pending_substitute: {
-    bg:     'rgb(239 68 68 / 0.09)',
-    border: 'rgb(239 68 68 / 0.55)',
-    text:   'rgb(153 27 27)',
-    accent: 'rgb(239 68 68)',
-    label:  'Needs Sub',
-  },
 }
 
 // ── Component ─────────────────────────────────────────────────
@@ -122,6 +69,63 @@ interface Props {
 export function TeacherScheduleView({ teacherId, availability }: Props) {
   const [weekStart, setWeekStart] = useState(() => weekSunday(new Date()))
   const scrollRef = useRef<HTMLDivElement>(null)
+  const { t } = useI18n()
+
+  const DAYS = [
+    t('days.sun'), t('days.mon'), t('days.tue'), t('days.wed'),
+    t('days.thu'), t('days.fri'), t('days.sat'),
+  ] as const
+
+  const KIND_CFG: Record<SessionKind, { label: string; bg: string; color: string }> = {
+    trial:   { label: t('teachers.sessionTrial'),   bg: 'rgb(99 102 241 / 0.15)',  color: 'rgb(67 56 202)'  },
+    regular: { label: t('teachers.sessionRegular'), bg: 'rgb(14 124 90 / 0.15)',   color: 'rgb(14 124 90)'  },
+    makeup:  { label: t('teachers.sessionMakeup'),  bg: 'rgb(245 158 11 / 0.15)',  color: 'rgb(180 83 9)'   },
+  }
+
+  const STATUS_CFG: Record<string, { bg: string; border: string; text: string; accent: string; label: string }> = {
+    scheduled: {
+      bg:     'rgb(14 124 90 / 0.09)',
+      border: 'rgb(14 124 90 / 0.55)',
+      text:   'rgb(6 54 39)',
+      accent: 'rgb(14 124 90)',
+      label:  t('status.confirmed'),
+    },
+    attended: {
+      bg:     'rgb(34 197 94 / 0.10)',
+      border: 'rgb(22 163 74 / 0.50)',
+      text:   'rgb(15 118 54)',
+      accent: 'rgb(22 163 74)',
+      label:  t('status.attended'),
+    },
+    absent: {
+      bg:     'rgb(245 158 11 / 0.10)',
+      border: 'rgb(245 158 11 / 0.55)',
+      text:   'rgb(120 53 15)',
+      accent: 'rgb(245 158 11)',
+      label:  t('status.absent'),
+    },
+    cancelled: {
+      bg:     'rgb(148 163 184 / 0.10)',
+      border: 'rgb(148 163 184 / 0.45)',
+      text:   'rgb(71 85 105)',
+      accent: 'rgb(148 163 184)',
+      label:  t('status.cancelled'),
+    },
+    rescheduled: {
+      bg:     'rgb(148 163 184 / 0.10)',
+      border: 'rgb(148 163 184 / 0.45)',
+      text:   'rgb(71 85 105)',
+      accent: 'rgb(148 163 184)',
+      label:  t('status.rescheduled'),
+    },
+    pending_substitute: {
+      bg:     'rgb(239 68 68 / 0.09)',
+      border: 'rgb(239 68 68 / 0.55)',
+      text:   'rgb(153 27 27)',
+      accent: 'rgb(239 68 68)',
+      label:  t('status.needsSub'),
+    },
+  }
 
   const weekEnd = addDays(weekStart, 6)
 
@@ -196,7 +200,7 @@ export function TeacherScheduleView({ teacherId, availability }: Props) {
               className="px-3 py-1 text-xs font-semibold rounded-lg border hover:bg-black/5 transition-colors"
               style={{ borderColor: border }}
             >
-              This week
+              {t('teachers.scheduleThisWeek')}
             </button>
             <button
               onClick={() => setWeekStart(w => addDays(w, 7))}
@@ -210,12 +214,12 @@ export function TeacherScheduleView({ teacherId, availability }: Props) {
 
         {/* Legend */}
         <div className="flex flex-wrap items-center gap-4 text-[11px] font-medium" style={{ opacity: 0.6 }}>
-          <LegendChip shape="rect" color="rgb(14 124 90 / 0.2)" border="rgb(14 124 90 / 0.3)" label="Available" />
-          <LegendChip color="rgb(14 124 90)"  label="Confirmed" />
-          <LegendChip color="rgb(22 163 74)"  label="Attended" />
-          <LegendChip color="rgb(245 158 11)" label="Absent" />
-          <LegendChip color="rgb(239 68 68)"  label="Needs Sub" />
-          <LegendChip color="rgb(148 163 184)" label="Cancelled" />
+          <LegendChip shape="rect" color="rgb(14 124 90 / 0.2)" border="rgb(14 124 90 / 0.3)" label={t('status.available')} />
+          <LegendChip color="rgb(14 124 90)"  label={t('status.confirmed')} />
+          <LegendChip color="rgb(22 163 74)"  label={t('status.attended')} />
+          <LegendChip color="rgb(245 158 11)" label={t('status.absent')} />
+          <LegendChip color="rgb(239 68 68)"  label={t('status.needsSub')} />
+          <LegendChip color="rgb(148 163 184)" label={t('status.cancelled')} />
         </div>
       </div>
 
@@ -223,7 +227,7 @@ export function TeacherScheduleView({ teacherId, availability }: Props) {
       <div className="grid grid-cols-3 border-b" style={{ borderColor: border }}>
         <StatCell
           icon={<LayoutGrid size={13} />}
-          label="Weekly available"
+          label={t('teachers.weeklyAvailable')}
           value={fmtDuration(totalAvailMin)}
           color="rgb(14 124 90)"
           border={border}
@@ -231,7 +235,7 @@ export function TeacherScheduleView({ teacherId, availability }: Props) {
         />
         <StatCell
           icon={<Clock size={13} />}
-          label="Booked this week"
+          label={t('teachers.bookedThisWeek')}
           value={fmtDuration(bookedMin)}
           color="rgb(99 102 241)"
           border={border}
@@ -239,7 +243,7 @@ export function TeacherScheduleView({ teacherId, availability }: Props) {
         />
         <StatCell
           icon={<Clock size={13} />}
-          label="Free slots"
+          label={t('teachers.freeSlots')}
           value={fmtDuration(freeMin)}
           color={freeMin === 0 ? 'rgb(239 68 68)' : 'rgb(14 124 90)'}
           border={border}
@@ -286,7 +290,7 @@ export function TeacherScheduleView({ teacherId, availability }: Props) {
                 className="absolute inset-0 z-30 flex items-center justify-center"
                 style={{ background: 'rgb(255 255 255 / 0.8)' }}
               >
-                <span className="text-sm opacity-40 animate-pulse">Loading sessions…</span>
+                <span className="text-sm opacity-40 animate-pulse">{t('teachers.loadingSessions')}</span>
               </div>
             )}
 
@@ -434,7 +438,7 @@ export function TeacherScheduleView({ teacherId, availability }: Props) {
                                     {kindCfg.label}
                                   </span>
                                   <p className="text-[11px] font-bold leading-snug truncate" style={{ color: cfg.text }}>
-                                    {session.student?.name ?? 'Unknown student'}
+                                    {session.student?.name ?? t('teachers.unknownStudent')}
                                   </p>
                                 </div>
                                 <p className="text-[10px] leading-snug truncate" style={{ color: cfg.text, opacity: 0.7 }}>

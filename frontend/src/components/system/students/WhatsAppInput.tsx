@@ -2,6 +2,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { ChevronDown, Search } from 'lucide-react'
 import { COUNTRIES, flagEmoji } from '@/lib/system/countries'
+import { useI18n } from '@/lib/system/i18n'
 
 interface WhatsAppInputProps {
   value: string
@@ -30,6 +31,7 @@ export function WhatsAppInput({
   inputClassName,
   inputStyle,
 }: WhatsAppInputProps) {
+  const { t } = useI18n()
   const parsed  = parseNumber(value)
   const [dialCode, setDialCode] = useState(parsed.dialCode || syncDialCode || '+1')
   const [local, setLocal]       = useState(parsed.local)
@@ -201,13 +203,13 @@ export function WhatsAppInput({
               ref={searchRef}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search country or +code…"
+              placeholder={t('students.searchCountryOrCode')}
               className="flex-1 bg-transparent text-sm outline-none"
             />
           </div>
           <ul className="max-h-52 overflow-y-auto py-1">
             {options.length === 0 && (
-              <li className="px-3 py-2 text-sm opacity-40">No results</li>
+              <li className="px-3 py-2 text-sm opacity-40">{t('common.noResults')}</li>
             )}
             {options.map((c) => (
               <li

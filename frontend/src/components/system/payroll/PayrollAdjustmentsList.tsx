@@ -1,19 +1,20 @@
 'use client'
 import { Trash2, Plus, Minus } from 'lucide-react'
 import { formatMoney } from '@/lib/money'
+import { useI18n } from '@/lib/system/i18n'
 import type { PayrollAdjustment, PayrollStatus } from '@/types/system/payroll'
 
-const CATEGORY_LABELS: Record<string, string> = {
-  performance:            'Performance bonus',
-  retention:              'Retention bonus',
-  reports_consistency:    'Reports consistency',
-  tenure:                 'Tenure bonus',
-  other_bonus:            'Other bonus',
-  unauthorized_absence:   'Unauthorized absence',
-  late_report:            'Late report',
-  late_arrival:           'Late arrival',
-  quality_issue:          'Quality issue',
-  other_deduction:        'Other deduction',
+const CATEGORY_KEYS: Record<string, string> = {
+  performance:            'payroll.adjustments.performanceBonus',
+  retention:              'payroll.adjustments.retentionBonus',
+  reports_consistency:    'payroll.adjustments.reportsConsistency',
+  tenure:                 'payroll.adjustments.tenureBonus',
+  other_bonus:            'payroll.adjustments.otherBonus',
+  unauthorized_absence:   'payroll.adjustments.unauthorizedAbsence',
+  late_report:            'payroll.adjustments.lateReport',
+  late_arrival:           'payroll.adjustments.lateArrival',
+  quality_issue:          'payroll.adjustments.qualityIssue',
+  other_deduction:        'payroll.adjustments.otherDeduction',
 }
 
 interface PayrollAdjustmentsListProps {
@@ -27,12 +28,13 @@ export function PayrollAdjustmentsList({
   payrollStatus,
   onDelete,
 }: PayrollAdjustmentsListProps) {
+  const { t } = useI18n()
   const bonuses = adjustments.filter(a => a.type === 'bonus')
   const deductions = adjustments.filter(a => a.type === 'deduction')
   const canDelete = payrollStatus === 'pending'
 
   if (adjustments.length === 0) {
-    return <p className="text-sm text-gray-400 py-2">No adjustments.</p>
+    return <p className="text-sm text-gray-400 py-2">{t('payroll.adjustments.empty')}</p>
   }
 
   function renderGroup(items: PayrollAdjustment[], label: string, sign: '+' | '-', colorClass: string) {
@@ -47,7 +49,7 @@ export function PayrollAdjustmentsList({
                 {sign === '+' ? <Plus size={10} /> : <Minus size={10} />}
               </span>
               <span className="flex-1 min-w-0">
-                <span className="font-medium">{CATEGORY_LABELS[adj.category] ?? adj.category}</span>
+                <span className="font-medium">{CATEGORY_KEYS[adj.category] ? t(CATEGORY_KEYS[adj.category]) : adj.category}</span>
                 {adj.reason && (
                   <span className="ml-1 text-gray-400">— {adj.reason}</span>
                 )}

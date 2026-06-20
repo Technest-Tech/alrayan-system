@@ -7,6 +7,7 @@ import { User, CreditCard, BookOpen } from 'lucide-react'
 import type { Teacher } from '@/types/system/teacher'
 import { useCourses } from '@/hooks/system/useCourses'
 import { WhatsAppInput } from '@/components/system/students/WhatsAppInput'
+import { useI18n } from '@/lib/system/i18n'
 
 const schema = z.object({
   name:                    z.string().min(1, 'Name is required'),
@@ -54,6 +55,7 @@ function FieldError({ message }: { message?: string }) {
 }
 
 export function TeacherForm({ defaultValues, onSubmit, isLoading, isEdit }: TeacherFormProps) {
+  const { t } = useI18n()
   const { data: courses = [] } = useCourses()
 
   const form = useForm({
@@ -77,25 +79,25 @@ export function TeacherForm({ defaultValues, onSubmit, isLoading, isEdit }: Teac
 
       {/* ── Identity ───────────────────────────────────── */}
       <section className="space-y-4">
-        <SectionHeader icon={User} title="Identity" />
+        <SectionHeader icon={User} title={t('teachers.sectionIdentity')} />
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label className="block text-xs font-medium mb-1.5 opacity-60 uppercase tracking-wide">Full Name *</label>
-            <input className={inputCls} style={inputStyle} placeholder="e.g. Ahmed Hassan" {...register('name')} />
+            <label className="block text-xs font-medium mb-1.5 opacity-60 uppercase tracking-wide">{t('common.name')} *</label>
+            <input className={inputCls} style={inputStyle} placeholder={t('teachers.nameExample')} {...register('name')} />
             <FieldError message={errors.name?.message} />
           </div>
 
           {!isEdit && (
             <div>
-              <label className="block text-xs font-medium mb-1.5 opacity-60 uppercase tracking-wide">Email *</label>
+              <label className="block text-xs font-medium mb-1.5 opacity-60 uppercase tracking-wide">{t('common.email')} *</label>
               <input type="email" className={inputCls} style={inputStyle} placeholder="teacher@example.com" {...register('email')} />
               <FieldError message={errors.email?.message} />
             </div>
           )}
 
           <div>
-            <label className="block text-xs font-medium mb-1.5 opacity-60 uppercase tracking-wide">WhatsApp</label>
+            <label className="block text-xs font-medium mb-1.5 opacity-60 uppercase tracking-wide">{t('common.whatsapp')}</label>
             <Controller
               name="whatsapp"
               control={control}
@@ -114,7 +116,7 @@ export function TeacherForm({ defaultValues, onSubmit, isLoading, isEdit }: Teac
 
       {/* ── Teachable Courses ──────────────────────────── */}
       <section className="space-y-4">
-        <SectionHeader icon={BookOpen} title="Teachable Courses" />
+        <SectionHeader icon={BookOpen} title={t('teachers.sectionTeachableCourses')} />
         <Controller
           name="teachable_course_ids"
           control={control}
@@ -157,11 +159,11 @@ export function TeacherForm({ defaultValues, onSubmit, isLoading, isEdit }: Teac
 
       {/* ── Payment & Rate ─────────────────────────────── */}
       <section className="space-y-4">
-        <SectionHeader icon={CreditCard} title="Payment &amp; Rate" />
+        <SectionHeader icon={CreditCard} title={t('teachers.sectionPaymentRate')} />
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label className="block text-xs font-medium mb-1.5 opacity-60 uppercase tracking-wide">Payment Method</label>
+            <label className="block text-xs font-medium mb-1.5 opacity-60 uppercase tracking-wide">{t('teachers.paymentMethod')}</label>
             <Controller name="payment_method" control={control} render={({ field }) => (
               <Select value={field.value} onValueChange={field.onChange}>
                 <SelectTrigger className="w-full h-10 rounded-xl text-sm"><SelectValue /></SelectTrigger>
@@ -173,13 +175,13 @@ export function TeacherForm({ defaultValues, onSubmit, isLoading, isEdit }: Teac
           </div>
 
           <div>
-            <label className="block text-xs font-medium mb-1.5 opacity-60 uppercase tracking-wide">Account Details</label>
-            <input className={inputCls} style={inputStyle} placeholder="Phone / account number" {...register('payment_account_details')} />
+            <label className="block text-xs font-medium mb-1.5 opacity-60 uppercase tracking-wide">{t('teachers.accountDetails')}</label>
+            <input className={inputCls} style={inputStyle} placeholder={t('teachers.accountDetailsPlaceholder')} {...register('payment_account_details')} />
           </div>
         </div>
 
         <div className="max-w-xs">
-          <label className="block text-xs font-medium mb-1.5 opacity-60 uppercase tracking-wide">Hourly Rate (EGP / hr)</label>
+          <label className="block text-xs font-medium mb-1.5 opacity-60 uppercase tracking-wide">{t('teachers.hourlyRate')}</label>
           <div className="relative">
             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-medium opacity-50 pointer-events-none">EGP</span>
             <input
@@ -204,7 +206,7 @@ export function TeacherForm({ defaultValues, onSubmit, isLoading, isEdit }: Teac
           className="px-6 py-2.5 rounded-xl text-sm font-semibold text-white disabled:opacity-60 transition-opacity"
           style={{ background: 'rgb(14 124 90)' }}
         >
-          {isLoading ? 'Saving…' : isEdit ? 'Save changes' : 'Create teacher'}
+          {isLoading ? t('common.saving') : isEdit ? 'Save changes' : t('teachers.createTeacher')}
         </button>
       </div>
     </form>

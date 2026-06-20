@@ -6,12 +6,14 @@ import { toast } from 'sonner'
 import type { StudentDetail } from '@/types/system/student'
 import { useLinkSibling, useUnlinkSibling, useStudents } from '@/hooks/system/useStudents'
 import { ApiError } from '@/lib/system/api'
+import { useI18n } from '@/lib/system/i18n'
 
 interface FamilyTabContentProps {
   student: StudentDetail
 }
 
 function LinkSiblingSheet({ studentId, onClose }: { studentId: number | string; onClose: () => void }) {
+  const { t } = useI18n()
   const [query,   setQuery]   = useState('')
   const [selected, setSelected] = useState<{ id: number; name: string } | null>(null)
   const [discount, setDiscount] = useState('0')
@@ -45,7 +47,7 @@ function LinkSiblingSheet({ studentId, onClose }: { studentId: number | string; 
           className="flex items-center justify-between px-6 py-4 border-b shrink-0"
           style={{ background: 'rgb(var(--surface-card, 255 255 255))', borderColor: 'rgb(var(--border-default, 229 233 240))' }}
         >
-          <h2 className="font-semibold">Add sibling</h2>
+          <h2 className="font-semibold">{t('students.addSibling')}</h2>
           <button onClick={onClose} className="p-1 rounded-lg hover:bg-black/5 transition-colors">
             <X size={18} />
           </button>
@@ -53,11 +55,11 @@ function LinkSiblingSheet({ studentId, onClose }: { studentId: number | string; 
 
         <div className="flex-1 p-6 space-y-5">
           <div>
-            <label className="block text-sm font-medium mb-1.5">Search student</label>
+            <label className="block text-sm font-medium mb-1.5">{t('students.searchStudent')}</label>
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Type student name…"
+              placeholder={t('students.searchStudentPlaceholder')}
               className={inputCls}
               style={inputStyle}
             />
@@ -93,7 +95,7 @@ function LinkSiblingSheet({ studentId, onClose }: { studentId: number | string; 
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-1.5">Sibling discount (%)</label>
+            <label className="block text-sm font-medium mb-1.5">{t('students.siblingDiscount')}</label>
             <input
               type="number"
               min="0"
@@ -111,7 +113,7 @@ function LinkSiblingSheet({ studentId, onClose }: { studentId: number | string; 
           style={{ borderColor: 'rgb(var(--border-default, 229 233 240))', background: 'rgb(var(--surface-card, 255 255 255))' }}
         >
           <button onClick={onClose} className="px-4 py-2 rounded-xl text-sm border hover:bg-black/5 transition-colors" style={{ borderColor: 'rgb(var(--border-default, 229 233 240))' }}>
-            Cancel
+            {t('common.cancel')}
           </button>
           <button
             onClick={handleLink}
@@ -119,7 +121,7 @@ function LinkSiblingSheet({ studentId, onClose }: { studentId: number | string; 
             className="px-4 py-2 rounded-xl text-sm font-semibold text-white disabled:opacity-50"
             style={{ background: 'rgb(14 124 90)' }}
           >
-            {link.isPending ? 'Linking…' : 'Link sibling'}
+            {link.isPending ? t('common.linking') : t('students.linkSibling')}
           </button>
         </div>
       </div>
@@ -128,6 +130,7 @@ function LinkSiblingSheet({ studentId, onClose }: { studentId: number | string; 
 }
 
 export function FamilyTabContent({ student }: FamilyTabContentProps) {
+  const { t } = useI18n()
   const [showAdd, setShowAdd] = useState(false)
   const unlink = useUnlinkSibling(student.id)
 
@@ -143,19 +146,19 @@ export function FamilyTabContent({ student }: FamilyTabContentProps) {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="font-semibold">Siblings</h3>
+        <h3 className="font-semibold">{t('students.siblingsSection')}</h3>
         <button
           onClick={() => setShowAdd(true)}
           className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium border hover:bg-black/5 transition-colors"
           style={{ borderColor: 'rgb(var(--border-default, 229 233 240))' }}
         >
           <Plus size={14} />
-          Add sibling
+          {t('students.addSibling')}
         </button>
       </div>
 
       {student.siblings.length === 0 ? (
-        <p className="text-sm opacity-40 text-center py-8">No siblings linked.</p>
+        <p className="text-sm opacity-40 text-center py-8">{t('students.noSiblings')}</p>
       ) : (
         <div
           className="rounded-xl border overflow-hidden"
@@ -164,9 +167,9 @@ export function FamilyTabContent({ student }: FamilyTabContentProps) {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b text-xs font-semibold uppercase tracking-wide opacity-50" style={{ borderColor: 'rgb(var(--border-default, 229 233 240))' }}>
-                <th className="text-left px-5 py-3">Name</th>
-                <th className="text-left px-5 py-3">Course</th>
-                <th className="text-left px-5 py-3">Teacher</th>
+                <th className="text-left px-5 py-3">{t('common.name')}</th>
+                <th className="text-left px-5 py-3">{t('common.course')}</th>
+                <th className="text-left px-5 py-3">{t('common.teacher')}</th>
                 <th className="text-left px-5 py-3">Discount</th>
                 <th className="px-5 py-3" />
               </tr>
@@ -196,7 +199,7 @@ export function FamilyTabContent({ student }: FamilyTabContentProps) {
                       onClick={() => handleUnlink(sib.id, sib.name)}
                       disabled={unlink.isPending}
                       className="p-1.5 rounded-lg text-red-500 hover:bg-red-50 transition-colors disabled:opacity-40"
-                      title="Unlink sibling"
+                      title={t('students.unlinkSibling')}
                     >
                       <Unlink size={14} />
                     </button>

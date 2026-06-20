@@ -1,7 +1,7 @@
 import {
-  LayoutDashboard, Users, GraduationCap, BookOpen, CalendarDays,
+  LayoutDashboard, UsersRound, CalendarDays,
   Award, DollarSign, Wallet, BarChart3,
-  Bell, MessageCircle, Settings, ScrollText, UserCheck, CreditCard,
+  Bell, Settings, ScrollText, UserCheck, CreditCard, ListChecks,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 
@@ -19,38 +19,36 @@ export interface NavSection {
 
 export const SYSTEM_NAV: readonly NavSection[] = [
   {
-    label: 'Operations',
+    label: 'nav.sections.operations',
     items: [
-      { label: 'Dashboard',        href: '/dashboard',          icon: LayoutDashboard, perm: null },
-      { label: 'Leads',            href: '/leads',              icon: UserCheck,       perm: 'leads.view' },
-      { label: 'Students',         href: '/students',           icon: Users,           perm: 'students.view' },
-      { label: 'Teachers',         href: '/teachers',           icon: GraduationCap,   perm: 'teachers.view' },
-      { label: 'Calendar',         href: '/calendar',           icon: CalendarDays,    perm: 'lessons.view' },
-      { label: 'Certificates',     href: '/certificates',       icon: Award,           perm: 'certificates.view' },
-      { label: 'Courses',          href: '/courses-admin',      icon: BookOpen,        perm: 'courses.view' },
+      { label: 'nav.dashboard',    href: '/dashboard',          icon: LayoutDashboard, perm: null },
+      { label: 'nav.users',        href: '/users',              icon: UsersRound,      perm: 'users.view_directory' },
+      { label: 'nav.leads',        href: '/leads',              icon: UserCheck,       perm: 'leads.view' },
+      { label: 'nav.tasks',        href: '/tasks',              icon: ListChecks,      perm: 'tasks.view' },
+      { label: 'nav.calendar',     href: '/calendar',           icon: CalendarDays,    perm: 'lessons.view' },
+      { label: 'nav.certificates', href: '/certificates',       icon: Award,           perm: 'certificates.view' },
     ],
   },
   {
-    label: 'Finance',
+    label: 'nav.sections.finance',
     items: [
-      { label: 'Payments',   href: '/payments',           icon: CreditCard, perm: 'lessons.view'  },
-      { label: 'Billing',    href: '/billing/invoices',   icon: DollarSign, perm: 'invoices.view' },
-      { label: 'Payroll',    href: '/payroll',            icon: Wallet,     perm: 'payroll.view' },
-      { label: 'Accounting', href: '/accounting/revenue', icon: BarChart3,  perm: 'accounting.view' },
+      { label: 'nav.payments',   href: '/payments',           icon: CreditCard, perm: 'lessons.view'  },
+      { label: 'nav.billing',    href: '/billing/invoices',   icon: DollarSign, perm: 'invoices.view' },
+      { label: 'nav.payroll',    href: '/payroll',            icon: Wallet,     perm: 'payroll.view' },
+      { label: 'nav.accounting', href: '/accounting/revenue', icon: BarChart3,  perm: 'accounting.view' },
     ],
   },
   {
-    label: 'Communications',
+    label: 'nav.sections.communications',
     items: [
-      { label: 'Notifications',   href: '/notifications',   icon: Bell,          perm: 'notifications.view' },
-      { label: 'WhatsApp groups', href: '/whatsapp-groups', icon: MessageCircle, perm: 'whatsapp.view' },
+      { label: 'nav.notifications', href: '/notifications', icon: Bell, perm: 'notifications.view' },
     ],
   },
   {
-    label: 'Admin',
+    label: 'nav.sections.admin',
     items: [
-      { label: 'Settings',  href: '/settings/academy', icon: Settings,    perm: 'settings.view' },
-      { label: 'Audit log', href: '/audit-log',         icon: ScrollText,  perm: 'audit.view' },
+      { label: 'nav.settings', href: '/settings',          icon: Settings,   perm: 'settings.view' },
+      { label: 'nav.auditLog', href: '/audit-log',         icon: ScrollText, perm: 'audit.view' },
     ],
   },
 ] as const

@@ -5,6 +5,7 @@ import { toast } from 'sonner'
 import type { TeacherAvailabilitySlot } from '@/types/system/teacher'
 import { useUpdateAvailability } from '@/hooks/system/useTeacherAvailability'
 import { ApiError } from '@/lib/system/api'
+import { useI18n } from '@/lib/system/i18n'
 
 /* ─── Types ──────────────────────────────────────────── */
 type TimeSlot  = { start: string; end: string }
@@ -12,16 +13,6 @@ type DayState  = { enabled: boolean; slots: TimeSlot[] }
 type WeekState = DayState[]
 
 /* ─── Constants ──────────────────────────────────────── */
-const DAYS = [
-  { short: 'Sun', label: 'Sunday' },
-  { short: 'Mon', label: 'Monday' },
-  { short: 'Tue', label: 'Tuesday' },
-  { short: 'Wed', label: 'Wednesday' },
-  { short: 'Thu', label: 'Thursday' },
-  { short: 'Fri', label: 'Friday' },
-  { short: 'Sat', label: 'Saturday' },
-]
-
 const TIME_OPTIONS: string[] = []
 for (let h = 0; h < 24; h++) {
   TIME_OPTIONS.push(`${String(h).padStart(2, '0')}:00`)
@@ -29,8 +20,9 @@ for (let h = 0; h < 24; h++) {
 }
 TIME_OPTIONS.push('24:00')
 
-function formatTime(t: string) {
-  const [h, m] = t.split(':').map(Number)
+function formatTime(val: string) {
+  const parts = val.split(':').map(Number)
+  const h = parts[0], m = parts[1]
   if (h === 24) return '12:00 AM (midnight)'
   const ampm = h < 12 ? 'AM' : 'PM'
   const hh   = h % 12 === 0 ? 12 : h % 12
@@ -39,7 +31,7 @@ function formatTime(t: string) {
 
 /* ─── Converters ─────────────────────────────────────── */
 function slotsToWeek(slots: TeacherAvailabilitySlot[]): WeekState {
-  const week: WeekState = DAYS.map(() => ({
+  const week: WeekState = Array.from({ length: 7 }, () => ({
     enabled: false,
     slots: [{ start: '09:00', end: '17:00' }],
   }))
@@ -96,8 +88,8 @@ function TimeSelect({ value, onChange, options }: { value: string; onChange: (v:
         minWidth: '120px',
       }}
     >
-      {options.map(t => (
-        <option key={t} value={t}>{formatTime(t)}</option>
+      {options.map(opt => (
+        <option key={opt} value={opt}>{formatTime(opt)}</option>
       ))}
     </select>
   )
@@ -111,6 +103,16 @@ interface AvailabilityPickerProps {
 }
 
 export function AvailabilityPicker({ teacherId, initialSlots, timezone }: AvailabilityPickerProps) {
+  const { t } = useI18n()
+  const DAYS = [
+    { short: t('days.sun'), label: t('days.sunday') },
+    { short: t('days.mon'), label: t('days.monday') },
+    { short: t('days.tue'), label: t('days.tuesday') },
+    { short: t('days.wed'), label: t('days.wednesday') },
+    { short: t('days.thu'), label: t('days.thursday') },
+    { short: t('days.fri'), label: t('days.friday') },
+    { short: t('days.sat'), label: t('days.saturday') },
+  ]
   const [week, setWeek] = useState<WeekState>(() => slotsToWeek(initialSlots))
   const update = useUpdateAvailability(teacherId)
 
@@ -156,9 +158,9 @@ export function AvailabilityPicker({ teacherId, initialSlots, timezone }: Availa
     const slots = weekToSlots(week)
     try {
       await update.mutateAsync({ availability: slots, timezone })
-      toast.success('Availability saved.')
+      toast.success(t('teachers.availabilitySaved'))
     } catch (e) {
-      toast.error(e instanceof ApiError ? e.message : 'Failed to save availability.')
+      toast.error(e instanceof ApiError ? e.message : t('teachers.availabilityError'))
     }
   }
 
@@ -172,7 +174,7 @@ export function AvailabilityPicker({ teacherId, initialSlots, timezone }: Availa
         <div className="flex items-center gap-2">
           <Clock size={15} style={{ color: 'rgb(14 124 90)' }} />
           <span className="text-xs opacity-50">
-            {activeDayCount === 0 ? 'No days selected' : `${activeDayCount} day${activeDayCount > 1 ? 's' : ''} active`}
+            {activeDayCount === 0 ? t('teachers.noDaysSelected') : `${activeDayCount} ${activeDayCount === 1 ? t('teachers.availDaySingular') : t('teachers.availDayPlural')}`}
             {' · '}{timezone}
           </span>
         </div>
@@ -182,7 +184,7 @@ export function AvailabilityPicker({ teacherId, initialSlots, timezone }: Availa
           className="px-4 py-2 rounded-xl text-sm font-semibold text-white disabled:opacity-60 transition-opacity"
           style={{ background: 'rgb(14 124 90)' }}
         >
-          {update.isPending ? 'Saving…' : 'Save availability'}
+          {update.isPending ? t('common.saving') : t('teachers.saveAvailability')}
         </button>
       </div>
 
@@ -214,7 +216,7 @@ export function AvailabilityPicker({ teacherId, initialSlots, timezone }: Availa
                 </div>
 
                 {!day.enabled && (
-                  <span className="text-xs opacity-35 italic">Unavailable</span>
+                  <span className="text-xs opacity-35 italic">{t('teachers.unavailable')}</span>
                 )}
               </div>
 
@@ -224,7 +226,7 @@ export function AvailabilityPicker({ teacherId, initialSlots, timezone }: Availa
                   {day.slots.map((slot, idx) => (
                     <div key={idx} className="flex items-center gap-2 mt-2 flex-wrap">
                       <span className="text-xs opacity-40 w-8 text-right shrink-0">
-                        {idx === 0 ? 'From' : 'Also'}
+                        {idx === 0 ? t('teachers.availFrom') : t('teachers.availAlso')}
                       </span>
 
                       <TimeSelect
@@ -233,12 +235,12 @@ export function AvailabilityPicker({ teacherId, initialSlots, timezone }: Availa
                         options={TIME_OPTIONS.slice(0, -1)}
                       />
 
-                      <span className="text-xs opacity-40">to</span>
+                      <span className="text-xs opacity-40">{t('teachers.availTo')}</span>
 
                       <TimeSelect
                         value={slot.end}
                         onChange={v => updateSlot(d, idx, 'end', v)}
-                        options={TIME_OPTIONS.filter(t => t > slot.start)}
+                        options={TIME_OPTIONS.filter(tv => tv > slot.start)}
                       />
 
                       {day.slots.length > 1 && (
@@ -261,7 +263,7 @@ export function AvailabilityPicker({ teacherId, initialSlots, timezone }: Availa
                     style={{ color: 'rgb(14 124 90)' }}
                   >
                     <Plus size={12} />
-                    Add another time range
+                    {t('teachers.addTimeRange')}
                   </button>
                 </div>
               )}

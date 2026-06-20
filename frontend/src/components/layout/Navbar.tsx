@@ -88,7 +88,7 @@ export function Navbar() {
           {/* Wordmark */}
           <Link
             href="/"
-            aria-label="Alrayan Academy — Home"
+            aria-label="Azhary — Home"
             className="flex flex-col leading-none group"
           >
             <span
@@ -98,7 +98,7 @@ export function Navbar() {
                 scrolledOrInner ? 'text-primary' : 'text-white',
               )}
             >
-              Alrayan
+              Azhary
             </span>
             <span
               className={cn(
@@ -219,8 +219,8 @@ export function Navbar() {
               <div className="flex flex-col h-full">
                 {/* Mobile header */}
                 <div className="flex items-center justify-between p-5 border-b border-border-soft">
-                  <Link href="/" aria-label="Alrayan Academy" onClick={() => setMobileOpen(false)} className="flex flex-col leading-none">
-                    <span className="font-display font-semibold text-[1.6rem] tracking-tight text-primary">Alrayan</span>
+                  <Link href="/" aria-label="Azhary" onClick={() => setMobileOpen(false)} className="flex flex-col leading-none">
+                    <span className="font-display font-semibold text-[1.6rem] tracking-tight text-primary">Azhary</span>
                     <span className="text-accent text-[0.6rem] font-sans font-semibold uppercase tracking-[0.22em] mt-0.5">Quran Academy</span>
                   </Link>
                   <button

@@ -20,7 +20,7 @@ class SystemPasswordResetNotification extends Notification
     public function toMail(object $notifiable): MailMessage
     {
         return (new MailMessage)
-            ->subject('Reset your Alrayan Academy account password')
+            ->subject('Reset your Azhary account password')
             ->greeting('Hello, ' . $notifiable->name)
             ->line('You are receiving this email because we received a password reset request for your account.')
             ->action('Reset Password', $this->url)

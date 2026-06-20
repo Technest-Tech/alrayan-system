@@ -3,8 +3,10 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { PageHeader } from '@/components/system/primitives/PageHeader'
 import { useCreateInvoice } from '@/hooks/system/useCreateInvoice'
+import { useI18n } from '@/lib/system/i18n'
 
 export default function NewInvoicePage() {
+  const { t } = useI18n()
   const router = useRouter()
   const { mutateAsync, isPending } = useCreateInvoice()
   const [studentId, setStudentId] = useState('')
@@ -13,7 +15,7 @@ export default function NewInvoicePage() {
   const [error, setError] = useState<string | null>(null)
 
   const submit = async () => {
-    if (!studentId) return setError('Student ID is required.')
+    if (!studentId) return setError(t('billing.invoices.studentIdRequired'))
     setError(null)
     try {
       const invoice = await mutateAsync({
@@ -23,49 +25,49 @@ export default function NewInvoicePage() {
       })
       router.push(`/billing/invoices/${invoice.id}`)
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : 'Failed to create invoice.')
+      setError(e instanceof Error ? e.message : t('billing.invoices.createFailed'))
     }
   }
 
   return (
     <>
       <PageHeader
-        title="New Invoice"
-        description="Create an advance or reactivation invoice for a student."
+        title={t('billing.invoices.newTitle')}
+        description={t('billing.invoices.newSimpleSubtitle')}
       />
       <div className="max-w-lg space-y-6">
         {error && <p className="text-sm text-red-600">{error}</p>}
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Student ID</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">{t('billing.invoices.studentIdLabel')}</label>
           <input
             value={studentId}
             onChange={e => setStudentId(e.target.value)}
             className="w-full rounded-xl border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2"
-            placeholder="Enter student ID"
+            placeholder={t('billing.invoices.studentIdPlaceholder')}
             style={{}}
           />
           <p className="mt-1 text-xs text-gray-400">
-            You can find the student ID on the student detail page.
+            {t('billing.invoices.studentIdHint')}
           </p>
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Invoice type</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">{t('billing.invoices.invoiceType')}</label>
           <select
             value={type}
             onChange={e => setType(e.target.value as 'advance' | 'reactivation')}
             className="w-full rounded-xl border border-gray-300 px-3 py-2 text-sm"
           >
-            <option value="advance">Advance — pro-rata for remaining days this month</option>
-            <option value="reactivation">Reactivation — outstanding balance + pro-rata</option>
+            <option value="advance">{t('billing.invoices.typeAdvanceOption')}</option>
+            <option value="reactivation">{t('billing.invoices.typeReactivationOption')}</option>
           </select>
         </div>
 
         {type === 'advance' && (
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Effective from (optional)
+              {t('billing.invoices.effectiveFromOptional')}
             </label>
             <input
               type="date"
@@ -74,7 +76,7 @@ export default function NewInvoicePage() {
               className="w-full rounded-xl border border-gray-300 px-3 py-2 text-sm"
             />
             <p className="mt-1 text-xs text-gray-400">
-              Defaults to today if left blank.
+              {t('billing.invoices.effectiveFromHint')}
             </p>
           </div>
         )}
@@ -84,7 +86,7 @@ export default function NewInvoicePage() {
             onClick={() => router.back()}
             className="px-4 py-2 text-sm text-gray-600 border border-gray-300 rounded-xl hover:bg-gray-50"
           >
-            Cancel
+            {t('common.cancel')}
           </button>
           <button
             onClick={submit}
@@ -92,7 +94,7 @@ export default function NewInvoicePage() {
             className="px-4 py-2 rounded-xl text-white text-sm font-semibold disabled:opacity-50"
             style={{ background: 'rgb(14 124 90)' }}
           >
-            {isPending ? 'Creating…' : 'Create invoice'}
+            {isPending ? t('common.creating') : t('billing.invoices.createInvoice')}
           </button>
         </div>
       </div>

@@ -5,6 +5,7 @@ import { useStudentSessions } from '@/hooks/system/useSessions'
 import { useSchedulePatterns } from '@/hooks/system/useSchedulePatterns'
 import type { StudentDetail } from '@/types/system/student'
 import type { Session } from '@/types/system/session'
+import { useI18n } from '@/lib/system/i18n'
 
 const DISMISS_KEY = (id: number) => `student_guide_dismissed_${id}`
 
@@ -19,6 +20,7 @@ interface Props {
 }
 
 export function StudentWorkflowGuide({ student, onScheduleTrial, onGoToSessions, onActivate, onSetSchedule }: Props) {
+  const { t } = useI18n()
   const [dismissed, setDismissed] = useState(() => {
     try { return localStorage.getItem(DISMISS_KEY(student.id)) === '1' } catch { return false }
   })
@@ -43,41 +45,41 @@ export function StudentWorkflowGuide({ student, onScheduleTrial, onGoToSessions,
   const steps = [
     {
       id: 'created',
-      title: 'Added',
-      detail: 'Name, country, timezone, and age category recorded. Student starts in trial status.',
+      title: t('students.guideStep1'),
+      detail: t('students.guideStep1Detail'),
       actionLabel: '',
       onAction: () => {},
       done: true,
     },
     {
       id: 'trial_scheduled',
-      title: 'Trial class',
-      detail: 'Pick the teacher, date, and time for the trial class. A Zoom link will be created automatically.',
-      actionLabel: 'Schedule Trial Class',
+      title: t('students.guideStep2'),
+      detail: t('students.guideStep2Detail'),
+      actionLabel: t('students.guideStep2Action'),
       onAction: onScheduleTrial,
       done: hasAnySession,
     },
     {
       id: 'trial_attended',
-      title: 'Attendance',
-      detail: 'Open the trial session in the Sessions tab and mark it as Attended or Absent after the class.',
-      actionLabel: 'Go to Sessions',
+      title: t('students.guideStep3'),
+      detail: t('students.guideStep3Detail'),
+      actionLabel: t('students.guideStep3Action'),
       onAction: onGoToSessions,
       done: hasAttendedSession,
     },
     {
       id: 'activate',
-      title: 'Activate',
-      detail: 'Set the course, teacher, sessions per month, session duration, currency, and monthly price.',
-      actionLabel: 'Activate Student',
+      title: t('students.guideStep4'),
+      detail: t('students.guideStep4Detail'),
+      actionLabel: t('students.guideStep4Action'),
       onAction: onActivate,
       done: isActivated,
     },
     {
       id: 'timetable',
-      title: 'Timetable',
-      detail: 'Choose which days and times the sessions run each week. Sessions are auto-generated from this.',
-      actionLabel: 'Set Timetable',
+      title: t('students.guideStep5'),
+      detail: t('students.guideStep5Detail'),
+      actionLabel: t('students.guideStep5Action'),
       onAction: onSetSchedule,
       done: hasPatterns,
     },
@@ -108,7 +110,7 @@ export function StudentWorkflowGuide({ student, onScheduleTrial, onGoToSessions,
             <Sparkles size={12} style={{ color: 'rgb(14 124 90)' }} />
           </div>
           <p className="text-xs font-semibold flex-1" style={{ color: 'rgb(11 31 58)' }}>
-            Onboarding guide
+            {t('students.guideTitle')}
             {currentStep && (
               <span className="font-normal ml-1" style={{ color: 'rgb(90 100 112)' }}>
                 · {currentStep.title}
@@ -121,7 +123,7 @@ export function StudentWorkflowGuide({ student, onScheduleTrial, onGoToSessions,
             style={{ borderColor: 'rgb(var(--border-default,229 233 240))', color: 'rgb(156 163 175)' }}
           >
             <X size={11} />
-            Dismiss
+            {t('common.dismiss')}
           </button>
         </div>
 
@@ -190,7 +192,7 @@ export function StudentWorkflowGuide({ student, onScheduleTrial, onGoToSessions,
           >
             <div className="flex-1 min-w-0">
               <p className="text-xs font-semibold mb-0.5" style={{ color: 'rgb(11 31 58)' }}>
-                Next: {currentStep.title}
+                {t('students.guideNext')} {currentStep.title}
               </p>
               <p className="text-xs" style={{ color: 'rgb(90 100 112)' }}>{currentStep.detail}</p>
             </div>

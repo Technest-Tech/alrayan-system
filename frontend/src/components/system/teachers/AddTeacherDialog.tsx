@@ -7,6 +7,7 @@ import { X, UserCog } from 'lucide-react'
 import { TeacherForm, type TeacherFormValues } from './TeacherForm'
 import { api } from '@/lib/system/api'
 import { ApiError } from '@/lib/system/api'
+import { useI18n } from '@/lib/system/i18n'
 
 interface AddTeacherDialogProps {
   open: boolean
@@ -16,16 +17,17 @@ interface AddTeacherDialogProps {
 export function AddTeacherDialog({ open, onOpenChange }: AddTeacherDialogProps) {
   const qc = useQueryClient()
   const [isLoading, setIsLoading] = useState(false)
+  const { t } = useI18n()
 
   async function handleSubmit(data: TeacherFormValues) {
     setIsLoading(true)
     try {
       await api('/teachers', { method: 'POST', body: JSON.stringify(data) })
-      toast.success('Teacher created.')
+      toast.success(t('teachers.teacherCreated'))
       qc.invalidateQueries({ queryKey: ['system', 'teachers'] })
       onOpenChange(false)
     } catch (e) {
-      toast.error(e instanceof ApiError ? e.message : 'Failed to create teacher.')
+      toast.error(e instanceof ApiError ? e.message : t('teachers.createTeacherError'))
     } finally {
       setIsLoading(false)
     }
@@ -61,10 +63,10 @@ export function AddTeacherDialog({ open, onOpenChange }: AddTeacherDialogProps) 
               </div>
               <div>
                 <DialogPrimitive.Title className="font-semibold text-[rgb(11,31,58)] leading-none">
-                  Add Teacher
+                  {t('teachers.addTeacherDialogTitle')}
                 </DialogPrimitive.Title>
                 <DialogPrimitive.Description className="text-xs mt-0.5" style={{ color: 'rgb(90 100 112)' }}>
-                  Create a new teacher profile and invite them to the platform.
+                  {t('teachers.addTeacherDialogDescription')}
                 </DialogPrimitive.Description>
               </div>
               <DialogPrimitive.Close

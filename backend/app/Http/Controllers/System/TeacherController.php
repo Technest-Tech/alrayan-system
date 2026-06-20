@@ -8,8 +8,7 @@ use App\Http\Requests\System\Teacher\UpdateTeacherRequest;
 use App\Http\Resources\System\TeacherDetailResource;
 use App\Http\Resources\System\TeacherResource;
 use App\Models\System\Teacher;
-use App\Models\User;
-use App\Notifications\System\SystemUserInvitedNotification;
+use App\Services\System\TeacherCreator;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -43,47 +42,11 @@ class TeacherController extends Controller
         return new TeacherDetailResource($teacher);
     }
 
-    public function store(StoreTeacherRequest $request): TeacherDetailResource
+    public function store(StoreTeacherRequest $request, TeacherCreator $creator): TeacherDetailResource
     {
         $this->authorize('create', Teacher::class);
 
-        $teacher = DB::transaction(function () use ($request) {
-            $token = Str::random(60);
-
-            $user = User::create([
-                'name'      => $request->name,
-                'email'     => $request->email,
-                'phone'     => $request->phone,
-                'whatsapp'  => $request->whatsapp,
-                'password'  => Hash::make(Str::random(32)),
-                'role'      => 'teacher',
-                'is_active' => true,
-            ]);
-            $user->syncRoles(['teacher']);
-
-            // Store invite token in password resets table
-            DB::table('password_reset_tokens')->updateOrInsert(
-                ['email' => $user->email],
-                ['token' => Hash::make($token), 'created_at' => now()]
-            );
-
-            $user->notify(new SystemUserInvitedNotification($token));
-
-            $perMinute = (int) round($request->hourly_rate / 60);
-
-            return Teacher::create([
-                'user_id'                  => $user->id,
-                'qualifications'           => $request->qualifications,
-                'cv_url'                   => $request->cv_url,
-                'teachable_course_ids'     => $request->teachable_course_ids ?? [],
-                'payment_method'           => $request->payment_method,
-                'payment_account_details'  => $request->payment_account_details,
-                'hourly_rate'              => $request->hourly_rate,
-                'per_minute_rate_30'       => $perMinute,
-                'per_minute_rate_45'       => $perMinute,
-                'per_minute_rate_60'       => $perMinute,
-            ]);
-        });
+        $teacher = $creator->create($request->validated(), auth()->id());
 
         return new TeacherDetailResource($teacher->load('user'));
     }

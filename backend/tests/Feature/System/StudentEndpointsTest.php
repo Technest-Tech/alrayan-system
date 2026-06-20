@@ -55,7 +55,7 @@ class StudentEndpointsTest extends SystemTestCase
             'phone'               => '+15550001111',
             'country'             => 'US',
             'timezone'            => 'America/New_York',
-            'age_category'        => 'adult',
+            'student_type'        => 'adult',
             'sessions_per_month'  => 8,
             'session_duration_min'=> 30,
             'currency'            => 'USD',
@@ -74,7 +74,7 @@ class StudentEndpointsTest extends SystemTestCase
         $this->actingAs($this->adminUser(), 'sanctum')
             ->postJson('/api/system/students', [])
             ->assertUnprocessable()
-            ->assertJsonValidationErrors(['name', 'country', 'timezone', 'age_category']);
+            ->assertJsonValidationErrors(['name', 'country', 'timezone', 'student_type']);
     }
 
     public function test_admin_can_view_student(): void

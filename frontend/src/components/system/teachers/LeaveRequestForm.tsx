@@ -5,6 +5,7 @@ import { z } from 'zod'
 import { toast } from 'sonner'
 import { useRequestLeave } from '@/hooks/system/useTeacherLeaves'
 import { ApiError } from '@/lib/system/api'
+import { useI18n } from '@/lib/system/i18n'
 
 const schema = z.object({
   start_date: z.string().min(1, 'Start date is required'),
@@ -24,6 +25,7 @@ const inputStyle = { borderColor: 'rgb(var(--border-default, 229 233 240))', bac
 
 export function LeaveRequestForm({ teacherId, onSuccess }: LeaveRequestFormProps) {
   const requestLeave = useRequestLeave()
+  const { t } = useI18n()
 
   const { register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -44,20 +46,20 @@ export function LeaveRequestForm({ teacherId, onSuccess }: LeaveRequestFormProps
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium mb-1.5">Start date</label>
+          <label className="block text-sm font-medium mb-1.5">{t('teachers.leaveStartDate')}</label>
           <input type="date" className={inputCls} style={inputStyle} {...register('start_date')} />
           {errors.start_date && <p className="text-red-500 text-xs mt-1">{errors.start_date.message}</p>}
         </div>
         <div>
-          <label className="block text-sm font-medium mb-1.5">End date</label>
+          <label className="block text-sm font-medium mb-1.5">{t('teachers.leaveEndDate')}</label>
           <input type="date" className={inputCls} style={inputStyle} {...register('end_date')} />
           {errors.end_date && <p className="text-red-500 text-xs mt-1">{errors.end_date.message}</p>}
         </div>
       </div>
 
       <div>
-        <label className="block text-sm font-medium mb-1.5">Reason</label>
-        <textarea rows={3} className={inputCls} style={inputStyle} placeholder="Explain the reason for leave…" {...register('reason')} />
+        <label className="block text-sm font-medium mb-1.5">{t('common.reason')}</label>
+        <textarea rows={3} className={inputCls} style={inputStyle} placeholder={t('teachers.leaveReasonPlaceholder')} {...register('reason')} />
         {errors.reason && <p className="text-red-500 text-xs mt-1">{errors.reason.message}</p>}
       </div>
 
@@ -68,7 +70,7 @@ export function LeaveRequestForm({ teacherId, onSuccess }: LeaveRequestFormProps
           className="px-4 py-2 rounded-xl text-sm font-semibold text-white disabled:opacity-60"
           style={{ background: 'rgb(14 124 90)' }}
         >
-          {isSubmitting ? 'Submitting…' : 'Submit leave request'}
+          {isSubmitting ? t('common.submitting') : t('teachers.submitLeaveRequest')}
         </button>
       </div>
     </form>

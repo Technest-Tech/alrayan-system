@@ -21,6 +21,7 @@ class Teacher extends Model
         'teachable_course_ids'    => 'array',
         'payment_account_details' => 'encrypted',
         'is_active'               => 'boolean',
+        'accepts_new_students'    => 'boolean',
     ];
 
     public function user()          { return $this->belongsTo(User::class); }

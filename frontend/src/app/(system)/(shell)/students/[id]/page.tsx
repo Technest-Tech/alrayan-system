@@ -29,6 +29,7 @@ import { useCourses } from '@/hooks/system/useCourses'
 import { useTeachers } from '@/hooks/system/useTeachers'
 import type { StudentStatus } from '@/types/system/student'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { useI18n } from '@/lib/system/i18n'
 
 /* ─── Avatar ───────────────────────────────────────── */
 const PALETTE = ['#0E7C5A', '#0B1F3A', '#1E5AAB', '#7C3AED', '#B45309', '#BE185D', '#C05621']
@@ -314,7 +315,27 @@ const CURRENCIES = ['USD', 'EGP', 'GBP', 'EUR', 'SAR', 'AED']
 const TABS = ['Profile', 'Sessions', 'Reports', 'Invoices', 'Wallet', 'Family', 'Timeline', 'Notes'] as const
 type Tab = typeof TABS[number]
 
-const CANCELLATION_REASONS = [
+const TAB_KEYS: Record<Tab, string> = {
+  Profile:  'students.tabProfile',
+  Sessions: 'students.tabSessions',
+  Reports:  'students.tabReports',
+  Invoices: 'students.tabInvoices',
+  Wallet:   'students.tabWallet',
+  Family:   'students.tabFamily',
+  Timeline: 'students.tabTimeline',
+  Notes:    'students.tabNotes',
+}
+
+const CANCELLATION_REASON_KEYS = [
+  'students.reasonNoInterest',
+  'students.reasonPrice',
+  'students.reasonSchedule',
+  'students.reasonCompleted',
+  'students.reasonMoved',
+  'students.reasonOther',
+]
+
+const CANCELLATION_REASON_VALUES = [
   'No longer interested', 'Price too high', 'Schedule conflict',
   'Completed course', 'Moved to another provider', 'Other',
 ]
@@ -345,6 +366,7 @@ function DeleteStudentModal({ studentName, onConfirm, onClose, isLoading }: {
   onClose: () => void
   isLoading: boolean
 }) {
+  const { t } = useI18n()
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-[rgb(11,31,58)]/40 backdrop-blur-sm" onClick={onClose} />
@@ -365,11 +387,11 @@ function DeleteStudentModal({ studentName, onConfirm, onClose, isLoading }: {
         <div className="flex gap-3 pt-1">
           <button onClick={onClose} className="flex-1 px-4 py-2 rounded-xl text-sm font-medium border hover:bg-black/5 transition-colors"
             style={{ borderColor: 'rgb(var(--border-default,229 233 240))' }}>
-            Cancel
+            {t('common.cancel')}
           </button>
           <button onClick={onConfirm} disabled={isLoading}
             className="flex-1 px-4 py-2 rounded-xl text-sm font-semibold text-white bg-red-600 hover:bg-red-700 disabled:opacity-50 transition-colors">
-            {isLoading ? 'Deleting…' : 'Delete student'}
+            {isLoading ? t('common.deleting') : t('students.deleteButton')}
           </button>
         </div>
       </div>
@@ -383,6 +405,7 @@ function CancelModal({ onConfirm, onClose, isLoading }: {
   onClose: () => void
   isLoading: boolean
 }) {
+  const { t } = useI18n()
   const [reason, setReason] = useState('')
   const [notes,  setNotes]  = useState('')
   return (
@@ -393,26 +416,28 @@ function CancelModal({ onConfirm, onClose, isLoading }: {
           <X size={16} />
         </button>
         <div>
-          <h3 className="font-semibold text-[rgb(11,31,58)]">Cancel enrolment</h3>
-          <p className="text-xs mt-0.5" style={{ color: 'rgb(90 100 112)' }}>This action will be logged in the student timeline.</p>
+          <h3 className="font-semibold text-[rgb(11,31,58)]">{t('students.cancelEnrolmentTitle')}</h3>
+          <p className="text-xs mt-0.5" style={{ color: 'rgb(90 100 112)' }}>{t('students.cancelEnrolmentNote')}</p>
         </div>
         <div>
-          <label className="block text-xs font-medium mb-1.5 opacity-70">Reason</label>
+          <label className="block text-xs font-medium mb-1.5 opacity-70">{t('common.reason')}</label>
           <select value={reason} onChange={(e) => setReason(e.target.value)} className={inp} style={inpStyle}>
-            <option value="">Select a reason…</option>
-            {CANCELLATION_REASONS.map((r) => <option key={r} value={r}>{r}</option>)}
+            <option value="">{t('students.selectReason')}</option>
+            {CANCELLATION_REASON_KEYS.map((key, i) => (
+              <option key={CANCELLATION_REASON_VALUES[i]} value={CANCELLATION_REASON_VALUES[i]}>{t(key)}</option>
+            ))}
           </select>
         </div>
         <div>
-          <label className="block text-xs font-medium mb-1.5 opacity-70">Internal notes (optional)</label>
+          <label className="block text-xs font-medium mb-1.5 opacity-70">{t('students.internalNotes')}</label>
           <textarea rows={3} value={notes} onChange={(e) => setNotes(e.target.value)} className={inp} style={inpStyle} />
         </div>
         <div className="flex justify-end gap-3 pt-1">
           <button onClick={onClose} className="px-4 py-2 rounded-xl text-sm font-medium border hover:bg-black/5 transition-colors"
-            style={{ borderColor: 'rgb(var(--border-default,229 233 240))' }}>Back</button>
+            style={{ borderColor: 'rgb(var(--border-default,229 233 240))' }}>{t('common.back')}</button>
           <button onClick={() => onConfirm(reason, notes)} disabled={!reason || isLoading}
             className="px-4 py-2 rounded-xl text-sm font-semibold text-white bg-red-600 hover:bg-red-700 disabled:opacity-50 transition-colors">
-            {isLoading ? 'Cancelling…' : 'Confirm cancel'}
+            {isLoading ? t('students.cancelling') : t('students.confirmCancel')}
           </button>
         </div>
       </div>
@@ -452,7 +477,8 @@ function Label({ children, required }: { children: React.ReactNode; required?: b
 /* ═══ Page ═════════════════════════════════════════════ */
 export default function StudentDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
-  const router = useRouter()
+  const router  = useRouter()
+  const { t }   = useI18n()
   const [tab, setTab] = useState<Tab>('Profile')
   const [showCancel,      setShowCancel]      = useState(false)
   const [showActivate,    setShowActivate]    = useState(false)
@@ -533,8 +559,8 @@ export default function StudentDetailPage({ params }: { params: Promise<{ id: st
 
   if (!student) {
     return (
-      <EmptyState icon="AlertCircle" title="Student not found"
-        action={<Link href="/students" className="text-sm underline">Back to students</Link>} />
+      <EmptyState icon="AlertCircle" title={t('students.studentNotFound')}
+        action={<Link href="/students" className="text-sm underline">{t('students.backToStudents')}</Link>} />
     )
   }
 
@@ -554,7 +580,7 @@ export default function StudentDetailPage({ params }: { params: Promise<{ id: st
       <div className="flex items-center gap-1.5 mb-5 text-sm" style={{ color: 'rgb(90 100 112)' }}>
         <Link href="/students" className="flex items-center gap-1 hover:text-[rgb(14,124,90)] transition-colors">
           <ChevronLeft size={14} />
-          Students
+          {t('students.title')}
         </Link>
         <span className="opacity-30">/</span>
         <span style={{ color: 'rgb(11 31 58)' }}>{student.name}</span>
@@ -586,7 +612,7 @@ export default function StudentDetailPage({ params }: { params: Promise<{ id: st
                   <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-1.5 py-0.5 rounded-full"
                     style={{ background: 'rgb(14 124 90 / 0.1)', color: 'rgb(14 124 90)' }}>
                     <Baby size={10} />
-                    Child
+                    {t('students.typeChild')}
                   </span>
                 )}
                 <StudentStatusBadge status={student.status} />
@@ -599,7 +625,7 @@ export default function StudentDetailPage({ params }: { params: Promise<{ id: st
               </div>
               <p className="text-sm" style={{ color: 'rgb(90 100 112)' }}>
                 {student.student_type === 'child' && student.guardian
-                  ? <>via <span className="font-medium" style={{ color: 'rgb(11 31 58)' }}>{student.guardian.name}</span> · </>
+                  ? <>{t('students.via')} <span className="font-medium" style={{ color: 'rgb(11 31 58)' }}>{student.guardian.name}</span> · </>
                   : null}
                 {student.country}
                 {student.timezone ? <> · <span className="opacity-70">{student.timezone}</span></> : null}
@@ -615,7 +641,7 @@ export default function StudentDetailPage({ params }: { params: Promise<{ id: st
                 style={{ borderColor: 'rgb(var(--border-default,229 233 240))', color: 'rgb(90 100 112)' }}
               >
                 <Trash2 size={13} />
-                Delete
+                {t('common.delete')}
               </button>
               {student.whatsapp && (
                 <a
@@ -634,16 +660,16 @@ export default function StudentDetailPage({ params }: { params: Promise<{ id: st
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors"
                   style={{ background: 'rgb(14 124 90 / 0.1)', color: 'rgb(14 124 90)', border: '1px solid rgb(14 124 90 / 0.25)' }}>
                   <CalendarDays size={13} />
-                  Schedule Trial Class
+                  {t('students.scheduleTrialClass')}
                 </button>
               )}
               {student.status === 'trial' && hasScheduledTrial && (
                 <button onClick={() => setTab('Sessions')}
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors"
                   style={{ background: 'rgb(14 124 90 / 0.06)', color: 'rgb(14 124 90)', border: '1px solid rgb(14 124 90 / 0.2)', cursor: 'default' }}
-                  title="Trial class already scheduled — view in Sessions tab">
+                  title={t('students.trialScheduledTooltip')}>
                   <Check size={13} />
-                  Trial Scheduled
+                  {t('students.trialScheduled')}
                 </button>
               )}
               {student.status === 'trial' && hasAnySession && !hasScheduledTrial && (
@@ -651,7 +677,7 @@ export default function StudentDetailPage({ params }: { params: Promise<{ id: st
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors"
                   style={{ background: 'rgb(107 114 128 / 0.08)', color: 'rgb(107 114 128)', border: '1px solid rgb(107 114 128 / 0.2)' }}>
                   <CalendarDays size={13} />
-                  Schedule Another Trial
+                  {t('students.scheduleAnotherTrial')}
                 </button>
               )}
               {allowed.map((to) => {
@@ -659,25 +685,25 @@ export default function StudentDetailPage({ params }: { params: Promise<{ id: st
                   <button key={to} onClick={() => doTransition(to)} disabled={transition.isPending}
                     className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50"
                     style={{ background: 'rgb(14 124 90)' }}>
-                    <PlayCircle size={13} /> Activate
+                    <PlayCircle size={13} /> {t('common.activate')}
                   </button>
                 )
                 if (to === 'paused')   return (
                   <button key={to} onClick={() => doTransition(to)} disabled={transition.isPending}
                     className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-white bg-amber-500 hover:bg-amber-600 disabled:opacity-50 transition-colors">
-                    <PauseCircle size={13} /> Pause
+                    <PauseCircle size={13} /> {t('status.paused')}
                   </button>
                 )
                 if (to === 'suspended') return (
                   <button key={to} onClick={() => doTransition(to)} disabled={transition.isPending}
                     className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-white bg-orange-500 hover:bg-orange-600 disabled:opacity-50 transition-colors">
-                    <PauseCircle size={13} /> Suspend
+                    <PauseCircle size={13} /> {t('status.suspended')}
                   </button>
                 )
                 if (to === 'cancelled') return (
                   <button key={to} onClick={() => doTransition(to)} disabled={transition.isPending}
                     className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-white bg-red-600 hover:bg-red-700 disabled:opacity-50 transition-colors">
-                    <XCircle size={13} /> Cancel
+                    <XCircle size={13} /> {t('status.cancelled')}
                   </button>
                 )
                 return null
@@ -688,9 +714,9 @@ export default function StudentDetailPage({ params }: { params: Promise<{ id: st
           {/* Stats strip */}
           <div className="mt-5 pt-4 pb-5 grid grid-cols-2 sm:grid-cols-4 gap-x-6 gap-y-3 border-t"
             style={{ borderColor: 'rgb(var(--border-default,229 233 240))' }}>
-            <StatChip label="Course"   value={student.course?.name ?? '—'} />
-            <StatChip label="Teacher"  value={student.assigned_teacher?.name ?? 'Unassigned'} />
-            <StatChip label="Sessions" value={sessions} />
+            <StatChip label={t('common.course')}   value={student.course?.name ?? '—'} />
+            <StatChip label={t('common.teacher')}  value={student.assigned_teacher?.name ?? t('status.unassigned')} />
+            <StatChip label={t('common.sessions')} value={sessions} />
             {student.student_type === 'child'
               ? <StatChip label="Parent" value={student.guardian?.name ?? '—'} />
               : <StatChip label="Price"  value={student.monthly_price_minor ? price : '—'} />
@@ -712,14 +738,14 @@ export default function StudentDetailPage({ params }: { params: Promise<{ id: st
       <div className="sticky top-0 z-10 -mx-1 px-1 bg-[rgb(var(--surface-bg,244_246_250))] pb-0">
         <div className="flex gap-0 border-b overflow-x-auto"
           style={{ borderColor: 'rgb(var(--border-default,229 233 240))' }}>
-          {TABS.map((t) => (
-            <button key={t} onClick={() => setTab(t)}
+          {TABS.map((tabName) => (
+            <button key={tabName} onClick={() => setTab(tabName)}
               className="px-4 py-2.5 text-sm font-medium whitespace-nowrap border-b-2 transition-colors"
               style={{
-                borderBottomColor: tab === t ? 'rgb(14 124 90)' : 'transparent',
-                color: tab === t ? 'rgb(14 124 90)' : 'rgb(90 100 112)',
+                borderBottomColor: tab === tabName ? 'rgb(14 124 90)' : 'transparent',
+                color: tab === tabName ? 'rgb(14 124 90)' : 'rgb(90 100 112)',
               }}>
-              {t}
+              {t(TAB_KEYS[tabName])}
             </button>
           ))}
         </div>
@@ -731,14 +757,14 @@ export default function StudentDetailPage({ params }: { params: Promise<{ id: st
         {tab === 'Profile' && (
           <form onSubmit={handleSubmit(onProfileSave)} className="space-y-4 max-w-3xl">
 
-            <Card title="Identity">
+            <Card title={t('students.sectionIdentity')}>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div><Label required>Name</Label><input className={inp} style={inpStyle} {...register('name')} /></div>
-                <div><Label>Email</Label><input type="email" className={inp} style={inpStyle} {...register('email')} /></div>
-                <div><Label>WhatsApp</Label><input className={inp} style={inpStyle} {...register('whatsapp')} /></div>
+                <div><Label required>{t('common.name')}</Label><input className={inp} style={inpStyle} {...register('name')} /></div>
+                <div><Label>{t('common.email')}</Label><input type="email" className={inp} style={inpStyle} {...register('email')} /></div>
+                <div><Label>{t('common.whatsapp')}</Label><input className={inp} style={inpStyle} {...register('whatsapp')} /></div>
                 {student.student_type === 'adult' && (<>
                   <div>
-                    <Label required>Country</Label>
+                    <Label required>{t('common.country')}</Label>
                     <Controller name="country" control={control} render={({ field }) => (
                       <CountryCombobox value={field.value ?? ''} onChange={(code, tz) => {
                         field.onChange(code)
@@ -747,7 +773,7 @@ export default function StudentDetailPage({ params }: { params: Promise<{ id: st
                     )} />
                   </div>
                   <div>
-                    <Label required>Timezone</Label>
+                    <Label required>{t('common.timezone')}</Label>
                     <Controller name="timezone" control={control} render={({ field }) => (
                       <input className={inp} style={inpStyle} placeholder="e.g. Africa/Cairo" {...field} value={field.value ?? ''} />
                     )} />
@@ -757,7 +783,7 @@ export default function StudentDetailPage({ params }: { params: Promise<{ id: st
             </Card>
 
             {student.student_type === 'child' && (
-              <Card title="Parent / Guardian">
+              <Card title={t('students.sectionParentGuardian')}>
                 {student.guardian ? (
                   <div className="space-y-4">
                     {/* Parent identity row */}
@@ -789,7 +815,7 @@ export default function StudentDetailPage({ params }: { params: Promise<{ id: st
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1 border-t"
                       style={{ borderColor: 'rgb(var(--border-default,229 233 240))' }}>
                       <div>
-                        <Label required>Country</Label>
+                        <Label required>{t('common.country')}</Label>
                         <Controller name="country" control={control} render={({ field }) => (
                           <CountryCombobox value={field.value ?? ''} onChange={(code, tz) => {
                             field.onChange(code)
@@ -798,7 +824,7 @@ export default function StudentDetailPage({ params }: { params: Promise<{ id: st
                         )} />
                       </div>
                       <div>
-                        <Label required>Timezone</Label>
+                        <Label required>{t('common.timezone')}</Label>
                         <Controller name="timezone" control={control} render={({ field }) => (
                           <input className={inp} style={inpStyle} placeholder="e.g. Africa/Cairo" {...field} value={field.value ?? ''} />
                         )} />
@@ -830,48 +856,48 @@ export default function StudentDetailPage({ params }: { params: Promise<{ id: st
                     )}
                   </div>
                 ) : (
-                  <p className="text-sm opacity-40">No guardian linked.</p>
+                  <p className="text-sm opacity-40">{t('students.noGuardianLinked')}</p>
                 )}
               </Card>
             )}
 
-            <Card title="Enrollment">
+            <Card title={t('students.sectionEnrollment')}>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <Label>Course</Label>
+                  <Label>{t('common.course')}</Label>
                   <Controller name="course_id" control={control} render={({ field }) => (
                     <EntityCombobox
                       items={courses.map((c) => ({ id: c.id, name: c.name }))}
                       value={field.value as number | undefined}
                       onChange={field.onChange}
-                      placeholder="Select course…"
-                      noneLabel="No course"
+                      placeholder={t('students.selectCourse')}
+                      noneLabel={t('students.noCourse')}
                     />
                   )} />
                 </div>
                 <div>
-                  <Label>Teacher</Label>
+                  <Label>{t('common.teacher')}</Label>
                   <Controller name="assigned_teacher_id" control={control} render={({ field }) => (
                     <EntityCombobox
-                      items={teachers.map((t) => ({ id: t.id, name: t.name ?? `Teacher #${t.id}` }))}
+                      items={teachers.map((tc) => ({ id: tc.id, name: tc.name ?? `Teacher #${tc.id}` }))}
                       value={field.value as number | undefined}
                       onChange={field.onChange}
-                      placeholder="Assign teacher…"
-                      noneLabel="Unassigned"
+                      placeholder={t('students.assignTeacher')}
+                      noneLabel={t('status.unassigned')}
                     />
                   )} />
                 </div>
                 <div>
-                  <Label>Sessions / month</Label>
+                  <Label>{t('students.sessionsPerMonth')}</Label>
                   <input type="number" min="1" className={inp} style={inpStyle} {...register('sessions_per_month')} />
                 </div>
                 <div>
-                  <Label>Session duration</Label>
+                  <Label>{t('students.sessionDuration')}</Label>
                   <Controller name="session_duration_min" control={control} render={({ field }) => (
                     <Select value={String(field.value)} onValueChange={v => field.onChange(Number(v))}>
                       <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
                       <SelectContent>
-                        {DURATIONS.map((d) => <SelectItem key={d} value={String(d)}>{d} minutes</SelectItem>)}
+                        {DURATIONS.map((d) => <SelectItem key={d} value={String(d)}>{d} {t('common.minutes')}</SelectItem>)}
                       </SelectContent>
                     </Select>
                   )} />
@@ -879,10 +905,10 @@ export default function StudentDetailPage({ params }: { params: Promise<{ id: st
               </div>
             </Card>
 
-            <Card title="Pricing">
+            <Card title={t('students.sectionPricing')}>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div>
-                  <Label>Currency</Label>
+                  <Label>{t('common.currency')}</Label>
                   <Controller name="currency" control={control} render={({ field }) => (
                     <Select value={field.value} onValueChange={field.onChange}>
                       <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
@@ -893,11 +919,11 @@ export default function StudentDetailPage({ params }: { params: Promise<{ id: st
                   )} />
                 </div>
                 <div>
-                  <Label>Monthly price</Label>
+                  <Label>{t('students.monthlyPrice')}</Label>
                   <input type="number" min="0" className={inp} style={inpStyle} {...register('monthly_price_minor')} />
                 </div>
                 <div>
-                  <Label>Discount (%)</Label>
+                  <Label>{t('students.discount')}</Label>
                   <input type="number" min="0" max="100" className={inp} style={inpStyle} {...register('custom_discount_pct')} />
                 </div>
               </div>
@@ -907,16 +933,16 @@ export default function StudentDetailPage({ params }: { params: Promise<{ id: st
               <button type="submit" disabled={isSubmitting}
                 className="px-5 py-2 rounded-xl text-sm font-semibold text-white disabled:opacity-60 hover:opacity-90 transition-opacity"
                 style={{ background: 'rgb(14 124 90)' }}>
-                {isSubmitting ? 'Saving…' : 'Save changes'}
+                {isSubmitting ? t('common.saving') : t('common.save')}
               </button>
             </div>
           </form>
         )}
 
         {tab === 'Sessions' && <StudentSessionsTab studentId={student.id} />}
-        {tab === 'Reports'  && <EmptyState icon="BarChart2" title="Reports"  description="Coming soon." />}
-        {tab === 'Invoices' && <EmptyState icon="FileText"  title="Invoices" description="Coming soon." />}
-        {tab === 'Wallet'   && <EmptyState icon="Wallet"    title="Wallet"   description="Coming soon." />}
+        {tab === 'Reports'  && <EmptyState icon="BarChart2" title={t('students.tabReports')}  description={t('common.comingSoon')} />}
+        {tab === 'Invoices' && <EmptyState icon="FileText"  title={t('students.tabInvoices')} description={t('common.comingSoon')} />}
+        {tab === 'Wallet'   && <EmptyState icon="Wallet"    title={t('students.tabWallet')}   description={t('common.comingSoon')} />}
         {tab === 'Family'   && <FamilyTabContent student={student} />}
         {tab === 'Timeline' && <StudentTimeline entries={student.timeline} isLoading={false} />}
         {tab === 'Notes'    && (

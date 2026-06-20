@@ -28,7 +28,7 @@ class SendWelcomeOnStudentEnrolled implements ShouldQueue
 
         $this->wa->sendTemplate('welcome_student', $student->whatsappGroup, [
             'student_name'      => $student->name,
-            'academy_name'      => Setting::get('academy.name', 'Alrayan Academy'),
+            'academy_name'      => Setting::get('academy.name', 'Azhary'),
             'assigned_teacher'  => $student->assignedTeacher?->user->name ?? '',
             'first_session_time'=> $firstSession
                 ? $firstSession->scheduled_start->setTimezone($student->timezone ?? 'UTC')->format('D M j H:i T')

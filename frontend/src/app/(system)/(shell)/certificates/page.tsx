@@ -5,6 +5,7 @@ import { Download, Layers, FileText, ChevronLeft, CheckCircle2 } from 'lucide-re
 import { PageHeader } from '@/components/system/primitives/PageHeader'
 import { useCertificates } from '@/hooks/system/useCertificates'
 import { CERTIFICATE_TYPE_LABELS, type CertificateType } from '@/types/system/certificate'
+import { useI18n } from '@/lib/system/i18n'
 import {
   CertificateCanvas,
   downloadCertificatePDF,
@@ -13,6 +14,14 @@ import {
 
 type Tab = 'builder' | 'issued'
 type Template = 'classic' | 'modern'
+
+// UI-only translation keys for certificate types (the baked PDF still uses CERTIFICATE_TYPE_LABELS)
+const CERTIFICATE_TYPE_KEYS: Record<CertificateType, string> = {
+  course_completion: 'certificates.types.course_completion',
+  hifz_milestone:    'certificates.types.hifz_milestone',
+  ijazah:            'certificates.types.ijazah',
+  other:             'certificates.types.other',
+}
 
 const CERT_YEAR = new Date().getFullYear()
 
@@ -41,9 +50,10 @@ function ThumbnailStar({ cx, cy, size, fill, opacity = 1 }: { cx: number; cy: nu
 
 // ─── Template Picker ──────────────────────────────────────────────────────────
 function TemplatePicker({ onSelect }: { onSelect: (t: Template) => void }) {
+  const { t } = useI18n()
   return (
     <div className="mt-8">
-      <p className="text-sm opacity-50 mb-6">Choose a template to get started</p>
+      <p className="text-sm opacity-50 mb-6">{t('certificates.builder.chooseTemplate')}</p>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-3xl">
 
         {/* Classic — Quranic Gold */}
@@ -117,8 +127,8 @@ function TemplatePicker({ onSelect }: { onSelect: (t: Template) => void }) {
           </div>
           {/* Label */}
           <div className="px-4 py-3" style={{ background: 'rgb(var(--surface-card))' }}>
-            <div className="font-semibold text-sm">Quranic Gold</div>
-            <div className="text-xs opacity-40 mt-0.5">Cream · Khatam stars · Bismillah · Arabesque borders</div>
+            <div className="font-semibold text-sm">{t('certificates.templates.classic.name')}</div>
+            <div className="text-xs opacity-40 mt-0.5">{t('certificates.templates.classic.desc')}</div>
           </div>
         </button>
 
@@ -221,8 +231,8 @@ function TemplatePicker({ onSelect }: { onSelect: (t: Template) => void }) {
           </div>
           {/* Label */}
           <div className="px-4 py-3" style={{ background: 'rgb(var(--surface-card))' }}>
-            <div className="font-semibold text-sm">Royal Islamic</div>
-            <div className="text-xs opacity-40 mt-0.5">Navy header · Khatam stars · Bismillah · Circle lattice · Green footer</div>
+            <div className="font-semibold text-sm">{t('certificates.templates.modern.name')}</div>
+            <div className="text-xs opacity-40 mt-0.5">{t('certificates.templates.modern.desc')}</div>
           </div>
         </button>
       </div>
@@ -245,6 +255,7 @@ const inputStyle = { borderColor: 'rgb(var(--border-default))' }
 
 // ─── Main Page ─────────────────────────────────────────────────────────────────
 export default function CertificatesPage() {
+  const { t } = useI18n()
   const [tab, setTab]           = useState<Tab>('builder')
   const [template, setTemplate] = useState<Template | null>(null)
   const [downloading, setDown]  = useState(false)
@@ -258,9 +269,9 @@ export default function CertificatesPage() {
     setData(d => ({ ...d, [k]: v }))
   }, [])
 
-  function handleTypeChange(t: CertificateType) {
-    setCertType(t)
-    setField('typeLabel', CERTIFICATE_TYPE_LABELS[t])
+  function handleTypeChange(ct: CertificateType) {
+    setCertType(ct)
+    setField('typeLabel', CERTIFICATE_TYPE_LABELS[ct])
   }
 
   async function handleDownload() {
@@ -271,7 +282,7 @@ export default function CertificatesPage() {
 
   return (
     <>
-      <PageHeader title="Certificate Builder" description="Design premium certificates and download as PDF." />
+      <PageHeader title={t('certificates.builder.heading')} description={t('certificates.builder.subheading')} />
 
       {/* Tab bar */}
       <div
@@ -279,8 +290,8 @@ export default function CertificatesPage() {
         style={{ background: 'rgb(var(--surface-card-2))' }}
       >
         {([
-          { id: 'builder', label: 'Builder', Icon: Layers },
-          { id: 'issued',  label: 'Issued Certificates', Icon: FileText },
+          { id: 'builder', label: t('certificates.tabs.builder'), Icon: Layers },
+          { id: 'issued',  label: t('certificates.tabs.issued'), Icon: FileText },
         ] as const).map(({ id, label, Icon }) => (
           <button
             key={id}
@@ -308,7 +319,7 @@ export default function CertificatesPage() {
                 className="flex items-center gap-1 text-xs opacity-40 hover:opacity-70 mb-5 transition-opacity"
               >
                 <ChevronLeft size={13} />
-                Change template
+                {t('certificates.builder.changeTemplate')}
               </button>
 
               {/* Template badge */}
@@ -318,63 +329,67 @@ export default function CertificatesPage() {
                   style={{ background: 'rgb(var(--surface-card-2))', border: '1px solid rgb(var(--border-default))' }}
                 >
                   <CheckCircle2 size={12} className="text-[#0E7C5A]" />
-                  {template === 'classic' ? 'Classic Elegance' : 'Royal Modern'} selected
+                  {t('certificates.builder.templateSelected', {
+                    template: template === 'classic'
+                      ? t('certificates.templates.classic.name')
+                      : t('certificates.templates.modern.name'),
+                  })}
                 </span>
               </div>
 
               <div className="grid grid-cols-1 xl:grid-cols-[360px_1fr] gap-8">
                 {/* ── Form ── */}
                 <div className="space-y-4">
-                  <Field label="Student Name">
+                  <Field label={t('certificates.fields.studentName')}>
                     <input
                       value={data.studentName}
                       onChange={e => setField('studentName', e.target.value)}
-                      placeholder="e.g. Ahmed Al-Rashid"
+                      placeholder={t('certificates.placeholders.studentName')}
                       className={inputCls} style={inputStyle}
                     />
                   </Field>
 
-                  <Field label="Certificate Type">
+                  <Field label={t('certificates.fields.type')}>
                     <select
                       value={certType}
                       onChange={e => handleTypeChange(e.target.value as CertificateType)}
                       className={inputCls} style={inputStyle}
                     >
-                      {(Object.keys(CERTIFICATE_TYPE_LABELS) as CertificateType[]).map(t => (
-                        <option key={t} value={t}>{CERTIFICATE_TYPE_LABELS[t]}</option>
+                      {(Object.keys(CERTIFICATE_TYPE_LABELS) as CertificateType[]).map(ct => (
+                        <option key={ct} value={ct}>{t(CERTIFICATE_TYPE_KEYS[ct])}</option>
                       ))}
                     </select>
                   </Field>
 
-                  <Field label="Achievement Title">
+                  <Field label={t('certificates.fields.title')}>
                     <input
                       value={data.title}
                       onChange={e => setField('title', e.target.value)}
-                      placeholder="e.g. Completed Juz Amma with Tajweed"
+                      placeholder={t('certificates.placeholders.title')}
                       className={inputCls} style={inputStyle}
                     />
                   </Field>
 
-                  <Field label="Description (optional)">
+                  <Field label={t('certificates.fields.description')}>
                     <textarea
                       value={data.description}
                       onChange={e => setField('description', e.target.value)}
                       rows={3}
-                      placeholder="Additional details about the achievement…"
+                      placeholder={t('certificates.placeholders.description')}
                       className={inputCls} style={inputStyle}
                     />
                   </Field>
 
                   <div className="grid grid-cols-2 gap-3">
-                    <Field label="Course Name">
+                    <Field label={t('certificates.fields.courseName')}>
                       <input
                         value={data.courseName}
                         onChange={e => setField('courseName', e.target.value)}
-                        placeholder="e.g. Quran Memorization"
+                        placeholder={t('certificates.placeholders.courseName')}
                         className={inputCls} style={inputStyle}
                       />
                     </Field>
-                    <Field label="Date Issued">
+                    <Field label={t('certificates.fields.dateIssued')}>
                       <input
                         type="date"
                         value={data.issuedOn}
@@ -385,25 +400,25 @@ export default function CertificatesPage() {
                   </div>
 
                   <div className="grid grid-cols-2 gap-3">
-                    <Field label="Teacher / Instructor">
+                    <Field label={t('certificates.fields.teacher')}>
                       <input
                         value={data.teacherName}
                         onChange={e => setField('teacherName', e.target.value)}
-                        placeholder="Teacher Name"
+                        placeholder={t('certificates.placeholders.teacher')}
                         className={inputCls} style={inputStyle}
                       />
                     </Field>
-                    <Field label="Director Name">
+                    <Field label={t('certificates.fields.director')}>
                       <input
                         value={data.directorName}
                         onChange={e => setField('directorName', e.target.value)}
-                        placeholder="Academy Director"
+                        placeholder={t('certificates.placeholders.director')}
                         className={inputCls} style={inputStyle}
                       />
                     </Field>
                   </div>
 
-                  <Field label="Certificate Number">
+                  <Field label={t('certificates.fields.number')}>
                     <input
                       value={data.certNumber}
                       onChange={e => setField('certNumber', e.target.value)}
@@ -421,24 +436,24 @@ export default function CertificatesPage() {
                       style={{ background: '#C9A24B' }}
                     >
                       <Download size={15} />
-                      {downloading ? 'Preparing PDF…' : 'Download PDF'}
+                      {downloading ? t('certificates.builder.preparingPdf') : t('certificates.builder.downloadPdf')}
                     </button>
                     <p className="text-center text-xs opacity-30">
-                      Opens print dialog — save as PDF from there
+                      {t('certificates.builder.printHint')}
                     </p>
                   </div>
 
                   {/* Link to issue + save via backend */}
                   <div className="pt-1 text-center">
                     <Link href="/certificates/new" className="text-xs opacity-40 hover:opacity-60 underline underline-offset-2">
-                      Issue &amp; save to database instead →
+                      {t('certificates.builder.issueInstead')}
                     </Link>
                   </div>
                 </div>
 
                 {/* ── Live Preview ── */}
                 <div className="flex flex-col gap-3">
-                  <div className="text-xs font-medium opacity-40 uppercase tracking-wide">Live Preview</div>
+                  <div className="text-xs font-medium opacity-40 uppercase tracking-wide">{t('certificates.builder.livePreview')}</div>
                   <div
                     className="rounded-2xl overflow-hidden shadow-md"
                     style={{ border: '1px solid rgb(var(--border-default))', background: '#e5e7eb' }}
@@ -448,7 +463,7 @@ export default function CertificatesPage() {
                     </div>
                   </div>
                   <p className="text-xs opacity-30 text-center">
-                    The downloaded PDF exactly matches this preview · A4 landscape
+                    {t('certificates.builder.pdfMatchHint')}
                   </p>
                 </div>
               </div>
@@ -463,8 +478,15 @@ export default function CertificatesPage() {
           <table className="w-full text-sm">
             <thead style={{ background: 'rgb(var(--surface-card-2))' }}>
               <tr>
-                {['Number', 'Student', 'Type', 'Title', 'Issued', 'Status'].map(h => (
-                  <th key={h} className="px-4 py-3 text-left font-medium opacity-60 text-xs uppercase tracking-wide">{h}</th>
+                {[
+                  'certificates.table.number',
+                  'certificates.table.student',
+                  'certificates.table.type',
+                  'certificates.table.title',
+                  'certificates.table.issued',
+                  'certificates.table.status',
+                ].map(h => (
+                  <th key={h} className="px-4 py-3 text-left font-medium opacity-60 text-xs uppercase tracking-wide">{t(h)}</th>
                 ))}
               </tr>
             </thead>
@@ -484,20 +506,20 @@ export default function CertificatesPage() {
                     <Link href={`/certificates/${c.id}`} className="font-mono text-xs opacity-60 hover:opacity-100">{c.certificate_number}</Link>
                   </td>
                   <td className="px-4 py-3 font-medium">{c.student?.name ?? '—'}</td>
-                  <td className="px-4 py-3 opacity-60">{CERTIFICATE_TYPE_LABELS[c.type]}</td>
+                  <td className="px-4 py-3 opacity-60">{t(CERTIFICATE_TYPE_KEYS[c.type])}</td>
                   <td className="px-4 py-3 max-w-xs truncate">{c.title}</td>
                   <td className="px-4 py-3 whitespace-nowrap opacity-60">{c.issued_on}</td>
                   <td className="px-4 py-3">
                     {c.is_revoked
-                      ? <span className="px-2 py-0.5 text-xs rounded-full bg-red-50 text-red-600 border border-red-100">Revoked</span>
-                      : <span className="px-2 py-0.5 text-xs rounded-full bg-green-50 text-green-700 border border-green-100">Active</span>}
+                      ? <span className="px-2 py-0.5 text-xs rounded-full bg-red-50 text-red-600 border border-red-100">{t('certificates.status.revoked')}</span>
+                      : <span className="px-2 py-0.5 text-xs rounded-full bg-green-50 text-green-700 border border-green-100">{t('status.active')}</span>}
                   </td>
                 </tr>
               ))}
               {!issuedLoading && certs.length === 0 && (
                 <tr>
                   <td colSpan={6} className="px-4 py-10 text-center opacity-30 text-sm">
-                    No certificates issued yet.
+                    {t('certificates.table.empty')}
                   </td>
                 </tr>
               )}

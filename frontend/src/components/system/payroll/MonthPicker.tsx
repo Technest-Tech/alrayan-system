@@ -6,11 +6,27 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { useI18n } from '@/lib/system/i18n'
 
 interface MonthPickerProps {
   value?: string
   onChange: (period: string) => void
 }
+
+const MONTH_KEYS = [
+  'schedule.months.january',
+  'schedule.months.february',
+  'schedule.months.march',
+  'schedule.months.april',
+  'schedule.months.may',
+  'schedule.months.june',
+  'schedule.months.july',
+  'schedule.months.august',
+  'schedule.months.september',
+  'schedule.months.october',
+  'schedule.months.november',
+  'schedule.months.december',
+] as const
 
 function getLastTwelveMonths(): string[] {
   const months: string[] = []
@@ -24,21 +40,19 @@ function getLastTwelveMonths(): string[] {
   return months
 }
 
-function formatPeriod(period: string): string {
-  const [year, month] = period.split('-')
-  return new Date(Number(year), Number(month) - 1, 1).toLocaleDateString('en-US', {
-    month: 'long',
-    year: 'numeric',
-  })
-}
-
 export function MonthPicker({ value, onChange }: MonthPickerProps) {
+  const { t } = useI18n()
   const months = getLastTwelveMonths()
+
+  function formatPeriod(period: string): string {
+    const [year, month] = period.split('-')
+    return `${t(MONTH_KEYS[Number(month) - 1])} ${year}`
+  }
 
   return (
     <Select value={value ?? months[0]} onValueChange={onChange}>
       <SelectTrigger className="w-48">
-        <SelectValue placeholder="Select period" />
+        <SelectValue placeholder={t('payroll.selectPeriod')} />
       </SelectTrigger>
       <SelectContent>
         {months.map(m => (

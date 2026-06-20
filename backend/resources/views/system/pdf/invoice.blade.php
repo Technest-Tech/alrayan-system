@@ -34,7 +34,7 @@
 <div class="page">
   <div class="header">
     <div class="logo-area">
-      <h1>Alrayan Academy</h1>
+      <h1>Azhary</h1>
       <p>Online Quran Learning · alrayan-academy.com</p>
     </div>
     <div class="invoice-meta">
@@ -113,7 +113,7 @@
   @endif
 
   <div class="footer">
-    <p>Alrayan Academy · Thank you for learning with us!</p>
+    <p>Azhary · Thank you for learning with us!</p>
     <p>For payment queries, please contact us at info@alrayan-academy.com</p>
   </div>
 </div>

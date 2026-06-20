@@ -8,20 +8,22 @@ import { Textarea } from '@/components/ui/textarea'
 import { useMarkLeadLost } from '@/hooks/system/useLeads'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
+import { useI18n } from '@/lib/system/i18n'
 
 const REASONS = [
-  { value: 'price', label: 'Price' },
-  { value: 'schedule', label: 'Schedule' },
-  { value: 'teacher', label: 'Teacher' },
-  { value: 'no_response', label: 'No response' },
-  { value: 'personal', label: 'Personal' },
-  { value: 'quality', label: 'Quality' },
-  { value: 'other', label: 'Other' },
-]
+  { value: 'price', key: 'leads.lostReasonPrice' },
+  { value: 'schedule', key: 'leads.lostReasonSchedule' },
+  { value: 'teacher', key: 'leads.lostReasonTeacher' },
+  { value: 'no_response', key: 'leads.lostReasonNoResponse' },
+  { value: 'personal', key: 'leads.lostReasonPersonal' },
+  { value: 'quality', key: 'leads.lostReasonQuality' },
+  { value: 'other', key: 'leads.lostReasonOther' },
+] as const
 
 interface Props { open: boolean; onClose: () => void; leadId: number }
 
 export function MarkLostDialog({ open, onClose, leadId }: Props) {
+  const { t } = useI18n()
   const [reason, setReason] = useState('')
   const [notes, setNotes] = useState('')
   const markLost = useMarkLeadLost(leadId)
@@ -30,7 +32,7 @@ export function MarkLostDialog({ open, onClose, leadId }: Props) {
   const handleSave = async () => {
     if (!reason) return
     await markLost.mutateAsync({ lost_reason: reason, lost_notes: notes || undefined })
-    toast.success('Lead marked as lost.')
+    toast.success(t('leads.toastMarkedLost'))
     onClose()
     router.refresh()
   }
@@ -38,26 +40,26 @@ export function MarkLostDialog({ open, onClose, leadId }: Props) {
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent>
-        <DialogHeader><DialogTitle>Mark lead as lost</DialogTitle></DialogHeader>
+        <DialogHeader><DialogTitle>{t('leads.markLostTitle')}</DialogTitle></DialogHeader>
         <div className="space-y-4">
           <div className="space-y-1">
-            <Label>Reason *</Label>
+            <Label>{t('common.reason')} *</Label>
             <Select value={reason} onValueChange={setReason}>
-              <SelectTrigger><SelectValue placeholder="Select a reason…" /></SelectTrigger>
+              <SelectTrigger><SelectValue placeholder={t('leads.selectReasonPlaceholder')} /></SelectTrigger>
               <SelectContent>
-                {REASONS.map(r => <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>)}
+                {REASONS.map(r => <SelectItem key={r.value} value={r.value}>{t(r.key)}</SelectItem>)}
               </SelectContent>
             </Select>
           </div>
           <div className="space-y-1">
-            <Label>Notes (optional)</Label>
+            <Label>{t('common.notes')} ({t('common.optional')})</Label>
             <Textarea rows={3} value={notes} onChange={e => setNotes(e.target.value)} />
           </div>
         </div>
         <DialogFooter>
-          <Button variant="ghost" onClick={onClose}>Cancel</Button>
+          <Button variant="ghost" onClick={onClose}>{t('common.cancel')}</Button>
           <Button variant="destructive" onClick={handleSave} disabled={!reason || markLost.isPending}>
-            {markLost.isPending ? 'Saving…' : 'Mark lost'}
+            {markLost.isPending ? t('common.saving') : t('leads.markLostButton')}
           </Button>
         </DialogFooter>
       </DialogContent>

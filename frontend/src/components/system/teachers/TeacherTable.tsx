@@ -12,6 +12,7 @@ import { EmptyState } from '@/components/system/primitives/EmptyState'
 import { useActivateTeacher, useDeactivateTeacher } from '@/hooks/system/useTeachers'
 import { useCourses } from '@/hooks/system/useCourses'
 import { ApiError } from '@/lib/system/api'
+import { useI18n } from '@/lib/system/i18n'
 
 /* ─── Avatar helpers ──────────────────────────── */
 const PALETTE = ['#0E7C5A', '#0B1F3A', '#1E5AAB', '#7C3AED', '#B45309', '#BE185D', '#C05621']
@@ -31,6 +32,7 @@ function avatarColor(name: string | null) {
 /* ─── Row actions ─────────────────────────────── */
 function TeacherRowActions({ teacher }: { teacher: Teacher }) {
   const router     = useRouter()
+  const { t }      = useI18n()
   const [open, setOpen]   = useState(false)
   const [pos,  setPos]    = useState({ top: 0, right: 0 })
   const btnRef = useRef<HTMLButtonElement>(null)
@@ -79,18 +81,18 @@ function TeacherRowActions({ teacher }: { teacher: Teacher }) {
       }}
       onClick={(e) => e.stopPropagation()}
     >
-      <MenuItem icon={<ExternalLink size={14} />} label="View profile"
+      <MenuItem icon={<ExternalLink size={14} />} label={t('teachers.contextViewProfile')}
         onClick={() => { setOpen(false); router.push(`/teachers/${teacher.id}`) }} />
-      <MenuItem icon={<Pencil size={14} />} label="Edit"
+      <MenuItem icon={<Pencil size={14} />} label={t('teachers.contextEdit')}
         onClick={() => { setOpen(false); router.push(`/teachers/${teacher.id}`) }} />
       {teacher.whatsapp && (
-        <MenuItem icon={<MessageCircle size={14} />} label="Open WhatsApp"
+        <MenuItem icon={<MessageCircle size={14} />} label={t('teachers.contextWhatsApp')}
           onClick={() => { setOpen(false); window.open(`https://wa.me/${teacher.whatsapp!.replace(/\D/g, '')}`, '_blank') }} />
       )}
       <div className="my-1 border-t" style={{ borderColor: 'rgb(var(--border-default,229 233 240))' }} />
       <MenuItem
         icon={teacher.is_active ? <PowerOff size={14} /> : <Power size={14} />}
-        label={teacher.is_active ? 'Deactivate' : 'Activate'}
+        label={teacher.is_active ? t('teachers.contextDeactivate') : t('common.activate')}
         onClick={toggleActive}
         danger={teacher.is_active}
       />
@@ -141,27 +143,28 @@ function fmtRate(perMinute: number) {
 }
 
 export function TeacherTable({ data, isLoading, onRowClick }: TeacherTableProps) {
+  const { t }      = useI18n()
   const { data: courses = [] } = useCourses()
   const courseMap = Object.fromEntries(courses.map((c: SystemCourse) => [c.id, c.name]))
 
   const columns: ColumnDef<Teacher>[] = [
     {
       id:     'name',
-      header: 'Teacher',
+      header: t('teachers.columnTeacher'),
       cell: ({ row }) => {
-        const t     = row.original
-        const color = avatarColor(t.name)
+        const tc    = row.original
+        const color = avatarColor(tc.name)
         return (
           <div className="flex items-center gap-3">
             <div
               className="flex items-center justify-center w-8 h-8 rounded-full text-white text-xs font-semibold shrink-0 select-none"
               style={{ background: color }}
             >
-              {initials(t.name)}
+              {initials(tc.name)}
             </div>
             <div className="min-w-0">
-              <p className="font-medium truncate" style={{ color: 'rgb(11 31 58)' }}>{t.name ?? '—'}</p>
-              <p className="text-xs truncate" style={{ color: 'rgb(90 100 112)' }}>{t.email ?? ''}</p>
+              <p className="font-medium truncate" style={{ color: 'rgb(11 31 58)' }}>{tc.name ?? '—'}</p>
+              <p className="text-xs truncate" style={{ color: 'rgb(90 100 112)' }}>{tc.email ?? ''}</p>
             </div>
           </div>
         )
@@ -169,7 +172,7 @@ export function TeacherTable({ data, isLoading, onRowClick }: TeacherTableProps)
     },
     {
       id:     'courses',
-      header: 'Courses',
+      header: t('teachers.columnCourses'),
       cell: ({ row }) => {
         const names = row.original.teachable_course_ids.map(id => courseMap[id]).filter(Boolean)
         if (!names.length) return <span style={{ color: 'rgb(203 211 222)' }}>—</span>
@@ -193,7 +196,7 @@ export function TeacherTable({ data, isLoading, onRowClick }: TeacherTableProps)
     },
     {
       id:     'students',
-      header: 'Students',
+      header: t('teachers.columnStudents'),
       cell: ({ row }) => (
         <span
           className="tabular-nums text-xs font-semibold px-2 py-0.5 rounded-md"
@@ -205,7 +208,7 @@ export function TeacherTable({ data, isLoading, onRowClick }: TeacherTableProps)
     },
     {
       id:     'rate',
-      header: 'Rate (60-min)',
+      header: t('teachers.columnRate'),
       cell: ({ row }) => (
         <span className="tabular-nums font-semibold text-sm" style={{ color: 'rgb(14 124 90)' }}>
           {fmtRate(row.original.per_minute_rate_60)}
@@ -214,7 +217,7 @@ export function TeacherTable({ data, isLoading, onRowClick }: TeacherTableProps)
     },
     {
       id:     'status',
-      header: 'Status',
+      header: t('common.status'),
       cell: ({ row }) => <StatusBadge value={row.original.is_active ? 'active' : 'inactive'} />,
     },
     {
@@ -232,7 +235,7 @@ export function TeacherTable({ data, isLoading, onRowClick }: TeacherTableProps)
   const toolbar = (
     <div className="flex items-center justify-between">
       <span className="text-sm font-medium" style={{ color: 'rgb(90 100 112)' }}>
-        {data.length} {data.length === 1 ? 'teacher' : 'teachers'}
+        {data.length} {data.length === 1 ? t('teachers.countSingular') : t('teachers.countPlural')}
       </span>
     </div>
   )
@@ -248,8 +251,8 @@ export function TeacherTable({ data, isLoading, onRowClick }: TeacherTableProps)
       emptyState={
         <EmptyState
           icon="GraduationCap"
-          title="No teachers found"
-          description="Try adjusting your filters or add a new teacher."
+          title={t('teachers.tableEmpty')}
+          description={t('teachers.tableEmptyHint')}
         />
       }
     />

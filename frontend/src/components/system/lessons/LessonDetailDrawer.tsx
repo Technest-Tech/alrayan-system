@@ -4,6 +4,7 @@ import { X, Pencil, Trash2, User, GraduationCap, Clock, CalendarDays, BookOpen, 
 import type { Lesson } from '@/types/system/lesson'
 import { useDeleteLesson } from '@/hooks/system/useLessons'
 import { LessonForm } from './LessonForm'
+import { STATUS_PILL, STATUS_LABEL } from '@/lib/system/lessonStatus'
 
 const BORDER   = 'rgb(var(--border-default,229 233 240))'
 const NAVY     = 'rgb(11 31 58)'
@@ -28,19 +29,12 @@ function formatMinutes(min: number) {
   return `${h}h ${m}m`
 }
 
-const STATUS_STYLE: Record<string, { bg: string; color: string; label: string }> = {
-  scheduled:    { bg: '#EFF6FF', color: '#1D4ED8', label: 'Scheduled' },
-  attended:     { bg: '#F0FDF4', color: '#15803D', label: 'Attended' },
-  paid_absence: { bg: '#FFF7ED', color: '#C2410C', label: 'Paid Absence' },
-  absent:       { bg: '#FEF2F2', color: '#B91C1C', label: 'Absent' },
-  cancelled:    { bg: '#F3F4F6', color: '#6B7280', label: 'Cancelled' },
-}
-
 function Pill({ status }: { status: string }) {
-  const s = STATUS_STYLE[status] ?? { bg: '#F3F4F6', color: '#6B7280', label: status }
+  const s = STATUS_PILL[status as keyof typeof STATUS_PILL] ?? { bg: '#F3F4F6', color: '#6B7280' }
+  const label = STATUS_LABEL[status as keyof typeof STATUS_LABEL] ?? status
   return (
     <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium" style={{ background: s.bg, color: s.color }}>
-      {s.label}
+      {label}
     </span>
   )
 }
@@ -175,7 +169,11 @@ export function LessonDetailDrawer({ lesson, open, onClose, onUpdate }: Props) {
               <div>
                 <div className="flex justify-between text-xs mb-1.5" style={{ color: MUTED }}>
                   <span>Progress</span>
-                  <span>{lesson.package.consumed_hours}h / {lesson.package.package_hours}h</span>
+                  <span>
+                    {lesson.package.consumed_hours}h / {lesson.package.package_hours}h
+                    {' · '}
+                    {Math.round(Math.min(100, (lesson.package.consumed_hours / lesson.package.package_hours) * 100))}%
+                  </span>
                 </div>
                 <div className="h-2 rounded-full" style={{ background: 'rgb(229 233 240)' }}>
                   <div

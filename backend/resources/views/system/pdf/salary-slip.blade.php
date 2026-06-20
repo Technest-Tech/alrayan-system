@@ -27,7 +27,7 @@
 <body>
 <div class="page">
   <div class="header">
-    <h1>Alrayan Academy</h1>
+    <h1>Azhary</h1>
     <p>Salary Slip &mdash; {{ \Carbon\Carbon::create($payroll->period_year, $payroll->period_month, 1)->format('F Y') }}</p>
   </div>
 
@@ -79,7 +79,7 @@
     </tbody>
   </table>
 
-  <div class="footer">Generated on {{ now()->format('d M Y, H:i') }} &middot; Alrayan Academy &middot; This document is auto-generated.</div>
+  <div class="footer">Generated on {{ now()->format('d M Y, H:i') }} &middot; Azhary &middot; This document is auto-generated.</div>
 </div>
 </body>
 </html>

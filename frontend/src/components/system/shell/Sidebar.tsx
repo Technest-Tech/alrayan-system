@@ -1,8 +1,9 @@
 'use client'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Languages } from 'lucide-react'
 import type { NavSection } from '@/lib/system/nav'
+import { useI18n } from '@/lib/system/i18n'
 
 interface SidebarProps {
   collapsed: boolean
@@ -15,6 +16,7 @@ interface SidebarProps {
 export function Sidebar({ collapsed, onToggle, nav, mobileOpen, onMobileClose }: SidebarProps) {
   const pathname = usePathname()
   const showLabels = !collapsed || mobileOpen
+  const { locale, setLocale, t } = useI18n()
 
   return (
     <>
@@ -45,7 +47,7 @@ export function Sidebar({ collapsed, onToggle, nav, mobileOpen, onMobileClose }:
           {showLabels ? (
             <div className="flex flex-col leading-none text-center">
               <span className="font-display text-[1.6rem] font-semibold tracking-tight text-white">
-                Alrayan
+                Azhary
               </span>
               <span className="text-[0.6rem] font-semibold uppercase tracking-[0.22em] mt-0.5" style={{ color: '#C9A24B' }}>
                 Quran Academy
@@ -62,7 +64,7 @@ export function Sidebar({ collapsed, onToggle, nav, mobileOpen, onMobileClose }:
             <div key={section.label}>
               {showLabels && (
                 <p className="px-3 mb-1 text-[10px] font-semibold uppercase tracking-widest text-white/40">
-                  {section.label}
+                  {t(section.label)}
                 </p>
               )}
               <ul className="space-y-0.5">
@@ -73,7 +75,7 @@ export function Sidebar({ collapsed, onToggle, nav, mobileOpen, onMobileClose }:
                     <li key={item.href}>
                       <Link
                         href={item.href}
-                        title={!showLabels ? item.label : undefined}
+                        title={!showLabels ? t(item.label) : undefined}
                         onClick={onMobileClose}
                         className={[
                           'flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors',
@@ -84,7 +86,7 @@ export function Sidebar({ collapsed, onToggle, nav, mobileOpen, onMobileClose }:
                         style={active ? { background: 'rgb(var(--surface-sidebar-active, 14 124 90))' } : {}}
                       >
                         <Icon size={18} className="shrink-0" />
-                        {showLabels && <span className="truncate">{item.label}</span>}
+                        {showLabels && <span className="truncate">{t(item.label)}</span>}
                       </Link>
                     </li>
                   )
@@ -94,10 +96,56 @@ export function Sidebar({ collapsed, onToggle, nav, mobileOpen, onMobileClose }:
           ))}
         </nav>
 
+        {/* Language switcher */}
+        <div className="shrink-0 border-t border-white/10 px-2 py-3">
+          {showLabels ? (
+            <div className="flex items-center gap-2 px-3">
+              <Languages size={15} className="shrink-0 text-white/40" />
+              <span className="flex-1 text-xs text-white/40">{t('sidebar.language')}</span>
+              <button
+                onClick={() => setLocale('en')}
+                className={`text-xs font-semibold transition-colors ${
+                  locale === 'en' ? 'text-white' : 'text-white/40 hover:text-white/70'
+                }`}
+              >
+                EN
+              </button>
+              <span className="text-white/20 text-xs select-none">|</span>
+              <button
+                onClick={() => setLocale('fr')}
+                className={`text-xs font-semibold transition-colors ${
+                  locale === 'fr' ? 'text-white' : 'text-white/40 hover:text-white/70'
+                }`}
+              >
+                FR
+              </button>
+            </div>
+          ) : (
+            <div className="flex flex-col items-center gap-0.5">
+              <button
+                onClick={() => setLocale('en')}
+                className={`text-[10px] font-bold leading-5 transition-colors ${
+                  locale === 'en' ? 'text-white' : 'text-white/40 hover:text-white/70'
+                }`}
+              >
+                EN
+              </button>
+              <button
+                onClick={() => setLocale('fr')}
+                className={`text-[10px] font-bold leading-5 transition-colors ${
+                  locale === 'fr' ? 'text-white' : 'text-white/40 hover:text-white/70'
+                }`}
+              >
+                FR
+              </button>
+            </div>
+          )}
+        </div>
+
         {/* Collapse toggle — floating edge tab, desktop only */}
         <button
           onClick={onToggle}
-          aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          aria-label={collapsed ? t('sidebar.expand') : t('sidebar.collapse')}
           className="hidden lg:flex absolute -right-3 top-[76px] w-6 h-6 items-center justify-center rounded-full border border-white/20 text-white/60 hover:text-white hover:border-white/50 transition-all duration-200 shadow-lg z-50"
           style={{ background: 'rgb(var(--surface-sidebar, 11 31 58))' }}
         >

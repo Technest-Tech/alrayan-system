@@ -2,6 +2,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { ChevronDown, Search } from 'lucide-react'
 import { COUNTRIES, flagEmoji } from '@/lib/system/countries'
+import { useI18n } from '@/lib/system/i18n'
 
 interface CountryComboboxProps {
   value: string
@@ -9,6 +10,7 @@ interface CountryComboboxProps {
 }
 
 export function CountryCombobox({ value, onChange }: CountryComboboxProps) {
+  const { t } = useI18n()
   const [open, setOpen]       = useState(false)
   const [search, setSearch]   = useState('')
   const [dropPos, setDropPos] = useState<{ top: number; left: number; width: number } | null>(null)
@@ -67,7 +69,7 @@ export function CountryCombobox({ value, onChange }: CountryComboboxProps) {
             <span className="text-[11px] opacity-40 shrink-0">{selected.code}</span>
           </>
         ) : (
-          <span className="flex-1 opacity-40">Select country…</span>
+          <span className="flex-1 opacity-40">{t('students.selectCountry')}</span>
         )}
         <ChevronDown size={13} className="opacity-40 shrink-0 ml-1" />
       </button>
@@ -95,14 +97,14 @@ export function CountryCombobox({ value, onChange }: CountryComboboxProps) {
               ref={searchRef}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search country…"
+              placeholder={t('students.searchCountry')}
               className="flex-1 bg-transparent text-sm outline-none"
             />
           </div>
 
           <ul className="max-h-52 overflow-y-auto py-1">
             {filtered.length === 0 && (
-              <li className="px-3 py-2 text-sm opacity-40">No results</li>
+              <li className="px-3 py-2 text-sm opacity-40">{t('common.noResults')}</li>
             )}
             {filtered.map((c) => (
               <li

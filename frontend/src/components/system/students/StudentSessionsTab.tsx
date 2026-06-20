@@ -4,22 +4,34 @@ import { Video, CalendarDays, ChevronRight } from 'lucide-react'
 import { useStudentSessions } from '@/hooks/system/useSessions'
 import { SessionDrawer } from '@/components/system/schedule/SessionDrawer'
 import type { Session } from '@/types/system/session'
+import { useI18n } from '@/lib/system/i18n'
 
-const STATUS_CONFIG: Record<string, { label: string; bg: string; color: string }> = {
-  scheduled:          { label: 'Scheduled',        bg: 'rgb(14 124 90 / 0.08)',  color: 'rgb(14 124 90)' },
-  attended:           { label: 'Attended',          bg: 'rgb(30 90 171 / 0.08)', color: 'rgb(30 90 171)' },
-  absent:             { label: 'Absent',            bg: 'rgb(220 38 38 / 0.08)', color: 'rgb(220 38 38)' },
-  cancelled:          { label: 'Cancelled',         bg: 'rgb(107 114 128 / 0.1)', color: 'rgb(107 114 128)' },
-  rescheduled:        { label: 'Rescheduled',       bg: 'rgb(217 119 6 / 0.08)', color: 'rgb(180 83 9)' },
-  pending_substitute: { label: 'Needs substitute',  bg: 'rgb(234 88 12 / 0.08)', color: 'rgb(194 65 12)' },
+const STATUS_STYLE: Record<string, { bg: string; color: string }> = {
+  scheduled:          { bg: 'rgb(14 124 90 / 0.08)',  color: 'rgb(14 124 90)' },
+  attended:           { bg: 'rgb(30 90 171 / 0.08)', color: 'rgb(30 90 171)' },
+  absent:             { bg: 'rgb(220 38 38 / 0.08)', color: 'rgb(220 38 38)' },
+  cancelled:          { bg: 'rgb(107 114 128 / 0.1)', color: 'rgb(107 114 128)' },
+  rescheduled:        { bg: 'rgb(217 119 6 / 0.08)', color: 'rgb(180 83 9)' },
+  pending_substitute: { bg: 'rgb(234 88 12 / 0.08)', color: 'rgb(194 65 12)' },
+}
+
+const STATUS_KEY: Record<string, string> = {
+  scheduled:          'status.scheduled',
+  attended:           'status.attended',
+  absent:             'status.absent',
+  cancelled:          'status.cancelled',
+  rescheduled:        'status.rescheduled',
+  pending_substitute: 'status.needsSub',
 }
 
 function StatusBadge({ status }: { status: string }) {
-  const cfg = STATUS_CONFIG[status] ?? { label: status, bg: 'rgb(107 114 128 / 0.1)', color: 'rgb(107 114 128)' }
+  const { t } = useI18n()
+  const style = STATUS_STYLE[status] ?? { bg: 'rgb(107 114 128 / 0.1)', color: 'rgb(107 114 128)' }
+  const label = STATUS_KEY[status] ? t(STATUS_KEY[status]) : status
   return (
     <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold"
-      style={{ background: cfg.bg, color: cfg.color }}>
-      {cfg.label}
+      style={{ background: style.bg, color: style.color }}>
+      {label}
     </span>
   )
 }
@@ -37,6 +49,7 @@ interface Props {
 }
 
 export function StudentSessionsTab({ studentId }: Props) {
+  const { t } = useI18n()
   const { data, isLoading } = useStudentSessions(studentId)
   const [selected, setSelected] = useState<Session | null>(null)
   const [drawerOpen, setDrawerOpen] = useState(false)
@@ -60,9 +73,9 @@ export function StudentSessionsTab({ studentId }: Props) {
           style={{ background: 'rgb(14 124 90 / 0.08)' }}>
           <Video size={22} style={{ color: 'rgb(14 124 90)' }} />
         </div>
-        <p className="font-semibold text-sm" style={{ color: 'rgb(11 31 58)' }}>No sessions yet</p>
+        <p className="font-semibold text-sm" style={{ color: 'rgb(11 31 58)' }}>{t('students.sessionsEmpty')}</p>
         <p className="text-xs mt-1" style={{ color: 'rgb(90 100 112)' }}>
-          Sessions will appear here once scheduled.
+          {t('students.sessionsEmptyHint')}
         </p>
       </div>
     )
@@ -79,7 +92,7 @@ export function StudentSessionsTab({ studentId }: Props) {
         {upcoming.length > 0 && (
           <section>
             <p className="text-[11px] font-semibold uppercase tracking-widest mb-3" style={{ color: 'rgb(90 100 112)' }}>
-              Upcoming ({upcoming.length})
+              {t('students.sessionsUpcoming')} ({upcoming.length})
             </p>
             <div className="space-y-2">
               {upcoming.map(s => <SessionRow key={s.id} session={s} onOpen={open} />)}
@@ -90,7 +103,7 @@ export function StudentSessionsTab({ studentId }: Props) {
         {past.length > 0 && (
           <section>
             <p className="text-[11px] font-semibold uppercase tracking-widest mb-3" style={{ color: 'rgb(90 100 112)' }}>
-              Past ({past.length})
+              {t('students.sessionsPast')} ({past.length})
             </p>
             <div className="space-y-2">
               {past.map(s => <SessionRow key={s.id} session={s} onOpen={open} />)}
@@ -110,6 +123,7 @@ export function StudentSessionsTab({ studentId }: Props) {
 }
 
 function SessionRow({ session, onOpen }: { session: Session; onOpen: (s: Session) => void }) {
+  const { t } = useI18n()
   const isCancelled = session.status === 'cancelled' || session.status === 'rescheduled'
 
   return (
@@ -140,8 +154,8 @@ function SessionRow({ session, onOpen }: { session: Session; onOpen: (s: Session
           <StatusBadge status={session.status} />
         </div>
         <p className="text-xs mt-0.5" style={{ color: 'rgb(90 100 112)' }}>
-          {session.teacher?.name ?? 'Unassigned'} · {session.duration_min} min
-          {session.zoom_join_url && <> · <span style={{ color: 'rgb(30 90 171)' }}>Zoom ready</span></>}
+          {session.teacher?.name ?? t('status.unassigned')} · {session.duration_min} min
+          {session.zoom_join_url && <> · <span style={{ color: 'rgb(30 90 171)' }}>{t('students.zoomReady')}</span></>}
         </p>
       </div>
 

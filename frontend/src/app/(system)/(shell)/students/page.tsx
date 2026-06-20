@@ -10,15 +10,16 @@ import { useStudents } from '@/hooks/system/useStudents'
 import { useCourses } from '@/hooks/system/useCourses'
 import { useTeachers } from '@/hooks/system/useTeachers'
 import { useUrlFilters } from '@/lib/system/filters'
+import { useI18n } from '@/lib/system/i18n'
 import type { Student } from '@/types/system/student'
 
 const STATUS_PILLS = [
-  { value: '',          label: 'All' },
-  { value: 'trial',     label: 'Trial' },
-  { value: 'active',    label: 'Active' },
-  { value: 'paused',    label: 'Paused' },
-  { value: 'suspended', label: 'Suspended' },
-  { value: 'cancelled', label: 'Cancelled' },
+  { value: '',          key: 'common.all' },
+  { value: 'trial',     key: 'status.trial' },
+  { value: 'active',    key: 'status.active' },
+  { value: 'paused',    key: 'status.paused' },
+  { value: 'suspended', key: 'status.suspended' },
+  { value: 'cancelled', key: 'status.cancelled' },
 ]
 
 // sentinel keeps empty-string "all" out of the Select value prop
@@ -30,6 +31,7 @@ const selStyle = { borderColor: 'rgb(var(--border-default,229 233 240))', backgr
 
 export default function StudentsPage() {
   const router  = useRouter()
+  const { t }   = useI18n()
   const [dialogOpen, setDialogOpen] = useState(false)
   const { filters, setFilter, resetFilters } = useUrlFilters(['q', 'status', 'course_id', 'assigned_teacher_id', 'country', 'student_type'])
 
@@ -64,8 +66,8 @@ export default function StudentsPage() {
       {/* ── Header ── */}
       <div className="flex items-start justify-between mb-6">
         <div>
-          <h1 className="text-xl font-semibold" style={{ color: 'rgb(11 31 58)' }}>Students</h1>
-          <p className="text-sm mt-0.5" style={{ color: 'rgb(90 100 112)' }}>Manage your student roster and enrolments.</p>
+          <h1 className="text-xl font-semibold" style={{ color: 'rgb(11 31 58)' }}>{t('students.title')}</h1>
+          <p className="text-sm mt-0.5" style={{ color: 'rgb(90 100 112)' }}>{t('students.subtitle')}</p>
         </div>
         <button
           onClick={() => setDialogOpen(true)}
@@ -73,36 +75,16 @@ export default function StudentsPage() {
           style={{ background: 'rgb(14 124 90)' }}
         >
           <Plus size={15} />
-          Add Student
+          {t('students.addStudent')}
         </button>
       </div>
 
       {/* ── Stat cards ── */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
-        <StatCard
-          icon={<Users size={15} />}
-          label="Total"
-          value={stats.total}
-          accent="#0B1F3A"
-        />
-        <StatCard
-          icon={<GraduationCap size={15} />}
-          label="Active"
-          value={stats.active}
-          accent="rgb(14 124 90)"
-        />
-        <StatCard
-          icon={<Clock size={15} />}
-          label="Trial"
-          value={stats.trial}
-          accent="rgb(30 90 171)"
-        />
-        <StatCard
-          icon={<PauseCircle size={15} />}
-          label="Paused"
-          value={stats.paused}
-          accent="rgb(154 113 23)"
-        />
+        <StatCard icon={<Users size={15} />}       label={t('common.total')}         value={stats.total}    accent="#0B1F3A" />
+        <StatCard icon={<GraduationCap size={15} />} label={t('status.active')}        value={stats.active}   accent="rgb(14 124 90)" />
+        <StatCard icon={<Clock size={15} />}         label={t('status.trial')}         value={stats.trial}    accent="rgb(30 90 171)" />
+        <StatCard icon={<PauseCircle size={15} />}   label={t('status.paused')}        value={stats.paused}   accent="rgb(154 113 23)" />
       </div>
 
       {/* ── Filters card ── */}
@@ -132,7 +114,7 @@ export default function StudentsPage() {
                   border: '1px solid rgb(var(--border-default,229 233 240))',
                 }}
               >
-                {p.label}
+                {t(p.key)}
               </button>
             )
           })}
@@ -145,7 +127,7 @@ export default function StudentsPage() {
             <input
               value={filters.q}
               onChange={(e) => setFilter('q', e.target.value)}
-              placeholder="Search students…"
+              placeholder={t('students.search')}
               className="w-full pl-8 pr-3 py-2 rounded-lg border text-sm outline-none focus:ring-2 focus:ring-[rgb(14,124,90)] transition-shadow"
               style={selStyle}
             />
@@ -156,7 +138,7 @@ export default function StudentsPage() {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value={ALL}>All courses</SelectItem>
+              <SelectItem value={ALL}>{t('students.filterAllCourses')}</SelectItem>
               {courses.map(c => <SelectItem key={c.id} value={String(c.id)}>{c.name}</SelectItem>)}
             </SelectContent>
           </Select>
@@ -166,7 +148,7 @@ export default function StudentsPage() {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value={ALL}>All teachers</SelectItem>
+              <SelectItem value={ALL}>{t('students.filterAllTeachers')}</SelectItem>
               {teachers.map(t => <SelectItem key={t.id} value={String(t.id)}>{t.name}</SelectItem>)}
             </SelectContent>
           </Select>
@@ -176,9 +158,9 @@ export default function StudentsPage() {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value={ALL}>All types</SelectItem>
-              <SelectItem value="child">Child</SelectItem>
-              <SelectItem value="adult">Adult</SelectItem>
+              <SelectItem value={ALL}>{t('students.filterAllTypes')}</SelectItem>
+              <SelectItem value="child">{t('students.typeChild')}</SelectItem>
+              <SelectItem value="adult">{t('students.typeAdult')}</SelectItem>
             </SelectContent>
           </Select>
 
@@ -191,7 +173,7 @@ export default function StudentsPage() {
               style={{ borderColor: 'rgb(var(--border-default,229 233 240))' }}
             >
               <RotateCcw size={12} />
-              Reset
+              {t('common.reset')}
             </button>
           )}
         </div>

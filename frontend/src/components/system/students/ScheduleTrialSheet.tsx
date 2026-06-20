@@ -5,6 +5,7 @@ import { CalendarDays, ChevronDown, Search, X } from 'lucide-react'
 import { useCreateSession } from '@/hooks/system/useSessions'
 import { useTeachers } from '@/hooks/system/useTeachers'
 import { ApiError } from '@/lib/system/api'
+import { useI18n } from '@/lib/system/i18n'
 import type { StudentDetail } from '@/types/system/student'
 
 interface Props {
@@ -27,6 +28,7 @@ function TeacherCombobox({ items, value, onChange }: {
   value:    number | undefined
   onChange: (id: number | undefined) => void
 }) {
+  const { t } = useI18n()
   const [open,   setOpen]   = useState(false)
   const [search, setSearch] = useState('')
   const containerRef        = useRef<HTMLDivElement>(null)
@@ -36,7 +38,7 @@ function TeacherCombobox({ items, value, onChange }: {
   const filtered = items.filter((i) => i.name.toLowerCase().includes(search.toLowerCase()))
 
   useEffect(() => {
-    if (open) { const t = setTimeout(() => searchRef.current?.focus(), 40); return () => clearTimeout(t) }
+    if (open) { const tc = setTimeout(() => searchRef.current?.focus(), 40); return () => clearTimeout(tc) }
     else setSearch('')
   }, [open])
 
@@ -55,7 +57,7 @@ function TeacherCombobox({ items, value, onChange }: {
         className="w-full flex items-center gap-2 px-3 py-2 rounded-xl border text-sm outline-none focus:ring-2 focus:ring-[rgb(14,124,90)] transition-shadow text-left"
         style={{ borderColor: 'rgb(var(--border-default,229 233 240))', background: '#fff' }}>
         <span className="flex-1 truncate" style={!selected ? { color: 'rgb(156 163 175)' } : { color: 'rgb(11 31 58)' }}>
-          {selected ? selected.name : 'Select teacher…'}
+          {selected ? selected.name : t('students.assignTeacher')}
         </span>
         <ChevronDown size={13} className="opacity-40 shrink-0" />
       </button>
@@ -66,10 +68,10 @@ function TeacherCombobox({ items, value, onChange }: {
             style={{ borderColor: 'rgb(var(--border-default,229 233 240))' }}>
             <Search size={13} className="opacity-40 shrink-0" />
             <input ref={searchRef} value={search} onChange={e => setSearch(e.target.value)}
-              placeholder="Search…" className="flex-1 bg-transparent text-sm outline-none" />
+              placeholder={t('common.search')} className="flex-1 bg-transparent text-sm outline-none" />
           </div>
           <ul className="max-h-48 overflow-y-auto py-1">
-            {filtered.length === 0 && <li className="px-3 py-2 text-sm opacity-40">No results</li>}
+            {filtered.length === 0 && <li className="px-3 py-2 text-sm opacity-40">{t('common.noResults')}</li>}
             {filtered.map(item => (
               <li key={item.id}
                 onMouseDown={e => { e.preventDefault(); onChange(item.id); setOpen(false) }}
@@ -104,8 +106,9 @@ function defaultDatetime() {
 }
 
 export function ScheduleTrialSheet({ student, open, onClose }: Props) {
+  const { t } = useI18n()
   const { data: teachersData } = useTeachers()
-  const teachers = (teachersData?.data ?? []).map(t => ({ id: t.id, name: t.name ?? `Teacher #${t.id}` }))
+  const teachers = (teachersData?.data ?? []).map(tc => ({ id: tc.id, name: tc.name ?? `Teacher #${tc.id}` }))
 
   const [teacherId,        setTeacherId]        = useState<number | undefined>(student.assigned_teacher?.id)
   const [date,             setDate]             = useState(() => new Date().toISOString().split('T')[0])
@@ -178,7 +181,7 @@ export function ScheduleTrialSheet({ student, open, onClose }: Props) {
             <CalendarDays size={16} style={{ color: 'rgb(14 124 90)' }} />
           </div>
           <div>
-            <p className="font-semibold text-sm" style={{ color: 'rgb(11 31 58)' }}>Schedule Trial Class</p>
+            <p className="font-semibold text-sm" style={{ color: 'rgb(11 31 58)' }}>{t('students.scheduleTrialClass')}</p>
             <p className="text-xs" style={{ color: 'rgb(90 100 112)' }}>{student.name}</p>
           </div>
           <button onClick={onClose}
@@ -193,29 +196,29 @@ export function ScheduleTrialSheet({ student, open, onClose }: Props) {
             style={{ background: '#fff', border: '1px solid rgb(var(--border-default,229 233 240))' }}>
 
             <div>
-              <Label required>Teacher</Label>
+              <Label required>{t('common.teacher')}</Label>
               <TeacherCombobox items={teachers} value={teacherId} onChange={setTeacherId} />
             </div>
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <Label required>Date</Label>
+                <Label required>{t('common.date')}</Label>
                 <input type="date" className={inp} style={inpStyle}
                   value={date}
                   min={new Date().toISOString().split('T')[0]}
                   onChange={e => setDate(e.target.value)} />
               </div>
               <div>
-                <Label required>Time</Label>
+                <Label required>{t('common.time')}</Label>
                 <select className={inp} style={inpStyle}
                   value={time} onChange={e => setTime(e.target.value)}>
-                  {TIME_OPTIONS.map(t => <option key={t} value={t}>{t}</option>)}
+                  {TIME_OPTIONS.map(tv => <option key={tv} value={tv}>{tv}</option>)}
                 </select>
               </div>
             </div>
 
             <div>
-              <Label required>Duration</Label>
+              <Label required>{t('common.duration')}</Label>
               <div className="flex gap-2">
                 {DURATIONS.map(d => (
                   <button key={d} type="button" onClick={() => setDuration(d)}
@@ -223,7 +226,7 @@ export function ScheduleTrialSheet({ student, open, onClose }: Props) {
                     style={duration === d
                       ? { background: 'rgb(14 124 90)', color: '#fff', borderColor: 'rgb(14 124 90)' }
                       : { background: '#fff', borderColor: 'rgb(var(--border-default,229 233 240))', color: 'rgb(11 31 58)' }}>
-                    {d}m
+                    {d}{t('students.min')}
                   </button>
                 ))}
               </div>
@@ -234,13 +237,13 @@ export function ScheduleTrialSheet({ student, open, onClose }: Props) {
           {teacherId && (
             <div className="rounded-xl px-4 py-3 text-sm"
               style={{ background: 'rgb(14 124 90 / 0.06)', border: '1px solid rgb(14 124 90 / 0.15)' }}>
-              <p className="font-medium" style={{ color: 'rgb(14 124 90)' }}>Session summary</p>
+              <p className="font-medium" style={{ color: 'rgb(14 124 90)' }}>{t('students.sessionSummary')}</p>
               <p className="mt-1 opacity-80" style={{ color: 'rgb(11 31 58)' }}>
                 {new Date(`${date}T${time}`).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'short' })}
-                {' at '}{time} · {duration} min
+                {` ${t('students.at')} `}{time} · {duration} {t('students.min')}
               </p>
               <p className="opacity-60 text-xs mt-0.5" style={{ color: 'rgb(11 31 58)' }}>
-                with {teachers.find(t => t.id === teacherId)?.name}
+                {`${t('students.with')} `}{teachers.find(tc => tc.id === teacherId)?.name}
               </p>
             </div>
           )}
@@ -249,7 +252,7 @@ export function ScheduleTrialSheet({ student, open, onClose }: Props) {
           {student.student_type === 'child' && student.siblings.length > 0 && (
             <div className="rounded-2xl p-4 space-y-3"
               style={{ background: '#fff', border: '1px solid rgb(var(--border-default,229 233 240))' }}>
-              <p className="text-xs font-semibold uppercase tracking-widest opacity-40">Also schedule for siblings?</p>
+              <p className="text-xs font-semibold uppercase tracking-widest opacity-40">{t('students.scheduleSiblings')}</p>
               {student.siblings.map(sib => (
                 <label key={sib.id} className="flex items-center gap-3 cursor-pointer group">
                   <input
@@ -268,14 +271,14 @@ export function ScheduleTrialSheet({ student, open, onClose }: Props) {
                   </div>
                   {includedSiblings.has(sib.id) && (
                     <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full" style={{ background: 'rgb(14 124 90 / 0.1)', color: 'rgb(14 124 90)' }}>
-                      Same slot
+                      {t('students.sameSlot')}
                     </span>
                   )}
                 </label>
               ))}
               {includedSiblings.size > 0 && (
                 <p className="text-[11px] opacity-40 pt-1">
-                  Same teacher, date &amp; time will be used for all selected siblings.
+                  {t('students.sameSlotHint')}
                 </p>
               )}
             </div>
@@ -288,17 +291,17 @@ export function ScheduleTrialSheet({ student, open, onClose }: Props) {
           <button onClick={onClose}
             className="px-4 py-2 rounded-xl text-sm font-medium border hover:bg-black/5 transition-colors"
             style={{ borderColor: 'rgb(var(--border-default,229 233 240))' }}>
-            Cancel
+            {t('common.cancel')}
           </button>
           <button onClick={handleSave} disabled={create.isPending || !teacherId}
             className="inline-flex items-center gap-2 px-5 py-2 rounded-xl text-sm font-semibold text-white disabled:opacity-60 transition-opacity hover:opacity-90"
             style={{ background: 'rgb(14 124 90)' }}>
             <CalendarDays size={14} />
             {create.isPending
-              ? 'Scheduling…'
+              ? t('common.scheduling')
               : includedSiblings.size > 0
-                ? `Schedule ${1 + includedSiblings.size} Trials`
-                : 'Schedule Trial'
+                ? `${t('students.scheduleTrial')} ${1 + includedSiblings.size} ${t('students.trialsPlural')}`
+                : t('students.scheduleTrial')
             }
           </button>
         </div>

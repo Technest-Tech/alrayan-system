@@ -7,6 +7,7 @@ import { useLessonSubjects, useLessonEvaluations, useCreateLesson, useUpdateLess
 import { useTeachers } from '@/hooks/system/useTeachers'
 import { useStudents } from '@/hooks/system/useStudents'
 import type { Lesson, LessonStatus, StoreLessonPayload } from '@/types/system/lesson'
+import { LESSON_STATUSES } from '@/lib/system/lessonStatus'
 
 /* ── Design tokens ────────────────────────────────────────── */
 const BORDER   = 'rgb(var(--border-default,229 233 240))'
@@ -56,13 +57,7 @@ function Field({ label, required, children }: { label: string; required?: boolea
 }
 
 /* ── Form constants ──────────────────────────────────────── */
-const STATUSES: { value: LessonStatus; label: string }[] = [
-  { value: 'scheduled',    label: 'Scheduled'    },
-  { value: 'attended',     label: 'Attended'     },
-  { value: 'paid_absence', label: 'Paid Absence' },
-  { value: 'absent',       label: 'Absent'       },
-  { value: 'cancelled',    label: 'Cancelled'    },
-]
+const STATUSES = LESSON_STATUSES
 
 const HOUR_OPTIONS   = [0, 1, 2, 3]
 const MINUTE_OPTIONS = [0, 30]
@@ -189,7 +184,7 @@ export function LessonForm({ initialValues, prefill, onSuccess, onCancel }: Prop
         <div className="grid grid-cols-2 gap-3">
           <Field label="Teacher" required>
             <SearchableSelect
-              options={teachers.map(t => ({ value: String(t.id), label: (t as any).name ?? `Teacher #${t.id}` }))}
+              options={teachers.map(t => ({ value: String(t.id), label: t.name ?? `Teacher #${t.id}` }))}
               value={teacherId}
               onChange={setTeacherId}
               placeholder="Select teacher…"

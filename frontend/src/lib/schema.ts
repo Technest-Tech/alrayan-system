@@ -49,7 +49,7 @@ export function aboutPageSchema() {
     '@type': 'AboutPage',
     name: `About ${siteConfig.name}`,
     url: `${siteConfig.url}/about`,
-    description: 'Learn about Alrayan Academy — our mission, story, teaching approach, and certified teachers.',
+    description: 'Learn about Azhary — our mission, story, teaching approach, and certified teachers.',
     publisher: {
       '@type': 'EducationalOrganization',
       name: siteConfig.name,

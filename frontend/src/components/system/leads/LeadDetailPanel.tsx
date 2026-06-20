@@ -4,7 +4,40 @@ import { formatDistanceToNow } from 'date-fns'
 import { X, Globe, Users, Camera, Play, MessageCircle, Music, CircleHelp, Phone, Mail, Tag, Clock, CheckCircle2, PlusCircle, RefreshCw, MapPin, Package, Calendar } from 'lucide-react'
 import { useLead } from '@/hooks/system/useLeads'
 import type { LeadStatus, LeadPriority, LeadActivity } from '@/types/system/lead'
-import { LEAD_STATUS_LABELS, LEAD_PRIORITY_LABELS } from '@/types/system/lead'
+import { useI18n } from '@/lib/system/i18n'
+
+const STATUS_LABEL_KEYS: Record<string, string> = {
+  new_lead:            'leads.statusNewLead',
+  interested:          'leads.statusInterested',
+  waiting_for_trial:   'leads.statusWaitingForTrial',
+  waiting_for_payment: 'leads.statusWaitingForPayment',
+  closed:              'leads.statusClosed',
+  not_interested:      'leads.statusNotInterested',
+  lost:                'leads.statusLost',
+}
+const PRIORITY_LABEL_KEYS: Record<string, string> = {
+  high:   'leads.priorityHigh',
+  medium: 'leads.priorityMedium',
+  low:    'leads.priorityLow',
+}
+const SOURCE_LABEL_KEYS: Record<string, string> = {
+  google_ads:       'leads.sourceGoogleAds',
+  facebook_ads:     'leads.sourceFacebookAds',
+  instagram_ads:    'leads.sourceInstagramShort',
+  whatsapp_direct:  'leads.sourceWhatsappDirect',
+  student_referral: 'leads.sourceReferral',
+  website_form:     'leads.sourceWebsiteForm',
+  manual_entry:     'leads.sourceManual',
+}
+const PLATFORM_LABEL_KEYS: Record<string, string> = {
+  website:   'leads.platformWebsite',
+  facebook:  'leads.platformFacebook',
+  instagram: 'leads.platformInstagram',
+  youtube:   'leads.platformYoutube',
+  whatsapp:  'leads.platformWhatsapp',
+  tiktok:    'leads.platformTiktok',
+  other:     'leads.platformOther',
+}
 
 /* ── Islamic star path ──────────────────────────── */
 const STAR = 'M50,5 L57.65,31.52 L81.82,18.18 L68.48,42.35 L95,50 L68.48,57.65 L81.82,81.82 L57.65,68.48 L50,95 L42.35,68.48 L18.18,81.82 L31.52,57.65 L5,50 L31.52,42.35 L18.18,18.18 L42.35,31.52 Z'
@@ -66,16 +99,6 @@ const PLATFORM_ICONS: Record<string, React.ElementType> = {
   other:     CircleHelp,
 }
 
-const SOURCE_LABELS: Record<string, string> = {
-  google_ads:       'Google Ads',
-  facebook_ads:     'Facebook Ads',
-  instagram_ads:    'Instagram',
-  whatsapp_direct:  'WhatsApp Direct',
-  student_referral: 'Referral',
-  website_form:     'Website Form',
-  manual_entry:     'Manual',
-}
-
 /* ── Avatar helpers ─────────────────────────────── */
 const PALETTES = [
   { bg: 'rgba(30,90,171,0.15)',  color: 'rgb(30 90 171)' },
@@ -134,7 +157,8 @@ function ActivityIcon({ event }: { event: string }) {
 }
 
 function ActivityLabel({ event, properties }: { event: string; properties: LeadActivity['properties'] }) {
-  if (event.includes('created')) return <span className="font-medium">Lead Created</span>
+  const { t } = useI18n()
+  if (event.includes('created')) return <span className="font-medium">{t('leads.activityLeadCreated')}</span>
   if (event.includes('status')) {
     const attrs = (properties as Record<string, Record<string, string>>)?.attributes ?? {}
     const old   = (properties as Record<string, Record<string, unknown>>)?.old ?? {}
@@ -142,12 +166,12 @@ function ActivityLabel({ event, properties }: { event: string; properties: LeadA
     const oldS  = (old as Record<string, string>)?.status ?? ''
     return (
       <span>
-        <span className="font-medium">Status Changed</span>
+        <span className="font-medium">{t('leads.activityStatusChanged')}</span>
         {oldS && newS && (
           <span className="ml-1 text-[10px]" style={{ color: 'rgb(90 100 112)' }}>
-            {LEAD_STATUS_LABELS[oldS as LeadStatus] ?? oldS}
+            {STATUS_LABEL_KEYS[oldS] ? t(STATUS_LABEL_KEYS[oldS]) : oldS}
             {' → '}
-            {LEAD_STATUS_LABELS[newS as LeadStatus] ?? newS}
+            {STATUS_LABEL_KEYS[newS] ? t(STATUS_LABEL_KEYS[newS]) : newS}
           </span>
         )}
       </span>
@@ -168,6 +192,7 @@ interface Props {
 }
 
 export function LeadDetailPanel({ leadId, onClose }: Props) {
+  const { t } = useI18n()
   const { data: lead, isLoading } = useLead(leadId)
 
   useEffect(() => {
@@ -256,7 +281,7 @@ export function LeadDetailPanel({ leadId, onClose }: Props) {
                     </h2>
                     {lead && (
                       <p className="text-xs mt-1" style={{ color: 'rgba(201,162,75,0.7)' }}>
-                        Added {formatDistanceToNow(new Date(lead.created_at), { addSuffix: true })}
+                        {t('leads.addedPrefix')} {formatDistanceToNow(new Date(lead.created_at), { addSuffix: true })}
                       </p>
                     )}
                   </>
@@ -279,16 +304,16 @@ export function LeadDetailPanel({ leadId, onClose }: Props) {
                   className="inline-flex items-center text-xs font-semibold px-2.5 py-0.5 rounded-full border"
                   style={{ ...statusStyle, borderColor: statusStyle.border }}
                 >
-                  {LEAD_STATUS_LABELS[lead.status]}
+                  {STATUS_LABEL_KEYS[lead.status] ? t(STATUS_LABEL_KEYS[lead.status]) : lead.status}
                 </span>
                 {lead.priority && (
                   <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full" style={priorityStyle}>
-                    {LEAD_PRIORITY_LABELS[lead.priority as LeadPriority] ?? lead.priority}
+                    {PRIORITY_LABEL_KEYS[lead.priority] ? t(PRIORITY_LABEL_KEYS[lead.priority]) : lead.priority}
                   </span>
                 )}
                 {lead.source && (
                   <span className="text-[10px] font-medium px-2 py-0.5 rounded-md" style={{ background: 'rgba(201,162,75,0.15)', color: 'rgba(201,162,75,0.9)' }}>
-                    {SOURCE_LABELS[lead.source] ?? lead.source}
+                    {SOURCE_LABEL_KEYS[lead.source] ? t(SOURCE_LABEL_KEYS[lead.source]) : lead.source}
                   </span>
                 )}
               </div>
@@ -314,19 +339,19 @@ export function LeadDetailPanel({ leadId, onClose }: Props) {
           ) : lead ? (
             <>
               {/* Contact Details */}
-              <SectionCard title="Contact Details">
+              <SectionCard title={t('leads.sectionContactDetails')}>
                 {lead.platform && (
                   <DetailRow
                     icon={PlatformIcon}
-                    label="Platform"
-                    value={lead.platform.charAt(0).toUpperCase() + lead.platform.slice(1)}
+                    label={t('leads.fieldPlatform')}
+                    value={PLATFORM_LABEL_KEYS[lead.platform] ? t(PLATFORM_LABEL_KEYS[lead.platform]) : lead.platform.charAt(0).toUpperCase() + lead.platform.slice(1)}
                     accent="rgb(30 90 171)"
                   />
                 )}
                 {((payloadPhones && payloadPhones.length > 0) || lead.phone) && (
                   <DetailRow
                     icon={Phone}
-                    label="Phone Numbers"
+                    label={t('leads.fieldPhoneNumbers')}
                     accent="rgb(14 124 90)"
                     value={
                       payloadPhones && payloadPhones.length > 0 ? (
@@ -336,7 +361,7 @@ export function LeadDetailPanel({ leadId, onClose }: Props) {
                               <span className="text-sm">{p.value}</span>
                               {p.primary && (
                                 <span className="text-[9px] font-bold px-1.5 py-0.5 rounded" style={{ background: 'rgb(201 162 75 / 0.15)', color: 'rgb(154 113 23)' }}>
-                                  Primary
+                                  {t('leads.primary')}
                                 </span>
                               )}
                             </div>
@@ -349,7 +374,7 @@ export function LeadDetailPanel({ leadId, onClose }: Props) {
                 {((payloadEmails && payloadEmails.length > 0) || lead.email) && (
                   <DetailRow
                     icon={Mail}
-                    label="Email Addresses"
+                    label={t('leads.fieldEmailAddresses')}
                     accent="rgb(101 56 182)"
                     value={
                       payloadEmails && payloadEmails.length > 0 ? (
@@ -359,7 +384,7 @@ export function LeadDetailPanel({ leadId, onClose }: Props) {
                               <span className="text-xs truncate">{e.value}</span>
                               {e.primary && (
                                 <span className="text-[9px] font-bold px-1.5 py-0.5 rounded shrink-0" style={{ background: 'rgb(201 162 75 / 0.15)', color: 'rgb(154 113 23)' }}>
-                                  Primary
+                                  {t('leads.primary')}
                                 </span>
                               )}
                             </div>
@@ -372,15 +397,15 @@ export function LeadDetailPanel({ leadId, onClose }: Props) {
                 {lead.source && (
                   <DetailRow
                     icon={Tag}
-                    label="Source"
-                    value={SOURCE_LABELS[lead.source] ?? lead.source}
+                    label={t('leads.fieldSource')}
+                    value={SOURCE_LABEL_KEYS[lead.source] ? t(SOURCE_LABEL_KEYS[lead.source]) : lead.source}
                     accent="rgb(154 113 23)"
                   />
                 )}
                 {(lead.city || lead.country) && (
                   <DetailRow
                     icon={MapPin}
-                    label="Location"
+                    label={t('leads.fieldLocation')}
                     value={[lead.city, lead.country].filter(Boolean).join(', ')}
                     accent="rgb(190 24 93)"
                   />
@@ -389,11 +414,11 @@ export function LeadDetailPanel({ leadId, onClose }: Props) {
 
               {/* Package Info */}
               {(lead.package_type || lead.subscription_price) && (
-                <SectionCard title="Package & Billing">
+                <SectionCard title={t('leads.sectionPackageBilling')}>
                   {lead.subscription_price && (
                     <DetailRow
                       icon={Package}
-                      label="Subscription Price"
+                      label={t('leads.fieldSubscriptionPrice')}
                       value={`${lead.subscription_price} ${lead.currency ?? 'EUR'}`}
                       accent="rgb(14 124 90)"
                     />
@@ -401,15 +426,15 @@ export function LeadDetailPanel({ leadId, onClose }: Props) {
                   {lead.package_hours && (
                     <DetailRow
                       icon={Clock}
-                      label="Package Hours"
-                      value={`${lead.package_hours} hrs`}
+                      label={t('leads.fieldPackageHours')}
+                      value={t('leads.hoursValue', { hours: String(lead.package_hours) })}
                       accent="rgb(30 90 171)"
                     />
                   )}
                   {lead.payment_method && lead.payment_method !== 'none' && (
                     <DetailRow
                       icon={Tag}
-                      label="Payment Method"
+                      label={t('leads.fieldPaymentMethod')}
                       value={lead.payment_method.replace('_', ' ')}
                       accent="rgb(101 56 182)"
                     />
@@ -419,24 +444,24 @@ export function LeadDetailPanel({ leadId, onClose }: Props) {
 
               {/* Notes */}
               {lead.notes && (
-                <SectionCard title="Notes">
+                <SectionCard title={t('common.notes')}>
                   <p className="text-sm leading-relaxed" style={{ color: 'rgb(11 31 58)' }}>{lead.notes}</p>
                 </SectionCard>
               )}
 
               {/* Rejection Reason */}
               {lead.rejection_reason && (
-                <SectionCard title="Rejection Reason">
+                <SectionCard title={t('leads.sectionRejectionReason')}>
                   <p className="text-sm leading-relaxed" style={{ color: 'rgb(180 40 20)' }}>{lead.rejection_reason}</p>
                 </SectionCard>
               )}
 
               {/* Follow-up */}
               {(lead.payload as Record<string, unknown> | null)?.next_followup && (
-                <SectionCard title="Follow Up">
+                <SectionCard title={t('leads.sectionFollowUp')}>
                   <DetailRow
                     icon={Calendar}
-                    label="Next Follow-up"
+                    label={t('leads.fieldNextFollowUp')}
                     value={String((lead.payload as Record<string, unknown>).next_followup)}
                     accent="rgb(14 124 90)"
                   />
@@ -445,7 +470,7 @@ export function LeadDetailPanel({ leadId, onClose }: Props) {
 
               {/* Activity History */}
               {lead.activities && lead.activities.length > 0 && (
-                <SectionCard title="Activity History">
+                <SectionCard title={t('leads.sectionActivityHistory')}>
                   <div className="space-y-0">
                     {lead.activities.map((act, i) => (
                       <div key={act.id} className="flex gap-3">

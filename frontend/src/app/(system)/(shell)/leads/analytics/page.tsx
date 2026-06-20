@@ -11,6 +11,17 @@ import {
   Users, UserPlus, TrendingUp, Target,
   RefreshCw, ArrowLeft, Search, ChevronDown, Globe, BarChart2,
 } from 'lucide-react'
+import { useI18n } from '@/lib/system/i18n'
+
+const STATUS_LABEL_KEYS: Record<string, string> = {
+  closed:              'leads.statusClosed',
+  waiting_for_trial:   'leads.statusWaitingForTrial',
+  waiting_for_payment: 'leads.statusWaitingForPayment',
+  lost:                'leads.statusLost',
+  interested:          'leads.statusInterested',
+  new_lead:            'leads.statusNewLead',
+  not_interested:      'leads.statusNotInterested',
+}
 
 /* ─────────────── helpers ─────────────── */
 const STAR_PATH = 'M50,5 L57.65,31.52 L81.82,18.18 L68.48,42.35 L95,50 L68.48,57.65 L81.82,81.82 L57.65,68.48 L50,95 L42.35,68.48 L18.18,81.82 L31.52,57.65 L5,50 L31.52,42.35 L18.18,18.18 L42.35,31.52 Z'
@@ -42,16 +53,6 @@ const STATUS_COLOR: Record<string, string> = {
   interested:          '#10b981',
   new_lead:            '#1E5AAB',
   not_interested:      '#64748b',
-}
-
-const STATUS_LABEL: Record<string, string> = {
-  closed:              'Closed',
-  waiting_for_trial:   'Waiting for Trial',
-  waiting_for_payment: 'Waiting for Payment',
-  lost:                'Lost',
-  interested:          'Interested',
-  new_lead:            'New Lead',
-  not_interested:      'Not Interested',
 }
 
 /* ─────────────── Chart card wrapper ─────────────── */
@@ -90,40 +91,41 @@ function KpiCard({
 
 /* ─────────────── Filter bar ─────────────── */
 const STATUS_OPTIONS = [
-  { value: '', label: 'All Statuses' },
-  { value: 'new_lead', label: 'New Lead' },
-  { value: 'interested', label: 'Interested' },
-  { value: 'waiting_for_trial', label: 'Waiting for Trial' },
-  { value: 'waiting_for_payment', label: 'Waiting for Payment' },
-  { value: 'closed', label: 'Closed' },
-  { value: 'not_interested', label: 'Not Interested' },
-  { value: 'lost', label: 'Lost' },
+  { value: '', key: 'leads.filterAllStatuses' },
+  { value: 'new_lead', key: 'leads.statusNewLead' },
+  { value: 'interested', key: 'leads.statusInterested' },
+  { value: 'waiting_for_trial', key: 'leads.statusWaitingForTrial' },
+  { value: 'waiting_for_payment', key: 'leads.statusWaitingForPayment' },
+  { value: 'closed', key: 'leads.statusClosed' },
+  { value: 'not_interested', key: 'leads.statusNotInterested' },
+  { value: 'lost', key: 'leads.statusLost' },
 ]
 const SOURCE_OPTIONS = [
-  { value: '', label: 'All Sources' },
-  { value: 'google_ads', label: 'Google Ads' },
-  { value: 'facebook_ads', label: 'Facebook Ads' },
-  { value: 'instagram_ads', label: 'Instagram' },
-  { value: 'whatsapp_direct', label: 'WhatsApp' },
-  { value: 'student_referral', label: 'Student Referral' },
-  { value: 'teacher_referral', label: 'Teacher Referral' },
-  { value: 'website_form', label: 'Website Form' },
-  { value: 'superprof', label: 'Superprof' },
-  { value: 'leboncoin', label: 'Leboncoin' },
-  { value: 'walk_in', label: 'Walk-in' },
-  { value: 'other', label: 'Other' },
+  { value: '', key: 'leads.filterAllSources' },
+  { value: 'google_ads', key: 'leads.sourceGoogleAds' },
+  { value: 'facebook_ads', key: 'leads.sourceFacebookAds' },
+  { value: 'instagram_ads', key: 'leads.sourceInstagramShort' },
+  { value: 'whatsapp_direct', key: 'leads.platformWhatsapp' },
+  { value: 'student_referral', key: 'leads.sourceStudentReferral' },
+  { value: 'teacher_referral', key: 'leads.sourceTeacherReferral' },
+  { value: 'website_form', key: 'leads.sourceWebsiteForm' },
+  { value: 'superprof', key: 'leads.sourceSuperprof' },
+  { value: 'leboncoin', key: 'leads.sourceLeboncoin' },
+  { value: 'walk_in', key: 'leads.sourceWalkIn' },
+  { value: 'other', key: 'leads.sourceOther' },
 ]
 const PRIORITY_OPTIONS = [
-  { value: '', label: 'All Priorities' },
-  { value: 'high', label: 'High' },
-  { value: 'medium', label: 'Medium' },
-  { value: 'low', label: 'Low' },
+  { value: '', key: 'leads.filterAllPriorities' },
+  { value: 'high', key: 'leads.priorityHigh' },
+  { value: 'medium', key: 'leads.priorityMedium' },
+  { value: 'low', key: 'leads.priorityLow' },
 ]
 
 function NativeSelect({ value, onChange, options, className = '' }: {
   value: string; onChange: (v: string) => void
-  options: { value: string; label: string }[]; className?: string
+  options: { value: string; key: string }[]; className?: string
 }) {
+  const { t } = useI18n()
   return (
     <div className={`relative ${className}`}>
       <select
@@ -131,7 +133,7 @@ function NativeSelect({ value, onChange, options, className = '' }: {
         onChange={e => onChange(e.target.value)}
         className="w-full h-9 pl-3 pr-8 rounded-lg text-sm border border-gray-200 bg-white text-gray-700 appearance-none focus:outline-none focus:ring-2 focus:ring-[#0E7C5A]/30 cursor-pointer"
       >
-        {options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+        {options.map(o => <option key={o.value} value={o.value}>{t(o.key)}</option>)}
       </select>
       <ChevronDown size={12} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
     </div>
@@ -140,20 +142,21 @@ function NativeSelect({ value, onChange, options, className = '' }: {
 
 /* ─────────────── Donut center label ─────────────── */
 function DonutCenter({ total }: { total: number }) {
+  const { t } = useI18n()
   return (
     <text x="50%" y="50%" textAnchor="middle" dominantBaseline="middle">
       <tspan x="50%" dy="-0.4em" fontSize="22" fontWeight="700" fill="#111827">{total.toLocaleString()}</tspan>
-      <tspan x="50%" dy="1.3em" fontSize="10" fill="#9ca3af">TOTAL LEADS</tspan>
+      <tspan x="50%" dy="1.3em" fontSize="10" fill="#9ca3af">{t('leads.totalLeadsCaps')}</tspan>
     </text>
   )
 }
 
 /* ─────────────── Date presets ─────────────── */
-const PRESETS: Record<string, { label: string; from: string; to: string }> = {
-  '30d':  { label: 'Last 30 days',  from: new Date(Date.now() - 30  * 86400000).toISOString().slice(0, 10), to: new Date().toISOString().slice(0, 10) },
-  '90d':  { label: 'Last 90 days',  from: new Date(Date.now() - 90  * 86400000).toISOString().slice(0, 10), to: new Date().toISOString().slice(0, 10) },
-  '180d': { label: 'Last 180 days', from: new Date(Date.now() - 180 * 86400000).toISOString().slice(0, 10), to: new Date().toISOString().slice(0, 10) },
-  '1y':   { label: 'Last year',     from: new Date(Date.now() - 365 * 86400000).toISOString().slice(0, 10), to: new Date().toISOString().slice(0, 10) },
+const PRESETS: Record<string, { labelKey: string; from: string; to: string }> = {
+  '30d':  { labelKey: 'leads.preset30d',  from: new Date(Date.now() - 30  * 86400000).toISOString().slice(0, 10), to: new Date().toISOString().slice(0, 10) },
+  '90d':  { labelKey: 'leads.preset90d',  from: new Date(Date.now() - 90  * 86400000).toISOString().slice(0, 10), to: new Date().toISOString().slice(0, 10) },
+  '180d': { labelKey: 'leads.preset180d', from: new Date(Date.now() - 180 * 86400000).toISOString().slice(0, 10), to: new Date().toISOString().slice(0, 10) },
+  '1y':   { labelKey: 'leads.preset1y',   from: new Date(Date.now() - 365 * 86400000).toISOString().slice(0, 10), to: new Date().toISOString().slice(0, 10) },
 }
 
 /* ─────────────── Tab button ─────────────── */
@@ -177,6 +180,7 @@ type Tab = 'overview' | 'by_source' | 'performance' | 'demographics'
 
 /* ═══════════════ Page ═══════════════ */
 export default function LeadStatisticsPage() {
+  const { t } = useI18n()
   const router = useRouter()
   const qc = useQueryClient()
 
@@ -193,14 +197,14 @@ export default function LeadStatisticsPage() {
   /* ── donut data ── */
   const donutData = data
     ? Object.entries(data.by_status)
-        .map(([status, total]) => ({ name: STATUS_LABEL[status] ?? status, value: total, status, color: STATUS_COLOR[status] ?? '#9ca3af' }))
+        .map(([status, total]) => ({ name: STATUS_LABEL_KEYS[status] ? t(STATUS_LABEL_KEYS[status]) : status, value: total, status, color: STATUS_COLOR[status] ?? '#9ca3af' }))
         .sort((a, b) => b.value - a.value)
     : []
 
   /* ── funnel bar data ── */
   const funnelData = data
     ? Object.entries(data.by_status)
-        .map(([status, total]) => ({ status: STATUS_LABEL[status] ?? status, total, color: STATUS_COLOR[status] ?? '#9ca3af' }))
+        .map(([status, total]) => ({ status: STATUS_LABEL_KEYS[status] ? t(STATUS_LABEL_KEYS[status]) : status, total, color: STATUS_COLOR[status] ?? '#9ca3af' }))
         .sort((a, b) => b.total - a.total)
     : []
 
@@ -259,9 +263,9 @@ export default function LeadStatisticsPage() {
               <KhatamStar size={22} color="#C9A24B" opacity={0.9} />
               <div>
                 <h1 className="text-2xl font-bold text-white leading-none" style={{ fontFamily: "'Cormorant Garamond', Georgia, serif", letterSpacing: '-0.01em' }}>
-                  CRM
+                  {t('leads.crmTitle')}
                 </h1>
-                <p className="text-xs mt-0.5" style={{ color: 'rgba(201,162,75,0.7)' }}>Statistics & Analytics</p>
+                <p className="text-xs mt-0.5" style={{ color: 'rgba(201,162,75,0.7)' }}>{t('leads.statisticsAnalytics')}</p>
               </div>
             </div>
 
@@ -273,7 +277,7 @@ export default function LeadStatisticsPage() {
                 style={{ background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.75)', border: '1px solid rgba(255,255,255,0.12)' }}
               >
                 <RefreshCw size={12} className={isFetching ? 'animate-spin' : ''} />
-                Refresh
+                {t('leads.refresh')}
               </button>
 
               <button
@@ -282,7 +286,7 @@ export default function LeadStatisticsPage() {
                 style={{ background: 'rgba(201,162,75,0.15)', color: 'rgba(201,162,75,0.9)', border: '1px solid rgba(201,162,75,0.25)' }}
               >
                 <ArrowLeft size={12} />
-                Back to CRM
+                {t('leads.backToCrm')}
               </button>
             </div>
           </div>
@@ -292,28 +296,28 @@ export default function LeadStatisticsPage() {
 
       {/* ── Filters ── */}
       <div className="rounded-2xl bg-white border border-gray-100 shadow-sm p-5 mb-5">
-        <p className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-3">Filters</p>
+        <p className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-3">{t('leads.filtersTitle')}</p>
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
           <div className="relative">
             <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
             <input
               readOnly
-              placeholder="Search by name, email, phone..."
+              placeholder={t('leads.searchPlaceholder')}
               className="w-full h-9 pl-8 pr-3 rounded-lg text-sm border border-gray-200 bg-gray-50 text-gray-400 cursor-not-allowed"
             />
           </div>
           <NativeSelect value="" onChange={() => {}} options={STATUS_OPTIONS} />
-          <NativeSelect value="" onChange={() => {}} options={[{ value: '', label: 'All Platforms' }]} />
+          <NativeSelect value="" onChange={() => {}} options={[{ value: '', key: 'leads.filterAllPlatforms' }]} />
           <NativeSelect value="" onChange={() => {}} options={SOURCE_OPTIONS} />
           <NativeSelect value="" onChange={() => {}} options={PRIORITY_OPTIONS} />
-          <NativeSelect value="" onChange={() => {}} options={[{ value: '', label: 'All Assignees' }]} />
+          <NativeSelect value="" onChange={() => {}} options={[{ value: '', key: 'leads.filterAllAssignees' }]} />
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 mt-3">
-          <NativeSelect value="" onChange={() => {}} options={[{ value: '', label: 'All Packages' }]} />
+          <NativeSelect value="" onChange={() => {}} options={[{ value: '', key: 'leads.filterAllPackages' }]} />
           <NativeSelect
             value={preset}
             onChange={v => { setPreset(v); setFromCustom(''); setToCustom('') }}
-            options={Object.entries(PRESETS).map(([k, p]) => ({ value: k, label: p.label }))}
+            options={Object.entries(PRESETS).map(([k, p]) => ({ value: k, key: p.labelKey }))}
           />
           <div className="relative">
             <input
@@ -336,18 +340,18 @@ export default function LeadStatisticsPage() {
 
       {/* ── KPI cards ── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-5">
-        <KpiCard label="Total Leads" value={data?.summary.total.toLocaleString() ?? '—'} sub="in database" icon={<Users size={18} />} loading={isLoading} />
-        <KpiCard label="New This Month" value={data?.summary.new_this_month.toLocaleString() ?? '—'} sub={`${data?.summary.new_this_week ?? 0} this week`} icon={<UserPlus size={18} />} loading={isLoading} />
-        <KpiCard label="Conversion Rate" value={data ? `${data.summary.conversion_rate}%` : '—'} sub="leads closed" icon={<TrendingUp size={18} />} loading={isLoading} />
-        <KpiCard label="Closed Deals" value={data?.summary.closed.toLocaleString() ?? '—'} sub="successful conversions" icon={<Target size={18} />} loading={isLoading} />
+        <KpiCard label={t('leads.kpiTotalLeads')} value={data?.summary.total.toLocaleString() ?? '—'} sub={t('leads.kpiInDatabase')} icon={<Users size={18} />} loading={isLoading} />
+        <KpiCard label={t('leads.kpiNewThisMonth')} value={data?.summary.new_this_month.toLocaleString() ?? '—'} sub={t('leads.kpiThisWeek', { count: String(data?.summary.new_this_week ?? 0) })} icon={<UserPlus size={18} />} loading={isLoading} />
+        <KpiCard label={t('leads.kpiConversionRate')} value={data ? `${data.summary.conversion_rate}%` : '—'} sub={t('leads.kpiLeadsClosed')} icon={<TrendingUp size={18} />} loading={isLoading} />
+        <KpiCard label={t('leads.kpiClosedDeals')} value={data?.summary.closed.toLocaleString() ?? '—'} sub={t('leads.kpiSuccessfulConversions')} icon={<Target size={18} />} loading={isLoading} />
       </div>
 
       {/* ── Tab navigation ── */}
       <div className="flex items-center gap-1 mb-5 bg-white border border-gray-100 rounded-xl p-1 shadow-sm w-fit">
-        <TabBtn active={tab === 'overview'}     onClick={() => setTab('overview')}>     <BarChart2 size={14} />Overview</TabBtn>
-        <TabBtn active={tab === 'by_source'}    onClick={() => setTab('by_source')}>    <Globe size={14} />By Source</TabBtn>
-        <TabBtn active={tab === 'performance'}  onClick={() => setTab('performance')}>  <TrendingUp size={14} />Performance</TabBtn>
-        <TabBtn active={tab === 'demographics'} onClick={() => setTab('demographics')}> <Users size={14} />Demographics</TabBtn>
+        <TabBtn active={tab === 'overview'}     onClick={() => setTab('overview')}>     <BarChart2 size={14} />{t('leads.tabOverview')}</TabBtn>
+        <TabBtn active={tab === 'by_source'}    onClick={() => setTab('by_source')}>    <Globe size={14} />{t('leads.tabBySource')}</TabBtn>
+        <TabBtn active={tab === 'performance'}  onClick={() => setTab('performance')}>  <TrendingUp size={14} />{t('leads.tabPerformance')}</TabBtn>
+        <TabBtn active={tab === 'demographics'} onClick={() => setTab('demographics')}> <Users size={14} />{t('leads.tabDemographics')}</TabBtn>
       </div>
 
       {isLoading && (
@@ -360,7 +364,7 @@ export default function LeadStatisticsPage() {
         <div className="space-y-4">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             {/* Leads over time */}
-            <Card title={`Leads Over Time — ${PRESETS[preset]?.label ?? 'Custom range'}`} icon={<BarChart2 size={15} />}>
+            <Card title={`${t('leads.cardLeadsOverTime')} — ${PRESETS[preset]?.labelKey ? t(PRESETS[preset].labelKey) : t('leads.customRange')}`} icon={<BarChart2 size={15} />}>
               <ResponsiveContainer width="100%" height={240}>
                 <AreaChart data={data.trend_daily} margin={{ top: 4, right: 4, bottom: 0, left: -20 }}>
                   <defs>
@@ -373,13 +377,13 @@ export default function LeadStatisticsPage() {
                   <XAxis dataKey="date" tick={{ fontSize: 10 }} tickLine={false} axisLine={false} />
                   <YAxis tick={{ fontSize: 10 }} tickLine={false} axisLine={false} />
                   <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8 }} />
-                  <Area type="monotone" dataKey="leads_count" stroke="#0E7C5A" fill="url(#grad-leads)" strokeWidth={2} name="Leads" dot={false} />
+                  <Area type="monotone" dataKey="leads_count" stroke="#0E7C5A" fill="url(#grad-leads)" strokeWidth={2} name={t('leads.chartLeadsName')} dot={false} />
                 </AreaChart>
               </ResponsiveContainer>
             </Card>
 
             {/* Status distribution donut */}
-            <Card title="Status Distribution" icon={<Target size={15} />}>
+            <Card title={t('leads.cardStatusDistribution')} icon={<Target size={15} />}>
               <ResponsiveContainer width="100%" height={240}>
                 <PieChart>
                   <Pie
@@ -412,7 +416,7 @@ export default function LeadStatisticsPage() {
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             {/* Conversion funnel (status bar chart) */}
-            <Card title="Conversion Funnel" icon={<TrendingUp size={15} />}>
+            <Card title={t('leads.cardConversionFunnel')} icon={<TrendingUp size={15} />}>
               <ResponsiveContainer width="100%" height={240}>
                 <BarChart data={funnelData} margin={{ top: 4, right: 4, bottom: 24, left: -20 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" vertical={false} />
@@ -427,23 +431,23 @@ export default function LeadStatisticsPage() {
             </Card>
 
             {/* By source */}
-            <Card title="By Source" icon={<Globe size={15} />}>
+            <Card title={t('leads.tabBySource')} icon={<Globe size={15} />}>
               <ResponsiveContainer width="100%" height={240}>
                 <BarChart data={sourceData} layout="vertical" margin={{ top: 4, right: 4, bottom: 0, left: 60 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" horizontal={false} />
                   <XAxis type="number" tick={{ fontSize: 10 }} tickLine={false} axisLine={false} />
                   <YAxis type="category" dataKey="source" tick={{ fontSize: 10 }} tickLine={false} axisLine={false} width={60} />
                   <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8 }} />
-                  <Bar dataKey="total" fill="#0E7C5A" radius={[0, 4, 4, 0]} maxBarSize={18} name="Leads" />
+                  <Bar dataKey="total" fill="#0E7C5A" radius={[0, 4, 4, 0]} maxBarSize={18} name={t('leads.chartLeadsName')} />
                 </BarChart>
               </ResponsiveContainer>
             </Card>
           </div>
 
           {/* Recent Activity */}
-          <Card title="Recent Activity" icon={<Users size={15} />}>
+          <Card title={t('leads.cardRecentActivity')} icon={<Users size={15} />}>
             {data.recent_activity.length === 0
-              ? <p className="text-sm text-gray-400 py-4 text-center">No recent activity</p>
+              ? <p className="text-sm text-gray-400 py-4 text-center">{t('leads.noRecentActivity')}</p>
               : (
                 <div className="divide-y divide-gray-50">
                   {data.recent_activity.map(a => (
@@ -469,22 +473,22 @@ export default function LeadStatisticsPage() {
 
       {data && tab === 'by_source' && (
         <div className="space-y-4">
-          <Card title="Leads by Source" icon={<Globe size={15} />}>
+          <Card title={t('leads.cardLeadsBySource')} icon={<Globe size={15} />}>
             <ResponsiveContainer width="100%" height={320}>
               <BarChart data={sourceData} layout="vertical" margin={{ top: 4, right: 32, bottom: 0, left: 80 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" horizontal={false} />
                 <XAxis type="number" tick={{ fontSize: 11 }} tickLine={false} axisLine={false} />
                 <YAxis type="category" dataKey="source" tick={{ fontSize: 11 }} tickLine={false} axisLine={false} width={80} />
                 <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8 }} />
-                <Bar dataKey="total" fill="#0E7C5A" radius={[0, 4, 4, 0]} maxBarSize={22} name="Leads" />
+                <Bar dataKey="total" fill="#0E7C5A" radius={[0, 4, 4, 0]} maxBarSize={22} name={t('leads.chartLeadsName')} />
               </BarChart>
             </ResponsiveContainer>
           </Card>
 
-          <Card title="Conversion by Source" icon={<TrendingUp size={15} />}>
+          <Card title={t('leads.cardConversionBySource')} icon={<TrendingUp size={15} />}>
             <div className="divide-y divide-gray-50">
               <div className="grid grid-cols-4 gap-4 pb-2 text-[10px] font-semibold uppercase tracking-wider text-gray-400">
-                <span>Source</span><span className="text-right">Leads</span><span className="text-right">Enrolled</span><span className="text-right">Rate</span>
+                <span>{t('leads.fieldSource')}</span><span className="text-right">{t('leads.colLeads')}</span><span className="text-right">{t('status.enrolled')}</span><span className="text-right">{t('leads.colRate')}</span>
               </div>
               {data.by_source
                 .sort((a, b) => b.total - a.total)
@@ -506,9 +510,9 @@ export default function LeadStatisticsPage() {
 
       {data && tab === 'performance' && (
         <div className="space-y-4">
-          <Card title="Performance by Supervisor" icon={<Users size={15} />}>
+          <Card title={t('leads.cardPerformanceBySupervisor')} icon={<Users size={15} />}>
             {supervisorData.length === 0
-              ? <p className="text-sm text-gray-400 py-4 text-center">No supervisor data in this range</p>
+              ? <p className="text-sm text-gray-400 py-4 text-center">{t('leads.noSupervisorData')}</p>
               : (
                 <>
                   <ResponsiveContainer width="100%" height={280}>
@@ -517,15 +521,15 @@ export default function LeadStatisticsPage() {
                       <XAxis dataKey="name" tick={{ fontSize: 10 }} tickLine={false} axisLine={false} angle={-20} textAnchor="end" />
                       <YAxis tick={{ fontSize: 10 }} tickLine={false} axisLine={false} />
                       <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8 }} />
-                      <Bar dataKey="total" fill="#1E5AAB" radius={[4, 4, 0, 0]} maxBarSize={36} name="Total Leads" />
-                      <Bar dataKey="enrolled" fill="#0E7C5A" radius={[4, 4, 0, 0]} maxBarSize={36} name="Enrolled" />
+                      <Bar dataKey="total" fill="#1E5AAB" radius={[4, 4, 0, 0]} maxBarSize={36} name={t('leads.chartTotalLeadsName')} />
+                      <Bar dataKey="enrolled" fill="#0E7C5A" radius={[4, 4, 0, 0]} maxBarSize={36} name={t('status.enrolled')} />
                       <Legend wrapperStyle={{ fontSize: 11 }} />
                     </BarChart>
                   </ResponsiveContainer>
 
                   <div className="divide-y divide-gray-50 mt-2">
                     <div className="grid grid-cols-4 gap-4 pb-2 text-[10px] font-semibold uppercase tracking-wider text-gray-400">
-                      <span>Supervisor</span><span className="text-right">Leads</span><span className="text-right">Enrolled</span><span className="text-right">Rate</span>
+                      <span>{t('leads.columnSupervisor')}</span><span className="text-right">{t('leads.colLeads')}</span><span className="text-right">{t('status.enrolled')}</span><span className="text-right">{t('leads.colRate')}</span>
                     </div>
                     {supervisorData.map(s => (
                       <div key={s.name} className="grid grid-cols-4 gap-4 py-2.5 text-sm">
@@ -545,9 +549,9 @@ export default function LeadStatisticsPage() {
 
       {data && tab === 'demographics' && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <Card title="By Country" icon={<Globe size={15} />}>
+          <Card title={t('leads.cardByCountry')} icon={<Globe size={15} />}>
             {countryData.length === 0
-              ? <p className="text-sm text-gray-400 py-4 text-center">No country data in this range</p>
+              ? <p className="text-sm text-gray-400 py-4 text-center">{t('leads.noCountryData')}</p>
               : (
                 <ResponsiveContainer width="100%" height={300}>
                   <BarChart data={countryData} layout="vertical" margin={{ top: 4, right: 32, bottom: 0, left: 60 }}>
@@ -555,16 +559,16 @@ export default function LeadStatisticsPage() {
                     <XAxis type="number" tick={{ fontSize: 10 }} tickLine={false} axisLine={false} />
                     <YAxis type="category" dataKey="country" tick={{ fontSize: 10 }} tickLine={false} axisLine={false} width={60} />
                     <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8 }} />
-                    <Bar dataKey="total" fill="#1E5AAB" radius={[0, 4, 4, 0]} maxBarSize={18} name="Leads" />
+                    <Bar dataKey="total" fill="#1E5AAB" radius={[0, 4, 4, 0]} maxBarSize={18} name={t('leads.chartLeadsName')} />
                   </BarChart>
                 </ResponsiveContainer>
               )
             }
           </Card>
 
-          <Card title="By Gender" icon={<Users size={15} />}>
+          <Card title={t('leads.cardByGender')} icon={<Users size={15} />}>
             {genderData.length === 0
-              ? <p className="text-sm text-gray-400 py-4 text-center">No gender data in this range</p>
+              ? <p className="text-sm text-gray-400 py-4 text-center">{t('leads.noGenderData')}</p>
               : (
                 <ResponsiveContainer width="100%" height={300}>
                   <PieChart>

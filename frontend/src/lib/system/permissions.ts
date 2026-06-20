@@ -18,7 +18,7 @@ export type Permission =
   | 'whatsapp.view' | 'whatsapp.edit'
   | 'certificates.view' | 'certificates.issue'
   | 'settings.view' | 'settings.edit'
-  | 'users.view' | 'users.invite' | 'users.edit' | 'users.deactivate'
+  | 'users.view' | 'users.view_directory' | 'users.invite' | 'users.create' | 'users.edit' | 'users.deactivate' | 'users.suspend' | 'users.archive'
   | 'audit.view'
 
 export const PERMISSION_GROUPS: Record<string, string[]> = {
@@ -39,7 +39,7 @@ export const PERMISSION_GROUPS: Record<string, string[]> = {
   whatsapp:      ['view', 'edit'],
   certificates:  ['view', 'issue'],
   settings:      ['view', 'edit'],
-  users:         ['view', 'invite', 'edit', 'deactivate'],
+  users:         ['view', 'view_directory', 'invite', 'create', 'edit', 'deactivate', 'suspend', 'archive'],
   audit:         ['view'],
 }
 

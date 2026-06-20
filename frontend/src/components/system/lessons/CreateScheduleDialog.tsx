@@ -2,7 +2,7 @@
 import { useState } from 'react'
 import { X, Plus, Trash2, RotateCw } from 'lucide-react'
 import { toast } from 'sonner'
-import { useCreateLessonSchedule, useLessonSubjects } from '@/hooks/system/useLessons'
+import { useCreateLessonSchedule, useUpdateLessonSchedule, useLessonSubjects } from '@/hooks/system/useLessons'
 import { useTeachers } from '@/hooks/system/useTeachers'
 import { useStudents } from '@/hooks/system/useStudents'
 import type { LessonSchedule, ScheduleSlot } from '@/types/system/lesson'
@@ -71,17 +71,27 @@ const RECURRENCE_OPTIONS: { value: LessonSchedule['recurrence']; label: string }
   { value: 'custom',        label: 'Custom'            },
 ]
 
+interface SchedulePrefill {
+  date?: string
+  startTime?: string
+  durationMinutes?: number
+  teacherId?: number
+  studentId?: number
+}
+
 interface Props {
   open: boolean
   onOpenChange: (v: boolean) => void
   onSuccess?: () => void
+  schedule?: LessonSchedule          // edit mode
+  prefill?: SchedulePrefill          // pre-fill from a calendar drag-select
 }
 
 function newSlot(): Omit<ScheduleSlot, 'id'> {
   return { day_of_week: 1, start_time: '18:00', duration_minutes: 60 }
 }
 
-export function CreateScheduleDialog({ open, onOpenChange, onSuccess }: Props) {
+export function CreateScheduleDialog({ open, onOpenChange, onSuccess, schedule, prefill }: Props) {
   const { data: subjects = [] } = useLessonSubjects()
   const { data: teachersData }  = useTeachers()
   const { data: studentsData }  = useStudents({ per_page: 500 })
@@ -89,13 +99,25 @@ export function CreateScheduleDialog({ open, onOpenChange, onSuccess }: Props) {
   const students = studentsData?.data ?? []
 
   const createSchedule = useCreateLessonSchedule()
+  const updateSchedule = useUpdateLessonSchedule()
+  const isEdit = !!schedule
 
-  const [teacherId,  setTeacherId]  = useState('')
-  const [studentId,  setStudentId]  = useState('')
-  const [subjectId,  setSubjectId]  = useState('')
-  const [recurrence, setRecurrence] = useState<LessonSchedule['recurrence']>('weekly')
-  const [startDate,  setStartDate]  = useState(() => new Date().toISOString().split('T')[0])
-  const [slots,      setSlots]      = useState<Omit<ScheduleSlot, 'id'>[]>([newSlot()])
+  // Seeded once from props — the parent mounts this dialog fresh each time it opens.
+  const [teacherId,  setTeacherId]  = useState(() => schedule ? String(schedule.teacher_id) : prefill?.teacherId ? String(prefill.teacherId) : '')
+  const [studentId,  setStudentId]  = useState(() => schedule ? String(schedule.student_id) : prefill?.studentId ? String(prefill.studentId) : '')
+  const [subjectId,  setSubjectId]  = useState(() => schedule?.subject_id ? String(schedule.subject_id) : '')
+  const [recurrence, setRecurrence] = useState<LessonSchedule['recurrence']>(() => schedule?.recurrence ?? 'weekly')
+  const [startDate,  setStartDate]  = useState(() => schedule ? schedule.start_date.slice(0, 10) : (prefill?.date ?? new Date().toISOString().split('T')[0]))
+  const [slots,      setSlots]      = useState<Omit<ScheduleSlot, 'id'>[]>(() => {
+    if (schedule && schedule.slots.length) {
+      return schedule.slots.map(s => ({ day_of_week: s.day_of_week, start_time: s.start_time.slice(0, 5), duration_minutes: s.duration_minutes }))
+    }
+    if (prefill) {
+      const dow = prefill.date ? new Date(`${prefill.date}T00:00`).getDay() : 1
+      return [{ day_of_week: dow, start_time: prefill.startTime ?? '18:00', duration_minutes: prefill.durationMinutes ?? 60 }]
+    }
+    return [newSlot()]
+  })
 
   function addSlot()        { setSlots(p => [...p, newSlot()]) }
   function removeSlot(i: number) { setSlots(p => p.filter((_, j) => j !== i)) }
@@ -112,16 +134,22 @@ export function CreateScheduleDialog({ open, onOpenChange, onSuccess }: Props) {
       toast.error('Please fill in all required fields.')
       return
     }
+    const payload = {
+      teacher_id: Number(teacherId),
+      student_id: Number(studentId),
+      subject_id: subjectId ? Number(subjectId) : null,
+      recurrence,
+      start_date: startDate,
+      slots,
+    }
     try {
-      await createSchedule.mutateAsync({
-        teacher_id: Number(teacherId),
-        student_id: Number(studentId),
-        subject_id: subjectId ? Number(subjectId) : null,
-        recurrence,
-        start_date: startDate,
-        slots,
-      })
-      toast.success('Schedule created.')
+      if (isEdit && schedule) {
+        await updateSchedule.mutateAsync({ id: schedule.id, ...payload })
+        toast.success('Schedule updated.')
+      } else {
+        await createSchedule.mutateAsync(payload)
+        toast.success('Schedule created.')
+      }
       onSuccess?.()
       onOpenChange(false)
     } catch {
@@ -152,7 +180,7 @@ export function CreateScheduleDialog({ open, onOpenChange, onSuccess }: Props) {
               <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: TEAL_50 }}>
                 <RotateCw size={14} style={{ color: TEAL_600 }} />
               </div>
-              <h2 className="text-base font-semibold" style={{ color: NAVY }}>Create Schedule</h2>
+              <h2 className="text-base font-semibold" style={{ color: NAVY }}>{isEdit ? 'Edit Schedule' : 'Create Schedule'}</h2>
             </div>
             <button onClick={() => onOpenChange(false)} className="p-1.5 rounded-lg hover:bg-black/5 transition-colors" aria-label="Close">
               <X size={18} />
@@ -167,7 +195,7 @@ export function CreateScheduleDialog({ open, onOpenChange, onSuccess }: Props) {
               <div className="grid grid-cols-3 gap-3">
                 <Field label="Teacher" required>
                   <SearchableSelect
-                    options={teachers.map(t => ({ value: String(t.id), label: (t as any).name ?? `Teacher #${t.id}` }))}
+                    options={teachers.map(t => ({ value: String(t.id), label: t.name ?? `Teacher #${t.id}` }))}
                     value={teacherId}
                     onChange={setTeacherId}
                     placeholder="Select…"
@@ -316,11 +344,11 @@ export function CreateScheduleDialog({ open, onOpenChange, onSuccess }: Props) {
               </button>
               <button
                 type="submit"
-                disabled={createSchedule.isPending}
+                disabled={createSchedule.isPending || updateSchedule.isPending}
                 className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50"
                 style={{ background: TEAL_600 }}
               >
-                {createSchedule.isPending ? 'Saving…' : 'Create Schedule'}
+                {(createSchedule.isPending || updateSchedule.isPending) ? 'Saving…' : isEdit ? 'Update Schedule' : 'Create Schedule'}
               </button>
             </div>
           </form>

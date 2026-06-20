@@ -6,6 +6,7 @@ import { useMarkAttendance } from '@/hooks/system/useSessions'
 import { SessionReportForm } from '@/components/system/session-reports/SessionReportForm'
 import { RescheduleSheet } from './RescheduleSheet'
 import { CancelSessionDialog } from './CancelSessionDialog'
+import { useI18n } from '@/lib/system/i18n'
 
 interface Props {
   session: Session | null
@@ -14,13 +15,13 @@ interface Props {
   onUpdate?: () => void
 }
 
-const STATUS_CONFIG: Record<string, { label: string; bg: string; color: string }> = {
-  scheduled:          { label: 'Scheduled',       bg: 'rgb(14 124 90 / 0.08)',  color: 'rgb(14 124 90)' },
-  attended:           { label: 'Attended',         bg: 'rgb(30 90 171 / 0.08)', color: 'rgb(30 90 171)' },
-  absent:             { label: 'Absent',           bg: 'rgb(220 38 38 / 0.08)', color: 'rgb(220 38 38)' },
-  cancelled:          { label: 'Cancelled',        bg: 'rgb(107 114 128 / 0.1)', color: 'rgb(107 114 128)' },
-  rescheduled:        { label: 'Rescheduled',      bg: 'rgb(217 119 6 / 0.08)', color: 'rgb(180 83 9)' },
-  pending_substitute: { label: 'Needs substitute', bg: 'rgb(234 88 12 / 0.08)', color: 'rgb(194 65 12)' },
+const STATUS_CONFIG: Record<string, { labelKey: string; bg: string; color: string }> = {
+  scheduled:          { labelKey: 'status.scheduled',           bg: 'rgb(14 124 90 / 0.08)',  color: 'rgb(14 124 90)' },
+  attended:           { labelKey: 'status.attended',            bg: 'rgb(30 90 171 / 0.08)', color: 'rgb(30 90 171)' },
+  absent:             { labelKey: 'status.absent',              bg: 'rgb(220 38 38 / 0.08)', color: 'rgb(220 38 38)' },
+  cancelled:          { labelKey: 'status.cancelled',           bg: 'rgb(107 114 128 / 0.1)', color: 'rgb(107 114 128)' },
+  rescheduled:        { labelKey: 'status.rescheduled',         bg: 'rgb(217 119 6 / 0.08)', color: 'rgb(180 83 9)' },
+  pending_substitute: { labelKey: 'schedule.status.needsSubstitute', bg: 'rgb(234 88 12 / 0.08)', color: 'rgb(194 65 12)' },
 }
 
 function formatDay(iso: string) {
@@ -33,6 +34,7 @@ function formatTime(iso: string) {
 const border = { borderColor: 'rgb(var(--border-default,229 233 240))' }
 
 export function SessionDrawer({ session, open, onClose, onUpdate }: Props) {
+  const { t } = useI18n()
   const [rescheduleOpen, setRescheduleOpen] = useState(false)
   const [cancelOpen,     setCancelOpen]     = useState(false)
   const markAttendance = useMarkAttendance()
@@ -70,13 +72,13 @@ export function SessionDrawer({ session, open, onClose, onUpdate }: Props) {
                 {formatDay(session.scheduled_start)}
               </p>
               <p className="text-xs mt-0.5" style={{ color: 'rgb(90 100 112)' }}>
-                {formatTime(session.scheduled_start)} – {formatTime(session.scheduled_end)} · {session.duration_min} min
+                {formatTime(session.scheduled_start)} – {formatTime(session.scheduled_end)} · {session.duration_min} {t('common.minutes')}
               </p>
               <span
                 className="inline-flex items-center mt-1.5 px-2 py-0.5 rounded-full text-[11px] font-semibold"
                 style={{ background: cfg.bg, color: cfg.color }}
               >
-                {cfg.label}
+                {t(cfg.labelKey)}
               </span>
             </div>
             <button onClick={onClose}
@@ -91,7 +93,7 @@ export function SessionDrawer({ session, open, onClose, onUpdate }: Props) {
 
           {/* People */}
           <div className="rounded-2xl p-4 space-y-2.5" style={{ background: '#fff', border: '1px solid rgb(var(--border-default,229 233 240))' }}>
-            <p className="text-[11px] font-semibold uppercase tracking-widest opacity-40">Participants</p>
+            <p className="text-[11px] font-semibold uppercase tracking-widest opacity-40">{t('schedule.session.participants')}</p>
             {session.student?.name && (
               <div className="flex items-center gap-2 text-sm">
                 <User size={13} className="opacity-40 shrink-0" />
@@ -102,7 +104,7 @@ export function SessionDrawer({ session, open, onClose, onUpdate }: Props) {
               <div className="flex items-center gap-2 text-sm">
                 <User size={13} className="opacity-40 shrink-0" />
                 <span style={{ color: 'rgb(11 31 58)' }}>{session.teacher.name}</span>
-                <span className="text-[11px] opacity-40">(teacher)</span>
+                <span className="text-[11px] opacity-40">{t('schedule.session.teacherSuffix')}</span>
               </div>
             )}
           </div>
@@ -110,7 +112,7 @@ export function SessionDrawer({ session, open, onClose, onUpdate }: Props) {
           {/* Zoom */}
           {session.zoom_join_url && (
             <div className="rounded-2xl p-4" style={{ background: '#fff', border: '1px solid rgb(var(--border-default,229 233 240))' }}>
-              <p className="text-[11px] font-semibold uppercase tracking-widest opacity-40 mb-2">Zoom</p>
+              <p className="text-[11px] font-semibold uppercase tracking-widest opacity-40 mb-2">{t('schedule.session.zoom')}</p>
               <div className="flex items-center gap-2">
                 <Video size={13} className="opacity-40 shrink-0" />
                 <span className="text-xs truncate flex-1" style={{ color: 'rgb(30 90 171)' }}>{session.zoom_join_url}</span>
@@ -119,7 +121,7 @@ export function SessionDrawer({ session, open, onClose, onUpdate }: Props) {
                   className="text-[11px] px-2 py-1 rounded-lg border font-medium hover:bg-black/5 transition-colors shrink-0"
                   style={border}
                 >
-                  Copy
+                  {t('schedule.session.copy')}
                 </button>
               </div>
             </div>
@@ -128,7 +130,7 @@ export function SessionDrawer({ session, open, onClose, onUpdate }: Props) {
           {/* Quick actions — only for schedulable statuses */}
           {canMark && (
             <div className="rounded-2xl p-4 space-y-3" style={{ background: '#fff', border: '1px solid rgb(var(--border-default,229 233 240))' }}>
-              <p className="text-[11px] font-semibold uppercase tracking-widest opacity-40">Quick actions</p>
+              <p className="text-[11px] font-semibold uppercase tracking-widest opacity-40">{t('schedule.session.quickActions')}</p>
               <div className="grid grid-cols-2 gap-2">
                 <button
                   onClick={() => mark('attended')}
@@ -136,7 +138,7 @@ export function SessionDrawer({ session, open, onClose, onUpdate }: Props) {
                   className="px-3 py-2 rounded-xl text-xs font-semibold transition-colors disabled:opacity-50"
                   style={{ background: 'rgb(14 124 90 / 0.08)', color: 'rgb(14 124 90)', border: '1px solid rgb(14 124 90 / 0.2)' }}
                 >
-                  Mark attended
+                  {t('schedule.session.markAttended')}
                 </button>
                 <button
                   onClick={() => mark('absent')}
@@ -144,21 +146,21 @@ export function SessionDrawer({ session, open, onClose, onUpdate }: Props) {
                   className="px-3 py-2 rounded-xl text-xs font-semibold transition-colors disabled:opacity-50"
                   style={{ background: 'rgb(220 38 38 / 0.08)', color: 'rgb(220 38 38)', border: '1px solid rgb(220 38 38 / 0.2)' }}
                 >
-                  Mark absent
+                  {t('schedule.session.markAbsent')}
                 </button>
                 <button
                   onClick={() => setRescheduleOpen(true)}
                   className="px-3 py-2 rounded-xl text-xs font-semibold transition-colors hover:bg-black/5"
                   style={{ border: '1px solid rgb(var(--border-default,229 233 240))', color: 'rgb(11 31 58)' }}
                 >
-                  Reschedule
+                  {t('schedule.session.reschedule')}
                 </button>
                 <button
                   onClick={() => setCancelOpen(true)}
                   className="px-3 py-2 rounded-xl text-xs font-semibold transition-colors"
                   style={{ background: 'rgb(220 38 38 / 0.06)', color: 'rgb(220 38 38)', border: '1px solid rgb(220 38 38 / 0.15)' }}
                 >
-                  Cancel session
+                  {t('schedule.session.cancelSession')}
                 </button>
               </div>
             </div>
@@ -170,7 +172,7 @@ export function SessionDrawer({ session, open, onClose, onUpdate }: Props) {
               style={{ background: 'rgb(234 88 12 / 0.08)', border: '1px solid rgb(234 88 12 / 0.2)' }}>
               <AlertTriangle size={13} className="shrink-0 mt-0.5" style={{ color: 'rgb(194 65 12)' }} />
               <p className="text-xs" style={{ color: 'rgb(194 65 12)' }}>
-                Session report overdue since {new Date(session.report_overdue_at).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                {t('schedule.session.reportOverdueSince', { date: new Date(session.report_overdue_at).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) })}
               </p>
             </div>
           )}
@@ -179,7 +181,7 @@ export function SessionDrawer({ session, open, onClose, onUpdate }: Props) {
           <div className="rounded-2xl p-4 space-y-3" style={{ background: '#fff', border: '1px solid rgb(var(--border-default,229 233 240))' }}>
             <div className="flex items-center gap-2">
               <FileText size={13} className="opacity-40" />
-              <p className="text-[11px] font-semibold uppercase tracking-widest opacity-40">Session report</p>
+              <p className="text-[11px] font-semibold uppercase tracking-widest opacity-40">{t('schedule.session.sessionReport')}</p>
             </div>
 
             {showReport ? (
@@ -190,8 +192,8 @@ export function SessionDrawer({ session, open, onClose, onUpdate }: Props) {
             ) : (
               <p className="text-xs" style={{ color: 'rgb(156 163 175)' }}>
                 {session.status === 'scheduled' || session.status === 'pending_substitute'
-                  ? 'Available after the session is marked as attended.'
-                  : 'No report for this session.'}
+                  ? t('schedule.session.reportAvailableAfter')
+                  : t('schedule.session.noReport')}
               </p>
             )}
           </div>

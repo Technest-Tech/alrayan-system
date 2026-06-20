@@ -8,6 +8,7 @@ import { usePayments, usePaymentStats } from '@/hooks/system/usePayments'
 import { useTeachers }                  from '@/hooks/system/useTeachers'
 import { ManagePackagesModal }          from '@/components/system/payments/ManagePackagesModal'
 import { SearchableSelect }             from '@/components/system/lessons/SearchableSelect'
+import { useI18n }                      from '@/lib/system/i18n'
 import type { PaymentRow, PackageStatus } from '@/types/system/payment'
 
 /* ── Design tokens ─────────────────────────────────────── */
@@ -24,17 +25,18 @@ function fmtMoney(minor: number, currency: string) {
   return `${currency} ${(minor / 100).toLocaleString('en-US', { minimumFractionDigits: 2 })}`
 }
 
-const STATUS_STYLE: Record<PackageStatus, { bg: string; color: string; label: string }> = {
-  pending:   { bg: '#FEF2F2', color: '#B91C1C',  label: 'Pending'       },
-  paid:      { bg: '#111827', color: '#ffffff',  label: 'Active (Paid)' },
-  suspended: { bg: '#F3F4F6', color: '#6B7280',  label: 'Suspended'     },
+const STATUS_STYLE: Record<PackageStatus, { bg: string; color: string; key: string }> = {
+  pending:   { bg: '#FEF2F2', color: '#B91C1C',  key: 'status.pending'    },
+  paid:      { bg: '#111827', color: '#ffffff',  key: 'payments.activePaid' },
+  suspended: { bg: '#F3F4F6', color: '#6B7280',  key: 'status.suspended'  },
 }
 
 function PayStatusBadge({ status }: { status: PackageStatus }) {
+  const { t } = useI18n()
   const s = STATUS_STYLE[status]
   return (
     <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold whitespace-nowrap" style={{ background: s.bg, color: s.color }}>
-      {s.label}
+      {t(s.key)}
     </span>
   )
 }
@@ -59,27 +61,28 @@ function StatCard({ icon, label, value, sub, iconBg, iconColor }: {
 }
 
 const SORT_OPTIONS = [
-  { value: 'latest',     label: 'Newest first'   },
-  { value: 'name_asc',   label: 'Name A → Z'     },
-  { value: 'name_desc',  label: 'Name Z → A'     },
-  { value: 'tariff_desc', label: 'Tariff: High → Low' },
-  { value: 'tariff_asc',  label: 'Tariff: Low → High' },
+  { value: 'latest',      key: 'payments.sortNewest'     },
+  { value: 'name_asc',    key: 'payments.sortNameAsc'    },
+  { value: 'name_desc',   key: 'payments.sortNameDesc'   },
+  { value: 'tariff_desc', key: 'payments.sortTariffDesc' },
+  { value: 'tariff_asc',  key: 'payments.sortTariffAsc'  },
 ]
 
 const STATUS_FILTER_OPTIONS = [
-  { value: 'pending',   label: 'Pending'       },
-  { value: 'paid',      label: 'Active (Paid)' },
-  { value: 'suspended', label: 'Suspended'     },
+  { value: 'pending',   key: 'status.pending'      },
+  { value: 'paid',      key: 'payments.activePaid' },
+  { value: 'suspended', key: 'status.suspended'    },
 ]
 
 const PER_PAGE_OPTIONS = [
-  { value: '10', label: '10 / page' },
-  { value: '20', label: '20 / page' },
-  { value: '50', label: '50 / page' },
+  { value: '10', key: 'payments.perPage10' },
+  { value: '20', key: 'payments.perPage20' },
+  { value: '50', key: 'payments.perPage50' },
 ]
 
 /* ── Main page ─────────────────────────────────────────── */
 export default function PaymentsPage() {
+  const { t } = useI18n()
   const [search,     setSearch]     = useState('')
   const [status,     setStatus]     = useState('')
   const [teacherId,  setTeacherId]  = useState('')
@@ -123,10 +126,10 @@ export default function PaymentsPage() {
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-xl font-bold" style={{ color: NAVY }}>Payments</h1>
+              <h1 className="text-xl font-bold" style={{ color: NAVY }}>{t('payments.title')}</h1>
               <span style={{ color: TEAL_400, fontSize: 11, lineHeight: 1 }}>✦</span>
             </div>
-            <p className="text-sm mt-0.5" style={{ color: MUTED }}>Manage student packages and payment status.</p>
+            <p className="text-sm mt-0.5" style={{ color: MUTED }}>{t('payments.subtitle')}</p>
           </div>
         </div>
       </div>
@@ -135,30 +138,30 @@ export default function PaymentsPage() {
       <div className="grid grid-cols-4 gap-4 mb-5">
         <StatCard
           icon={<Users size={18} />}
-          label="Students with Pending Payments"
+          label={t('payments.statPendingStudents')}
           value={stats?.pending_students ?? '—'}
-          sub={`${stats?.pending_students ?? 0} Students`}
+          sub={t('payments.statStudentsCount', { count: String(stats?.pending_students ?? 0) })}
           iconBg="#EFF6FF" iconColor="#1D4ED8"
         />
         <StatCard
           icon={<Layers size={18} />}
-          label="Multiple Unpaid Packages"
+          label={t('payments.statMultipleUnpaid')}
           value={stats?.multiple_unpaid ?? '—'}
-          sub={`${stats?.multiple_unpaid ?? 0} Packages`}
+          sub={t('payments.statPackagesCount', { count: String(stats?.multiple_unpaid ?? 0) })}
           iconBg="#FFF7ED" iconColor="#C2410C"
         />
         <StatCard
           icon={<Clock size={18} />}
-          label="Total Pending Amount"
+          label={t('payments.statTotalPending')}
           value={stats ? fmtMoney(stats.total_pending_minor, stats.currency) : '—'}
-          sub="Total Owed"
+          sub={t('payments.statTotalOwed')}
           iconBg="#FEFCE8" iconColor="#A16207"
         />
         <StatCard
           icon={<TrendingUp size={18} />}
-          label="Received This Month"
+          label={t('payments.statReceivedMonth')}
           value={stats ? fmtMoney(stats.received_month_minor, stats.currency) : '—'}
-          sub="Revenue"
+          sub={t('payments.statRevenue')}
           iconBg="#F0FDF4" iconColor="#15803D"
         />
       </div>
@@ -170,14 +173,14 @@ export default function PaymentsPage() {
 
           {/* Search */}
           <div className="flex flex-col gap-1.5 flex-1 min-w-[200px]">
-            <label className="text-xs font-medium" style={{ color: MUTED }}>Search</label>
+            <label className="text-xs font-medium" style={{ color: MUTED }}>{t('common.search')}</label>
             <div className="relative">
               <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: MUTED }} />
               <input
                 type="text"
                 value={search}
                 onChange={e => { setSearch(e.target.value); resetPage() }}
-                placeholder="Search student or phone…"
+                placeholder={t('payments.searchPlaceholder')}
                 className="w-full pl-8 pr-3 py-2.5 rounded-xl border text-sm outline-none focus:ring-2 focus:ring-[#0d9488] transition-shadow"
                 style={{ borderColor: BORDER }}
               />
@@ -186,12 +189,12 @@ export default function PaymentsPage() {
 
           {/* Payment status */}
           <div className="flex flex-col gap-1.5 w-44">
-            <label className="text-xs font-medium" style={{ color: MUTED }}>Payment Status</label>
+            <label className="text-xs font-medium" style={{ color: MUTED }}>{t('payments.paymentStatus')}</label>
             <SearchableSelect
-              options={STATUS_FILTER_OPTIONS}
+              options={STATUS_FILTER_OPTIONS.map(o => ({ value: o.value, label: t(o.key) }))}
               value={status}
               onChange={v => { setStatus(v); resetPage() }}
-              placeholder="All Statuses"
+              placeholder={t('payments.allStatuses')}
               clearable
             />
           </div>
@@ -200,22 +203,22 @@ export default function PaymentsPage() {
           <div className="flex flex-col gap-1.5 w-48">
             <label className="text-xs font-medium flex items-center gap-1.5" style={{ color: MUTED }}>
               <GraduationCap size={12} />
-              Teacher
+              {t('common.teacher')}
             </label>
             <SearchableSelect
-              options={teachers.map(t => ({ value: String(t.id), label: (t as any).name ?? `Teacher #${t.id}` }))}
+              options={teachers.map(tc => ({ value: String(tc.id), label: (tc as any).name ?? t('payments.teacherFallback', { id: String(tc.id) }) }))}
               value={teacherId}
               onChange={v => { setTeacherId(v); resetPage() }}
-              placeholder="All Teachers"
+              placeholder={t('payments.allTeachers')}
               clearable
             />
           </div>
 
           {/* Sort */}
           <div className="flex flex-col gap-1.5 w-48">
-            <label className="text-xs font-medium" style={{ color: MUTED }}>Sort By</label>
+            <label className="text-xs font-medium" style={{ color: MUTED }}>{t('payments.sortBy')}</label>
             <SearchableSelect
-              options={SORT_OPTIONS}
+              options={SORT_OPTIONS.map(o => ({ value: o.value, label: t(o.key) }))}
               value={sortBy}
               onChange={v => { setSortBy(v); resetPage() }}
             />
@@ -223,9 +226,9 @@ export default function PaymentsPage() {
 
           {/* Per page */}
           <div className="flex flex-col gap-1.5 w-32">
-            <label className="text-xs font-medium" style={{ color: MUTED }}>Rows per page</label>
+            <label className="text-xs font-medium" style={{ color: MUTED }}>{t('payments.rowsPerPage')}</label>
             <SearchableSelect
-              options={PER_PAGE_OPTIONS}
+              options={PER_PAGE_OPTIONS.map(o => ({ value: o.value, label: t(o.key) }))}
               value={String(perPage)}
               onChange={v => { setPerPage(Number(v)); resetPage() }}
             />
@@ -239,7 +242,7 @@ export default function PaymentsPage() {
         {/* Count bar */}
         <div className="px-4 py-2.5 border-b flex items-center justify-between" style={{ borderColor: BORDER, background: '#FAFAFA' }}>
           <p className="text-xs" style={{ color: MUTED }}>
-            Showing <strong style={{ color: NAVY }}>{rows.length ? (page - 1) * perPage + 1 : 0}–{Math.min(page * perPage, total)}</strong> of <strong style={{ color: NAVY }}>{total}</strong>
+            {t('payments.showing')} <strong style={{ color: NAVY }}>{rows.length ? (page - 1) * perPage + 1 : 0}–{Math.min(page * perPage, total)}</strong> {t('common.of')} <strong style={{ color: NAVY }}>{total}</strong>
           </p>
         </div>
 
@@ -247,7 +250,16 @@ export default function PaymentsPage() {
           <table className="w-full text-sm">
             <thead>
               <tr style={{ background: '#F9FAFB', borderBottom: `1px solid ${BORDER}` }}>
-                {['Student', 'Teacher', 'Phone', 'Payment Status', 'Current Package', 'Tariff', 'Notes', 'Actions'].map(h => (
+                {[
+                  t('payments.colStudent'),
+                  t('common.teacher'),
+                  t('payments.colPhone'),
+                  t('payments.paymentStatus'),
+                  t('payments.colCurrentPackage'),
+                  t('payments.colTariff'),
+                  t('common.notes'),
+                  t('common.actions'),
+                ].map(h => (
                   <th key={h} className="px-4 py-2.5 text-left text-xs font-semibold whitespace-nowrap" style={{ color: MUTED }}>
                     {h}
                   </th>
@@ -258,7 +270,7 @@ export default function PaymentsPage() {
               {rows.length === 0 ? (
                 <tr>
                   <td colSpan={8} className="px-4 py-12 text-center text-sm" style={{ color: MUTED }}>
-                    No students found.
+                    {t('payments.noStudents')}
                   </td>
                 </tr>
               ) : rows.map((row, idx) => (
@@ -297,7 +309,7 @@ export default function PaymentsPage() {
                     </span>
                     {row.needs_reconfirmation && (
                       <span className="ml-1.5 px-1.5 py-0.5 rounded text-xs font-medium" style={{ background: '#FFF7ED', color: '#C2410C' }}>
-                        ⚠ Re-confirm
+                        ⚠ {t('payments.reconfirm')}
                       </span>
                     )}
                   </td>
@@ -310,7 +322,7 @@ export default function PaymentsPage() {
                   {/* Notes */}
                   <td className="px-4 py-3 max-w-[160px]">
                     <span className="text-xs truncate block" style={{ color: MUTED }}>
-                      {row.notes ? `Last Pay Note: ${row.notes}` : '—'}
+                      {row.notes ? t('payments.lastPayNote', { note: row.notes }) : '—'}
                     </span>
                   </td>
 
@@ -321,7 +333,7 @@ export default function PaymentsPage() {
                       className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold text-white transition-opacity hover:opacity-85"
                       style={{ background: TEAL_600 }}
                     >
-                      Manage Packages
+                      {t('payments.managePackages')}
                     </button>
                   </td>
                 </tr>
@@ -342,7 +354,7 @@ export default function PaymentsPage() {
               <ChevronLeft size={15} />
             </button>
             <span className="text-xs px-2" style={{ color: MUTED }}>
-              Page {page} of {lastPage}
+              {t('payments.pageOf', { page: String(page), total: String(lastPage) })}
             </span>
             <button
               onClick={() => setPage(p => Math.min(lastPage, p + 1))}

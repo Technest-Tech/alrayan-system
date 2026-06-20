@@ -30,7 +30,7 @@ class UpdateSessionZoomMeeting implements ShouldQueue
             return;
         }
 
-        $topic = "Alrayan Academy — {$session->student->name} with {$session->teacher->user->name}";
+        $topic = "Azhary — {$session->student->name} with {$session->teacher->user->name}";
 
         $req = new MeetingRequest(
             topic:           $topic,

@@ -4,6 +4,7 @@ import { toast } from 'sonner'
 import type { SystemCourse } from '@/types/system/course'
 import { useToggleCourseActive } from '@/hooks/system/useCourses'
 import { ApiError } from '@/lib/system/api'
+import { useI18n } from '@/lib/system/i18n'
 
 interface CourseToggleSheetProps {
   course: SystemCourse | null
@@ -11,6 +12,7 @@ interface CourseToggleSheetProps {
 }
 
 export function CourseToggleSheet({ course, onClose }: CourseToggleSheetProps) {
+  const { t } = useI18n()
   const toggle = useToggleCourseActive()
 
   if (!course) return null
@@ -21,12 +23,12 @@ export function CourseToggleSheet({ course, onClose }: CourseToggleSheetProps) {
       await toggle.mutateAsync({ id: course.id, is_active_for_system: !course.is_active_for_system })
       toast.success(
         course.is_active_for_system
-          ? `"${course.name}" deactivated.`
-          : `"${course.name}" activated.`
+          ? t('courses.toggle.deactivated', { name: course.name })
+          : t('courses.toggle.activated', { name: course.name })
       )
       onClose()
     } catch (e) {
-      toast.error(e instanceof ApiError ? e.message : 'Something went wrong.')
+      toast.error(e instanceof ApiError ? e.message : t('courses.toggle.error'))
     }
   }
 
@@ -41,7 +43,7 @@ export function CourseToggleSheet({ course, onClose }: CourseToggleSheetProps) {
           className="flex items-center justify-between px-6 py-4 border-b shrink-0"
           style={{ background: 'rgb(var(--surface-card, 255 255 255))', borderColor: 'rgb(var(--border-default, 229 233 240))' }}
         >
-          <h2 className="font-semibold">Course settings</h2>
+          <h2 className="font-semibold">{t('courses.toggle.title')}</h2>
           <button onClick={onClose} className="p-1 rounded-lg hover:bg-black/5 transition-colors">
             <X size={18} />
           </button>
@@ -57,7 +59,7 @@ export function CourseToggleSheet({ course, onClose }: CourseToggleSheetProps) {
               <p className="mt-1 text-sm opacity-60">{course.description}</p>
             )}
             <div className="mt-3 flex items-center gap-2 text-sm">
-              <span className="opacity-50">Students:</span>
+              <span className="opacity-50">{t('courses.toggle.studentsLabel')}</span>
               <span className="font-medium tabular-nums">{course.active_student_count}</span>
             </div>
           </div>
@@ -68,9 +70,9 @@ export function CourseToggleSheet({ course, onClose }: CourseToggleSheetProps) {
           >
             <div className="flex items-center justify-between">
               <div>
-                <p className="font-medium text-sm">Active for system</p>
+                <p className="font-medium text-sm">{t('courses.toggle.activeForSystem')}</p>
                 <p className="text-xs opacity-50 mt-0.5">
-                  When inactive, teachers cannot be assigned to this course.
+                  {t('courses.toggle.activeForSystemHint')}
                 </p>
               </div>
               <button
@@ -103,7 +105,7 @@ export function CourseToggleSheet({ course, onClose }: CourseToggleSheetProps) {
             className="px-4 py-2 rounded-xl text-sm font-medium border hover:bg-black/5 transition-colors"
             style={{ borderColor: 'rgb(var(--border-default, 229 233 240))' }}
           >
-            Close
+            {t('common.dismiss')}
           </button>
         </div>
       </div>

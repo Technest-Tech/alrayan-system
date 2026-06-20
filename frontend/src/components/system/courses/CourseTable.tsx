@@ -1,6 +1,7 @@
 'use client'
 import { Settings } from 'lucide-react'
 import type { SystemCourse } from '@/types/system/course'
+import { useI18n } from '@/lib/system/i18n'
 
 interface CourseTableProps {
   courses: SystemCourse[]
@@ -33,6 +34,7 @@ function StatChip({ value, label, color }: StatChipProps) {
 }
 
 export function CourseTable({ courses, onEdit }: CourseTableProps) {
+  const { t } = useI18n()
   return (
     <div
       className="rounded-xl border overflow-hidden"
@@ -69,7 +71,7 @@ export function CourseTable({ courses, onEdit }: CourseTableProps) {
                     : 'rgb(var(--status-neutral, 90 100 112))',
                 }}
               >
-                {course.is_active_for_system ? 'Active' : 'Inactive'}
+                {course.is_active_for_system ? t('status.active') : t('status.inactive')}
               </span>
             </div>
             {course.description && (
@@ -79,17 +81,17 @@ export function CourseTable({ courses, onEdit }: CourseTableProps) {
 
           {/* Stats */}
           <div className="flex items-center gap-2 shrink-0">
-            <StatChip value={course.active_student_count} label="active"   color="green" />
-            <StatChip value={course.paused_student_count} label="paused"   color="amber" />
-            <StatChip value={course.total_student_count}  label="total"    color="slate" />
-            <StatChip value={course.teacher_count}        label="teachers" color="blue"  />
+            <StatChip value={course.active_student_count} label={t('courses.statActive')}   color="green" />
+            <StatChip value={course.paused_student_count} label={t('courses.statPaused')}   color="amber" />
+            <StatChip value={course.total_student_count}  label={t('common.total')}         color="slate" />
+            <StatChip value={course.teacher_count}        label={t('courses.statTeachers')} color="blue"  />
           </div>
 
           {/* Edit */}
           <button
             onClick={() => onEdit(course)}
             className="p-1.5 rounded-lg hover:bg-black/10 transition-colors opacity-50 hover:opacity-100 shrink-0"
-            title="Edit course"
+            title={t('courses.editCourse')}
           >
             <Settings size={16} />
           </button>
@@ -97,7 +99,7 @@ export function CourseTable({ courses, onEdit }: CourseTableProps) {
       ))}
 
       {courses.length === 0 && (
-        <div className="py-16 text-center text-sm opacity-40">No courses found.</div>
+        <div className="py-16 text-center text-sm opacity-40">{t('courses.noCoursesFound')}</div>
       )}
     </div>
   )

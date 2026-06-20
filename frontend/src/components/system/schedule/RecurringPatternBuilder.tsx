@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react'
 import { useReplaceSchedulePatterns, usePreviewSchedulePatterns } from '@/hooks/system/useSchedulePatterns'
 import type { PatternPreviewOccurrence } from '@/types/system/session'
+import { useI18n } from '@/lib/system/i18n'
 
 interface PatternEntry {
   day_of_week: number
@@ -20,7 +21,7 @@ interface Props {
   onCancel?: () => void
 }
 
-const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+const DAY_KEYS = ['days.sun', 'days.mon', 'days.tue', 'days.wed', 'days.thu', 'days.fri', 'days.sat']
 
 const TIME_OPTIONS = Array.from({ length: 48 }, (_, i) => {
   const h = Math.floor(i / 2).toString().padStart(2, '0')
@@ -38,6 +39,7 @@ export function RecurringPatternBuilder({
   onSaved,
   onCancel,
 }: Props) {
+  const { t } = useI18n()
   const [effectiveDate, setEffectiveDate] = useState(() => new Date().toISOString().split('T')[0])
   const [patterns, setPatterns]           = useState<PatternEntry[]>(initialPatterns)
   const [preview, setPreview]             = useState<PatternPreviewOccurrence[]>([])
@@ -66,7 +68,7 @@ export function RecurringPatternBuilder({
   // Debounced preview
   useEffect(() => {
     if (patterns.length === 0) { setPreview([]); setConflicts([]); return }
-    const t = setTimeout(() => {
+    const timer = setTimeout(() => {
       doPreview.mutate(
         { studentId, effectiveDate, patterns },
         {
@@ -78,7 +80,7 @@ export function RecurringPatternBuilder({
         }
       )
     }, 600)
-    return () => clearTimeout(t)
+    return () => clearTimeout(timer)
   }, [patterns, effectiveDate])
 
   const handleSave = async () => {
@@ -93,7 +95,7 @@ export function RecurringPatternBuilder({
     <div className="space-y-6">
       {/* Effective date */}
       <div>
-        <label className="text-sm font-medium">Effective from</label>
+        <label className="text-sm font-medium">{t('schedule.recurring.effectiveFrom')}</label>
         <input
           type="date"
           className="mt-1 px-3 py-2 rounded-md border bg-background text-sm"
@@ -105,9 +107,9 @@ export function RecurringPatternBuilder({
 
       {/* Day chips */}
       <div>
-        <label className="text-sm font-medium mb-2 block">Days of week</label>
+        <label className="text-sm font-medium mb-2 block">{t('schedule.recurring.daysOfWeek')}</label>
         <div className="flex gap-2">
-          {DAY_NAMES.map((name, i) => {
+          {DAY_KEYS.map((dayKey, i) => {
             const active = patterns.some(p => p.day_of_week === i)
             return (
               <button
@@ -117,7 +119,7 @@ export function RecurringPatternBuilder({
                   active ? 'bg-primary text-primary-foreground border-primary' : 'hover:bg-muted'
                 }`}
               >
-                {name}
+                {t(dayKey)}
               </button>
             )
           })}
@@ -129,15 +131,15 @@ export function RecurringPatternBuilder({
         <div className="space-y-2">
           {patterns.map(p => (
             <div key={p.day_of_week} className="flex items-center gap-3 p-3 rounded-md border">
-              <span className="text-sm font-medium w-10">{DAY_NAMES[p.day_of_week]}</span>
+              <span className="text-sm font-medium w-10">{t(DAY_KEYS[p.day_of_week])}</span>
               <select
                 className="text-sm px-2 py-1 rounded border bg-background"
                 value={p.start_time}
                 onChange={e => updatePattern(p.day_of_week, 'start_time', e.target.value)}
               >
-                {TIME_OPTIONS.map(t => <option key={t} value={t}>{t}</option>)}
+                {TIME_OPTIONS.map(opt => <option key={opt} value={opt}>{opt}</option>)}
               </select>
-              <span className="text-sm text-muted-foreground">{p.duration_min} min · {timezone}</span>
+              <span className="text-sm text-muted-foreground">{p.duration_min} {t('schedule.recurring.minTimezone', { timezone })}</span>
               <button
                 onClick={() => setPatterns(prev => prev.filter(x => x.day_of_week !== p.day_of_week))}
                 className="ml-auto text-muted-foreground hover:text-destructive text-sm"
@@ -152,15 +154,15 @@ export function RecurringPatternBuilder({
       {/* Session count validation */}
       {targetSessions !== null && (
         <div className={`text-sm font-medium ${countOk ? 'text-green-700' : 'text-orange-600'}`}>
-          Total: {patterns.length}/week × 4 weeks = {patterns.length * 4} sessions/month
-          {countOk ? ' ✓' : ` (expected ~${sessionsPerMonth})`}
+          {t('schedule.recurring.totalSummary', { perWeek: String(patterns.length), perMonth: String(patterns.length * 4) })}
+          {countOk ? ' ✓' : ` ${t('schedule.recurring.expectedHint', { expected: String(sessionsPerMonth ?? '') })}`}
         </div>
       )}
 
       {/* Live preview */}
       {preview.length > 0 && (
         <div>
-          <div className="text-sm font-medium mb-2">Live preview — next 4 weeks</div>
+          <div className="text-sm font-medium mb-2">{t('schedule.recurring.livePreview')}</div>
           <div className="rounded-md border overflow-hidden max-h-48 overflow-y-auto">
             {preview.slice(0, 12).map((occ, i) => (
               <div key={i} className={`flex items-center justify-between px-3 py-2 text-sm border-b last:border-0 ${occ.has_conflict ? 'bg-orange-50' : ''}`}>
@@ -180,10 +182,10 @@ export function RecurringPatternBuilder({
       {/* Conflict override */}
       {conflicts.length > 0 && (
         <div className="rounded-md bg-orange-50 border border-orange-200 p-3">
-          <div className="text-sm font-medium text-orange-800 mb-1">⚠ {conflicts.length} conflict(s) found</div>
+          <div className="text-sm font-medium text-orange-800 mb-1">⚠ {t('schedule.recurring.conflictsFound', { count: String(conflicts.length) })}</div>
           <label className="flex items-center gap-2 cursor-pointer">
             <input type="checkbox" checked={forceConflicts} onChange={e => setForceConflicts(e.target.checked)} />
-            <span className="text-sm text-orange-700">Save anyway with override (audit-logged)</span>
+            <span className="text-sm text-orange-700">{t('schedule.recurring.saveAnywayOverride')}</span>
           </label>
         </div>
       )}
@@ -192,7 +194,7 @@ export function RecurringPatternBuilder({
       <div className="flex gap-2">
         {onCancel && (
           <button onClick={onCancel} className="px-4 py-2 text-sm rounded border hover:bg-muted">
-            Cancel
+            {t('common.cancel')}
           </button>
         )}
         <button
@@ -200,7 +202,7 @@ export function RecurringPatternBuilder({
           disabled={replace.isPending || patterns.length === 0 || (conflicts.length > 0 && !forceConflicts)}
           className="px-4 py-2 text-sm rounded bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
         >
-          {replace.isPending ? 'Saving…' : 'Save schedule'}
+          {replace.isPending ? t('common.saving') : t('schedule.recurring.saveSchedule')}
         </button>
       </div>
     </div>

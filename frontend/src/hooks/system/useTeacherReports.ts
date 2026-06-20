@@ -50,3 +50,65 @@ export function useTeacherReportSummary(teacherId: number | string, period: Repo
     enabled: !!teacherId,
   })
 }
+
+export interface TeacherTodayLesson {
+  id: number
+  time: string
+  student: string | null
+  status: string
+  duration_min: number
+}
+
+export interface TeacherProfileStats {
+  month: string
+  currency: string
+  total_students: number
+  hours_this_month: number
+  hours_last_month: number
+  revenue_minor: number
+  revenue_last_minor: number
+  hours_today: number
+  hours_prev_week_day: number
+  hours_last_7: number
+  hours_prev_7: number
+  quality_score: number
+  quality_reviews_30d: number
+  calendar: Record<string, number>
+  today: {
+    attended: number
+    scheduled: number
+    lessons: TeacherTodayLesson[]
+  }
+}
+
+export interface Racer {
+  teacher_id: number
+  name: string | null
+  photo_url: string | null
+  hours: number
+  rank: number
+}
+
+export interface TeacherRaceData {
+  month: string
+  leader_hours: number
+  racers: Racer[]
+}
+
+/** Teacher Race leaderboard (all active teachers by hours this month). */
+export function useTeacherRace(month?: string) {
+  return useQuery({
+    queryKey: ['system', 'teachers', 'race', month ?? 'current'],
+    queryFn: () => api<TeacherRaceData>(`/teachers/race${month ? `?month=${month}` : ''}`),
+  })
+}
+
+/** Rich teacher-profile dashboard stats. `month` is YYYY-MM (defaults to current month server-side). */
+export function useTeacherProfileStats(teacherId: number | string | null | undefined, month?: string) {
+  return useQuery({
+    queryKey: ['system', 'teachers', teacherId, 'profile-stats', month ?? 'current'],
+    queryFn: () =>
+      api<TeacherProfileStats>(`/teachers/${teacherId}/profile-stats${month ? `?month=${month}` : ''}`),
+    enabled: !!teacherId,
+  })
+}

@@ -20,8 +20,8 @@ export const faqs: FaqItem[] = [
   {
     id: 'g1',
     category: 'General',
-    q: 'What is Alrayan Academy?',
-    a: 'Alrayan Academy is an online Quran and Arabic education academy offering 1-on-1 live classes with certified teachers from Al-Azhar University and other leading Islamic institutions. We serve students in 50+ countries across all age groups and levels.',
+    q: 'What is Azhary?',
+    a: 'Azhary is an online Quran and Arabic education academy offering 1-on-1 live classes with certified teachers from Al-Azhar University and other leading Islamic institutions. We serve students in 50+ countries across all age groups and levels.',
   },
   {
     id: 'g2',

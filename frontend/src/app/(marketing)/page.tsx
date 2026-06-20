@@ -27,7 +27,7 @@ import {
 import type { LucideIcon } from 'lucide-react'
 
 export const metadata: Metadata = buildMetadata({
-  title: 'Online Quran Academy | 1-on-1 Classes | Alrayan Academy',
+  title: 'Online Quran Academy | 1-on-1 Classes | Azhary',
   description:
     'Learn Quran online with certified teachers from Al-Azhar. 1-on-1 Tajweed, Hifz, Arabic, and Islamic studies classes. Free trial available worldwide.',
   path: '/',
@@ -62,7 +62,7 @@ export default function HomePage() {
           marginTop: '-68px',
           background: 'linear-gradient(to bottom, transparent 68px, #F8F4ED 68px)',
         }}
-        aria-label="Why choose Alrayan"
+        aria-label="Why choose Azhary"
       >
         <Container>
           {/* Single unified panel — gap-px on #E8E2D9 creates hairline cell dividers */}
@@ -140,7 +140,7 @@ export default function HomePage() {
         </Container>
       </Section>
 
-      {/* ── Why Alrayan ── */}
+      {/* ── Why Azhary ── */}
       <Section aria-labelledby="why-heading">
         <Container>
           <div className="grid lg:grid-cols-2 gap-16 items-center">
@@ -179,7 +179,7 @@ export default function HomePage() {
             <div className="hidden lg:flex items-center justify-center" aria-hidden="true">
               <Image
                 src="/images/about-methodology.png"
-                alt="Alrayan teaching methodology — listen, learn, certify"
+                alt="Azhary teaching methodology — listen, learn, certify"
                 width={600}
                 height={400}
                 className="w-full h-auto rounded-3xl shadow-lg"

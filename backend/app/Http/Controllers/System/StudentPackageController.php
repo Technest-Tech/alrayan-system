@@ -55,13 +55,13 @@ class StudentPackageController extends Controller
 
         if (
             $request->has('package_hours') &&
-            $request->input('package_hours') !== $previousHours
+            (int) $request->input('package_hours') !== (int) $previousHours
         ) {
+            // This package keeps its own hour limit (we no longer clobber the student-wide default);
+            // re-distribute so the new limit cascades through the pending packages.
             $student = $studentPackage->student;
-
-            if ($student && isset($student->package_hours_default)) {
-                $student->update(['package_hours_default' => $request->input('package_hours')]);
-                $this->packageService->repackage($student);
+            if ($student) {
+                $this->packageService->rebuild($student);
             }
         }
 

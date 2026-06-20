@@ -21,15 +21,22 @@ class LeadFactory extends Factory
                 'google_ads', 'facebook_ads', 'instagram_ads', 'whatsapp_direct',
                 'student_referral', 'website_form', 'manual_entry',
             ]),
-            'status'  => 'new',
-            'payload' => null,
+            'platform' => $this->faker->randomElement([
+                'website', 'facebook', 'instagram', 'youtube', 'whatsapp', 'tiktok', 'other',
+            ]),
+            'priority' => 'medium',
+            'status'   => 'new_lead',
+            'payload'  => null,
         ];
     }
 
-    public function statusNew(): static  { return $this->state(['status' => 'new']); }
-    public function contacted(): static { return $this->state(['status' => 'contacted']); }
-    public function trialBooked(): static { return $this->state(['status' => 'trial_booked']); }
-    public function enrolled(): static  { return $this->state(['status' => 'enrolled']); }
+    public function newLead(): static          { return $this->state(['status' => 'new_lead']); }
+    public function interested(): static       { return $this->state(['status' => 'interested']); }
+    public function waitingForTrial(): static  { return $this->state(['status' => 'waiting_for_trial']); }
+    public function waitingForPayment(): static{ return $this->state(['status' => 'waiting_for_payment']); }
+    public function closed(): static           { return $this->state(['status' => 'closed']); }
+    public function notInterested(): static    { return $this->state(['status' => 'not_interested']); }
+
     public function lost(): static
     {
         return $this->state([

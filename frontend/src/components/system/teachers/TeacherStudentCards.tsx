@@ -2,6 +2,7 @@
 import Link from 'next/link'
 import { MessageCircle, Baby, BookOpen, CalendarDays, Clock3, Globe } from 'lucide-react'
 import type { Student, StudentStatus } from '@/types/system/student'
+import { useI18n } from '@/lib/system/i18n'
 
 // ── Avatar ────────────────────────────────────────────────────
 
@@ -15,16 +16,6 @@ function avatarColor(name: string): string {
 
 function initials(name: string): string {
   return name.split(' ').slice(0, 2).map(n => n[0]?.toUpperCase() ?? '').join('')
-}
-
-// ── Status config ─────────────────────────────────────────────
-
-const STATUS_CFG: Record<StudentStatus, { label: string; bg: string; color: string }> = {
-  trial:     { label: 'Trial',     bg: 'rgb(30 90 171 / 0.10)',   color: 'rgb(30 90 171)'   },
-  active:    { label: 'Active',    bg: 'rgb(14 124 90 / 0.10)',   color: 'rgb(14 124 90)'   },
-  paused:    { label: 'Paused',    bg: 'rgb(154 113 23 / 0.10)',  color: 'rgb(154 113 23)'  },
-  suspended: { label: 'Suspended', bg: 'rgb(220 38 38 / 0.10)',   color: 'rgb(220 38 38)'   },
-  cancelled: { label: 'Cancelled', bg: 'rgb(107 114 128 / 0.10)', color: 'rgb(107 114 128)' },
 }
 
 // ── Helpers ───────────────────────────────────────────────────
@@ -41,6 +32,7 @@ function whatsappHref(raw: string): string {
 // ── Stats bar ─────────────────────────────────────────────────
 
 function StatsBar({ students }: { students: Student[] }) {
+  const { t } = useI18n()
   const total     = students.length
   const active    = students.filter(s => s.status === 'active').length
   const trial     = students.filter(s => s.status === 'trial').length
@@ -55,11 +47,11 @@ function StatsBar({ students }: { students: Student[] }) {
       style={{ borderColor: border, background: 'rgb(var(--surface-card, 255 255 255))' }}
     >
       {[
-        { label: 'Total',     value: total,     color: 'rgb(11 31 58)' },
-        { label: 'Active',    value: active,    color: 'rgb(14 124 90)' },
-        { label: 'Trial',     value: trial,     color: 'rgb(30 90 171)' },
-        { label: 'Paused',    value: paused,    color: 'rgb(154 113 23)' },
-        { label: 'Cancelled', value: cancelled, color: 'rgb(107 114 128)' },
+        { label: t('common.total'),     value: total,     color: 'rgb(11 31 58)' },
+        { label: t('status.active'),    value: active,    color: 'rgb(14 124 90)' },
+        { label: t('status.trial'),     value: trial,     color: 'rgb(30 90 171)' },
+        { label: t('status.paused'),    value: paused,    color: 'rgb(154 113 23)' },
+        { label: t('status.cancelled'), value: cancelled, color: 'rgb(107 114 128)' },
       ].map((item, i) => (
         <div
           key={item.label}
@@ -77,6 +69,14 @@ function StatsBar({ students }: { students: Student[] }) {
 // ── Single card ───────────────────────────────────────────────
 
 function StudentCard({ student }: { student: Student }) {
+  const { t } = useI18n()
+  const STATUS_CFG: Record<StudentStatus, { label: string; bg: string; color: string }> = {
+    trial:     { label: t('status.trial'),     bg: 'rgb(30 90 171 / 0.10)',   color: 'rgb(30 90 171)'   },
+    active:    { label: t('status.active'),    bg: 'rgb(14 124 90 / 0.10)',   color: 'rgb(14 124 90)'   },
+    paused:    { label: t('status.paused'),    bg: 'rgb(154 113 23 / 0.10)',  color: 'rgb(154 113 23)'  },
+    suspended: { label: t('status.suspended'), bg: 'rgb(220 38 38 / 0.10)',   color: 'rgb(220 38 38)'   },
+    cancelled: { label: t('status.cancelled'), bg: 'rgb(107 114 128 / 0.10)', color: 'rgb(107 114 128)' },
+  }
   const color   = avatarColor(student.name)
   const status  = STATUS_CFG[student.status]
   const isChild = student.student_type === 'child'
@@ -115,7 +115,7 @@ function StudentCard({ student }: { student: Student }) {
             </p>
             <p className="text-xs truncate mt-0.5" style={{ color: 'rgb(90 100 112)' }}>
               {isChild && student.guardian?.name
-                ? `Guardian: ${student.guardian.name}`
+                ? `${t('teachers.guardianLabel')} ${student.guardian.name}`
                 : (student.email ?? student.country)}
             </p>
           </div>
@@ -138,22 +138,22 @@ function StudentCard({ student }: { student: Student }) {
         <DetailRow icon={<BookOpen size={13} />}>
           {student.course?.name
             ? <span className="font-medium" style={{ color: 'rgb(11 31 58)' }}>{student.course.name}</span>
-            : <span className="italic" style={{ color: 'rgb(203 211 222)' }}>No course assigned</span>
+            : <span className="italic" style={{ color: 'rgb(203 211 222)' }}>{t('teachers.noCourseAssigned')}</span>
           }
         </DetailRow>
 
         <DetailRow icon={<CalendarDays size={13} />}>
           <span style={{ color: 'rgb(11 31 58)' }}>
             <span className="font-semibold">{student.sessions_per_month}</span>
-            <span className="opacity-60"> sessions/mo · </span>
+            <span className="opacity-60"> {t('teachers.sessionsPerMonthShort')} · </span>
             <span className="font-semibold">{student.session_duration_min}</span>
-            <span className="opacity-60"> min each</span>
+            <span className="opacity-60"> {t('teachers.minuteEach')}</span>
           </span>
         </DetailRow>
 
         <DetailRow icon={<Clock3 size={13} />}>
           <span style={{ color: 'rgb(90 100 112)' }}>
-            Since{' '}
+            {t('teachers.since')}{' '}
             <span className="font-medium" style={{ color: 'rgb(11 31 58)' }}>
               {fmtEnrolled(student.enrolled_at)}
             </span>
@@ -183,7 +183,7 @@ function StudentCard({ student }: { student: Student }) {
             style={{ borderColor: border, color: 'rgb(11 31 58)' }}
           >
             <MessageCircle size={13} style={{ color: 'rgb(37 211 102)' }} />
-            WhatsApp
+            {t('common.whatsapp')}
           </a>
         ) : (
           <span className="text-xs opacity-30 italic">No WhatsApp</span>
@@ -194,7 +194,7 @@ function StudentCard({ student }: { student: Student }) {
           className="ml-auto text-xs font-semibold transition-colors hover:opacity-70"
           style={{ color: 'rgb(14 124 90)' }}
         >
-          View profile →
+          {t('teachers.contextViewProfile')} →
         </Link>
       </div>
     </div>
@@ -218,6 +218,7 @@ interface Props {
 }
 
 export function TeacherStudentCards({ students, isLoading }: Props) {
+  const { t } = useI18n()
   const border = 'rgb(var(--border-default, 229 233 240))'
 
   if (isLoading) {
@@ -247,9 +248,9 @@ export function TeacherStudentCards({ students, isLoading }: Props) {
           <BookOpen size={22} style={{ color: 'rgb(14 124 90)' }} />
         </div>
         <div>
-          <p className="font-semibold" style={{ color: 'rgb(11 31 58)' }}>No students yet</p>
+          <p className="font-semibold" style={{ color: 'rgb(11 31 58)' }}>{t('teachers.noStudentsYet')}</p>
           <p className="text-sm mt-1" style={{ color: 'rgb(90 100 112)' }}>
-            Students assigned to this teacher will appear here.
+            {t('teachers.noStudentsHint')}
           </p>
         </div>
       </div>

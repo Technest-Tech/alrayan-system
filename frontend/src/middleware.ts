@@ -16,10 +16,11 @@ const MARKETING_PATHS = [
 ]
 
 const SYSTEM_PATHS = [
-  '/dashboard', '/students', '/teachers', '/leads', '/courses-admin',
-  '/schedule', '/attendance', '/session-reports', '/quality',
+  '/dashboard', '/students', '/teachers', '/leads',
+  '/calendar', '/payments', '/quality',
   '/billing', '/payroll', '/accounting', '/certificates',
-  '/notifications', '/whatsapp-groups', '/settings', '/audit-log', '/teacher',
+  '/notifications', '/whatsapp-groups', '/settings', '/audit-log',
+  '/users', '/teacher',
 ]
 
 export function middleware(req: NextRequest) {

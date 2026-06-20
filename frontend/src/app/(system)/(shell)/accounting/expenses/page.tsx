@@ -5,8 +5,10 @@ import { Plus } from 'lucide-react'
 import { PageHeader } from '@/components/system/primitives/PageHeader'
 import { MoneyDisplay } from '@/components/system/primitives/MoneyDisplay'
 import { useExpenses, useExpenseCategories, useDeleteExpense } from '@/hooks/system/useExpenses'
+import { useI18n } from '@/lib/system/i18n'
 
 export default function ExpensesPage() {
+  const { t } = useI18n()
   const [filters, setFilters] = useState({ q: '' })
   const { data, isLoading } = useExpenses(filters)
   const { data: categories } = useExpenseCategories()
@@ -16,19 +18,19 @@ export default function ExpensesPage() {
 
   return (
     <>
-      <PageHeader title="Expenses" description="Track and categorize all academy expenses.">
+      <PageHeader title={t('accounting.expenses.title')} description={t('accounting.expenses.subtitle')}>
         <Link href="/accounting/expenses/new"
           className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium text-white"
           style={{ background: 'rgb(var(--accent))' }}>
           <Plus size={16} />
-          Add expense
+          {t('accounting.expenses.addExpense')}
         </Link>
       </PageHeader>
 
       <div className="flex gap-3 mt-6">
         <input
           type="text"
-          placeholder="Search…"
+          placeholder={t('accounting.expenses.searchPlaceholder')}
           value={filters.q}
           onChange={e => setFilters(f => ({ ...f, q: e.target.value }))}
           className="rounded-xl border px-3 py-2 text-sm w-60"
@@ -38,7 +40,7 @@ export default function ExpensesPage() {
           onChange={e => setFilters(f => ({ ...f, category_id: e.target.value || undefined } as typeof f))}
           className="rounded-xl border px-3 py-2 text-sm"
           style={{ borderColor: 'rgb(var(--border-default))' }}>
-          <option value="">All categories</option>
+          <option value="">{t('accounting.expenses.allCategories')}</option>
           {categories?.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
         </select>
       </div>
@@ -47,10 +49,10 @@ export default function ExpensesPage() {
         <table className="w-full text-sm">
           <thead style={{ background: 'rgb(var(--surface-card-2))' }}>
             <tr>
-              <th className="px-4 py-3 text-left font-medium">Date</th>
-              <th className="px-4 py-3 text-left font-medium">Category</th>
-              <th className="px-4 py-3 text-left font-medium">Description</th>
-              <th className="px-4 py-3 text-right font-medium">Amount</th>
+              <th className="px-4 py-3 text-left font-medium">{t('common.date')}</th>
+              <th className="px-4 py-3 text-left font-medium">{t('accounting.common.category')}</th>
+              <th className="px-4 py-3 text-left font-medium">{t('accounting.common.description')}</th>
+              <th className="px-4 py-3 text-right font-medium">{t('accounting.common.amount')}</th>
               <th className="px-4 py-3"></th>
             </tr>
           </thead>
@@ -70,12 +72,12 @@ export default function ExpensesPage() {
                 </td>
                 <td className="px-4 py-3 text-right">
                   <Link href={`/accounting/expenses/${exp.id}`}
-                    className="text-xs opacity-50 hover:opacity-100">Edit</Link>
+                    className="text-xs opacity-50 hover:opacity-100">{t('common.edit')}</Link>
                 </td>
               </tr>
             ))}
             {!isLoading && expenses.length === 0 && (
-              <tr><td colSpan={5} className="px-4 py-8 text-center opacity-40">No expenses found.</td></tr>
+              <tr><td colSpan={5} className="px-4 py-8 text-center opacity-40">{t('accounting.expenses.noExpenses')}</td></tr>
             )}
           </tbody>
         </table>

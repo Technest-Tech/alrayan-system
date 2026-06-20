@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useMarkTransferred } from '@/hooks/system/usePayrollActions'
+import { useI18n } from '@/lib/system/i18n'
 import type { Payroll } from '@/types/system/payroll'
 
 interface MarkTransferredDialogProps {
@@ -26,6 +27,7 @@ export function MarkTransferredDialog({
   onClose,
   onSuccess,
 }: MarkTransferredDialogProps) {
+  const { t } = useI18n()
   const [reference, setReference] = useState('')
   const markTransferred = useMarkTransferred()
 
@@ -44,16 +46,16 @@ export function MarkTransferredDialog({
     <Dialog open={open} onOpenChange={v => !v && onClose()}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Mark as Transferred</DialogTitle>
+          <DialogTitle>{t('payroll.markTransferredTitle')}</DialogTitle>
         </DialogHeader>
 
         <div className="py-2">
           <Label htmlFor="transfer-ref" className="mb-1.5 block text-sm font-medium">
-            Transfer reference <span className="text-red-500">*</span>
+            {t('payroll.transferReference')} <span className="text-red-500">*</span>
           </Label>
           <Input
             id="transfer-ref"
-            placeholder="e.g. TXN-20260511-001"
+            placeholder={t('payroll.transferReferencePlaceholder')}
             value={reference}
             onChange={e => setReference(e.target.value)}
           />
@@ -61,13 +63,13 @@ export function MarkTransferredDialog({
 
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>
-            Cancel
+            {t('common.cancel')}
           </Button>
           <Button
             onClick={handleSubmit}
             disabled={!reference.trim() || markTransferred.isPending}
           >
-            {markTransferred.isPending ? 'Saving...' : 'Mark Transferred'}
+            {markTransferred.isPending ? t('common.saving') : t('payroll.markTransferredTitle')}
           </Button>
         </DialogFooter>
       </DialogContent>

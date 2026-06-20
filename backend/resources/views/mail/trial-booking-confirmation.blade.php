@@ -29,7 +29,7 @@
 <body>
   <div class="wrapper">
     <div class="header">
-      <h1>Alrayan Academy</h1>
+      <h1>Azhary</h1>
       <p>Your Free Trial Class is Booked</p>
     </div>
     <div class="divider"></div>
@@ -61,11 +61,11 @@
 
       <div class="closing">
         Jazakum Allahu khayran,<br>
-        <strong>The Alrayan Academy Team</strong>
+        <strong>The Azhary Team</strong>
       </div>
     </div>
     <div class="footer">
-      Alrayan Academy &middot; info@alrayan-academy.com
+      Azhary &middot; info@alrayan-academy.com
     </div>
   </div>
 </body>

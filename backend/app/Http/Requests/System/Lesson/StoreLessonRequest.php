@@ -20,7 +20,7 @@ class StoreLessonRequest extends FormRequest
             'duration_minutes'=> ['required', 'integer', 'in:30,60,90,120'],
             'subject_id'      => ['nullable', 'integer', 'exists:sys_lesson_subjects,id'],
             'evaluation_id'   => ['nullable', 'integer', 'exists:sys_lesson_evaluations,id'],
-            'status'          => ['nullable', 'string', 'in:scheduled,attended,paid_absence,absent,cancelled'],
+            'status'          => ['nullable', 'string', 'in:scheduled,attended,paid_absence,absent,trial_free,cancelled_by_student,cancelled_by_teacher'],
             'content'         => ['nullable', 'string', 'max:5000'],
             'notes'           => ['nullable', 'string', 'max:5000'],
             'homework'        => ['nullable', 'string', 'max:5000'],

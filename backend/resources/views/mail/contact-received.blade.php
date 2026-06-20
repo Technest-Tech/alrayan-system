@@ -25,7 +25,7 @@
 <body>
   <div class="wrapper">
     <div class="header">
-      <h1>Alrayan Academy</h1>
+      <h1>Azhary</h1>
       <p>New Contact Message</p>
     </div>
     <div class="divider"></div>
@@ -41,7 +41,7 @@
       <div class="message-box">{{ $contact->message }}</div>
     </div>
     <div class="footer">
-      Alrayan Academy &middot; info@alrayan-academy.com
+      Azhary &middot; info@alrayan-academy.com
     </div>
   </div>
 </body>

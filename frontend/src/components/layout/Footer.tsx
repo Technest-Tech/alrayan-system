@@ -57,12 +57,12 @@ export function Footer() {
             <div className="lg:col-span-2 space-y-6">
               <Link
                 href="/"
-                aria-label="Alrayan Academy — Home"
+                aria-label="Azhary — Home"
                 className="inline-block"
               >
                 <Image
                   src="/logo/alrayan-white.svg"
-                  alt="Alrayan Academy"
+                  alt="Azhary"
                   width={200}
                   height={52}
                   className="h-12 w-auto"

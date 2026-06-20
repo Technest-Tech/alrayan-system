@@ -40,9 +40,7 @@ class TeacherEndpointsTest extends SystemTestCase
             'name'                => 'Nour Hassan',
             'email'               => 'nour.hassan@example.com',
             'payment_method'      => 'instapay',
-            'per_minute_rate_30'  => 280,
-            'per_minute_rate_45'  => 270,
-            'per_minute_rate_60'  => 260,
+            'hourly_rate'         => 300,
         ];
 
         $this->actingAs($this->adminUser(), 'sanctum')
@@ -52,7 +50,8 @@ class TeacherEndpointsTest extends SystemTestCase
             ->assertJsonPath('data.email', 'nour.hassan@example.com');
 
         $this->assertDatabaseHas('users', ['email' => 'nour.hassan@example.com', 'role' => 'teacher']);
-        $this->assertDatabaseHas('sys_teachers', ['per_minute_rate_30' => 280]);
+        // Controller derives the per-minute rate from the hourly rate (300 / 60 = 5).
+        $this->assertDatabaseHas('sys_teachers', ['per_minute_rate_30' => 5]);
     }
 
     public function test_admin_can_deactivate_teacher(): void

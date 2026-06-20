@@ -4,8 +4,10 @@ import { KpiCard } from '@/components/system/dashboard/KpiCard'
 import { AlertsPanel } from '@/components/system/dashboard/AlertsPanel'
 import { QuickActions } from '@/components/system/dashboard/QuickActions'
 import { RecentActivity } from '@/components/system/dashboard/RecentActivity'
-import { useDashboard, type RevenuePoint, type StudentPoint, type ExpenseSlice, type CancellationBar } from '@/hooks/system/useDashboard'
+import { useDashboard } from '@/hooks/system/useDashboard'
 import { useSystemUser } from '@/components/system/shell/SystemShell'
+import { useI18n } from '@/lib/system/i18n'
+import TeacherRace from '@/components/system/users/TeacherRace'
 
 function BarChart({ items, valueKey, labelKey, formatValue }: {
   items: Record<string, number | string>[]
@@ -44,61 +46,67 @@ function ChartCard({ title, children }: { title: string; children: React.ReactNo
 
 function AdminDashboard() {
   const { data, isLoading } = useDashboard()
-  const kpis    = data?.kpis
-  const alerts  = data?.alerts ?? []
+  const { t } = useI18n()
+  const kpis     = data?.kpis
+  const alerts   = data?.alerts ?? []
   const activity = data?.recent_activity ?? []
-  const charts  = data?.charts
+  const charts   = data?.charts
 
   return (
     <>
-      <PageHeader title="Dashboard" description="A snapshot of your academy." />
+      <PageHeader title={t('dashboard.title')} description={t('dashboard.description')} />
 
       {/* KPI grid — 8 cards across 2 rows of 4 */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-6">
         <KpiCard
-          label="Active students"
+          label={t('dashboard.activeStudents')}
           value={kpis?.active_students ?? 0}
-          delta={kpis?.active_students_delta ? `+${kpis.active_students_delta} this month` : undefined}
+          delta={kpis?.active_students_delta ? t('dashboard.thisMonth', { n: String(kpis.active_students_delta) }) : undefined}
           loading={isLoading}
         />
         <KpiCard
-          label="Trial students"
+          label={t('dashboard.trialStudents')}
           value={kpis?.trial_students ?? 0}
-          delta={kpis?.trial_students_delta ? `+${kpis.trial_students_delta} this month` : undefined}
+          delta={kpis?.trial_students_delta ? t('dashboard.thisMonth', { n: String(kpis.trial_students_delta) }) : undefined}
           loading={isLoading}
         />
         <KpiCard
-          label="Paused"
+          label={t('dashboard.paused')}
           value={kpis?.paused_students ?? 0}
           loading={isLoading}
         />
         <KpiCard
-          label="Suspended"
+          label={t('dashboard.suspended')}
           value={kpis?.suspended_students ?? 0}
           loading={isLoading}
         />
         <KpiCard
-          label="Today's sessions"
+          label={t('dashboard.todaySessions')}
           value={kpis?.today_sessions ?? 0}
           loading={isLoading}
         />
         <KpiCard
-          label="Revenue this month"
+          label={t('dashboard.revenueMonth')}
           value={kpis?.month_revenue?.USD != null ? `$${(kpis.month_revenue.USD / 100).toLocaleString()}` : '—'}
           loading={isLoading}
         />
         <KpiCard
-          label="Outstanding"
+          label={t('dashboard.outstanding')}
           value={kpis?.outstanding?.USD != null ? `$${(kpis.outstanding.USD / 100).toLocaleString()}` : '—'}
-          sub="overdue invoices"
+          sub={t('dashboard.overdueInvoices')}
           loading={isLoading}
         />
         <KpiCard
-          label="Conversion rate"
+          label={t('dashboard.conversionRate')}
           value={kpis?.conversion_rate != null ? `${Math.round(kpis.conversion_rate * 100)}%` : '—'}
-          sub="month over month"
+          sub={t('dashboard.momPercent')}
           loading={isLoading}
         />
+      </div>
+
+      {/* Teacher Race */}
+      <div className="mt-4">
+        <TeacherRace currentTeacherId={null} />
       </div>
 
       {/* Alerts + Quick actions */}
@@ -109,7 +117,7 @@ function AdminDashboard() {
 
       {/* Charts — 2×2 grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-4">
-        <ChartCard title="Revenue — last 12 months">
+        <ChartCard title={t('dashboard.revenue12m')}>
           {isLoading
             ? <div className="h-24 animate-pulse rounded" style={{ background: 'rgb(var(--surface-card-2))' }} />
             : charts?.revenue_12m?.length
@@ -119,11 +127,11 @@ function AdminDashboard() {
                   valueKey="amount"
                   formatValue={v => `$${(v / 100).toLocaleString()}`}
                 />
-              : <p className="text-xs opacity-40">No data yet.</p>
+              : <p className="text-xs opacity-40">{t('dashboard.noData')}</p>
           }
         </ChartCard>
 
-        <ChartCard title="Student growth — last 12 months">
+        <ChartCard title={t('dashboard.studentGrowth12m')}>
           {isLoading
             ? <div className="h-24 animate-pulse rounded" style={{ background: 'rgb(var(--surface-card-2))' }} />
             : charts?.student_growth_12m?.length
@@ -132,11 +140,11 @@ function AdminDashboard() {
                   labelKey="month"
                   valueKey="active"
                 />
-              : <p className="text-xs opacity-40">No data yet.</p>
+              : <p className="text-xs opacity-40">{t('dashboard.noData')}</p>
           }
         </ChartCard>
 
-        <ChartCard title="Expenses — last 30 days">
+        <ChartCard title={t('dashboard.expenses30d')}>
           {isLoading
             ? <div className="h-24 animate-pulse rounded" style={{ background: 'rgb(var(--surface-card-2))' }} />
             : charts?.expenses_breakdown_30d?.length
@@ -146,11 +154,11 @@ function AdminDashboard() {
                   valueKey="amount"
                   formatValue={v => `$${(v / 100).toLocaleString()}`}
                 />
-              : <p className="text-xs opacity-40">No expenses recorded.</p>
+              : <p className="text-xs opacity-40">{t('dashboard.noExpenses')}</p>
           }
         </ChartCard>
 
-        <ChartCard title="Cancellation reasons">
+        <ChartCard title={t('dashboard.cancellationReasons')}>
           {isLoading
             ? <div className="h-24 animate-pulse rounded" style={{ background: 'rgb(var(--surface-card-2))' }} />
             : charts?.cancellation_reasons?.length
@@ -159,7 +167,7 @@ function AdminDashboard() {
                   labelKey="reason"
                   valueKey="count"
                 />
-              : <p className="text-xs opacity-40">No cancellations.</p>
+              : <p className="text-xs opacity-40">{t('dashboard.noCancellations')}</p>
           }
         </ChartCard>
       </div>
@@ -174,43 +182,52 @@ function AdminDashboard() {
 
 function TeacherDashboard() {
   const user = useSystemUser()
-  const today = new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
+  const { locale, t } = useI18n()
+  const today = new Date().toLocaleDateString(
+    locale === 'fr' ? 'fr-FR' : 'en-US',
+    { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' },
+  )
 
   return (
-    <div className="max-w-2xl">
-      <h1 className="text-2xl font-bold">Welcome, {user?.name}</h1>
+    <div>
+      <h1 className="text-2xl font-bold">{t('dashboard.welcome', { name: user?.name ?? '' })}</h1>
       <p className="opacity-50 mt-1 text-sm">{today}</p>
 
-      <div className="mt-8 space-y-4">
+      <div className="mt-8 space-y-4 max-w-2xl">
         <div
           className="rounded-2xl p-6"
           style={{ background: 'rgb(var(--surface-card, 255 255 255))', border: '1px solid rgb(var(--border-default, 229 233 240))' }}
         >
-          <p className="font-semibold">Today&apos;s sessions (0)</p>
-          <p className="text-sm opacity-40 mt-3">No sessions scheduled for today.</p>
+          <p className="font-semibold">{t('dashboard.todaySessionsCard', { count: '0' })}</p>
+          <p className="text-sm opacity-40 mt-3">{t('dashboard.noSessionsToday')}</p>
         </div>
         <div
           className="rounded-2xl p-6"
           style={{ background: 'rgb(var(--surface-card, 255 255 255))', border: '1px solid rgb(var(--border-default, 229 233 240))' }}
         >
-          <p className="font-semibold">Pending session reports (0)</p>
-          <p className="text-sm opacity-40 mt-3">You&apos;re all caught up.</p>
+          <p className="font-semibold">{t('dashboard.pendingReports', { count: '0' })}</p>
+          <p className="text-sm opacity-40 mt-3">{t('dashboard.allCaughtUp')}</p>
         </div>
         <div
           className="rounded-2xl p-6 flex items-center justify-between"
           style={{ background: 'rgb(var(--surface-card, 255 255 255))', border: '1px solid rgb(var(--border-default, 229 233 240))' }}
         >
           <div>
-            <p className="font-semibold">Salary statement</p>
-            <p className="text-sm opacity-40 mt-1">Current month not yet calculated.</p>
+            <p className="font-semibold">{t('dashboard.salaryStatement')}</p>
+            <p className="text-sm opacity-40 mt-1">{t('dashboard.salaryNotCalc')}</p>
           </div>
           <button
             className="px-4 py-2 rounded-xl text-sm font-medium border hover:bg-black/5 transition-colors"
             style={{ borderColor: 'rgb(var(--border-default, 229 233 240))' }}
           >
-            View
+            {t('dashboard.view')}
           </button>
         </div>
+      </div>
+
+      {/* Teacher Race */}
+      <div className="mt-4">
+        <TeacherRace currentTeacherId={user?.teacher_id ?? null} />
       </div>
     </div>
   )

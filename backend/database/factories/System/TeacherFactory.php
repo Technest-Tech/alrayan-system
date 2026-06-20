@@ -5,6 +5,7 @@ namespace Database\Factories\System;
 use App\Models\System\Teacher;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
+use Spatie\Permission\Models\Role;
 
 class TeacherFactory extends Factory
 {
@@ -28,5 +29,29 @@ class TeacherFactory extends Factory
     public function inactive(): static
     {
         return $this->state(['is_active' => false]);
+    }
+
+    /**
+     * Align the linked user with the unified identity model: role=teacher,
+     * status mirrors the teacher's is_active flag, and the Spatie role is set.
+     */
+    public function configure(): static
+    {
+        return $this->afterCreating(function (Teacher $teacher) {
+            $user = $teacher->user;
+            if (! $user) {
+                return;
+            }
+
+            $user->forceFill([
+                'role'      => 'teacher',
+                'status'    => $teacher->is_active ? 'active' : 'inactive',
+                'is_active' => (bool) $teacher->is_active,
+            ])->save();
+
+            if (Role::where('name', 'teacher')->where('guard_name', 'web')->exists() && ! $user->hasRole('teacher')) {
+                $user->assignRole('teacher');
+            }
+        });
     }
 }

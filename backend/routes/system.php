@@ -36,6 +36,7 @@ use App\Http\Controllers\System\StudentController;
 use App\Http\Controllers\System\StudentFamilyController;
 use App\Http\Controllers\System\StudentNoteController;
 use App\Http\Controllers\System\StudentTransitionController;
+use App\Http\Controllers\System\TaskController;
 use App\Http\Controllers\System\ActivateStudentController;
 use App\Http\Controllers\System\TeacherAvailabilityController;
 use App\Http\Controllers\System\TeacherController;
@@ -43,6 +44,7 @@ use App\Http\Controllers\System\TeacherLeaveController;
 use App\Http\Controllers\System\TeacherNoteController;
 use App\Http\Controllers\System\TeacherReportController;
 use App\Http\Controllers\System\UserController;
+use App\Http\Controllers\System\UserDirectoryController;
 use App\Http\Controllers\System\RoleController;
 use App\Http\Controllers\System\WalletController;
 use App\Http\Controllers\System\WassenderIntegrationController;
@@ -74,7 +76,27 @@ Route::prefix('system')->name('system.')->group(function () {
         // Dashboard
         Route::get('/dashboard', [DashboardController::class, 'show'])->name('dashboard');
 
-        // Users & Roles
+        // Generic file upload (photos / documents) for forms.
+        Route::post('/uploads', [\App\Http\Controllers\System\UploadController::class, 'store'])->name('uploads.store');
+
+        // Unified user directory (students, teachers, parents, staff in one place).
+        // Defined before the /users/{id} routes so /users/directory/* matches first.
+        Route::middleware('system.can:users.view_directory')->group(function () {
+            Route::get('/users/directory',         [UserDirectoryController::class, 'index'])->name('users.directory.index');
+            Route::get('/users/directory/stats',   [UserDirectoryController::class, 'stats'])->name('users.directory.stats');
+            Route::get('/users/directory/{id}',    [UserDirectoryController::class, 'show'])->whereNumber('id')->name('users.directory.show');
+        });
+        Route::middleware('system.can:users.create')->post('/users/directory', [UserDirectoryController::class, 'store'])->name('users.directory.store');
+        Route::middleware('system.can:users.edit')->patch('/users/directory/{id}', [UserDirectoryController::class, 'update'])->whereNumber('id')->name('users.directory.update');
+        Route::middleware('system.can:users.deactivate')->group(function () {
+            Route::post('/users/directory/{id}/activate',   [UserDirectoryController::class, 'activate'])->whereNumber('id')->name('users.directory.activate');
+            Route::post('/users/directory/{id}/deactivate', [UserDirectoryController::class, 'deactivate'])->whereNumber('id')->name('users.directory.deactivate');
+        });
+        Route::middleware('system.can:users.suspend')->post('/users/directory/{id}/suspend', [UserDirectoryController::class, 'suspend'])->whereNumber('id')->name('users.directory.suspend');
+        Route::middleware('system.can:users.archive')->post('/users/directory/{id}/archive', [UserDirectoryController::class, 'archive'])->whereNumber('id')->name('users.directory.archive');
+        Route::middleware('system.can:users.delete')->delete('/users/directory/{id}', [UserDirectoryController::class, 'destroy'])->whereNumber('id')->name('users.directory.destroy');
+
+        // Users & Roles (legacy staff invite flow)
         Route::middleware('system.can:users.view')->group(function () {
             Route::get('/users', [UserController::class, 'index'])->name('users.index');
             Route::get('/roles', [RoleController::class, 'index'])->name('roles.index');
@@ -101,11 +123,15 @@ Route::prefix('system')->name('system.')->group(function () {
 
         // Courses
         Route::middleware('system.can:courses.view')->get('/courses', [CourseController::class, 'index'])->name('courses.index');
+        Route::middleware('system.can:courses.edit')->post('/courses', [CourseController::class, 'store'])->name('courses.store');
         Route::middleware('system.can:courses.edit')->patch('/courses/{course}', [CourseController::class, 'update'])->name('courses.update');
+        Route::middleware('system.can:courses.edit')->delete('/courses/{course}', [CourseController::class, 'destroy'])->name('courses.destroy');
 
         // Teachers
         Route::middleware('system.can:teachers.view')->group(function () {
             Route::get('/teachers',      [TeacherController::class, 'index'])->name('teachers.index');
+            // Literal route must precede /teachers/{teacher} so "race" isn't treated as a model id.
+            Route::get('/teachers/race', [TeacherReportController::class, 'race'])->name('teachers.race');
             Route::get('/teachers/{teacher}/notes', [TeacherNoteController::class, 'index'])->name('teachers.notes.index');
         });
         Route::get('/teachers/{teacher}', [TeacherController::class, 'show'])->name('teachers.show');
@@ -120,6 +146,7 @@ Route::prefix('system')->name('system.')->group(function () {
         Route::patch('/teacher-notes/{note}',             [TeacherNoteController::class, 'update'])->name('teacher-notes.update');
         Route::delete('/teacher-notes/{note}',            [TeacherNoteController::class, 'destroy'])->name('teacher-notes.destroy');
         Route::get('/teachers/{teacher}/report-summary',  [TeacherReportController::class, 'summary'])->name('teachers.report-summary');
+        Route::get('/teachers/{teacher}/profile-stats',    [TeacherReportController::class, 'profileStats'])->name('teachers.profile-stats');
 
         // Teacher leaves
         Route::get('/teacher-leaves',                        [TeacherLeaveController::class, 'index'])->name('teacher-leaves.index');
@@ -334,6 +361,30 @@ Route::prefix('system')->name('system.')->group(function () {
             ->post('/lead-follow-ups/{leadFollowUp}/complete',       [LeadFollowUpController::class, 'complete'])->name('lead-follow-ups.complete');
         Route::middleware('system.can:lead_followups.delete')
             ->delete('/lead-follow-ups/{leadFollowUp}',              [LeadFollowUpController::class, 'destroy'])->name('lead-follow-ups.destroy');
+
+        // ── SYS-10: Tasks (operational log / work-queue) ─────────────────────────
+        Route::middleware('system.can:tasks.view_any')
+            ->get('/tasks', [TaskController::class, 'index'])->name('tasks.index');
+        Route::middleware('system.can:tasks.view')->group(function () {
+            Route::get('/tasks/{task}',            [TaskController::class, 'show'])->name('tasks.show');
+            Route::get('/tasks/{task}/notes',      [TaskController::class, 'notesIndex'])->name('tasks.notes.index');
+        });
+        Route::middleware('system.can:tasks.create')
+            ->post('/tasks', [TaskController::class, 'store'])->name('tasks.store');
+        Route::middleware('system.can:tasks.edit')->group(function () {
+            Route::patch('/tasks/{task}',          [TaskController::class, 'update'])->name('tasks.update');
+            Route::post('/tasks/{task}/postpone',  [TaskController::class, 'postpone'])->name('tasks.postpone');
+        });
+        Route::middleware('system.can:tasks.assign')
+            ->post('/tasks/{task}/assign', [TaskController::class, 'assign'])->name('tasks.assign');
+        Route::middleware('system.can:tasks.approve')
+            ->post('/tasks/{task}/approve', [TaskController::class, 'approve'])->name('tasks.approve');
+        Route::middleware('system.can:tasks.reject')
+            ->post('/tasks/{task}/reject', [TaskController::class, 'reject'])->name('tasks.reject');
+        Route::middleware('system.can:task_notes.create')
+            ->post('/tasks/{task}/notes', [TaskController::class, 'notesStore'])->name('tasks.notes.store');
+        Route::middleware('system.can:tasks.delete')
+            ->delete('/tasks/{task}', [TaskController::class, 'destroy'])->name('tasks.destroy');
 
         // WhatsApp groups
         Route::middleware('system.can:whatsapp.view')->group(function () {

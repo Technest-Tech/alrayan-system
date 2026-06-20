@@ -15,12 +15,24 @@ import { TeacherReportsTab } from '@/components/system/teachers/TeacherReportsTa
 import { NotesList } from '@/components/system/notes/NotesList'
 import { NoteComposer } from '@/components/system/notes/NoteComposer'
 import { ApiError } from '@/lib/system/api'
+import { useI18n } from '@/lib/system/i18n'
 
 const TABS = ['Profile', 'Availability', 'Students', 'Schedule', 'Reports', 'Salary', 'Notes'] as const
 type Tab = typeof TABS[number]
 
+const TAB_KEYS: Record<Tab, string> = {
+  Profile:      'teachers.tabProfile',
+  Availability: 'teachers.tabAvailability',
+  Students:     'teachers.tabStudents',
+  Schedule:     'teachers.tabSchedule',
+  Reports:      'teachers.tabReports',
+  Salary:       'teachers.tabSalary',
+  Notes:        'teachers.tabNotes',
+}
+
 export default function TeacherDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
+  const { t }   = useI18n()
   const [tab, setTab]           = useState<Tab>('Profile')
   const [menuOpen, setMenuOpen] = useState(false)
 
@@ -75,7 +87,7 @@ export default function TeacherDetailPage({ params }: { params: Promise<{ id: st
   }
 
   if (!teacher) {
-    return <EmptyState icon="AlertCircle" title="Teacher not found" action={<Link href="/teachers" className="text-sm underline">Back to teachers</Link>} />
+    return <EmptyState icon="AlertCircle" title={t('teachers.teacherNotFound')} action={<Link href="/teachers" className="text-sm underline">{t('teachers.backToTeachers')}</Link>} />
   }
 
   return (
@@ -83,7 +95,7 @@ export default function TeacherDetailPage({ params }: { params: Promise<{ id: st
       <div className="flex items-center gap-2 mb-6 text-sm opacity-50">
         <Link href="/teachers" className="hover:opacity-100 flex items-center gap-1">
           <ChevronLeft size={14} />
-          Teachers
+          {t('teachers.title')}
         </Link>
         <span>/</span>
         <span className="opacity-100">{teacher.name}</span>
@@ -123,16 +135,16 @@ export default function TeacherDetailPage({ params }: { params: Promise<{ id: st
               >
                 {teacher.invite_pending && (
                   <button className="w-full text-left px-3 py-2 hover:bg-black/5 transition-colors">
-                    Resend invite
+                    {t('teachers.resendInvite')}
                   </button>
                 )}
                 {teacher.is_active ? (
                   <button onClick={handleDeactivate} className="w-full text-left px-3 py-2 hover:bg-black/5 transition-colors text-red-600">
-                    Deactivate
+                    {t('common.deactivate')}
                   </button>
                 ) : (
                   <button onClick={handleActivate} className="w-full text-left px-3 py-2 hover:bg-black/5 transition-colors text-green-700">
-                    Activate
+                    {t('common.activate')}
                   </button>
                 )}
               </div>
@@ -146,21 +158,21 @@ export default function TeacherDetailPage({ params }: { params: Promise<{ id: st
         className="flex gap-1 border-b mb-6 overflow-x-auto"
         style={{ borderColor: 'rgb(var(--border-default, 229 233 240))' }}
       >
-        {TABS.map((t) => (
+        {TABS.map((tabName) => (
           <button
-            key={t}
-            onClick={() => setTab(t)}
+            key={tabName}
+            onClick={() => setTab(tabName)}
             className="px-4 py-2.5 text-sm font-medium whitespace-nowrap border-b-2 transition-colors"
             style={{
-              borderBottomColor: tab === t ? 'rgb(var(--status-success, 14 124 90))' : 'transparent',
-              color: tab === t ? 'rgb(var(--status-success, 14 124 90))' : undefined,
+              borderBottomColor: tab === tabName ? 'rgb(var(--status-success, 14 124 90))' : 'transparent',
+              color: tab === tabName ? 'rgb(var(--status-success, 14 124 90))' : undefined,
             }}
           >
-            {t}
-            {t === 'Students' && students.length > 0 && (
+            {t(TAB_KEYS[tabName])}
+            {tabName === 'Students' && students.length > 0 && (
               <span
                 className="ml-1.5 px-1.5 py-0.5 rounded-full text-[10px] font-bold"
-                style={tab === t
+                style={tab === tabName
                   ? { background: 'rgb(14 124 90)', color: '#fff' }
                   : { background: 'rgb(var(--border-default, 229 233 240))', color: 'rgb(90 100 112)' }
                 }
@@ -212,7 +224,7 @@ export default function TeacherDetailPage({ params }: { params: Promise<{ id: st
         )}
 
         {tab === 'Salary' && (
-          <EmptyState icon="DollarSign" title="Salary" description="Coming soon." />
+          <EmptyState icon="DollarSign" title={t('teachers.tabSalary')} description={t('common.comingSoon')} />
         )}
 
         {tab === 'Notes' && (

@@ -12,7 +12,7 @@ export default function NotFound() {
         <Container>
           <div className="text-center max-w-lg mx-auto">
             <p className="font-arabic text-accent text-4xl mb-4" dir="rtl" lang="ar" aria-hidden="true">
-              الريان
+              أزهري
             </p>
             <h1 className="heading-xl font-display text-primary mb-4">Page Not Found</h1>
             <p className="text-muted-text text-lg mb-8">

@@ -9,6 +9,7 @@ import { AddLeadDialog } from './AddLeadDialog'
 import { useDeleteLead } from '@/hooks/system/useLeads'
 import { useUsers } from '@/hooks/system/useUsers'
 import { api } from '@/lib/system/api'
+import { useI18n } from '@/lib/system/i18n'
 import { Search, X, ChevronDown } from 'lucide-react'
 
 /* ── Islamic star path ─────────────────────────── */
@@ -18,68 +19,69 @@ const STAR = 'M50,5 L57.65,31.52 L81.82,18.18 L68.48,42.35 L95,50 L68.48,57.65 L
 /* ── Column definitions ─────────────────────────── */
 const COLUMNS: {
   key: LeadStatus
-  label: string
+  labelKey: string
   dot: string
   accent: string
   headBg: string
   dropBg: string
   count?: number
 }[] = [
-  { key: 'new_lead',            label: 'New Lead',            dot: '#1E5AAB', accent: '#1E5AAB', headBg: 'rgba(30,90,171,0.07)',  dropBg: 'rgba(30,90,171,0.04)'  },
-  { key: 'waiting_for_trial',   label: 'Waiting for Trial',   dot: '#B47800', accent: '#B47800', headBg: 'rgba(180,120,0,0.07)',   dropBg: 'rgba(180,120,0,0.04)'  },
-  { key: 'waiting_for_payment', label: 'Waiting for Payment', dot: '#C0392B', accent: '#C0392B', headBg: 'rgba(192,57,43,0.07)',   dropBg: 'rgba(192,57,43,0.04)'  },
-  { key: 'closed',              label: 'Closed',              dot: '#0E7C5A', accent: '#0E7C5A', headBg: 'rgba(14,124,90,0.07)',   dropBg: 'rgba(14,124,90,0.04)'  },
-  { key: 'not_interested',      label: 'Not Interested',      dot: '#BE185D', accent: '#BE185D', headBg: 'rgba(190,24,93,0.07)',   dropBg: 'rgba(190,24,93,0.04)'  },
-  { key: 'interested',          label: 'Interested',          dot: '#0E7C5A', accent: '#0E7C5A', headBg: 'rgba(14,124,90,0.05)',   dropBg: 'rgba(14,124,90,0.03)'  },
-  { key: 'lost',                label: 'Lost',                dot: '#64748b', accent: '#64748b', headBg: 'rgba(100,116,139,0.07)', dropBg: 'rgba(100,116,139,0.04)' },
+  { key: 'new_lead',            labelKey: 'leads.statusNewLead',            dot: '#1E5AAB', accent: '#1E5AAB', headBg: 'rgba(30,90,171,0.07)',  dropBg: 'rgba(30,90,171,0.04)'  },
+  { key: 'waiting_for_trial',   labelKey: 'leads.statusWaitingForTrial',   dot: '#B47800', accent: '#B47800', headBg: 'rgba(180,120,0,0.07)',   dropBg: 'rgba(180,120,0,0.04)'  },
+  { key: 'waiting_for_payment', labelKey: 'leads.statusWaitingForPayment', dot: '#C0392B', accent: '#C0392B', headBg: 'rgba(192,57,43,0.07)',   dropBg: 'rgba(192,57,43,0.04)'  },
+  { key: 'closed',              labelKey: 'leads.statusClosed',              dot: '#0E7C5A', accent: '#0E7C5A', headBg: 'rgba(14,124,90,0.07)',   dropBg: 'rgba(14,124,90,0.04)'  },
+  { key: 'not_interested',      labelKey: 'leads.statusNotInterested',      dot: '#BE185D', accent: '#BE185D', headBg: 'rgba(190,24,93,0.07)',   dropBg: 'rgba(190,24,93,0.04)'  },
+  { key: 'interested',          labelKey: 'leads.statusInterested',          dot: '#0E7C5A', accent: '#0E7C5A', headBg: 'rgba(14,124,90,0.05)',   dropBg: 'rgba(14,124,90,0.03)'  },
+  { key: 'lost',                labelKey: 'leads.statusLost',                dot: '#64748b', accent: '#64748b', headBg: 'rgba(100,116,139,0.07)', dropBg: 'rgba(100,116,139,0.04)' },
 ]
 
 const STATUS_OPTIONS = [
-  { value: '', label: 'All Statuses' },
-  { value: 'new_lead',            label: 'New Lead' },
-  { value: 'interested',          label: 'Interested' },
-  { value: 'waiting_for_trial',   label: 'Waiting for Trial' },
-  { value: 'waiting_for_payment', label: 'Waiting for Payment' },
-  { value: 'closed',              label: 'Closed' },
-  { value: 'not_interested',      label: 'Not Interested' },
-  { value: 'lost',                label: 'Lost' },
+  { value: '', key: 'leads.filterAllStatuses' },
+  { value: 'new_lead',            key: 'leads.statusNewLead' },
+  { value: 'interested',          key: 'leads.statusInterested' },
+  { value: 'waiting_for_trial',   key: 'leads.statusWaitingForTrial' },
+  { value: 'waiting_for_payment', key: 'leads.statusWaitingForPayment' },
+  { value: 'closed',              key: 'leads.statusClosed' },
+  { value: 'not_interested',      key: 'leads.statusNotInterested' },
+  { value: 'lost',                key: 'leads.statusLost' },
 ]
 
 const PLATFORM_OPTIONS = [
-  { value: '', label: 'All Platforms' },
-  { value: 'website',   label: 'Website' },
-  { value: 'facebook',  label: 'Facebook' },
-  { value: 'instagram', label: 'Instagram' },
-  { value: 'youtube',   label: 'YouTube' },
-  { value: 'whatsapp',  label: 'WhatsApp' },
-  { value: 'tiktok',    label: 'TikTok' },
-  { value: 'other',     label: 'Other' },
+  { value: '', key: 'leads.filterAllPlatforms' },
+  { value: 'website',   key: 'leads.platformWebsite' },
+  { value: 'facebook',  key: 'leads.platformFacebook' },
+  { value: 'instagram', key: 'leads.platformInstagram' },
+  { value: 'youtube',   key: 'leads.platformYoutube' },
+  { value: 'whatsapp',  key: 'leads.platformWhatsapp' },
+  { value: 'tiktok',    key: 'leads.platformTiktok' },
+  { value: 'other',     key: 'leads.platformOther' },
 ]
 
 const SOURCE_OPTIONS = [
-  { value: '', label: 'All Sources' },
-  { value: 'google_ads',       label: 'Google Ads' },
-  { value: 'facebook_ads',     label: 'Facebook Ads' },
-  { value: 'instagram_ads',    label: 'Instagram' },
-  { value: 'whatsapp_direct',  label: 'WhatsApp Direct' },
-  { value: 'student_referral', label: 'Referral' },
-  { value: 'website_form',     label: 'Website Form' },
-  { value: 'manual_entry',     label: 'Manual' },
+  { value: '', key: 'leads.filterAllSources' },
+  { value: 'google_ads',       key: 'leads.sourceGoogleAds' },
+  { value: 'facebook_ads',     key: 'leads.sourceFacebookAds' },
+  { value: 'instagram_ads',    key: 'leads.sourceInstagramShort' },
+  { value: 'whatsapp_direct',  key: 'leads.sourceWhatsappDirect' },
+  { value: 'student_referral', key: 'leads.sourceReferral' },
+  { value: 'website_form',     key: 'leads.sourceWebsiteForm' },
+  { value: 'manual_entry',     key: 'leads.sourceManual' },
 ]
 
 const PRIORITY_OPTIONS = [
-  { value: '', label: 'All Priorities' },
-  { value: 'high',   label: 'High Priority' },
-  { value: 'medium', label: 'Medium Priority' },
-  { value: 'low',    label: 'Low Priority' },
+  { value: '', key: 'leads.filterAllPriorities' },
+  { value: 'high',   key: 'leads.priorityHighFilter' },
+  { value: 'medium', key: 'leads.priorityMediumFilter' },
+  { value: 'low',    key: 'leads.priorityLowFilter' },
 ]
 
 /* ── Filter select ──────────────────────────────── */
 function FilterSelect({ value, options, onChange }: {
   value: string
-  options: { value: string; label: string }[]
+  options: { value: string; key?: string; label?: string }[]
   onChange: (v: string) => void
 }) {
+  const { t } = useI18n()
   return (
     <div className="relative min-w-0">
       <select
@@ -92,7 +94,7 @@ function FilterSelect({ value, options, onChange }: {
           color: value ? 'rgb(11 31 58)' : 'rgb(90 100 112)',
         }}
       >
-        {options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+        {options.map(o => <option key={o.value} value={o.value}>{o.key ? t(o.key) : o.label}</option>)}
       </select>
       <ChevronDown size={11} className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none opacity-40" />
     </div>
@@ -122,6 +124,7 @@ interface Props {
 }
 
 export function LeadKanban({ leads, isLoading, filters, onFiltersChange }: Props) {
+  const { t } = useI18n()
   const qc = useQueryClient()
   const { data: usersData } = useUsers()
   const [dragLeadId,     setDragLeadId]     = useState<number | null>(null)
@@ -136,7 +139,7 @@ export function LeadKanban({ leads, isLoading, filters, onFiltersChange }: Props
     mutationFn: ({ id, status }: { id: number; status: LeadStatus }) =>
       api<{ data: unknown }>(`/leads/${id}`, { method: 'PATCH', body: JSON.stringify({ status }) }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['system', 'leads'] }),
-    onError:   () => toast.error('Could not move lead — check status rules or permissions.'),
+    onError:   () => toast.error(t('leads.toastMoveFailed')),
   })
 
   function handleEditLead(lead: Lead) {
@@ -145,13 +148,13 @@ export function LeadKanban({ leads, isLoading, filters, onFiltersChange }: Props
   }
 
   function handleDeleteLead(lead: Lead) {
-    if (!window.confirm(`Delete "${lead.name}"? This cannot be undone.`)) return
+    if (!window.confirm(t('leads.confirmDelete', { name: lead.name }))) return
     deleteLead.mutate(lead.id, {
       onSuccess: () => {
-        toast.success('Lead deleted.')
+        toast.success(t('leads.toastDeleted'))
         if (selectedLeadId === lead.id) setSelectedLeadId(null)
       },
-      onError: () => toast.error('Could not delete lead.'),
+      onError: () => toast.error(t('leads.toastDeleteFailed')),
     })
   }
 
@@ -182,7 +185,7 @@ export function LeadKanban({ leads, isLoading, filters, onFiltersChange }: Props
   const hasFilters = Object.values(filters).some(Boolean)
 
   const supervisorOptions = [
-    { value: '', label: 'All Assignees' },
+    { value: '', label: t('leads.filterAllAssignees') },
     ...(usersData?.data ?? [])
       .filter(u => u.role === 'supervisor' || u.role === 'admin')
       .map(u => ({ value: String(u.id), label: u.name })),
@@ -198,7 +201,7 @@ export function LeadKanban({ leads, isLoading, filters, onFiltersChange }: Props
         <div className="px-5 py-4">
           {/* Title row */}
           <div className="flex items-center justify-between mb-4">
-            <p className="text-sm font-semibold text-gray-800">Filters</p>
+            <p className="text-sm font-semibold text-gray-800">{t('leads.filtersTitle')}</p>
             {hasFilters && (
               <button
                 onClick={() => onFiltersChange({})}
@@ -206,7 +209,7 @@ export function LeadKanban({ leads, isLoading, filters, onFiltersChange }: Props
                 style={{ borderColor: 'rgba(192,57,43,0.3)', color: 'rgb(192 57 43)' }}
               >
                 <X size={10} />
-                Clear all
+                {t('leads.clearAll')}
               </button>
             )}
           </div>
@@ -218,7 +221,7 @@ export function LeadKanban({ leads, isLoading, filters, onFiltersChange }: Props
               <Search size={12} className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none opacity-40" />
               <input
                 type="text"
-                placeholder="Search by name, email, phone..."
+                placeholder={t('leads.searchPlaceholder')}
                 className="w-full pl-8 pr-3 h-9 rounded-lg border text-xs outline-none focus:ring-2 focus:ring-[#0E7C5A]/20 transition-all"
                 style={{
                   borderColor: filters.q ? '#C9A24B66' : 'rgb(229 233 240)',
@@ -238,7 +241,7 @@ export function LeadKanban({ leads, isLoading, filters, onFiltersChange }: Props
 
           {/* Row 2: Package · From Date · To Date */}
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-            <FilterSelect value="" options={[{ value: '', label: 'All Packages' }]} onChange={() => {}} />
+            <FilterSelect value="" options={[{ value: '', key: 'leads.filterAllPackages' }]} onChange={() => {}} />
 
             {/* From Date */}
             <div className="relative">
@@ -252,10 +255,10 @@ export function LeadKanban({ leads, isLoading, filters, onFiltersChange }: Props
                   background: filters.from_date ? 'rgba(201,162,75,0.04)' : '#fff',
                   color: filters.from_date ? 'rgb(11 31 58)' : 'rgb(156 163 175)',
                 }}
-                placeholder="From Date"
+                placeholder={t('leads.fromDate')}
               />
               {!filters.from_date && (
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-gray-400 pointer-events-none select-none">From Date</span>
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-gray-400 pointer-events-none select-none">{t('leads.fromDate')}</span>
               )}
             </div>
 
@@ -271,10 +274,10 @@ export function LeadKanban({ leads, isLoading, filters, onFiltersChange }: Props
                   background: filters.to_date ? 'rgba(201,162,75,0.04)' : '#fff',
                   color: filters.to_date ? 'rgb(11 31 58)' : 'rgb(156 163 175)',
                 }}
-                placeholder="To Date"
+                placeholder={t('leads.toDate')}
               />
               {!filters.to_date && (
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-gray-400 pointer-events-none select-none">To Date</span>
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-gray-400 pointer-events-none select-none">{t('leads.toDate')}</span>
               )}
             </div>
           </div>
@@ -313,7 +316,7 @@ export function LeadKanban({ leads, isLoading, filters, onFiltersChange }: Props
                     <div className="flex items-center gap-2">
                       <span className="w-2 h-2 rounded-full shrink-0" style={{ background: col.dot }} />
                       <span className="text-xs font-semibold" style={{ color: '#0B1F3A' }}>
-                        {col.label}
+                        {t(col.labelKey)}
                       </span>
                     </div>
                     <span
@@ -349,7 +352,7 @@ export function LeadKanban({ leads, isLoading, filters, onFiltersChange }: Props
                         background: isOver ? col.dropBg : 'transparent',
                       }}
                     >
-                      {isOver ? 'Release to move' : 'Empty'}
+                      {isOver ? t('leads.releaseToMove') : t('leads.columnEmpty')}
                     </div>
                   ) : (
                     colLeads.map(lead => (

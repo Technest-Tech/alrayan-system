@@ -2,6 +2,14 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { api } from '@/lib/system/api'
 import type { Guardian } from '@/types/system/guardian'
 
+export function useGuardians(enabled = true) {
+  return useQuery({
+    queryKey: ['system', 'guardians', 'list'],
+    queryFn: () => api<{ data: Guardian[] }>('/guardians').then(r => r.data),
+    enabled,
+  })
+}
+
 export function useSearchGuardians(whatsapp: string) {
   return useQuery({
     queryKey: ['system', 'guardians', 'search', whatsapp],

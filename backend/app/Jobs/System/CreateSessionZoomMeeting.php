@@ -28,7 +28,7 @@ class CreateSessionZoomMeeting implements ShouldQueue
         $student = $session->student;
         $teacher = $session->teacher;
 
-        $topic = "Alrayan Academy — {$student->name} with {$teacher->user->name}";
+        $topic = "Azhary — {$student->name} with {$teacher->user->name}";
 
         $req = new MeetingRequest(
             topic:           $topic,

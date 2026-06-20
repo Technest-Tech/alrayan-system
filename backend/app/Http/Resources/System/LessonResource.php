@@ -51,6 +51,16 @@ class LessonResource extends JsonResource
                 $this->package ? new StudentPackageResource($this->package) : null
             ),
 
+            // Per-package consumption. A boundary lesson has >1 row (split across packages).
+            'allocations' => $this->whenLoaded('allocations', fn() =>
+                $this->allocations->map(fn($a) => [
+                    'package_id'       => $a->package_id,
+                    'package_number'   => optional($a->package)->package_number,
+                    'hours'            => (float) $a->hours,
+                    'cumulative_hours' => (float) $a->cumulative_hours,
+                ])->values()
+            ),
+
             'added_by_name' => $this->whenLoaded('addedBy', fn() =>
                 optional($this->addedBy)->name
             ),

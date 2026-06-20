@@ -3,8 +3,9 @@ import { useState, useMemo, useRef, useEffect } from 'react'
 import {
   ChevronLeft, ChevronRight, Plus, CalendarDays, List, CalendarRange,
   X as XIcon, GraduationCap, Users, ChevronDown, Search, Check,
+  Settings, Filter, BookOpen, Clock, ArrowDownUp,
 } from 'lucide-react'
-import { useCalendarFeed, useLessons } from '@/hooks/system/useLessons'
+import { useCalendarFeed, useLessons, useLessonSchedules } from '@/hooks/system/useLessons'
 import { useTeachers }                 from '@/hooks/system/useTeachers'
 import { useStudents }                 from '@/hooks/system/useStudents'
 import { CreateLessonDialog }          from '@/components/system/lessons/CreateLessonDialog'
@@ -12,7 +13,14 @@ import { CreateScheduleDialog }        from '@/components/system/lessons/CreateS
 import { LessonDetailDrawer }          from '@/components/system/lessons/LessonDetailDrawer'
 import { WeekDayGrid }                 from '@/components/system/lessons/WeekDayGrid'
 import { SearchableSelect }            from '@/components/system/lessons/SearchableSelect'
-import type { Lesson, LessonStatus }   from '@/types/system/lesson'
+import { CreateNewChooser, type ChooserSelection } from '@/components/system/lessons/CreateNewChooser'
+import { ScheduleDetailsModal }        from '@/components/system/lessons/ScheduleDetailsModal'
+import { CalendarSettingsModal }       from '@/components/system/lessons/CalendarSettingsModal'
+import type { Lesson, LessonStatus, LessonSchedule } from '@/types/system/lesson'
+import {
+  STATUS_PILL, STATUS_LABEL, LESSON_STATUSES, lessonBlockStyle, displaySessionHours, isScheduleOccurrence,
+} from '@/lib/system/lessonStatus'
+import { useI18n } from '@/lib/system/i18n'
 
 /* ── Design tokens ─────────────────────────────────────── */
 const BORDER   = 'rgb(var(--border-default,229 233 240))'
@@ -24,7 +32,7 @@ const TEAL_400 = '#2DD4BF'
 const TEAL_600 = '#0d9488'
 
 /* ── Week starts Saturday ─────────────────────────────── */
-const DAY_LABELS = ['Sat', 'Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri']
+const DAY_LABEL_KEYS = ['days.sat', 'days.sun', 'days.mon', 'days.tue', 'days.wed', 'days.thu', 'days.fri']
 
 function jsToGrid(jsDow: number): number {
   return jsDow === 6 ? 0 : jsDow + 1
@@ -40,28 +48,24 @@ function weekStartOf(d: Date): Date {
 
 function fmt(d: Date): string { return d.toISOString().slice(0, 10) }
 
-const MONTH_NAMES = [
-  'January','February','March','April','May','June',
-  'July','August','September','October','November','December',
+const MONTH_KEYS = [
+  'schedule.months.january','schedule.months.february','schedule.months.march','schedule.months.april',
+  'schedule.months.may','schedule.months.june','schedule.months.july','schedule.months.august',
+  'schedule.months.september','schedule.months.october','schedule.months.november','schedule.months.december',
 ]
 
 /* ── Lesson pill ────────────────────────────────────────── */
 function LessonPill({ lesson, onClick, onDelete }: {
   lesson: Lesson; onClick: () => void; onDelete: (e: React.MouseEvent) => void
 }) {
-  const paid              = lesson.package.status === 'paid'
-  const isScheduledFuture = lesson.status === 'scheduled' && new Date(lesson.scheduled_at) > new Date()
-
-  const bg     = isScheduledFuture ? 'transparent' : paid ? '#F0FDF4'     : '#FEF2F2'
-  const color  = isScheduledFuture ? MUTED         : paid ? '#15803D'     : '#B91C1C'
-  const border = isScheduledFuture ? `1px solid ${BORDER}` : paid ? '1px solid #BBF7D0' : '1px solid #FECACA'
-
-  const sessionNum = paid || lesson.status === 'attended' ? lesson.session_number_hours : '0.0'
+  const { t }      = useI18n()
+  const bs         = lessonBlockStyle(lesson)
+  const sessionNum = displaySessionHours(lesson)
 
   return (
     <div
       className="flex items-center gap-1 px-1.5 py-0.5 rounded text-xs cursor-pointer group hover:opacity-90 transition-opacity"
-      style={{ background: bg, color, border }}
+      style={{ background: bs.bg, color: bs.color, border: bs.border }}
       onClick={onClick}
     >
       <span className="font-semibold shrink-0">{sessionNum}</span>
@@ -69,7 +73,7 @@ function LessonPill({ lesson, onClick, onDelete }: {
       <button
         onClick={onDelete}
         className="ml-auto shrink-0 opacity-0 group-hover:opacity-100 transition-opacity hover:text-red-600"
-        aria-label="Delete lesson"
+        aria-label={t('schedule.calendar.deleteLesson')}
       >
         <XIcon size={10} />
       </button>
@@ -82,6 +86,7 @@ function MonthCalendar({ year, month, lessons, onLessonClick, onLessonDelete }: 
   year: number; month: number; lessons: Lesson[]
   onLessonClick: (l: Lesson) => void; onLessonDelete: (l: Lesson) => void
 }) {
+  const { t }     = useI18n()
   const firstDay  = new Date(year, month - 1, 1)
   const totalDays = new Date(year, month, 0).getDate()
   const startCol  = jsToGrid(firstDay.getDay())
@@ -111,12 +116,12 @@ function MonthCalendar({ year, month, lessons, onLessonClick, onLessonDelete }: 
     <div className="rounded-2xl border overflow-hidden" style={{ borderColor: BORDER, boxShadow: '0 1px 4px rgb(0 0 0 / 0.04)' }}>
       {/* Day headers */}
       <div className="grid grid-cols-7" style={{ background: TEAL_50 }}>
-        {DAY_LABELS.map(d => (
+        {DAY_LABEL_KEYS.map(dayKey => (
           <div
-            key={d}
+            key={dayKey}
             className="px-2 py-3 text-center text-xs font-semibold uppercase tracking-wider"
             style={{ color: MUTED, borderRight: `1px solid ${TEAL_100}` }}
-          >{d}</div>
+          >{t(dayKey)}</div>
         ))}
       </div>
 
@@ -153,7 +158,7 @@ function MonthCalendar({ year, month, lessons, onLessonClick, onLessonDelete }: 
                     />
                   ))}
                   {dayLessons.length > 3 && (
-                    <div className="text-xs pl-1" style={{ color: MUTED }}>+{dayLessons.length - 3} more</div>
+                    <div className="text-xs pl-1" style={{ color: MUTED }}>{t('schedule.calendar.moreCount', { count: String(dayLessons.length - 3) })}</div>
                   )}
                 </div>
               </div>
@@ -165,110 +170,158 @@ function MonthCalendar({ year, month, lessons, onLessonClick, onLessonDelete }: 
   )
 }
 
-/* ── List view ─────────────────────────────────────────── */
-const STATUS_PILL: Record<LessonStatus, { bg: string; color: string }> = {
-  scheduled:    { bg: '#EFF6FF', color: '#1D4ED8' },
-  attended:     { bg: '#F0FDF4', color: '#15803D' },
-  paid_absence: { bg: '#FFF7ED', color: '#C2410C' },
-  absent:       { bg: '#FEF2F2', color: '#B91C1C' },
-  cancelled:    { bg: '#F3F4F6', color: '#6B7280' },
-}
-const STATUS_LABEL: Record<LessonStatus, string> = {
-  scheduled: 'Scheduled', attended: 'Attended', paid_absence: 'Paid Absence',
-  absent: 'Absent', cancelled: 'Cancelled',
-}
+/* ── List view (flat, with toolbar — matches the old system) ───────────── */
+const PAGE_SIZES = [10, 25, 50]
 
 function ListView({ lessons, onLessonClick }: { lessons: Lesson[]; onLessonClick: (l: Lesson) => void }) {
-  const grouped = useMemo(() => {
-    const m: Record<number, { packageNum: number; packageHours: number; status: 'paid' | 'pending'; lessons: Lesson[] }> = {}
-    lessons.forEach(l => {
-      if (!m[l.package_id]) m[l.package_id] = {
-        packageNum: l.package.package_number, packageHours: l.package.package_hours,
-        status: l.package.status, lessons: [],
-      }
-      m[l.package_id].lessons.push(l)
-    })
-    return Object.entries(m).sort(([, a], [, b]) => a.packageNum - b.packageNum)
-  }, [lessons])
+  const { t } = useI18n()
+  const [statusFilter, setStatusFilter] = useState<LessonStatus | ''>('')
+  const [pageSize,     setPageSize]     = useState(10)
+  const [oldestFirst,  setOldestFirst]  = useState(true)
+  const [page,         setPage]         = useState(1)
 
-  if (!lessons.length) return (
-    <div className="rounded-2xl border p-12 text-center" style={{ borderColor: BORDER }}>
-      <p style={{ color: MUTED }}>No lessons in this period.</p>
-    </div>
+  const filtered = useMemo(() => {
+    let ls = statusFilter ? lessons.filter(l => l.status === statusFilter) : lessons
+    ls = [...ls].sort((a, b) => {
+      const d = new Date(a.scheduled_at).getTime() - new Date(b.scheduled_at).getTime()
+      return oldestFirst ? d : -d
+    })
+    return ls
+  }, [lessons, statusFilter, oldestFirst])
+
+  const totalHours = useMemo(
+    () => filtered.reduce((s, l) => s + l.duration_minutes / 60, 0),
+    [filtered],
   )
 
+  const lastPage   = Math.max(1, Math.ceil(filtered.length / pageSize))
+  const safePage   = Math.min(page, lastPage)
+  const pageSlice  = filtered.slice((safePage - 1) * pageSize, safePage * pageSize)
+
   return (
-    <div className="space-y-4">
-      {grouped.map(([pkgId, group]) => {
-        const consumed = group.lessons.filter(l => l.status !== 'cancelled').reduce((s, l) => s + l.duration_minutes / 60, 0)
-        const progress = Math.min(100, (consumed / group.packageHours) * 100)
-        const isPaid   = group.status === 'paid'
+    <div className="rounded-2xl border overflow-hidden" style={{ borderColor: BORDER, boxShadow: '0 1px 4px rgb(0 0 0 / 0.04)' }}>
+      {/* Toolbar */}
+      <div className="flex flex-wrap items-center gap-3 px-4 py-3" style={{ borderBottom: `1px solid ${BORDER}` }}>
+        <select
+          className="px-3 py-2 rounded-xl border text-sm outline-none focus:ring-2 focus:ring-[#0d9488] bg-white"
+          style={{ borderColor: BORDER, color: NAVY }}
+          value={pageSize}
+          onChange={e => { setPageSize(Number(e.target.value)); setPage(1) }}
+        >
+          {PAGE_SIZES.map(n => <option key={n} value={n}>{t('schedule.list.perPage', { n: String(n) })}</option>)}
+        </select>
 
-        return (
-          <div key={pkgId} className="rounded-2xl border overflow-hidden" style={{ borderColor: BORDER, boxShadow: '0 1px 4px rgb(0 0 0 / 0.04)' }}>
-            <div className="px-4 py-2.5 flex items-center justify-between" style={{ background: isPaid ? '#F0FDF4' : '#FEF2F2', borderBottom: `1px solid ${BORDER}` }}>
-              <div className="flex items-center gap-3">
-                <span className="text-sm font-semibold" style={{ color: isPaid ? '#15803D' : '#B91C1C' }}>
-                  Package #{group.packageNum}
-                </span>
-                <span className="px-2 py-0.5 rounded-full text-xs font-medium" style={{ background: isPaid ? '#BBF7D0' : '#FECACA', color: isPaid ? '#15803D' : '#B91C1C' }}>
-                  {isPaid ? 'Paid' : 'Pending'}
-                </span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-32 h-1.5 rounded-full" style={{ background: 'rgb(229 233 240)' }}>
-                  <div className="h-1.5 rounded-full" style={{ width: `${progress}%`, background: isPaid ? TEAL_600 : '#EF4444' }} />
-                </div>
-                <span className="text-xs" style={{ color: MUTED }}>{Math.round(progress)}%</span>
-              </div>
-            </div>
+        <select
+          className="px-3 py-2 rounded-xl border text-sm outline-none focus:ring-2 focus:ring-[#0d9488] bg-white"
+          style={{ borderColor: BORDER, color: NAVY }}
+          value={statusFilter}
+          onChange={e => { setStatusFilter(e.target.value as LessonStatus | ''); setPage(1) }}
+        >
+          <option value="">{t('schedule.list.allStatuses')}</option>
+          {LESSON_STATUSES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
+        </select>
 
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead style={{ background: '#F9FAFB' }}>
-                  <tr>
-                    {['Session', 'Student', 'Duration', 'Date', 'Status', 'Notes', 'Progress'].map(h => (
-                      <th key={h} className="px-3 py-2 text-left text-xs font-medium whitespace-nowrap" style={{ color: MUTED, borderBottom: `1px solid ${BORDER}` }}>{h}</th>
-                    ))}
+        <Filter size={15} style={{ color: MUTED }} />
+
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium" style={{ background: TEAL_50, color: TEAL_600 }}>
+          <BookOpen size={12} /> {t('schedule.list.lessonsCount', { count: String(filtered.length) })}
+        </span>
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium" style={{ background: '#EEF2FF', color: '#4338CA' }}>
+          <Clock size={12} /> {t('schedule.list.hours', { hours: totalHours.toFixed(2) })}
+        </span>
+
+        <button
+          onClick={() => { setOldestFirst(v => !v); setPage(1) }}
+          className="ml-auto inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border text-xs font-medium transition-colors hover:bg-black/[0.03]"
+          style={{ borderColor: BORDER, color: MUTED }}
+        >
+          <ArrowDownUp size={13} /> {t('schedule.list.sortDate', { order: oldestFirst ? t('schedule.list.oldest') : t('schedule.list.newest') })}
+        </button>
+      </div>
+
+      {/* Table */}
+      {filtered.length === 0 ? (
+        <div className="p-12 text-center"><p style={{ color: MUTED }}>{t('schedule.list.empty')}</p></div>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead style={{ background: '#F9FAFB' }}>
+              <tr>
+                {[
+                  'schedule.list.colSessionNumber', 'schedule.list.colStudent', 'common.duration',
+                  'common.date', 'common.status', 'schedule.list.colContent',
+                  'common.notes', 'schedule.list.colProgress',
+                ].map(h => (
+                  <th key={h} className="px-3 py-2.5 text-left text-xs font-medium whitespace-nowrap" style={{ color: MUTED, borderBottom: `1px solid ${BORDER}` }}>{t(h)}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {pageSlice.map((l, idx) => {
+                const isPaid  = l.package?.status === 'paid'
+                const rowProg = l.package ? Math.min(100, (l.session_number_hours / l.package.package_hours) * 100) : 0
+                const pill    = STATUS_PILL[l.status] ?? { bg: '#F3F4F6', color: '#6B7280' }
+                return (
+                  <tr
+                    key={l.id}
+                    className="cursor-pointer hover:bg-black/[0.02] transition-colors"
+                    style={{ borderBottom: idx < pageSlice.length - 1 ? `1px solid ${BORDER}` : undefined }}
+                    onClick={() => onLessonClick(l)}
+                  >
+                    <td className="px-3 py-2.5">
+                      <span className="inline-flex items-center justify-center min-w-[34px] h-6 px-2 rounded-full text-xs font-semibold"
+                        style={{ background: isPaid ? '#F0FDF4' : '#FEF2F2', color: isPaid ? '#15803D' : '#B91C1C' }}>
+                        {displaySessionHours(l)}
+                      </span>
+                    </td>
+                    <td className="px-3 py-2.5 font-medium whitespace-nowrap" style={{ color: NAVY }}>{l.student.name}</td>
+                    <td className="px-3 py-2.5" style={{ color: MUTED }}>{(l.duration_minutes / 60).toFixed(l.duration_minutes % 60 ? 1 : 0)}h</td>
+                    <td className="px-3 py-2.5 whitespace-nowrap" style={{ color: MUTED }}>
+                      {new Date(l.scheduled_at).toLocaleString('en-US', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false })}
+                    </td>
+                    <td className="px-3 py-2.5">
+                      <span className="px-2 py-0.5 rounded-full text-xs font-medium" style={{ background: pill.bg, color: pill.color }}>{STATUS_LABEL[l.status]}</span>
+                    </td>
+                    <td className="px-3 py-2.5 max-w-[160px]">
+                      <span className="truncate block text-xs" style={{ color: MUTED }}>{l.content || '—'}</span>
+                    </td>
+                    <td className="px-3 py-2.5 max-w-[140px]">
+                      <span className="truncate block text-xs" style={{ color: MUTED }}>{l.notes || '—'}</span>
+                    </td>
+                    <td className="px-3 py-2.5">
+                      <div className="flex items-center gap-2">
+                        <div className="w-20 h-1.5 rounded-full" style={{ background: 'rgb(229 233 240)' }}>
+                          <div className="h-1.5 rounded-full" style={{ width: `${rowProg}%`, background: isPaid ? TEAL_600 : '#EF4444' }} />
+                        </div>
+                        <span className="text-xs tabular-nums" style={{ color: MUTED }}>{Math.round(rowProg)}%</span>
+                      </div>
+                    </td>
                   </tr>
-                </thead>
-                <tbody>
-                  {group.lessons.map((l, idx) => {
-                    const rowProg = Math.min(100, (l.session_number_hours / group.packageHours) * 100)
-                    const pill    = STATUS_PILL[l.status] ?? { bg: '#F3F4F6', color: '#6B7280' }
-                    return (
-                      <tr
-                        key={l.id}
-                        className="cursor-pointer hover:bg-black/[0.02] transition-colors"
-                        style={{ borderBottom: idx < group.lessons.length - 1 ? `1px solid ${BORDER}` : undefined, background: isPaid ? (idx % 2 === 0 ? '#fff' : '#FAFFFE') : (idx % 2 === 0 ? '#fff' : '#FFFAFA') }}
-                        onClick={() => onLessonClick(l)}
-                      >
-                        <td className="px-3 py-2.5 font-semibold" style={{ color: NAVY }}>{l.session_number_hours}h</td>
-                        <td className="px-3 py-2.5" style={{ color: NAVY }}>{l.student.name}</td>
-                        <td className="px-3 py-2.5" style={{ color: MUTED }}>{l.duration_minutes}m</td>
-                        <td className="px-3 py-2.5 whitespace-nowrap" style={{ color: MUTED }}>
-                          {new Date(l.scheduled_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                        </td>
-                        <td className="px-3 py-2.5">
-                          <span className="px-2 py-0.5 rounded-full text-xs font-medium" style={{ background: pill.bg, color: pill.color }}>{STATUS_LABEL[l.status]}</span>
-                        </td>
-                        <td className="px-3 py-2.5 max-w-[140px]">
-                          <span className="truncate block text-xs" style={{ color: MUTED }}>{l.notes ?? '—'}</span>
-                        </td>
-                        <td className="px-3 py-2.5">
-                          <div className="w-20 h-1.5 rounded-full" style={{ background: 'rgb(229 233 240)' }}>
-                            <div className="h-1.5 rounded-full" style={{ width: `${rowProg}%`, background: isPaid ? TEAL_600 : '#EF4444' }} />
-                          </div>
-                        </td>
-                      </tr>
-                    )
-                  })}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )
-      })}
+                )
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {/* Pagination */}
+      {filtered.length > pageSize && (
+        <div className="flex items-center justify-center gap-1 px-4 py-3" style={{ borderTop: `1px solid ${BORDER}` }}>
+          <button
+            onClick={() => setPage(p => Math.max(1, p - 1))}
+            disabled={safePage === 1}
+            className="px-3 py-1.5 rounded-lg text-xs font-medium disabled:opacity-40 hover:bg-black/5 transition-colors"
+            style={{ color: MUTED }}
+          >‹ {t('common.prev')}</button>
+          <span className="text-xs px-3" style={{ color: NAVY }}>{t('schedule.list.pageOf', { page: String(safePage), total: String(lastPage) })}</span>
+          <button
+            onClick={() => setPage(p => Math.min(lastPage, p + 1))}
+            disabled={safePage === lastPage}
+            className="px-3 py-1.5 rounded-lg text-xs font-medium disabled:opacity-40 hover:bg-black/5 transition-colors"
+            style={{ color: MUTED }}
+          >{t('common.next')} ›</button>
+        </div>
+      )}
     </div>
   )
 }
@@ -279,6 +332,7 @@ function StudentMultiSelect({ allStudents, selected, onChange }: {
   selected:    number[]
   onChange:    (ids: number[]) => void
 }) {
+  const { t }             = useI18n()
   const [open,  setOpen]  = useState(false)
   const [query, setQuery] = useState('')
   const [pos,   setPos]   = useState<{ top?: number; bottom?: number; left: number; width: number } | null>(null)
@@ -313,8 +367,8 @@ function StudentMultiSelect({ allStudents, selected, onChange }: {
   useEffect(() => {
     if (!open) return
     function handler(e: MouseEvent) {
-      const t = e.target as Node
-      if (!triggerRef.current?.contains(t) && !dropRef.current?.contains(t)) close()
+      const target = e.target as Node
+      if (!triggerRef.current?.contains(target) && !dropRef.current?.contains(target)) close()
     }
     window.addEventListener('mousedown', handler)
     return () => window.removeEventListener('mousedown', handler)
@@ -346,7 +400,7 @@ function StudentMultiSelect({ allStudents, selected, onChange }: {
         style={{ borderColor: open ? TEAL_600 : BORDER }}
       >
         {sel.length === 0 ? (
-          <span className="flex-1 truncate" style={{ color: MUTED }}>All Students</span>
+          <span className="flex-1 truncate" style={{ color: MUTED }}>{t('schedule.filter.allStudents')}</span>
         ) : (
           <div className="flex items-center gap-1 flex-1 min-w-0 flex-wrap">
             {sel.slice(0, 2).map(s => (
@@ -383,13 +437,13 @@ function StudentMultiSelect({ allStudents, selected, onChange }: {
                 type="text"
                 value={query}
                 onChange={e => setQuery(e.target.value)}
-                placeholder="Search students…"
+                placeholder={t('schedule.filter.searchStudents')}
                 className="flex-1 text-sm outline-none bg-transparent min-w-0"
                 style={{ color: NAVY }}
               />
               {selected.length > 0 && (
                 <button type="button" onClick={() => onChange([])} className="text-xs shrink-0 underline" style={{ color: MUTED }}>
-                  Clear all
+                  {t('schedule.filter.clearAll')}
                 </button>
               )}
             </div>
@@ -397,7 +451,7 @@ function StudentMultiSelect({ allStudents, selected, onChange }: {
             {/* Options */}
             <div className="overflow-y-auto" style={{ maxHeight: 220 }}>
               {filtered.length === 0 ? (
-                <p className="text-sm text-center py-4" style={{ color: MUTED }}>No results</p>
+                <p className="text-sm text-center py-4" style={{ color: MUTED }}>{t('common.noResults')}</p>
               ) : filtered.map(s => {
                 const isSel = selected.includes(s.id)
                 return (
@@ -435,6 +489,7 @@ interface LessonPrefill {
 type ViewMode = 'month' | 'week' | 'day'
 
 export default function CalendarPage() {
+  const { t } = useI18n()
   const today = new Date()
 
   const [anchorDate, setAnchorDate] = useState(today)
@@ -456,12 +511,20 @@ export default function CalendarPage() {
   const [createLessonOpen,   setCreateLessonOpen]   = useState(false)
   const [createScheduleOpen, setCreateScheduleOpen] = useState(false)
   const [lessonPrefill,      setLessonPrefill]      = useState<LessonPrefill | undefined>()
+  const [schedulePrefill,    setSchedulePrefill]    = useState<{ date?: string; startTime?: string; durationMinutes?: number; teacherId?: number; studentId?: number } | undefined>()
   const [selectedLesson,     setSelectedLesson]     = useState<Lesson | null>(null)
+  const [editLesson,         setEditLesson]         = useState<Lesson | undefined>()  // "Add Report" / edit
+  const [editSchedule,       setEditSchedule]       = useState<LessonSchedule | undefined>()
+  const [scheduleDetail,     setScheduleDetail]     = useState<Lesson | null>(null)
+  const [chooserSel,         setChooserSel]         = useState<ChooserSelection | null>(null)
+  const [settingsOpen,       setSettingsOpen]       = useState(false)
 
   const { data: teachersData } = useTeachers()
   const { data: studentsData } = useStudents({ per_page: 500 })
-  const teachers = teachersData?.data ?? []
-  const students = studentsData?.data ?? []
+  const { data: schedulesData } = useLessonSchedules({ teacherId: teacherFilter ? Number(teacherFilter) : undefined })
+  const teachers  = teachersData?.data ?? []
+  const students  = studentsData?.data ?? []
+  const schedules = schedulesData ?? []
 
   const [calStart, calEnd] = useMemo(() => {
     if (listMode || viewMode === 'month') {
@@ -482,7 +545,7 @@ export default function CalendarPage() {
     start: calStart, end: calEnd,
   })
 
-  const { data: lessonsData } = useLessons({ teacher_id: teacherFilter || undefined, per_page: 200 })
+  const { data: lessonsData } = useLessons({ teacher_id: teacherFilter || undefined, per_page: 1000 })
 
   const calendarLessons = useMemo(() => {
     const ls: Lesson[] = []
@@ -517,31 +580,82 @@ export default function CalendarPage() {
   }
 
   const periodTitle = useMemo(() => {
-    if (listMode || viewMode === 'month') return `${MONTH_NAMES[month - 1]} ${year}`
+    if (listMode || viewMode === 'month') return `${t(MONTH_KEYS[month - 1])} ${year}`
     if (viewMode === 'week') {
       const end = new Date(wkStart); end.setDate(end.getDate() + 6)
       return `${wkStart.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} – ${end.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`
     }
     return anchorDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })
-  }, [listMode, viewMode, month, year, wkStart, anchorDate])
+  }, [listMode, viewMode, month, year, wkStart, anchorDate, t])
 
+  // Drag-select on the grid → the "Create New" chooser (Lesson vs Schedule).
   function handleCellSelect({ date, startTime, durationMinutes }: { date: string; startTime: string; durationMinutes: number }) {
+    setChooserSel({ date, startTime, durationMinutes: Math.min(durationMinutes, 180) })
+  }
+
+  function chooserPrefillCommon() {
+    return {
+      teacherId: teacherFilter ? Number(teacherFilter) : undefined,
+      studentId: studentFilter.length === 1 ? studentFilter[0] : undefined,
+    }
+  }
+
+  function chooseLesson() {
+    if (!chooserSel) return
     setLessonPrefill({
-      scheduledAt:     `${date}T${startTime}`,
-      durationMinutes: Math.min(durationMinutes, 180),
-      teacherId:       teacherFilter ? Number(teacherFilter) : undefined,
-      studentId:       studentFilter.length === 1 ? studentFilter[0] : undefined,
+      scheduledAt:     `${chooserSel.date}T${chooserSel.startTime}`,
+      durationMinutes: chooserSel.durationMinutes,
+      ...chooserPrefillCommon(),
     })
+    setChooserSel(null)
+    setEditLesson(undefined)
     setCreateLessonOpen(true)
+  }
+
+  function chooseSchedule() {
+    if (!chooserSel) return
+    setSchedulePrefill({
+      date:            chooserSel.date,
+      startTime:       chooserSel.startTime,
+      durationMinutes: chooserSel.durationMinutes,
+      ...chooserPrefillCommon(),
+    })
+    setChooserSel(null)
+    setEditSchedule(undefined)
+    setCreateScheduleOpen(true)
   }
 
   function handleCreateLessonClose(v: boolean) {
     setCreateLessonOpen(v)
-    if (!v) setLessonPrefill(undefined)
+    if (!v) { setLessonPrefill(undefined); setEditLesson(undefined) }
+  }
+
+  function handleCreateScheduleClose(v: boolean) {
+    setCreateScheduleOpen(v)
+    if (!v) { setSchedulePrefill(undefined); setEditSchedule(undefined) }
+  }
+
+  // Schedule occurrences open the schedule panel; one-off lessons open the detail drawer.
+  function handleLessonClick(lesson: Lesson) {
+    if (isScheduleOccurrence(lesson)) setScheduleDetail(lesson)
+    else setSelectedLesson(lesson)
+  }
+
+  // "Add Report" on a schedule occurrence → open the lesson editor pre-loaded with it.
+  function handleAddReport(lesson: Lesson) {
+    setScheduleDetail(null)
+    setEditLesson(lesson)
+    setCreateLessonOpen(true)
+  }
+
+  function handleEditSchedule(scheduleId: number) {
+    const sched = schedules.find(s => s.id === scheduleId)
+    setScheduleDetail(null)
+    if (sched) { setEditSchedule(sched); setCreateScheduleOpen(true) }
   }
 
   async function handleLessonDelete(lesson: Lesson) {
-    if (!confirm(`Delete lesson for ${lesson.student.name}?`)) return
+    if (!confirm(t('schedule.calendar.deleteConfirm', { name: lesson.student.name }))) return
     setSelectedLesson(null)
     await refetch()
   }
@@ -566,29 +680,38 @@ export default function CalendarPage() {
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h1 className="text-xl font-bold" style={{ color: NAVY }}>Lessons & Calendar</h1>
+                <h1 className="text-xl font-bold" style={{ color: NAVY }}>{t('schedule.page.title')}</h1>
                 <span style={{ color: TEAL_400, fontSize: 11, lineHeight: 1 }}>✦</span>
               </div>
-              <p className="text-sm mt-0.5" style={{ color: MUTED }}>Schedule and track lessons across teachers and students.</p>
+              <p className="text-sm mt-0.5" style={{ color: MUTED }}>{t('schedule.page.subtitle')}</p>
             </div>
           </div>
 
           <div className="flex items-center gap-2">
             <button
-              onClick={() => setCreateScheduleOpen(true)}
+              onClick={() => setSettingsOpen(true)}
+              className="inline-flex items-center justify-center w-10 h-10 rounded-xl border transition-colors hover:bg-black/[0.02]"
+              style={{ borderColor: BORDER, color: MUTED, background: '#fff' }}
+              aria-label={t('schedule.page.calendarSettings')}
+              title={t('schedule.page.calendarSettings')}
+            >
+              <Settings size={16} />
+            </button>
+            <button
+              onClick={() => { setEditSchedule(undefined); setSchedulePrefill(undefined); setCreateScheduleOpen(true) }}
               className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium border transition-colors hover:bg-black/[0.02]"
               style={{ borderColor: BORDER, color: NAVY, background: '#fff' }}
             >
               <CalendarRange size={14} />
-              Create Schedule
+              {t('schedule.page.createSchedule')}
             </button>
             <button
-              onClick={() => setCreateLessonOpen(true)}
+              onClick={() => { setEditLesson(undefined); setLessonPrefill(undefined); setCreateLessonOpen(true) }}
               className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-white transition-opacity hover:opacity-90"
               style={{ background: TEAL_600 }}
             >
               <Plus size={14} />
-              Create Lesson
+              {t('schedule.page.createLesson')}
             </button>
           </div>
         </div>
@@ -607,13 +730,13 @@ export default function CalendarPage() {
             <div className="flex flex-col gap-1.5">
               <label className="text-xs font-medium flex items-center gap-1.5" style={{ color: MUTED }}>
                 <GraduationCap size={12} />
-                Teacher
+                {t('common.teacher')}
               </label>
               <SearchableSelect
-                options={teachers.map(t => ({ value: String(t.id), label: (t as any).name ?? `Teacher #${t.id}` }))}
+                options={teachers.map(tch => ({ value: String(tch.id), label: tch.name ?? t('schedule.filter.teacherNumber', { id: String(tch.id) }) }))}
                 value={teacherFilter}
                 onChange={setTeacherFilter}
-                placeholder="All Teachers"
+                placeholder={t('schedule.filter.allTeachers')}
                 clearable
                 className="w-48"
               />
@@ -623,7 +746,7 @@ export default function CalendarPage() {
             <div className="flex flex-col gap-1.5">
               <label className="text-xs font-medium flex items-center gap-1.5" style={{ color: MUTED }}>
                 <Users size={12} />
-                Students
+                {t('schedule.filter.students')}
                 {studentFilter.length > 0 && (
                   <span className="px-1.5 py-0.5 rounded-full text-xs font-semibold" style={{ background: TEAL_50, color: TEAL_600 }}>
                     {studentFilter.length}
@@ -641,7 +764,7 @@ export default function CalendarPage() {
                 style={{ borderColor: '#FECACA', color: '#DC2626' }}
               >
                 <XIcon size={11} />
-                Clear filters
+                {t('schedule.filter.clearFilters')}
               </button>
             )}
           </div>
@@ -661,18 +784,18 @@ export default function CalendarPage() {
                     style={{ width: 14, height: 14, left: 2, transform: showFullDay ? 'translateX(14px)' : 'translateX(0)' }}
                   />
                 </div>
-                <span className="text-xs font-medium" style={{ color: MUTED }}>Full Day</span>
+                <span className="text-xs font-medium" style={{ color: MUTED }}>{t('schedule.controls.fullDay')}</span>
               </label>
 
               {/* Period navigation */}
               <div className="flex items-center gap-1 rounded-xl border overflow-hidden" style={{ borderColor: BORDER }}>
-                <button onClick={prevPeriod} className="p-2 hover:bg-black/5 transition-colors" aria-label="Previous">
+                <button onClick={prevPeriod} className="p-2 hover:bg-black/5 transition-colors" aria-label={t('common.prev')}>
                   <ChevronLeft size={15} style={{ color: MUTED }} />
                 </button>
                 <span className="text-sm font-semibold px-3" style={{ color: NAVY, minWidth: 172, textAlign: 'center' }}>
                   {periodTitle}
                 </span>
-                <button onClick={nextPeriod} className="p-2 hover:bg-black/5 transition-colors" aria-label="Next">
+                <button onClick={nextPeriod} className="p-2 hover:bg-black/5 transition-colors" aria-label={t('common.next')}>
                   <ChevronRight size={15} style={{ color: MUTED }} />
                 </button>
               </div>
@@ -682,7 +805,7 @@ export default function CalendarPage() {
                 className="px-3 py-1.5 rounded-xl text-xs font-medium border transition-colors hover:bg-black/[0.03]"
                 style={{ borderColor: BORDER, color: MUTED }}
               >
-                Today
+                {t('schedule.controls.today')}
               </button>
             </div>
 
@@ -694,14 +817,14 @@ export default function CalendarPage() {
                   className="px-3 py-1.5 text-xs font-medium flex items-center gap-1.5 transition-colors"
                   style={{ background: !listMode ? TEAL_600 : '#fff', color: !listMode ? '#fff' : MUTED }}
                 >
-                  <CalendarDays size={13} /> Calendar
+                  <CalendarDays size={13} /> {t('schedule.controls.calendar')}
                 </button>
                 <button
                   onClick={() => setListMode(true)}
                   className="px-3 py-1.5 text-xs font-medium flex items-center gap-1.5 transition-colors"
                   style={{ background: listMode ? TEAL_600 : '#fff', color: listMode ? '#fff' : MUTED, borderLeft: `1px solid ${BORDER}` }}
                 >
-                  <List size={13} /> List
+                  <List size={13} /> {t('schedule.controls.list')}
                 </button>
               </div>
 
@@ -712,14 +835,14 @@ export default function CalendarPage() {
                     <button
                       key={v}
                       onClick={() => setViewMode(v)}
-                      className="px-3 py-1.5 text-xs font-medium capitalize transition-colors"
+                      className="px-3 py-1.5 text-xs font-medium transition-colors"
                       style={{
                         background: viewMode === v ? TEAL_50 : '#fff',
                         color:      viewMode === v ? TEAL_600 : MUTED,
                         fontWeight: viewMode === v ? 600 : 400,
                         borderLeft: i > 0 ? `1px solid ${BORDER}` : undefined,
                       }}
-                    >{v}</button>
+                    >{t(`schedule.view.${v}`)}</button>
                   ))}
                 </div>
               )}
@@ -733,7 +856,7 @@ export default function CalendarPage() {
         viewMode === 'month' ? (
           <MonthCalendar
             year={year} month={month} lessons={calendarLessons}
-            onLessonClick={setSelectedLesson}
+            onLessonClick={handleLessonClick}
             onLessonDelete={handleLessonDelete}
           />
         ) : (
@@ -741,25 +864,45 @@ export default function CalendarPage() {
             days={viewMode === 'week' ? weekDays : [anchorDate]}
             lessons={calendarLessons}
             showFullDay={showFullDay}
-            onLessonClick={setSelectedLesson}
+            onLessonClick={handleLessonClick}
             onCellSelect={handleCellSelect}
           />
         )
       ) : (
-        <ListView lessons={listLessons} onLessonClick={setSelectedLesson} />
+        <ListView lessons={listLessons} onLessonClick={handleLessonClick} />
       )}
 
       {/* ── Dialogs ─────────────────────────────────────── */}
+      <CreateNewChooser
+        open={!!chooserSel}
+        selection={chooserSel}
+        onChooseLesson={chooseLesson}
+        onChooseSchedule={chooseSchedule}
+        onClose={() => setChooserSel(null)}
+      />
       <CreateLessonDialog
         open={createLessonOpen}
         onOpenChange={handleCreateLessonClose}
+        lesson={editLesson}
         prefill={lessonPrefill}
         onSuccess={() => refetch()}
       />
-      <CreateScheduleDialog
-        open={createScheduleOpen}
-        onOpenChange={setCreateScheduleOpen}
-        onSuccess={() => refetch()}
+      {createScheduleOpen && (
+        <CreateScheduleDialog
+          open
+          onOpenChange={handleCreateScheduleClose}
+          schedule={editSchedule}
+          prefill={schedulePrefill}
+          onSuccess={() => refetch()}
+        />
+      )}
+      <ScheduleDetailsModal
+        lesson={scheduleDetail}
+        open={!!scheduleDetail}
+        onClose={() => setScheduleDetail(null)}
+        onAddReport={handleAddReport}
+        onEditSchedule={handleEditSchedule}
+        onChanged={() => refetch()}
       />
       <LessonDetailDrawer
         lesson={selectedLesson}
@@ -767,6 +910,7 @@ export default function CalendarPage() {
         onClose={() => setSelectedLesson(null)}
         onUpdate={() => refetch()}
       />
+      {settingsOpen && <CalendarSettingsModal open onClose={() => setSettingsOpen(false)} />}
     </>
   )
 }

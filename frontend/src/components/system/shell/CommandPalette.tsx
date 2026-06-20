@@ -1,6 +1,7 @@
 'use client'
 import { useEffect, useRef } from 'react'
 import { X } from 'lucide-react'
+import { useI18n } from '@/lib/system/i18n'
 
 interface CommandPaletteProps {
   open: boolean
@@ -9,6 +10,7 @@ interface CommandPaletteProps {
 
 export function CommandPalette({ open, onClose }: CommandPaletteProps) {
   const inputRef = useRef<HTMLInputElement>(null)
+  const { t } = useI18n()
 
   useEffect(() => {
     if (open) inputRef.current?.focus()
@@ -43,7 +45,7 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
           <input
             ref={inputRef}
             type="text"
-            placeholder="Search pages, students, courses…"
+            placeholder={t('commandPalette.placeholder')}
             className="flex-1 py-4 bg-transparent text-sm outline-none placeholder:opacity-40"
           />
           <button onClick={onClose} className="opacity-40 hover:opacity-70 transition-opacity">
@@ -51,7 +53,7 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
           </button>
         </div>
         <div className="px-4 py-8 text-center text-sm opacity-40">
-          Command palette populates in SYS-02
+          {t('commandPalette.empty')}
         </div>
       </div>
     </div>

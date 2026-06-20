@@ -7,21 +7,33 @@ import { FollowUpList } from '@/components/system/leads/FollowUpList'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Badge } from '@/components/ui/badge'
 import { LinkButton } from '@/components/ui/link-button'
+import { useI18n } from '@/lib/system/i18n'
+
+const STATUS_KEY: Record<string, string> = {
+  new_lead:            'leads.statusNewLead',
+  interested:          'leads.statusInterested',
+  waiting_for_trial:   'leads.statusWaitingForTrial',
+  waiting_for_payment: 'leads.statusWaitingForPayment',
+  closed:              'leads.statusClosed',
+  not_interested:      'leads.statusNotInterested',
+  lost:                'leads.statusLost',
+}
 
 export default function LeadDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { t } = useI18n()
   const { id } = use(params)
   const { data: lead, isLoading } = useLead(id)
 
-  if (isLoading) return <div className="p-8 text-muted-foreground">Loading…</div>
-  if (!lead) return <div className="p-8 text-muted-foreground">Lead not found.</div>
+  if (isLoading) return <div className="p-8 text-muted-foreground">{t('common.loading')}</div>
+  if (!lead) return <div className="p-8 text-muted-foreground">{t('leads.notFound')}</div>
 
   return (
     <>
       <PageHeader title={lead.name} description={`${(lead.source ?? '').replace('_', ' ')} · ${lead.country ?? '—'}`}>
         <div className="flex items-center gap-2">
-          <LinkButton variant="ghost" href="/leads">← Leads</LinkButton>
+          <LinkButton variant="ghost" href="/leads">← {t('leads.backToLeads')}</LinkButton>
           <Badge variant={lead.status === 'lost' ? 'destructive' : lead.status === 'closed' ? 'default' : 'secondary'}>
-            {lead.status.replace('_', ' ')}
+            {STATUS_KEY[lead.status] ? t(STATUS_KEY[lead.status]) : lead.status.replace('_', ' ')}
           </Badge>
         </div>
       </PageHeader>
@@ -29,8 +41,8 @@ export default function LeadDetailPage({ params }: { params: Promise<{ id: strin
       <div className="max-w-3xl">
         <Tabs defaultValue="profile">
           <TabsList>
-            <TabsTrigger value="profile">Profile</TabsTrigger>
-            <TabsTrigger value="followups">Follow-ups</TabsTrigger>
+            <TabsTrigger value="profile">{t('leads.tabProfile')}</TabsTrigger>
+            <TabsTrigger value="followups">{t('leads.tabFollowUps')}</TabsTrigger>
           </TabsList>
           <TabsContent value="profile" className="pt-4">
             <LeadProfile lead={lead} />

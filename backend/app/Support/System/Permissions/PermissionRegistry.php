@@ -5,11 +5,15 @@ namespace App\Support\System\Permissions;
 class PermissionRegistry
 {
     public const GROUPS = [
-        'leads'         => ['view', 'create', 'edit', 'delete', 'convert'],
+        'leads'          => ['view', 'view_any', 'create', 'edit', 'delete', 'convert', 'assign', 'mark_lost'],
+        'lead_followups' => ['create', 'edit', 'complete', 'delete'],
+        'tasks'          => ['view', 'view_any', 'create', 'edit', 'assign', 'approve', 'reject', 'delete'],
+        'task_notes'     => ['create', 'delete'],
         'students'      => ['view', 'create', 'edit', 'delete', 'change_status'],
         'teachers'      => ['view', 'create', 'edit', 'delete', 'approve_leave'],
         'courses'       => ['view', 'edit'],
         'schedule'      => ['view', 'edit', 'reschedule'],
+        'lessons'       => ['view', 'create', 'edit', 'delete'],
         'sessions'      => ['view', 'create', 'edit', 'reschedule', 'cancel'],
         'attendance'    => ['view', 'edit'],
         'reports'       => ['view', 'view_any', 'submit', 'edit_own', 'edit_any', 'delete_any'],
@@ -25,7 +29,7 @@ class PermissionRegistry
         'whatsapp'      => ['view', 'edit'],
         'certificates'  => ['view', 'issue'],
         'settings'      => ['view', 'edit'],
-        'users'          => ['view', 'invite', 'edit', 'deactivate'],
+        'users'          => ['view', 'view_directory', 'invite', 'create', 'edit', 'deactivate', 'suspend', 'archive', 'delete'],
         'audit'          => ['view'],
         'students_notes' => ['view', 'create', 'edit_own', 'edit_any', 'delete_own', 'delete_any'],
         'teachers_notes' => ['view', 'create', 'edit_own', 'edit_any', 'delete_own', 'delete_any'],

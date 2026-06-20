@@ -10,16 +10,17 @@ import { DataTable, type ColumnDef } from '@/components/system/primitives/DataTa
 import { EmptyState } from '@/components/system/primitives/EmptyState'
 import { useMarkLeadLost } from '@/hooks/system/useLeads'
 import { ApiError } from '@/lib/system/api'
+import { useI18n } from '@/lib/system/i18n'
 
 /* ─── Status styling ──────────────────────────── */
-const STATUS_STYLES: Record<string, { bg: string; color: string; label: string }> = {
-  new_lead:            { bg: 'rgb(30 90 171 / 0.1)',   color: 'rgb(30 90 171)',   label: 'New Lead' },
-  interested:          { bg: 'rgb(14 124 90 / 0.1)',   color: 'rgb(14 124 90)',   label: 'Interested' },
-  waiting_for_trial:   { bg: 'rgb(180 120 0 / 0.1)',   color: 'rgb(140 95 0)',    label: 'Waiting for Trial' },
-  waiting_for_payment: { bg: 'rgb(220 60 40 / 0.1)',   color: 'rgb(180 40 20)',   label: 'Waiting for Payment' },
-  closed:              { bg: 'rgb(14 124 90 / 0.12)',  color: 'rgb(14 124 90)',   label: 'Closed' },
-  not_interested:      { bg: 'rgb(190 24 93 / 0.1)',   color: 'rgb(190 24 93)',   label: 'Not Interested' },
-  lost:                { bg: 'rgb(90 100 112 / 0.1)',  color: 'rgb(90 100 112)',  label: 'Lost' },
+const STATUS_STYLES: Record<string, { bg: string; color: string; key: string }> = {
+  new_lead:            { bg: 'rgb(30 90 171 / 0.1)',   color: 'rgb(30 90 171)',   key: 'leads.statusNewLead' },
+  interested:          { bg: 'rgb(14 124 90 / 0.1)',   color: 'rgb(14 124 90)',   key: 'leads.statusInterested' },
+  waiting_for_trial:   { bg: 'rgb(180 120 0 / 0.1)',   color: 'rgb(140 95 0)',    key: 'leads.statusWaitingForTrial' },
+  waiting_for_payment: { bg: 'rgb(220 60 40 / 0.1)',   color: 'rgb(180 40 20)',   key: 'leads.statusWaitingForPayment' },
+  closed:              { bg: 'rgb(14 124 90 / 0.12)',  color: 'rgb(14 124 90)',   key: 'leads.statusClosed' },
+  not_interested:      { bg: 'rgb(190 24 93 / 0.1)',   color: 'rgb(190 24 93)',   key: 'leads.statusNotInterested' },
+  lost:                { bg: 'rgb(90 100 112 / 0.1)',  color: 'rgb(90 100 112)',  key: 'leads.statusLost' },
 }
 
 const SOURCE_LABELS: Record<string, string> = {
@@ -41,6 +42,7 @@ function avatarColor(name: string) {
 
 /* ─── Row actions ─────────────────────────────── */
 function LeadRowActions({ lead }: { lead: Lead }) {
+  const { t } = useI18n()
   const router = useRouter()
   const [open, setOpen] = useState(false)
   const [pos,  setPos]  = useState({ top: 0, right: 0 })
@@ -66,9 +68,9 @@ function LeadRowActions({ lead }: { lead: Lead }) {
     setOpen(false)
     try {
       await markLost.mutateAsync({ lost_reason: 'other' })
-      toast.success('Lead marked as lost.')
+      toast.success(t('leads.toastMarkedLost'))
     } catch (e) {
-      toast.error(e instanceof ApiError ? e.message : 'Action failed.')
+      toast.error(e instanceof ApiError ? e.message : t('leads.toastActionFailed'))
     }
   }
 
@@ -84,16 +86,16 @@ function LeadRowActions({ lead }: { lead: Lead }) {
       }}
       onClick={(e) => e.stopPropagation()}
     >
-      <MenuItem icon={<ExternalLink size={14} />} label="View lead"
+      <MenuItem icon={<ExternalLink size={14} />} label={t('leads.contextViewLead')}
         onClick={() => { setOpen(false); router.push(`/leads/${lead.id}`) }} />
       {lead.whatsapp && (
-        <MenuItem icon={<MessageCircle size={14} />} label="Open WhatsApp"
+        <MenuItem icon={<MessageCircle size={14} />} label={t('leads.contextOpenWhatsApp')}
           onClick={() => { setOpen(false); window.open(`https://wa.me/${lead.whatsapp!.replace(/\D/g, '')}`, '_blank') }} />
       )}
       {lead.status !== 'lost' && lead.status !== 'closed' && (
         <>
           <div className="my-1 border-t" style={{ borderColor: 'rgb(var(--border-default,229 233 240))' }} />
-          <MenuItem icon={<XCircle size={14} />} label="Mark as lost" onClick={handleMarkLost} danger />
+          <MenuItem icon={<XCircle size={14} />} label={t('leads.contextMarkLost')} onClick={handleMarkLost} danger />
         </>
       )}
     </div>,
@@ -133,13 +135,14 @@ function MenuItem({ icon, label, onClick, danger }: {
 
 /* ─── Status badge ────────────────────────────── */
 function LeadStatusBadge({ status }: { status: string }) {
-  const s = STATUS_STYLES[status] ?? STATUS_STYLES.new
+  const { t } = useI18n()
+  const s = STATUS_STYLES[status] ?? STATUS_STYLES.new_lead
   return (
     <span
       className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium"
       style={{ background: s.bg, color: s.color }}
     >
-      {s.label}
+      {t(s.key)}
     </span>
   )
 }
@@ -153,10 +156,11 @@ interface Props {
 }
 
 export function LeadTable({ leads, isLoading, filters, onFiltersChange }: Props) {
+  const { t } = useI18n()
   const columns: ColumnDef<Lead>[] = [
     {
       id:     'name',
-      header: 'Lead',
+      header: t('leads.columnLead'),
       cell: ({ row }) => {
         const l     = row.original
         const color = avatarColor(l.name)
@@ -180,7 +184,7 @@ export function LeadTable({ leads, isLoading, filters, onFiltersChange }: Props)
     },
     {
       id:     'source',
-      header: 'Source',
+      header: t('leads.fieldSource'),
       cell: ({ row }) => (
         <span
           className="text-xs font-medium px-2 py-0.5 rounded-md"
@@ -192,19 +196,19 @@ export function LeadTable({ leads, isLoading, filters, onFiltersChange }: Props)
     },
     {
       id:     'status',
-      header: 'Status',
+      header: t('common.status'),
       cell: ({ row }) => <LeadStatusBadge status={row.original.status} />,
     },
     {
       id:     'supervisor',
-      header: 'Supervisor',
+      header: t('leads.columnSupervisor'),
       cell: ({ row }) => row.original.supervisor_name
         ? <span style={{ color: 'rgb(11 31 58)' }}>{row.original.supervisor_name}</span>
         : <span style={{ color: 'rgb(203 211 222)' }}>—</span>,
     },
     {
       id:     'updated',
-      header: 'Last activity',
+      header: t('leads.columnLastActivity'),
       cell: ({ row }) => (
         <span className="text-xs" style={{ color: 'rgb(90 100 112)' }}>
           {formatDistanceToNow(new Date(row.original.updated_at), { addSuffix: true })}
@@ -230,7 +234,7 @@ export function LeadTable({ leads, isLoading, filters, onFiltersChange }: Props)
           <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 opacity-40" />
           <input
             type="text"
-            placeholder="Search…"
+            placeholder={t('common.search')}
             className="pl-7 pr-3 py-1.5 rounded-lg border text-sm outline-none focus:ring-2 focus:ring-[rgb(14,124,90)] w-44 transition-shadow"
             style={{ borderColor: 'rgb(var(--border-default,229 233 240))', background: '#fff' }}
             value={filters.q ?? ''}
@@ -243,14 +247,14 @@ export function LeadTable({ leads, isLoading, filters, onFiltersChange }: Props)
           value={filters.status ?? ''}
           onChange={e => onFiltersChange({ ...filters, status: e.target.value || '' })}
         >
-          <option value="">All statuses</option>
+          <option value="">{t('leads.filterAllStatuses')}</option>
           {Object.entries(STATUS_STYLES).map(([v, s]) => (
-            <option key={v} value={v}>{s.label}</option>
+            <option key={v} value={v}>{t(s.key)}</option>
           ))}
         </select>
       </div>
       <span className="text-sm font-medium" style={{ color: 'rgb(90 100 112)' }}>
-        {leads.length} {leads.length === 1 ? 'lead' : 'leads'}
+        {leads.length} {leads.length === 1 ? t('leads.countSingular') : t('leads.countPlural')}
       </span>
     </div>
   )
@@ -265,8 +269,8 @@ export function LeadTable({ leads, isLoading, filters, onFiltersChange }: Props)
       emptyState={
         <EmptyState
           icon="Users"
-          title="No leads found"
-          description="Try adjusting your filters or add a new lead."
+          title={t('leads.tableEmpty')}
+          description={t('leads.tableEmptyHint')}
         />
       }
     />

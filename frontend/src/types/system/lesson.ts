@@ -25,7 +25,7 @@ export interface StudentPackage {
   package_hours: number
   tariff_at_time: number
   currency: string
-  status: 'pending' | 'paid'
+  status: 'pending' | 'paid' | 'suspended'
   needs_reconfirmation: boolean
   paid_at: string | null
   consumed_hours: number
@@ -35,7 +35,25 @@ export interface StudentPackage {
 export interface LessonTeacher { id: number; name: string }
 export interface LessonStudent { id: number; name: string }
 
-export type LessonStatus = 'scheduled' | 'attended' | 'paid_absence' | 'absent' | 'cancelled'
+export type LessonStatus =
+  | 'scheduled'
+  | 'attended'
+  | 'paid_absence'
+  | 'absent'
+  | 'trial_free'
+  | 'cancelled_by_student'
+  | 'cancelled_by_teacher'
+
+/** Statuses that consume hours from the student's package. */
+export const CONSUMING_STATUSES: LessonStatus[] = ['attended', 'paid_absence', 'cancelled_by_student']
+
+/** Per-package consumption for one lesson (a boundary lesson has >1). */
+export interface LessonAllocation {
+  package_id: number
+  package_number: number | null
+  hours: number
+  cumulative_hours: number
+}
 
 export interface Lesson {
   id: number
@@ -60,6 +78,7 @@ export interface Lesson {
   subject: LessonSubject | null
   evaluation: LessonEvaluation | null
   package: StudentPackage
+  allocations?: LessonAllocation[]
 }
 
 export interface ScheduleSlot {

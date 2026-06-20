@@ -9,7 +9,7 @@ import { TrialBookingForm } from '@/components/conversion/TrialBookingForm'
 import { ContactSidebar } from '@/components/conversion/ContactSidebar'
 
 export const metadata: Metadata = buildMetadata({
-  title: 'Book a Free Trial Quran Class | Contact Alrayan Academy',
+  title: 'Book a Free Trial Quran Class | Contact Azhary',
   description:
     'Book your free first Quran class. Fill out the form and we will match you with a certified teacher within 24 hours. No credit card required.',
   path: '/contact',

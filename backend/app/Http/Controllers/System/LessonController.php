@@ -23,7 +23,7 @@ class LessonController extends Controller
         $this->authorize('viewAny', Lesson::class);
 
         $query = Lesson::query()
-            ->with(['package', 'teacher.user', 'student', 'subject', 'evaluation']);
+            ->with(['package', 'teacher.user', 'student', 'subject', 'evaluation', 'allocations.package']);
 
         if ($request->filled('teacher_id')) {
             $query->where('teacher_id', $request->input('teacher_id'));
@@ -56,7 +56,7 @@ class LessonController extends Controller
     {
         $this->authorize('view', $lesson);
 
-        $lesson->load(['package', 'teacher.user', 'student', 'subject', 'evaluation', 'addedBy', 'schedule']);
+        $lesson->load(['package', 'teacher.user', 'student', 'subject', 'evaluation', 'addedBy', 'schedule', 'allocations.package']);
 
         return new LessonResource($lesson);
     }
@@ -88,9 +88,10 @@ class LessonController extends Controller
             'subject_details'  => $request->subject_details,
         ]);
 
-        $this->packageService->recalculateSessionNumbers($package->id);
+        // Re-distribute the whole student chronologically (splits, session numbers, completion).
+        $this->packageService->rebuild($student);
 
-        $lesson->load(['package', 'teacher.user', 'student', 'subject', 'evaluation', 'addedBy']);
+        $lesson->refresh()->load(['package', 'teacher.user', 'student', 'subject', 'evaluation', 'addedBy', 'allocations.package']);
 
         return new LessonResource($lesson);
     }
@@ -114,11 +115,12 @@ class LessonController extends Controller
             'subject_details',
         ]));
 
-        if ($lesson->package_id) {
-            $this->packageService->recalculateSessionNumbers($lesson->package_id);
+        // A date / duration / status change can shift every package — re-distribute.
+        if ($student = $lesson->student) {
+            $this->packageService->rebuild($student);
         }
 
-        $lesson->load(['package', 'teacher.user', 'student', 'subject', 'evaluation', 'addedBy']);
+        $lesson->refresh()->load(['package', 'teacher.user', 'student', 'subject', 'evaluation', 'addedBy', 'allocations.package']);
 
         return new LessonResource($lesson);
     }
@@ -127,12 +129,12 @@ class LessonController extends Controller
     {
         $this->authorize('delete', $lesson);
 
-        $packageId = $lesson->package_id;
+        $student = $lesson->student;
 
         $lesson->delete();
 
-        if ($packageId) {
-            $this->packageService->recalculateSessionNumbers($packageId);
+        if ($student) {
+            $this->packageService->rebuild($student);
         }
 
         return response()->noContent();

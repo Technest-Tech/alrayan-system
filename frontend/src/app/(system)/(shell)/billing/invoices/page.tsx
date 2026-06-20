@@ -83,7 +83,7 @@ function buildAutoFooter(inv: Invoice): string {
     ? new Date(inv.issued_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
     : new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
   const course  = inv.snapshot?.course_name ? `\nCourse: ${inv.snapshot.course_name}` : ''
-  return [``, `──────────────────`, `Student: ${studentName}`, `Date: ${issued}${course}`, `Amount: ${amount}`, `Due: ${due}`, ``, `— Alrayan Academy`].join('\n')
+  return [``, `──────────────────`, `Student: ${studentName}`, `Date: ${issued}${course}`, `Amount: ${amount}`, `Due: ${due}`, ``, `— Azhary`].join('\n')
 }
 
 function buildWhatsAppMessage(inv: Invoice, kind: 'invoice' | 'reminder'): string {
@@ -93,7 +93,7 @@ function buildWhatsAppMessage(inv: Invoice, kind: 'invoice' | 'reminder'): strin
     const amount = formatMinor(inv.total_minor, inv.currency)
     const due    = new Date(inv.due_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
     const course = inv.snapshot?.course_name ? ` for ${inv.snapshot.course_name}` : ''
-    return [`Hi ${studentName},`, ``, `This is a friendly reminder about your payment${course}.`, `Amount due: ${amount}`, `Due date: ${due}`, ``, `Please let us know once the payment has been made. Jazak Allahu khairan.`, ``, `— Alrayan Academy`].join('\n')
+    return [`Hi ${studentName},`, ``, `This is a friendly reminder about your payment${course}.`, `Amount due: ${amount}`, `Due date: ${due}`, ``, `Please let us know once the payment has been made. Jazak Allahu khairan.`, ``, `— Azhary`].join('\n')
   }
   if (description) return `As-salamu alaikum ${studentName},\n\n${description}${buildAutoFooter(inv)}`
   const course = inv.snapshot?.course_name ? ` for ${inv.snapshot.course_name}` : ''
@@ -158,7 +158,7 @@ function NewInvoiceModal({ onClose, onCreated }: { onClose: () => void; onCreate
     const amount = manualAmountMinor > 0 ? formatMinor(manualAmountMinor, currency) : `${currency} 0.00`
     const due    = dueAt ? new Date(dueAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Due date'
     const today  = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
-    return `As-salamu alaikum ${name},\n\n${manualDescription.trim()}\n\n──────────────────\nStudent: ${name}\nDate: ${today}\nAmount: ${amount}\nDue: ${due}\n\n— Alrayan Academy`
+    return `As-salamu alaikum ${name},\n\n${manualDescription.trim()}\n\n──────────────────\nStudent: ${name}\nDate: ${today}\nAmount: ${amount}\nDue: ${due}\n\n— Azhary`
   })() : null
 
   return (

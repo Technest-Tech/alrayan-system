@@ -33,6 +33,7 @@ class Student extends Model
         'hourly_rate_minor'     => 'integer',
     ];
 
+    public function user()             { return $this->belongsTo(\App\Models\User::class, 'user_id'); }
     public function guardian()         { return $this->belongsTo(Guardian::class, 'guardian_id'); }
     public function course()          { return $this->belongsTo(Course::class); }
     public function assignedTeacher() { return $this->belongsTo(Teacher::class, 'assigned_teacher_id'); }

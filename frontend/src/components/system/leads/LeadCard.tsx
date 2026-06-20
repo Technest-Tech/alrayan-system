@@ -1,19 +1,31 @@
+'use client'
 import type { Lead } from '@/types/system/lead'
 import { formatDistanceToNow } from 'date-fns'
 import { Globe, Users, Camera, Play, MessageCircle, Music, CircleHelp, Phone, Pencil, Trash2 } from 'lucide-react'
+import { useI18n } from '@/lib/system/i18n'
 
 /* ── Islamic 8-point star ───────────────────────── */
 const STAR = 'M50,5 L57.65,31.52 L81.82,18.18 L68.48,42.35 L95,50 L68.48,57.65 L81.82,81.82 L57.65,68.48 L50,95 L42.35,68.48 L18.18,81.82 L31.52,57.65 L5,50 L31.52,42.35 L18.18,18.18 L42.35,31.52 Z'
 
 /* ── Source badge styling ───────────────────────── */
-const SOURCE_LABELS: Record<string, string> = {
-  google_ads:       'Google Ads',
-  facebook_ads:     'Facebook Ads',
-  instagram_ads:    'Instagram',
-  whatsapp_direct:  'WhatsApp Direct',
-  student_referral: 'Referral',
-  website_form:     'Website Form',
-  manual_entry:     'Manual',
+const SOURCE_LABEL_KEYS: Record<string, string> = {
+  google_ads:       'leads.sourceGoogleAds',
+  facebook_ads:     'leads.sourceFacebookAds',
+  instagram_ads:    'leads.sourceInstagramShort',
+  whatsapp_direct:  'leads.sourceWhatsappDirect',
+  student_referral: 'leads.sourceReferral',
+  website_form:     'leads.sourceWebsiteForm',
+  manual_entry:     'leads.sourceManual',
+}
+
+const PLATFORM_LABEL_KEYS: Record<string, string> = {
+  website:   'leads.platformWebsite',
+  facebook:  'leads.platformFacebook',
+  instagram: 'leads.platformInstagram',
+  youtube:   'leads.platformYoutube',
+  whatsapp:  'leads.platformWhatsapp',
+  tiktok:    'leads.platformTiktok',
+  other:     'leads.platformOther',
 }
 
 const SOURCE_COLORS: Record<string, { bg: string; color: string }> = {
@@ -71,13 +83,16 @@ interface LeadCardProps {
 }
 
 export function LeadCard({ lead, dragging, onClick, onEdit, onDelete }: LeadCardProps) {
+  const { t }        = useI18n()
   const av           = avatarStyle(lead.name)
   const srcStyle     = SOURCE_COLORS[lead.source ?? ''] ?? SOURCE_COLORS.manual_entry
-  const srcLabel     = SOURCE_LABELS[lead.source ?? ''] ?? lead.source ?? 'Manual'
+  const srcLabel     = lead.source
+    ? (SOURCE_LABEL_KEYS[lead.source] ? t(SOURCE_LABEL_KEYS[lead.source]) : lead.source)
+    : t('leads.sourceManual')
   const PlatformIcon = lead.platform ? (PLATFORM_ICONS[lead.platform] ?? Globe) : null
   const platformColor = lead.platform ? (PLATFORM_COLORS[lead.platform] ?? 'rgb(90 100 112)') : 'rgb(90 100 112)'
   const platformLabel = lead.platform
-    ? lead.platform.charAt(0).toUpperCase() + lead.platform.slice(1)
+    ? (PLATFORM_LABEL_KEYS[lead.platform] ? t(PLATFORM_LABEL_KEYS[lead.platform]) : lead.platform.charAt(0).toUpperCase() + lead.platform.slice(1))
     : null
 
   const payloadPhones = (lead.payload as Record<string, unknown> | null)?.phones as Array<{ value: string }> | undefined
@@ -112,7 +127,7 @@ export function LeadCard({ lead, dragging, onClick, onEdit, onDelete }: LeadCard
           <button
             type="button"
             onClick={e => { e.stopPropagation(); onEdit() }}
-            title="Edit lead"
+            title={t('leads.editLead')}
             className="p-1.5 rounded-lg transition-all hover:scale-110"
             style={{ background: 'rgba(11,31,58,0.07)', color: 'rgb(30 90 171)' }}
             onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(30,90,171,0.15)' }}
@@ -125,7 +140,7 @@ export function LeadCard({ lead, dragging, onClick, onEdit, onDelete }: LeadCard
           <button
             type="button"
             onClick={e => { e.stopPropagation(); onDelete() }}
-            title="Delete lead"
+            title={t('leads.deleteLead')}
             className="p-1.5 rounded-lg transition-all hover:scale-110"
             style={{ background: 'rgba(11,31,58,0.07)', color: 'rgb(90 100 112)' }}
             onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(192,57,43,0.15)'; (e.currentTarget as HTMLButtonElement).style.color = 'rgb(192 57 43)' }}
@@ -180,7 +195,7 @@ export function LeadCard({ lead, dragging, onClick, onEdit, onDelete }: LeadCard
           )}
           {lead.supervisor_name ? (
             <span className="text-[10px] truncate ml-auto" style={{ color: 'rgb(90 100 112)' }}>
-              Added by: <span style={{ color: '#0B1F3A', fontWeight: 500 }}>{lead.supervisor_name}</span>
+              {t('leads.addedBy')} <span style={{ color: '#0B1F3A', fontWeight: 500 }}>{lead.supervisor_name}</span>
             </span>
           ) : (
             <span className="text-[10px] ml-auto whitespace-nowrap" style={{ color: 'rgb(203 211 222)' }}>

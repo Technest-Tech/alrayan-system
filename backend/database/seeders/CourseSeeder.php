@@ -20,7 +20,7 @@ class CourseSeeder extends Seeder
                 'level'             => 'Beginner',
                 'duration_months'   => '2–4',
                 'features'          => ['Arabic alphabet mastery', 'Correct pronunciation from day one', 'Vowel marks (harakat)', 'Foundation for Tajweed'],
-                'seo_title'         => 'Noorani Qaida Online Course | Alrayan Academy',
+                'seo_title'         => 'Noorani Qaida Online Course | Azhary',
                 'seo_description'   => 'Learn to read Arabic and Quran from scratch with Noorani Qaida. 1-on-1 certified teacher. Free trial class. Students in 50+ countries.',
                 'outcomes'          => ['Read all 29 Arabic letters in isolation and connected form', 'Pronounce every letter from its correct articulation point (Makharij)', 'Apply short vowels, tanween, sukoon, and shaddah correctly', 'Recite with natural Madd (elongation) rules', 'Complete the full Noorani Qaida with teacher assessment'],
                 'curriculum'        => [
@@ -57,7 +57,7 @@ class CourseSeeder extends Seeder
                 'level'             => 'Beginner',
                 'duration_months'   => null,
                 'features'          => ['Noorani Qaida included', 'Patient, child-specialist teachers', 'Interactive and engaging lessons', 'Progress reports for parents'],
-                'seo_title'         => 'Online Quran Classes for Kids | Ages 5–14 | Alrayan',
+                'seo_title'         => 'Online Quran Classes for Kids | Ages 5–14 | Azhary',
                 'seo_description'   => 'Fun, structured online Quran classes for children aged 5–14. Certified child-specialist teachers. Free trial class. Join families from 50+ countries.',
                 'outcomes'          => ['Complete the Noorani Qaida and begin Quran reading', 'Recite short surahs with basic Tajweed', 'Understand the meaning of Surah Al-Fatiha and key duas', 'Develop love and respect for the Quran from an early age', 'Build a consistent Quran habit with structured teacher support'],
                 'curriculum'        => [
@@ -94,7 +94,7 @@ class CourseSeeder extends Seeder
                 'level'             => 'Beginner',
                 'duration_months'   => null,
                 'features'          => ['Start from scratch or pick up where you left off', 'Flexible scheduling around work and family', 'Certified teacher, 1-on-1 only', 'Tajweed correction from the first lesson'],
-                'seo_title'         => 'Online Quran Classes for Adults | Alrayan Academy',
+                'seo_title'         => 'Online Quran Classes for Adults | Azhary',
                 'seo_description'   => 'Start or restart your Quran journey as an adult. 1-on-1 classes at your pace with certified teachers. Free first class. No prior knowledge needed.',
                 'outcomes'          => ['Read the Quran independently with correct pronunciation', 'Apply core Tajweed rules from the first lesson', 'Complete Noorani Qaida if starting from scratch', 'Build a consistent Quran reading habit', 'Recite Surah Al-Fatiha and common prayer surahs perfectly'],
                 'curriculum'        => [
@@ -131,7 +131,7 @@ class CourseSeeder extends Seeder
                 'level'             => 'Beginner',
                 'duration_months'   => '6–12',
                 'features'          => ['All Tajweed rules covered', 'Real-time pronunciation correction', 'Practice with actual Quran verses', 'Certificate upon completion'],
-                'seo_title'         => 'Online Tajweed Course | Master Quran Recitation | Alrayan',
+                'seo_title'         => 'Online Tajweed Course | Master Quran Recitation | Azhary',
                 'seo_description'   => 'Master all Tajweed rules with a certified teacher. Real-time pronunciation correction, Quran verse practice. Free trial. Students worldwide.',
                 'outcomes'          => ['Understand and correctly apply all major Tajweed rules', 'Recite any Quranic passage with proper Tajweed', 'Identify and self-correct pronunciation errors', 'Receive a Tajweed completion certificate', 'Prepare for advanced Hifz or Ijazah programs'],
                 'curriculum'        => [
@@ -168,7 +168,7 @@ class CourseSeeder extends Seeder
                 'level'             => 'Intermediate',
                 'duration_months'   => null,
                 'features'          => ['Daily memorization targets', 'Systematic revision schedule', 'Dedicated Hifz teacher', 'Flexible pace options'],
-                'seo_title'         => 'Hifz Online | Quran Memorization Program | Alrayan',
+                'seo_title'         => 'Hifz Online | Quran Memorization Program | Azhary',
                 'seo_description'   => 'Memorize the Quran with expert guidance. Structured Hifz program with dedicated teacher, daily targets, and systematic revision. Free trial class.',
                 'outcomes'          => ['Memorize new Quran portions daily using proven techniques', 'Build a systematic revision schedule that ensures long-term retention', 'Recite memorized portions with correct Tajweed', 'Develop the discipline and consistency Hifz requires', 'Complete your Hifz journey with full teacher accountability'],
                 'curriculum'        => [
@@ -205,7 +205,7 @@ class CourseSeeder extends Seeder
                 'level'             => 'Advanced',
                 'duration_months'   => null,
                 'features'          => ['Authentic chain of transmission', 'One-on-one with Ijazah-holding sheikh', 'Hafs an Asim + option for other Riwayat', 'Certificate of Ijazah granted'],
-                'seo_title'         => 'Online Ijazah Program | Authentic Chain | Alrayan Academy',
+                'seo_title'         => 'Online Ijazah Program | Authentic Chain | Azhary',
                 'seo_description'   => 'Earn an authentic Ijazah with unbroken chain to the Prophet ﷺ. Hafs an Asim and other riwayat. Advanced program for qualified students.',
                 'outcomes'          => ['Recite the complete Quran with flawless Tajweed', 'Understand all advanced Tajweed and Waqf rules', 'Receive an authenticated Ijazah certificate with full chain documentation', 'Gain the right to grant Ijazah to your own future students', 'Connect to an unbroken chain back to the Prophet ﷺ'],
                 'curriculum'        => [
@@ -242,7 +242,7 @@ class CourseSeeder extends Seeder
                 'level'             => 'Beginner',
                 'duration_months'   => '6–18',
                 'features'          => ['From zero to conversational', 'MSA + Quranic Arabic tracks', 'Native Arab teachers', 'Grammar + vocabulary focus'],
-                'seo_title'         => 'Arabic for Non-Arabs Online | Learn Arabic | Alrayan',
+                'seo_title'         => 'Arabic for Non-Arabs Online | Learn Arabic | Azhary',
                 'seo_description'   => 'Learn Arabic from scratch with native Arab teachers. MSA and Quranic Arabic tracks. Beginner to conversational in 6–18 months. Free trial class.',
                 'outcomes'          => ['Read and write Arabic script fluently', 'Hold basic conversations in Modern Standard Arabic', 'Understand the structure of Arabic grammar (Nahw)', 'Read and comprehend Quranic Arabic vocabulary', 'Build a vocabulary of 1,000+ core Arabic words'],
                 'curriculum'        => [
@@ -278,7 +278,7 @@ class CourseSeeder extends Seeder
                 'level'             => 'Intermediate',
                 'duration_months'   => null,
                 'features'          => ['Verse-by-verse explanation', 'Context and Asbab al-Nuzul', 'Classical + modern scholarship', 'Available in English'],
-                'seo_title'         => 'Tafseer Course Online | Understand the Quran | Alrayan',
+                'seo_title'         => 'Tafseer Course Online | Understand the Quran | Azhary',
                 'seo_description'   => 'Go beyond recitation — understand the meaning of the Quran verse by verse. Classical and contemporary Tafseer in English. Free trial class.',
                 'outcomes'          => ['Understand the meaning of every verse you study', 'Learn the historical context (Asbab al-Nuzul) of key verses', 'Connect Quranic guidance to everyday modern life', 'Study major classical Tafseer works with teacher guidance', 'Develop a deeper spiritual connection to the Quran'],
                 'curriculum'        => [
@@ -314,7 +314,7 @@ class CourseSeeder extends Seeder
                 'level'             => 'All Levels',
                 'duration_months'   => null,
                 'features'          => ['Aqeedah (belief)', 'Seerah (Prophetic biography)', 'Fiqh (Islamic rulings)', 'Islamic history'],
-                'seo_title'         => 'Islamic Studies Online | Aqeedah, Seerah, Fiqh | Alrayan',
+                'seo_title'         => 'Islamic Studies Online | Aqeedah, Seerah, Fiqh | Azhary',
                 'seo_description'   => 'Comprehensive Islamic education covering Aqeedah, Seerah, Fiqh, and Islamic history. For children and adults. 1-on-1 with certified scholars. Free trial.',
                 'outcomes'          => ['Understand the six pillars of faith (Aqeedah) clearly', 'Know the life of the Prophet ﷺ in meaningful detail', 'Apply basic Fiqh rulings in daily worship', 'Understand Islamic history from the Prophet ﷺ to the present', 'Articulate Islamic values clearly and confidently'],
                 'curriculum'        => [
@@ -350,7 +350,7 @@ class CourseSeeder extends Seeder
                 'level'             => 'Advanced',
                 'duration_months'   => null,
                 'features'          => ['All ten Qiraat covered', 'Taught by Qiraat specialist', 'Prerequisite: Hafs Ijazah', 'Isnad (chain) provided'],
-                'seo_title'         => 'Ten Qiraat Online Program | Advanced Recitation | Alrayan',
+                'seo_title'         => 'Ten Qiraat Online Program | Advanced Recitation | Azhary',
                 'seo_description'   => 'Master all ten authentic modes of Quranic recitation (Qiraat). Advanced program for qualified Huffaz. Taught by a Sheikh with Ijazah in all ten. Free trial.',
                 'outcomes'          => ['Recite the Quran in all ten authenticated Qiraat', 'Understand the differences between each riwayah and its specific rules', 'Receive Isnad (chain) documentation for each Qiraah completed', 'Qualify to grant Ijazah in the Qiraat you complete', 'Deepen understanding of Quranic Arabic through variant readings'],
                 'curriculum'        => [
@@ -386,9 +386,9 @@ class CourseSeeder extends Seeder
                 'level'             => 'All Levels',
                 'duration_months'   => null,
                 'features'          => ['Female teachers only', 'All courses available', 'Same certifications and quality', 'Flexible scheduling'],
-                'seo_title'         => 'Female Quran Teachers Online | Learn with Sisters | Alrayan',
+                'seo_title'         => 'Female Quran Teachers Online | Learn with Sisters | Azhary',
                 'seo_description'   => 'All courses available with certified female Quran teachers. Safe, comfortable, effective. Tajweed, Hifz, Arabic, and more. Free trial with a female teacher.',
-                'outcomes'          => ['Complete any Alrayan course with a certified female teacher', 'Learn in a comfortable, focused, and distraction-free environment', 'Receive the same quality and credentials as all Alrayan teachers', 'Work with teachers who understand your specific needs and schedule', 'Achieve your Quran goals — recitation, Hifz, Tajweed, or Ijazah'],
+                'outcomes'          => ['Complete any Azhary course with a certified female teacher', 'Learn in a comfortable, focused, and distraction-free environment', 'Receive the same quality and credentials as all Azhary teachers', 'Work with teachers who understand your specific needs and schedule', 'Achieve your Quran goals — recitation, Hifz, Tajweed, or Ijazah'],
                 'curriculum'        => [
                     ['module' => 'All Standard Courses Available', 'topics' => ['Noorani Qaida with female teacher', 'Tajweed course with female teacher', 'Hifz program with female teacher']],
                     ['module' => 'Specialized Programs', 'topics' => ['Quran for Kids — female specialist teachers', 'Arabic for Non-Arabs with female teacher', 'Islamic Studies with female scholar']],
@@ -402,7 +402,7 @@ class CourseSeeder extends Seeder
                     ['title' => 'Schools & Institutions', 'description' => 'Your Islamic school or community center needs qualified female Quran teachers for classes, events, or ongoing programs.'],
                 ],
                 'faqs'              => [
-                    ['q' => 'Are the female teachers at Alrayan certified?', 'a' => 'Yes — all female teachers hold Ijazah or equivalent credentials from recognized Islamic institutions. They undergo the same rigorous vetting as our male teachers.'],
+                    ['q' => 'Are the female teachers at Azhary certified?', 'a' => 'Yes — all female teachers hold Ijazah or equivalent credentials from recognized Islamic institutions. They undergo the same rigorous vetting as our male teachers.'],
                     ['q' => 'Can female teachers grant Ijazah?', 'a' => 'Yes — Sister Aisha Karimi holds an authenticated Ijazah in Hafs an Asim and is qualified to grant Ijazah to her students.'],
                     ['q' => 'Are all courses available with female teachers?', 'a' => 'Yes — every course we offer is available with a female teacher, including Noorani Qaida, Tajweed, Hifz, Arabic, Islamic Studies, and Tafseer.'],
                     ['q' => 'Is the quality the same as male teachers?', 'a' => 'Absolutely. We apply identical vetting standards to all teachers regardless of gender. Every teacher must pass our full certification process.'],

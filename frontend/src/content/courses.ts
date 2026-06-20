@@ -29,7 +29,7 @@ export const courses: Course[] = [
     level: 'Beginner',
     durationMonths: '2–4',
     features: ['Arabic alphabet mastery', 'Correct pronunciation from day one', 'Vowel marks (harakat)', 'Foundation for Tajweed'],
-    seoTitle: 'Noorani Qaida Online Course | Alrayan Academy',
+    seoTitle: 'Noorani Qaida Online Course | Azhary',
     seoDescription: 'Learn to read Arabic and Quran from scratch with Noorani Qaida. 1-on-1 certified teacher. Free trial class. Students in 50+ countries.',
     outcomes: [
       'Read all 29 Arabic letters in isolation and connected form',
@@ -70,7 +70,7 @@ export const courses: Course[] = [
     ageGroup: 'Ages 5–14',
     level: 'Beginner',
     features: ['Noorani Qaida included', 'Patient, child-specialist teachers', 'Interactive and engaging lessons', 'Progress reports for parents'],
-    seoTitle: 'Online Quran Classes for Kids | Ages 5–14 | Alrayan',
+    seoTitle: 'Online Quran Classes for Kids | Ages 5–14 | Azhary',
     seoDescription: 'Fun, structured online Quran classes for children aged 5–14. Certified child-specialist teachers. Free trial class. Join families from 50+ countries.',
     outcomes: [
       'Complete the Noorani Qaida and begin Quran reading',
@@ -111,7 +111,7 @@ export const courses: Course[] = [
     ageGroup: 'Adults 18+',
     level: 'Beginner',
     features: ['Start from scratch or pick up where you left off', 'Flexible scheduling around work and family', 'Certified teacher, 1-on-1 only', 'Tajweed correction from the first lesson'],
-    seoTitle: 'Online Quran Classes for Adults | Alrayan Academy',
+    seoTitle: 'Online Quran Classes for Adults | Azhary',
     seoDescription: 'Start or restart your Quran journey as an adult. 1-on-1 classes at your pace with certified teachers. Free first class. No prior knowledge needed.',
     outcomes: [
       'Read the Quran independently with correct pronunciation',
@@ -152,7 +152,7 @@ export const courses: Course[] = [
     level: 'Beginner',
     durationMonths: '6–12',
     features: ['All Tajweed rules covered', 'Real-time pronunciation correction', 'Practice with actual Quran verses', 'Certificate upon completion'],
-    seoTitle: 'Online Tajweed Course | Master Quran Recitation | Alrayan',
+    seoTitle: 'Online Tajweed Course | Master Quran Recitation | Azhary',
     seoDescription: 'Master all Tajweed rules with a certified teacher. Real-time pronunciation correction, Quran verse practice. Free trial. Students worldwide.',
     outcomes: [
       'Understand and correctly apply all major Tajweed rules',
@@ -192,7 +192,7 @@ export const courses: Course[] = [
     icon: 'Brain',
     level: 'Intermediate',
     features: ['Daily memorization targets', 'Systematic revision schedule', 'Dedicated Hifz teacher', 'Flexible pace options'],
-    seoTitle: 'Hifz Online | Quran Memorization Program | Alrayan',
+    seoTitle: 'Hifz Online | Quran Memorization Program | Azhary',
     seoDescription: 'Memorize the Quran with expert guidance. Structured Hifz program with dedicated teacher, daily targets, and systematic revision. Free trial class.',
     outcomes: [
       'Memorize new Quran portions daily using proven techniques',
@@ -232,7 +232,7 @@ export const courses: Course[] = [
     icon: 'Award',
     level: 'Advanced',
     features: ['Authentic chain of transmission', 'One-on-one with Ijazah-holding sheikh', 'Hafs an Asim + option for other Riwayat', 'Certificate of Ijazah granted'],
-    seoTitle: 'Online Ijazah Program | Authentic Chain | Alrayan Academy',
+    seoTitle: 'Online Ijazah Program | Authentic Chain | Azhary',
     seoDescription: 'Earn an authentic Ijazah with unbroken chain to the Prophet ﷺ. Hafs an Asim and other riwayat. Advanced program for qualified students.',
     outcomes: [
       'Recite the complete Quran with flawless Tajweed',
@@ -273,7 +273,7 @@ export const courses: Course[] = [
     level: 'Beginner',
     durationMonths: '6–18',
     features: ['From zero to conversational', 'MSA + Quranic Arabic tracks', 'Native Arab teachers', 'Grammar + vocabulary focus'],
-    seoTitle: 'Arabic for Non-Arabs Online | Learn Arabic | Alrayan',
+    seoTitle: 'Arabic for Non-Arabs Online | Learn Arabic | Azhary',
     seoDescription: 'Learn Arabic from scratch with native Arab teachers. MSA and Quranic Arabic tracks. Beginner to conversational in 6–18 months. Free trial class.',
     outcomes: [
       'Read and write Arabic script fluently',
@@ -312,7 +312,7 @@ export const courses: Course[] = [
     icon: 'Lightbulb',
     level: 'Intermediate',
     features: ['Verse-by-verse explanation', 'Context and Asbab al-Nuzul', 'Classical + modern scholarship', 'Available in English'],
-    seoTitle: 'Tafseer Course Online | Understand the Quran | Alrayan',
+    seoTitle: 'Tafseer Course Online | Understand the Quran | Azhary',
     seoDescription: 'Go beyond recitation — understand the meaning of the Quran verse by verse. Classical and contemporary Tafseer in English. Free trial class.',
     outcomes: [
       'Understand the meaning of every verse you study',
@@ -351,7 +351,7 @@ export const courses: Course[] = [
     icon: 'BookMarked',
     level: 'All Levels',
     features: ['Aqeedah (belief)', 'Seerah (Prophetic biography)', 'Fiqh (Islamic rulings)', 'Islamic history'],
-    seoTitle: 'Islamic Studies Online | Aqeedah, Seerah, Fiqh | Alrayan',
+    seoTitle: 'Islamic Studies Online | Aqeedah, Seerah, Fiqh | Azhary',
     seoDescription: 'Comprehensive Islamic education covering Aqeedah, Seerah, Fiqh, and Islamic history. For children and adults. 1-on-1 with certified scholars. Free trial.',
     outcomes: [
       'Understand the six pillars of faith (Aqeedah) clearly',
@@ -390,7 +390,7 @@ export const courses: Course[] = [
     icon: 'Layers',
     level: 'Advanced',
     features: ['All ten Qiraat covered', 'Taught by Qiraat specialist', 'Prerequisite: Hafs Ijazah', 'Isnad (chain) provided'],
-    seoTitle: 'Ten Qiraat Online Program | Advanced Recitation | Alrayan',
+    seoTitle: 'Ten Qiraat Online Program | Advanced Recitation | Azhary',
     seoDescription: 'Master all ten authentic modes of Quranic recitation (Qiraat). Advanced program for qualified Huffaz. Taught by a Sheikh with Ijazah in all ten. Free trial.',
     outcomes: [
       'Recite the Quran in all ten authenticated Qiraat',
@@ -429,12 +429,12 @@ export const courses: Course[] = [
     icon: 'Heart',
     level: 'All Levels',
     features: ['Female teachers only', 'All courses available', 'Same certifications and quality', 'Flexible scheduling'],
-    seoTitle: 'Female Quran Teachers Online | Learn with Sisters | Alrayan',
+    seoTitle: 'Female Quran Teachers Online | Learn with Sisters | Azhary',
     seoDescription: 'All courses available with certified female Quran teachers. Safe, comfortable, effective. Tajweed, Hifz, Arabic, and more. Free trial with a female teacher.',
     outcomes: [
-      'Complete any Alrayan course with a certified female teacher',
+      'Complete any Azhary course with a certified female teacher',
       'Learn in a comfortable, focused, and distraction-free environment',
-      'Receive the same quality and credentials as all Alrayan teachers',
+      'Receive the same quality and credentials as all Azhary teachers',
       'Work with teachers who understand your specific needs and schedule',
       'Achieve your Quran goals — recitation, Hifz, Tajweed, or Ijazah',
     ],
@@ -451,7 +451,7 @@ export const courses: Course[] = [
       { title: 'Schools & Institutions', description: 'Your Islamic school or community center needs qualified female Quran teachers for classes, events, or ongoing programs.' },
     ],
     faqs: [
-      { q: 'Are the female teachers at Alrayan certified?', a: 'Yes — all female teachers hold Ijazah or equivalent credentials from recognized Islamic institutions. They undergo the same rigorous vetting as our male teachers.' },
+      { q: 'Are the female teachers at Azhary certified?', a: 'Yes — all female teachers hold Ijazah or equivalent credentials from recognized Islamic institutions. They undergo the same rigorous vetting as our male teachers.' },
       { q: 'Can female teachers grant Ijazah?', a: 'Yes — Sister Aisha Karimi holds an authenticated Ijazah in Hafs an Asim and is qualified to grant Ijazah to her students.' },
       { q: 'Are all courses available with female teachers?', a: 'Yes — every course we offer is available with a female teacher, including Noorani Qaida, Tajweed, Hifz, Arabic, Islamic Studies, and Tafseer.' },
       { q: 'Is the quality the same as male teachers?', a: 'Absolutely. We apply identical vetting standards to all teachers regardless of gender. Every teacher must pass our full certification process.' },

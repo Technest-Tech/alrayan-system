@@ -25,13 +25,13 @@
 <body>
   <div class="wrapper">
     <div class="header">
-      <h1>Alrayan Academy</h1>
+      <h1>Azhary</h1>
       <p>We Received Your Message</p>
     </div>
     <div class="divider"></div>
     <div class="body">
       <p class="greeting">Assalamu alaikum, {{ $contact->name }}!</p>
-      <p>Thank you for reaching out to Alrayan Academy. We have received your message and will reply to <strong>{{ $contact->email }}</strong> within 24 hours.</p>
+      <p>Thank you for reaching out to Azhary. We have received your message and will reply to <strong>{{ $contact->email }}</strong> within 24 hours.</p>
 
       <div class="reference-box">
         <p>Your message reference</p>
@@ -47,7 +47,7 @@
       </div>
     </div>
     <div class="footer">
-      Alrayan Academy &middot; info@alrayan-academy.com
+      Azhary &middot; info@alrayan-academy.com
     </div>
   </div>
 </body>

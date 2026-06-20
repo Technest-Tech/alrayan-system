@@ -7,6 +7,7 @@ import { useCreateLead, useUpdateLead, useConvertLead } from '@/hooks/system/use
 import { useCourses } from '@/hooks/system/useCourses'
 import { useTeachers } from '@/hooks/system/useTeachers'
 import { ApiError } from '@/lib/system/api'
+import { useI18n } from '@/lib/system/i18n'
 import type { Lead, LeadStatus, LeadPriority, LeadPlatform, LeadSource } from '@/types/system/lead'
 
 /* ── Islamic star path ─────────────────────────── */
@@ -44,6 +45,7 @@ function SectionDivider({ title }: { title: string }) {
 
 /* ── Enrollment alert banner ────────────────────── */
 function EnrollmentBanner() {
+  const { t } = useI18n()
   return (
     <div
       className="flex items-start gap-3 rounded-xl p-3 mb-1"
@@ -51,9 +53,9 @@ function EnrollmentBanner() {
     >
       <GraduationCap size={16} className="shrink-0 mt-0.5" style={{ color: 'rgb(14 124 90)' }} />
       <div>
-        <p className="text-xs font-semibold" style={{ color: 'rgb(14 124 90)' }}>Converting to Student</p>
+        <p className="text-xs font-semibold" style={{ color: 'rgb(14 124 90)' }}>{t('leads.convertingToStudent')}</p>
         <p className="text-xs mt-0.5" style={{ color: 'rgb(90 100 112)' }}>
-          Fill in the enrollment details below. A student account will be created when you save.
+          {t('leads.enrollmentBannerHint')}
         </p>
       </div>
     </div>
@@ -61,75 +63,75 @@ function EnrollmentBanner() {
 }
 
 /* ── Options ────────────────────────────────────── */
-const STATUS_OPTIONS_ADD: { value: LeadStatus; label: string }[] = [
-  { value: 'new_lead',            label: 'New Lead' },
-  { value: 'interested',          label: 'Interested' },
-  { value: 'waiting_for_trial',   label: 'Waiting for Trial' },
-  { value: 'waiting_for_payment', label: 'Waiting for Payment' },
-  { value: 'not_interested',      label: 'Not Interested' },
-  { value: 'lost',                label: 'Lost' },
+const STATUS_OPTIONS_ADD: { value: LeadStatus; key: string }[] = [
+  { value: 'new_lead',            key: 'leads.statusNewLead' },
+  { value: 'interested',          key: 'leads.statusInterested' },
+  { value: 'waiting_for_trial',   key: 'leads.statusWaitingForTrial' },
+  { value: 'waiting_for_payment', key: 'leads.statusWaitingForPayment' },
+  { value: 'not_interested',      key: 'leads.statusNotInterested' },
+  { value: 'lost',                key: 'leads.statusLost' },
 ]
 
-const STATUS_OPTIONS_EDIT: { value: LeadStatus; label: string }[] = [
+const STATUS_OPTIONS_EDIT: { value: LeadStatus; key: string }[] = [
   ...STATUS_OPTIONS_ADD,
-  { value: 'closed', label: 'Closed — Convert to Student' },
+  { value: 'closed', key: 'leads.statusClosedConvert' },
 ]
 
-const PLATFORM_OPTIONS: { value: string; label: string }[] = [
-  { value: 'website',   label: 'Website' },
-  { value: 'facebook',  label: 'Facebook' },
-  { value: 'instagram', label: 'Instagram' },
-  { value: 'youtube',   label: 'YouTube' },
-  { value: 'whatsapp',  label: 'WhatsApp' },
-  { value: 'tiktok',    label: 'TikTok' },
-  { value: 'other',     label: 'Other' },
+const PLATFORM_OPTIONS: { value: string; key: string }[] = [
+  { value: 'website',   key: 'leads.platformWebsite' },
+  { value: 'facebook',  key: 'leads.platformFacebook' },
+  { value: 'instagram', key: 'leads.platformInstagram' },
+  { value: 'youtube',   key: 'leads.platformYoutube' },
+  { value: 'whatsapp',  key: 'leads.platformWhatsapp' },
+  { value: 'tiktok',    key: 'leads.platformTiktok' },
+  { value: 'other',     key: 'leads.platformOther' },
 ]
 
-const SOURCE_OPTIONS: { value: string; label: string }[] = [
-  { value: 'google_ads',       label: 'Google Ads' },
-  { value: 'facebook_ads',     label: 'Facebook Ads' },
-  { value: 'instagram_ads',    label: 'Instagram' },
-  { value: 'whatsapp_direct',  label: 'WhatsApp Direct' },
-  { value: 'student_referral', label: 'Student Referral' },
-  { value: 'website_form',     label: 'Website Form' },
-  { value: 'manual_entry',     label: 'Manual Entry' },
+const SOURCE_OPTIONS: { value: string; key: string }[] = [
+  { value: 'google_ads',       key: 'leads.sourceGoogleAds' },
+  { value: 'facebook_ads',     key: 'leads.sourceFacebookAds' },
+  { value: 'instagram_ads',    key: 'leads.sourceInstagramShort' },
+  { value: 'whatsapp_direct',  key: 'leads.sourceWhatsappDirect' },
+  { value: 'student_referral', key: 'leads.sourceStudentReferral' },
+  { value: 'website_form',     key: 'leads.sourceWebsiteForm' },
+  { value: 'manual_entry',     key: 'leads.sourceManualEntry' },
 ]
 
-const PRIORITY_OPTIONS: { value: string; label: string }[] = [
-  { value: 'low',    label: 'Low' },
-  { value: 'medium', label: 'Medium' },
-  { value: 'high',   label: 'High' },
+const PRIORITY_OPTIONS: { value: string; key: string }[] = [
+  { value: 'low',    key: 'leads.priorityLow' },
+  { value: 'medium', key: 'leads.priorityMedium' },
+  { value: 'high',   key: 'leads.priorityHigh' },
 ]
 
-const GENDER_OPTIONS: { value: string; label: string }[] = [
-  { value: 'male',   label: 'Male' },
-  { value: 'female', label: 'Female' },
-  { value: 'other',  label: 'Other' },
+const GENDER_OPTIONS: { value: string; key: string }[] = [
+  { value: 'male',   key: 'leads.genderMale' },
+  { value: 'female', key: 'leads.genderFemale' },
+  { value: 'other',  key: 'leads.genderOther' },
 ]
 
 const CURRENCY_OPTIONS: { value: string; label: string }[] = [
   'EUR', 'USD', 'GBP', 'SAR', 'AED', 'MAD', 'OMR', 'QAR', 'KWD', 'BHD'
 ].map(c => ({ value: c, label: c }))
 
-const PAYMENT_OPTIONS: { value: string; label: string }[] = [
-  { value: 'none',          label: 'None' },
-  { value: 'card',          label: 'Card' },
-  { value: 'cash',          label: 'Cash' },
-  { value: 'bank_transfer', label: 'Bank Transfer' },
+const PAYMENT_OPTIONS: { value: string; key: string }[] = [
+  { value: 'none',          key: 'leads.paymentNone' },
+  { value: 'card',          key: 'leads.paymentCard' },
+  { value: 'cash',          key: 'leads.paymentCash' },
+  { value: 'bank_transfer', key: 'leads.paymentBankTransfer' },
 ]
 
-const REJECTION_OPTIONS: { value: string; label: string }[] = [
-  { value: 'price',          label: 'Price' },
-  { value: 'schedule',       label: 'Schedule' },
-  { value: 'not_interested', label: 'Not Interested' },
-  { value: 'no_response',    label: 'No Response' },
-  { value: 'other',          label: 'Other' },
+const REJECTION_OPTIONS: { value: string; key: string }[] = [
+  { value: 'price',          key: 'leads.lostReasonPrice' },
+  { value: 'schedule',       key: 'leads.lostReasonSchedule' },
+  { value: 'not_interested', key: 'leads.statusNotInterested' },
+  { value: 'no_response',    key: 'leads.lostReasonNoResponse' },
+  { value: 'other',          key: 'leads.lostReasonOther' },
 ]
 
-const SESSION_DURATION_OPTIONS: { value: string; label: string }[] = [
-  { value: '30', label: '30 minutes' },
-  { value: '45', label: '45 minutes' },
-  { value: '60', label: '60 minutes' },
+const SESSION_DURATION_OPTIONS: { value: string; key: string }[] = [
+  { value: '30', key: 'leads.duration30' },
+  { value: '45', key: 'leads.duration45' },
+  { value: '60', key: 'leads.duration60' },
 ]
 
 const TIMEZONE_OPTIONS: { value: string; label: string }[] = [
@@ -201,7 +203,7 @@ function Field({ label, required, children }: { label: string; required?: boolea
 interface SelectOption { value: string; label: string }
 
 function SearchSelect({
-  value, onChange, options, placeholder = 'Select…', clearable = true,
+  value, onChange, options, placeholder, clearable = true,
 }: {
   value: string
   onChange: (v: string) => void
@@ -209,6 +211,8 @@ function SearchSelect({
   placeholder?: string
   clearable?: boolean
 }) {
+  const { t } = useI18n()
+  placeholder = placeholder ?? t('leads.selectPlaceholder')
   const [open, setOpen]     = useState(false)
   const [search, setSearch] = useState('')
   const containerRef        = useRef<HTMLDivElement>(null)
@@ -258,7 +262,7 @@ function SearchSelect({
         <Search size={12} className="opacity-40 shrink-0" />
         <input
           ref={inputRef}
-          placeholder="Search…"
+          placeholder={t('leads.searchEllipsis')}
           className="flex-1 text-sm outline-none bg-transparent"
           value={search}
           onChange={e => setSearch(e.target.value)}
@@ -275,7 +279,7 @@ function SearchSelect({
         {clearable && value && (
           <button type="button" className="w-full flex items-center gap-2 px-3 py-1.5 text-xs border-b text-left hover:bg-red-50 transition-colors" style={{ borderColor: 'rgb(229 233 240)', color: 'rgb(90 100 112)' }}
             onClick={() => { onChange(''); setOpen(false) }}>
-            <X size={10} /> Clear selection
+            <X size={10} /> {t('leads.clearSelection')}
           </button>
         )}
         {filtered.map(opt => (
@@ -288,7 +292,7 @@ function SearchSelect({
           </button>
         ))}
         {filtered.length === 0 && (
-          <p className="px-3 py-2.5 text-xs" style={{ color: 'rgb(90 100 112)' }}>No results for "{search}"</p>
+          <p className="px-3 py-2.5 text-xs" style={{ color: 'rgb(90 100 112)' }}>{t('leads.noResultsFor', { query: search })}</p>
         )}
       </div>
     </div>
@@ -297,6 +301,7 @@ function SearchSelect({
 
 /* ── Country picker ─────────────────────────────── */
 function CountryPicker({ value, onChange }: { value: string; onChange: (code: string) => void }) {
+  const { t } = useI18n()
   const [open, setOpen]     = useState(false)
   const [search, setSearch] = useState('')
   const inputRef            = useRef<HTMLInputElement>(null)
@@ -318,7 +323,7 @@ function CountryPicker({ value, onChange }: { value: string; onChange: (code: st
 
   if (!open) return (
     <button type="button" className="w-full flex items-center gap-2 px-3 py-2 rounded-lg border text-sm text-left focus:outline-none focus:ring-2 focus:ring-[#C9A24B33] focus:border-[#C9A24B66] transition-all" style={inpStyle} onClick={() => setOpen(true)}>
-      {selected ? <><span>{flag(selected.code)}</span><span className="flex-1 truncate">{selected.name}</span></> : <span className="flex-1 opacity-40">e.g. Egypt</span>}
+      {selected ? <><span>{flag(selected.code)}</span><span className="flex-1 truncate">{selected.name}</span></> : <span className="flex-1 opacity-40">{t('leads.countryPlaceholder')}</span>}
       <ChevronDown size={13} className="opacity-40 shrink-0" />
     </button>
   )
@@ -327,19 +332,19 @@ function CountryPicker({ value, onChange }: { value: string; onChange: (code: st
     <div ref={containerRef} className="rounded-lg border overflow-hidden" style={{ borderColor: '#C9A24B66', boxShadow: '0 0 0 2px rgba(201,162,75,0.1)', background: '#fff' }}>
       <div className="flex items-center gap-2 px-3 py-2 border-b" style={{ borderColor: 'rgb(229 233 240)' }}>
         <Search size={12} className="opacity-40 shrink-0" />
-        <input ref={inputRef} placeholder="Search country…" className="flex-1 text-sm outline-none bg-transparent" value={search} onChange={e => setSearch(e.target.value)}
+        <input ref={inputRef} placeholder={t('leads.searchCountry')} className="flex-1 text-sm outline-none bg-transparent" value={search} onChange={e => setSearch(e.target.value)}
           onKeyDown={e => { if (e.key === 'Escape') { setOpen(false); setSearch('') } }} />
         <button type="button" className="opacity-40 hover:opacity-100" onClick={() => { setOpen(false); setSearch('') }}><X size={13} /></button>
       </div>
       <div className="max-h-44 overflow-y-auto">
-        {value && <button type="button" className="w-full flex items-center gap-2 px-3 py-1.5 text-xs border-b text-left hover:bg-red-50 transition-colors" style={{ borderColor: 'rgb(229 233 240)', color: 'rgb(90 100 112)' }} onClick={() => { onChange(''); setOpen(false) }}><X size={10} />Clear</button>}
+        {value && <button type="button" className="w-full flex items-center gap-2 px-3 py-1.5 text-xs border-b text-left hover:bg-red-50 transition-colors" style={{ borderColor: 'rgb(229 233 240)', color: 'rgb(90 100 112)' }} onClick={() => { onChange(''); setOpen(false) }}><X size={10} />{t('leads.clear')}</button>}
         {filtered.map(c => (
           <button key={c.code} type="button" className="w-full flex items-center gap-2 px-3 py-2 text-sm text-left hover:bg-black/5 transition-colors" style={c.code === value ? { background: 'rgba(201,162,75,0.07)' } : {}} onClick={() => { onChange(c.code); setOpen(false); setSearch('') }}>
             <span>{flag(c.code)}</span><span className="flex-1">{c.name}</span>
             {c.code === value && <Check size={12} style={{ color: '#C9A24B' }} />}
           </button>
         ))}
-        {filtered.length === 0 && <p className="px-3 py-2.5 text-xs" style={{ color: 'rgb(90 100 112)' }}>No results</p>}
+        {filtered.length === 0 && <p className="px-3 py-2.5 text-xs" style={{ color: 'rgb(90 100 112)' }}>{t('common.noResults')}</p>}
       </div>
     </div>
   )
@@ -351,6 +356,7 @@ interface ContactEntry { value: string; primary: boolean }
 function MultiContactField({ label, entries, onChange, placeholder }: {
   label: string; entries: ContactEntry[]; onChange: (e: ContactEntry[]) => void; placeholder: string
 }) {
+  const { t } = useI18n()
   const addEntry    = () => onChange([...entries, { value: '', primary: entries.length === 0 }])
   const removeEntry = (i: number) => {
     const next = entries.filter((_, idx) => idx !== i)
@@ -365,7 +371,7 @@ function MultiContactField({ label, entries, onChange, placeholder }: {
       <div className="flex items-center justify-between mb-1.5">
         <label className="text-xs font-medium" style={{ color: 'rgb(90 100 112)' }}>{label}</label>
         <button type="button" onClick={addEntry} className="inline-flex items-center gap-0.5 text-[11px] font-semibold hover:opacity-70 transition-opacity" style={{ color: 'rgb(14 124 90)' }}>
-          <Plus size={11} />Add
+          <Plus size={11} />{t('common.add')}
         </button>
       </div>
       {entries.length === 0 ? (
@@ -377,7 +383,7 @@ function MultiContactField({ label, entries, onChange, placeholder }: {
           {entries.map((entry, i) => (
             <div key={i} className="flex items-center gap-1.5">
               <input className={`${inp} flex-1`} style={inpStyle} value={entry.value} onChange={e => updateVal(i, e.target.value)} placeholder={placeholder} />
-              <button type="button" onClick={() => setPrimary(i)} className="p-1.5 rounded-lg transition-colors shrink-0" title="Set as primary"
+              <button type="button" onClick={() => setPrimary(i)} className="p-1.5 rounded-lg transition-colors shrink-0" title={t('leads.setAsPrimary')}
                 style={{ background: entry.primary ? 'rgba(201,162,75,0.15)' : 'transparent', color: entry.primary ? '#C9A24B' : 'rgb(203 211 222)' }}>
                 <Star size={12} fill={entry.primary ? 'currentColor' : 'none'} />
               </button>
@@ -455,6 +461,7 @@ interface AddLeadDialogProps {
 }
 
 export function AddLeadDialog({ open, onOpenChange, lead }: AddLeadDialogProps) {
+  const { t } = useI18n()
   const isEditMode = !!lead
   const isAlreadyClosed = lead?.status === 'closed'
 
@@ -532,7 +539,18 @@ export function AddLeadDialog({ open, onOpenChange, lead }: AddLeadDialogProps) 
   function reset() { setForm(EMPTY); setEmails([]); setPhones([]); setEnrollment(EMPTY_ENROLLMENT) }
 
   const courseOptions: SelectOption[] = courses.map((c: { id: number; name: string }) => ({ value: String(c.id), label: c.name }))
-  const teacherOptions: SelectOption[] = teachers.map((t: { id: number; name: string | null }) => ({ value: String(t.id), label: t.name ?? `Teacher #${t.id}` }))
+  const teacherOptions: SelectOption[] = teachers.map((tc: { id: number; name: string | null }) => ({ value: String(tc.id), label: tc.name ?? t('leads.teacherFallback', { id: String(tc.id) }) }))
+
+  const loc = (opts: { value: string; key: string }[]): SelectOption[] => opts.map(o => ({ value: o.value, label: t(o.key) }))
+  const statusOptionsAdd  = loc(STATUS_OPTIONS_ADD)
+  const statusOptionsEdit = loc(STATUS_OPTIONS_EDIT)
+  const platformOptions   = loc(PLATFORM_OPTIONS)
+  const sourceOptions     = loc(SOURCE_OPTIONS)
+  const priorityOptions   = loc(PRIORITY_OPTIONS)
+  const genderOptions     = loc(GENDER_OPTIONS)
+  const paymentOptions    = loc(PAYMENT_OPTIONS)
+  const rejectionOptions  = loc(REJECTION_OPTIONS)
+  const durationOptions   = loc(SESSION_DURATION_OPTIONS)
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -585,24 +603,24 @@ export function AddLeadDialog({ open, onOpenChange, lead }: AddLeadDialogProps) 
             guardian_name:        enrollment.guardian_name || undefined,
             guardian_whatsapp:    enrollment.guardian_whatsapp || undefined,
           })
-          toast.success('Lead converted to student successfully!')
+          toast.success(t('leads.toastConverted'))
         } else {
-          toast.success('Lead updated.')
+          toast.success(t('leads.toastUpdated'))
         }
       } else {
         /* ── Create ── */
         basePayload.status = form.status
         await create.mutateAsync(basePayload)
-        toast.success('Lead created.')
+        toast.success(t('leads.toastCreated'))
       }
       reset(); onOpenChange(false)
     } catch (err) {
-      toast.error(err instanceof ApiError ? err.message : isEditMode ? 'Failed to update lead.' : 'Failed to create lead.')
+      toast.error(err instanceof ApiError ? err.message : isEditMode ? t('leads.toastUpdateFailed') : t('leads.toastCreateFailed'))
     }
   }
 
   const isPending = create.isPending || update.isPending || convert.isPending
-  const statusOptions = isEditMode ? STATUS_OPTIONS_EDIT : STATUS_OPTIONS_ADD
+  const statusOptions = isEditMode ? statusOptionsEdit : statusOptionsAdd
 
   return (
     <DialogPrimitive.Root open={open} onOpenChange={v => { if (!v) reset(); onOpenChange(v) }}>
@@ -636,10 +654,10 @@ export function AddLeadDialog({ open, onOpenChange, lead }: AddLeadDialogProps) 
                 </div>
                 <div className="flex-1 min-w-0">
                   <DialogPrimitive.Title className="font-bold text-white leading-none" style={{ fontFamily: "'Cormorant Garamond', Georgia, serif", fontSize: '1.15rem' }}>
-                    {isEditMode ? 'Edit Lead' : 'Add Lead'}
+                    {isEditMode ? t('leads.editLeadTitle') : t('leads.addLead')}
                   </DialogPrimitive.Title>
                   <DialogPrimitive.Description className="text-xs mt-0.5" style={{ color: 'rgba(201,162,75,0.7)' }}>
-                    {isEditMode ? `Editing ${lead?.name}` : 'New entry for the CRM pipeline'}
+                    {isEditMode ? t('leads.editingName', { name: lead?.name ?? '' }) : t('leads.addLeadSubtitle')}
                   </DialogPrimitive.Description>
                 </div>
                 <DialogPrimitive.Close className="p-1.5 rounded-lg hover:bg-white/10 transition-colors text-white/50 hover:text-white shrink-0">
@@ -657,92 +675,92 @@ export function AddLeadDialog({ open, onOpenChange, lead }: AddLeadDialogProps) 
                 <input type="checkbox" checked={form.is_family_lead} onChange={e => set('is_family_lead', e.target.checked)} className="w-4 h-4 rounded accent-[rgb(14,124,90)]" />
                 <div className="flex items-center gap-1.5">
                   <Users size={13} style={{ color: 'rgb(90 100 112)' }} />
-                  <span className="text-sm" style={{ color: '#0B1F3A' }}>Family Lead (Parent + Children)</span>
+                  <span className="text-sm" style={{ color: '#0B1F3A' }}>{t('leads.familyLeadToggle')}</span>
                 </div>
               </label>
 
               {/* ─── 1: Status & Personal Info ─── */}
-              <SectionDivider title="Status & Personal Info" />
+              <SectionDivider title={t('leads.sectionStatusPersonal')} />
               <div className="space-y-3">
                 <div className="grid grid-cols-2 gap-3">
-                  <Field label="Status">
+                  <Field label={t('common.status')}>
                     {isAlreadyClosed ? (
                       <div className="flex items-center gap-2 px-3 py-2 rounded-lg border text-sm" style={{ ...inpStyle, background: 'rgba(14,124,90,0.07)', borderColor: 'rgba(14,124,90,0.3)' }}>
                         <span className="w-2 h-2 rounded-full shrink-0" style={{ background: 'rgb(14 124 90)' }} />
-                        <span style={{ color: 'rgb(14 124 90)', fontWeight: 600 }}>Closed</span>
-                        <span className="ml-auto text-[10px]" style={{ color: 'rgb(90 100 112)' }}>Converted to student</span>
+                        <span style={{ color: 'rgb(14 124 90)', fontWeight: 600 }}>{t('leads.statusClosed')}</span>
+                        <span className="ml-auto text-[10px]" style={{ color: 'rgb(90 100 112)' }}>{t('leads.convertedToStudent')}</span>
                       </div>
                     ) : (
-                      <SearchSelect value={form.status} onChange={v => set('status', v as LeadStatus)} options={statusOptions} placeholder="Select status" clearable={false} />
+                      <SearchSelect value={form.status} onChange={v => set('status', v as LeadStatus)} options={statusOptions} placeholder={t('leads.selectStatus')} clearable={false} />
                     )}
                   </Field>
-                  <Field label="Priority">
-                    <SearchSelect value={form.priority} onChange={v => set('priority', v as LeadPriority)} options={PRIORITY_OPTIONS} placeholder="Select priority" clearable={false} />
+                  <Field label={t('leads.fieldPriority')}>
+                    <SearchSelect value={form.priority} onChange={v => set('priority', v as LeadPriority)} options={priorityOptions} placeholder={t('leads.selectPriority')} clearable={false} />
                   </Field>
                 </div>
-                <Field label="Full Name" required>
-                  <input required className={inp} style={inpStyle} placeholder="Enter lead's full name" value={form.name} onChange={e => set('name', e.target.value)} />
+                <Field label={t('leads.fieldFullName')} required>
+                  <input required className={inp} style={inpStyle} placeholder={t('leads.fullNamePlaceholder')} value={form.name} onChange={e => set('name', e.target.value)} />
                 </Field>
                 <div className="grid grid-cols-2 gap-3">
-                  <MultiContactField label="Email Addresses" entries={emails} onChange={setEmails} placeholder="contact@example.com" />
-                  <MultiContactField label="Phone Numbers"   entries={phones}  onChange={setPhones}  placeholder="+1 234 567 890" />
+                  <MultiContactField label={t('leads.fieldEmailAddresses')} entries={emails} onChange={setEmails} placeholder="contact@example.com" />
+                  <MultiContactField label={t('leads.fieldPhoneNumbers')}   entries={phones}  onChange={setPhones}  placeholder="+1 234 567 890" />
                 </div>
                 <div className="grid grid-cols-2 gap-3">
-                  <Field label="Age">
-                    <input type="number" min={1} max={120} className={inp} style={inpStyle} placeholder="e.g. 28" value={form.age} onChange={e => set('age', e.target.value)} />
+                  <Field label={t('leads.fieldAge')}>
+                    <input type="number" min={1} max={120} className={inp} style={inpStyle} placeholder={t('leads.agePlaceholder')} value={form.age} onChange={e => set('age', e.target.value)} />
                   </Field>
-                  <Field label="Gender">
-                    <SearchSelect value={form.gender} onChange={v => set('gender', v)} options={GENDER_OPTIONS} placeholder="Select gender" />
+                  <Field label={t('leads.fieldGender')}>
+                    <SearchSelect value={form.gender} onChange={v => set('gender', v)} options={genderOptions} placeholder={t('leads.selectGender')} />
                   </Field>
-                  <Field label="Country">
+                  <Field label={t('common.country')}>
                     <CountryPicker value={form.country} onChange={v => set('country', v)} />
                   </Field>
-                  <Field label="City">
-                    <input className={inp} style={inpStyle} placeholder="City" value={form.city} onChange={e => set('city', e.target.value)} />
+                  <Field label={t('leads.fieldCity')}>
+                    <input className={inp} style={inpStyle} placeholder={t('leads.fieldCity')} value={form.city} onChange={e => set('city', e.target.value)} />
                   </Field>
                 </div>
               </div>
 
               {/* ─── 2: Subjects ─── */}
-              <SectionDivider title="Subjects" />
+              <SectionDivider title={t('leads.sectionSubjects')} />
               <div className="space-y-3">
                 <div className="grid grid-cols-2 gap-3">
-                  <Field label="Course Interest">
-                    <SearchSelect value={form.course_interest_id} onChange={v => set('course_interest_id', v)} options={courseOptions} placeholder="Select course" />
+                  <Field label={t('leads.fieldCourseInterest')}>
+                    <SearchSelect value={form.course_interest_id} onChange={v => set('course_interest_id', v)} options={courseOptions} placeholder={t('leads.selectCourse')} />
                   </Field>
-                  <Field label="Assigned Teacher">
-                    <SearchSelect value={form.assigned_teacher_id} onChange={v => set('assigned_teacher_id', v)} options={teacherOptions} placeholder="Select teacher" />
+                  <Field label={t('leads.fieldAssignedTeacher')}>
+                    <SearchSelect value={form.assigned_teacher_id} onChange={v => set('assigned_teacher_id', v)} options={teacherOptions} placeholder={t('leads.selectTeacher')} />
                   </Field>
                 </div>
-                <Field label="Sections / Groups">
-                  <TagInput value={form.sections} onChange={v => set('sections', v)} placeholder="Type section name and press Enter…" />
+                <Field label={t('leads.fieldSections')}>
+                  <TagInput value={form.sections} onChange={v => set('sections', v)} placeholder={t('leads.sectionsPlaceholder')} />
                 </Field>
               </div>
 
               {/* ─── 3: Platform & Source ─── */}
-              <SectionDivider title="Platform & Source" />
+              <SectionDivider title={t('leads.sectionPlatformSource')} />
               <div className="space-y-3">
                 <div className="grid grid-cols-2 gap-3">
-                  <Field label="Platform">
-                    <SearchSelect value={form.platform} onChange={v => set('platform', v)} options={PLATFORM_OPTIONS} placeholder="Where they found us" />
+                  <Field label={t('leads.fieldPlatform')}>
+                    <SearchSelect value={form.platform} onChange={v => set('platform', v)} options={platformOptions} placeholder={t('leads.platformPlaceholder')} />
                   </Field>
-                  <Field label="Source">
-                    <SearchSelect value={form.source} onChange={v => set('source', v)} options={SOURCE_OPTIONS} placeholder="How they came in" />
+                  <Field label={t('leads.fieldSource')}>
+                    <SearchSelect value={form.source} onChange={v => set('source', v)} options={sourceOptions} placeholder={t('leads.sourcePlaceholder')} />
                   </Field>
                 </div>
-                <Field label="Platform URL">
+                <Field label={t('leads.fieldPlatformUrl')}>
                   <input className={inp} style={inpStyle} placeholder="https://…" value={form.platform_url} onChange={e => set('platform_url', e.target.value)} />
                 </Field>
-                <Field label="Parent / Family">
+                <Field label={t('leads.fieldParentFamily')}>
                   <div className="flex items-center gap-6 mt-0.5">
                     {([
-                      { value: 'adult',      label: 'Adult Student' },
-                      { value: 'new_family', label: 'New Family' },
-                      { value: 'existing',   label: 'Existing Parent' },
+                      { value: 'adult',      key: 'leads.parentModeAdult' },
+                      { value: 'new_family', key: 'leads.parentModeNewFamily' },
+                      { value: 'existing',   key: 'leads.parentModeExisting' },
                     ] as const).map(opt => (
                       <label key={opt.value} className="flex items-center gap-2 cursor-pointer">
                         <input type="radio" name="parent_mode" value={opt.value} checked={form.parent_mode === opt.value} onChange={() => set('parent_mode', opt.value)} className="accent-[rgb(14,124,90)]" />
-                        <span className="text-sm" style={{ color: '#0B1F3A' }}>{opt.label}</span>
+                        <span className="text-sm" style={{ color: '#0B1F3A' }}>{t(opt.key)}</span>
                       </label>
                     ))}
                   </div>
@@ -750,49 +768,49 @@ export function AddLeadDialog({ open, onOpenChange, lead }: AddLeadDialogProps) 
               </div>
 
               {/* ─── 4: Package & Price ─── */}
-              <SectionDivider title="Package & Price" />
+              <SectionDivider title={t('leads.sectionPackagePrice')} />
               <div className="space-y-3">
                 <div className="grid grid-cols-4 gap-3">
-                  <Field label="Package (sessions)">
+                  <Field label={t('leads.fieldPackageSessions')}>
                     <input type="number" min={1} className={inp} style={inpStyle} placeholder="8" value={form.package_type} onChange={e => set('package_type', e.target.value)} />
                   </Field>
-                  <Field label="Hours">
+                  <Field label={t('leads.fieldHours')}>
                     <input type="number" min={1} className={inp} style={inpStyle} placeholder="4" value={form.package_hours} onChange={e => set('package_hours', e.target.value)} />
                   </Field>
-                  <Field label="Price">
+                  <Field label={t('leads.fieldPrice')}>
                     <input type="number" min={0} step="0.01" className={inp} style={inpStyle} placeholder="120" value={form.subscription_price} onChange={e => set('subscription_price', e.target.value)} />
                   </Field>
-                  <Field label="Currency">
+                  <Field label={t('common.currency')}>
                     <SearchSelect value={form.currency} onChange={v => set('currency', v)} options={CURRENCY_OPTIONS} placeholder="EUR" clearable={false} />
                   </Field>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
-                  <Field label="Payment Method">
-                    <SearchSelect value={form.payment_method} onChange={v => set('payment_method', v)} options={PAYMENT_OPTIONS} placeholder="Select method" clearable={false} />
+                  <Field label={t('leads.fieldPaymentMethod')}>
+                    <SearchSelect value={form.payment_method} onChange={v => set('payment_method', v)} options={paymentOptions} placeholder={t('leads.selectMethod')} clearable={false} />
                   </Field>
                 </div>
               </div>
 
               {/* ─── 5: Follow Up ─── */}
-              <SectionDivider title="Follow Up" />
+              <SectionDivider title={t('leads.sectionFollowUp')} />
               <div className="grid grid-cols-2 gap-3">
-                <Field label="Next Follow-up">
+                <Field label={t('leads.fieldNextFollowUp')}>
                   <input type="datetime-local" className={inp} style={inpStyle} value={form.next_followup} onChange={e => set('next_followup', e.target.value)} />
                 </Field>
-                <Field label="Assigned To">
-                  <SearchSelect value={form.assigned_to} onChange={v => set('assigned_to', v)} options={teacherOptions} placeholder="Unassigned" />
+                <Field label={t('leads.fieldAssignedTo')}>
+                  <SearchSelect value={form.assigned_to} onChange={v => set('assigned_to', v)} options={teacherOptions} placeholder={t('status.unassigned')} />
                 </Field>
               </div>
 
               {/* ─── 6: Notes & Rejection ─── */}
-              <SectionDivider title="Notes & Rejection" />
+              <SectionDivider title={t('leads.sectionNotesRejection')} />
               <div className="space-y-3">
-                <Field label="Notes">
-                  <textarea rows={3} className={inp} style={inpStyle} placeholder="Any notes about this lead…" value={form.notes} onChange={e => set('notes', e.target.value)} />
+                <Field label={t('common.notes')}>
+                  <textarea rows={3} className={inp} style={inpStyle} placeholder={t('leads.notesPlaceholder')} value={form.notes} onChange={e => set('notes', e.target.value)} />
                 </Field>
                 <div className="grid grid-cols-2 gap-3">
-                  <Field label="Rejection Reason">
-                    <SearchSelect value={form.rejection_reason} onChange={v => set('rejection_reason', v)} options={REJECTION_OPTIONS} placeholder="If applicable" />
+                  <Field label={t('leads.fieldRejectionReason')}>
+                    <SearchSelect value={form.rejection_reason} onChange={v => set('rejection_reason', v)} options={rejectionOptions} placeholder={t('leads.ifApplicable')} />
                   </Field>
                 </div>
               </div>
@@ -800,29 +818,29 @@ export function AddLeadDialog({ open, onOpenChange, lead }: AddLeadDialogProps) 
               {/* ─── 7: Student Enrollment (only when closing a non-closed lead) ─── */}
               {isClosing && (
                 <>
-                  <SectionDivider title="Student Enrollment Details" />
+                  <SectionDivider title={t('leads.sectionEnrollmentDetails')} />
                   <div className="space-y-3 pb-3">
                     <EnrollmentBanner />
 
                     <div className="grid grid-cols-2 gap-3">
-                      <Field label="Course" required>
-                        <SearchSelect value={enrollment.course_id} onChange={v => setEnr('course_id', v)} options={courseOptions} placeholder="Select course" clearable={false} />
+                      <Field label={t('common.course')} required>
+                        <SearchSelect value={enrollment.course_id} onChange={v => setEnr('course_id', v)} options={courseOptions} placeholder={t('leads.selectCourse')} clearable={false} />
                       </Field>
-                      <Field label="Assigned Teacher" required>
-                        <SearchSelect value={enrollment.assigned_teacher_id} onChange={v => setEnr('assigned_teacher_id', v)} options={teacherOptions} placeholder="Select teacher" clearable={false} />
+                      <Field label={t('leads.fieldAssignedTeacher')} required>
+                        <SearchSelect value={enrollment.assigned_teacher_id} onChange={v => setEnr('assigned_teacher_id', v)} options={teacherOptions} placeholder={t('leads.selectTeacher')} clearable={false} />
                       </Field>
                     </div>
 
                     <div className="grid grid-cols-2 gap-3">
-                      <Field label="Timezone" required>
-                        <SearchSelect value={enrollment.timezone} onChange={v => setEnr('timezone', v)} options={TIMEZONE_OPTIONS} placeholder="Select timezone" clearable={false} />
+                      <Field label={t('common.timezone')} required>
+                        <SearchSelect value={enrollment.timezone} onChange={v => setEnr('timezone', v)} options={TIMEZONE_OPTIONS} placeholder={t('leads.selectTimezone')} clearable={false} />
                       </Field>
-                      <Field label="Student Type" required>
+                      <Field label={t('leads.fieldStudentType')} required>
                         <div className="flex items-center gap-6 px-1 py-2">
-                          {(['adult', 'child'] as const).map(t => (
-                            <label key={t} className="flex items-center gap-2 cursor-pointer">
-                              <input type="radio" name="student_type" value={t} checked={enrollment.student_type === t} onChange={() => setEnr('student_type', t)} className="accent-[rgb(14,124,90)]" />
-                              <span className="text-sm capitalize" style={{ color: '#0B1F3A' }}>{t}</span>
+                          {(['adult', 'child'] as const).map(st => (
+                            <label key={st} className="flex items-center gap-2 cursor-pointer">
+                              <input type="radio" name="student_type" value={st} checked={enrollment.student_type === st} onChange={() => setEnr('student_type', st)} className="accent-[rgb(14,124,90)]" />
+                              <span className="text-sm" style={{ color: '#0B1F3A' }}>{st === 'adult' ? t('leads.studentTypeAdult') : t('leads.studentTypeChild')}</span>
                             </label>
                           ))}
                         </div>
@@ -830,26 +848,26 @@ export function AddLeadDialog({ open, onOpenChange, lead }: AddLeadDialogProps) 
                     </div>
 
                     <div className="grid grid-cols-4 gap-3">
-                      <Field label="Sessions / Month" required>
+                      <Field label={t('leads.fieldSessionsPerMonth')} required>
                         <input type="number" min={1} max={30} required={isClosing} className={inp} style={inpStyle} placeholder="4" value={enrollment.sessions_per_month} onChange={e => setEnr('sessions_per_month', e.target.value)} />
                       </Field>
-                      <Field label="Duration" required>
-                        <SearchSelect value={enrollment.session_duration_min} onChange={v => setEnr('session_duration_min', v)} options={SESSION_DURATION_OPTIONS} clearable={false} />
+                      <Field label={t('common.duration')} required>
+                        <SearchSelect value={enrollment.session_duration_min} onChange={v => setEnr('session_duration_min', v)} options={durationOptions} clearable={false} />
                       </Field>
-                      <Field label="Monthly Price" required>
+                      <Field label={t('leads.fieldMonthlyPrice')} required>
                         <input type="number" min={0} step="0.01" required={isClosing} className={inp} style={inpStyle} placeholder="120" value={enrollment.monthly_price} onChange={e => setEnr('monthly_price', e.target.value)} />
                       </Field>
-                      <Field label="Currency" required>
+                      <Field label={t('common.currency')} required>
                         <SearchSelect value={enrollment.currency} onChange={v => setEnr('currency', v)} options={CURRENCY_OPTIONS} clearable={false} />
                       </Field>
                     </div>
 
                     {enrollment.student_type === 'child' && (
                       <div className="grid grid-cols-2 gap-3">
-                        <Field label="Guardian Name" required>
-                          <input required={isClosing && enrollment.student_type === 'child'} className={inp} style={inpStyle} placeholder="Parent or guardian's name" value={enrollment.guardian_name} onChange={e => setEnr('guardian_name', e.target.value)} />
+                        <Field label={t('leads.fieldGuardianName')} required>
+                          <input required={isClosing && enrollment.student_type === 'child'} className={inp} style={inpStyle} placeholder={t('leads.guardianNamePlaceholder')} value={enrollment.guardian_name} onChange={e => setEnr('guardian_name', e.target.value)} />
                         </Field>
-                        <Field label="Guardian WhatsApp" required>
+                        <Field label={t('leads.fieldGuardianWhatsApp')} required>
                           <input required={isClosing && enrollment.student_type === 'child'} className={inp} style={inpStyle} placeholder="+1 234 567 890" value={enrollment.guardian_whatsapp} onChange={e => setEnr('guardian_whatsapp', e.target.value)} />
                         </Field>
                       </div>
@@ -862,7 +880,7 @@ export function AddLeadDialog({ open, onOpenChange, lead }: AddLeadDialogProps) 
               {isAlreadyClosed && (
                 <div className="mb-4 flex items-center gap-2 text-xs px-3 py-2.5 rounded-lg" style={{ background: 'rgba(14,124,90,0.07)', color: 'rgb(14 124 90)', border: '1px solid rgba(14,124,90,0.2)' }}>
                   <GraduationCap size={13} className="shrink-0" />
-                  This lead has already been converted to a student.
+                  {t('leads.alreadyConvertedNote')}
                 </div>
               )}
 
@@ -877,20 +895,20 @@ export function AddLeadDialog({ open, onOpenChange, lead }: AddLeadDialogProps) 
               {isClosing && (
                 <div className="flex items-center gap-1.5 text-xs" style={{ color: 'rgb(154 113 23)' }}>
                   <AlertTriangle size={12} />
-                  <span>Will create a student account</span>
+                  <span>{t('leads.willCreateStudent')}</span>
                 </div>
               )}
 
               <div className="flex items-center gap-3 ml-auto">
                 <DialogPrimitive.Close className="px-4 py-2 rounded-lg text-sm font-medium border hover:bg-black/5 transition-colors" style={{ borderColor: 'rgb(229 233 240)' }}>
-                  Cancel
+                  {t('common.cancel')}
                 </DialogPrimitive.Close>
                 <button
                   type="submit" form="lead-form" disabled={isPending}
                   className="inline-flex items-center gap-2 px-6 py-2 rounded-lg text-sm font-semibold text-white disabled:opacity-60 hover:opacity-90 transition-opacity"
                   style={{ background: isClosing ? 'linear-gradient(135deg, #0d9488, rgb(14 124 90))' : 'linear-gradient(135deg, #0d9488, rgb(14 124 90))' }}
                 >
-                  {isPending ? (isClosing ? 'Converting…' : isEditMode ? 'Saving…' : 'Creating…') : (isClosing ? 'Convert to Student' : isEditMode ? 'Save Changes' : 'Create Lead')}
+                  {isPending ? (isClosing ? t('leads.converting') : isEditMode ? t('common.saving') : t('common.creating')) : (isClosing ? t('leads.convertToStudent') : isEditMode ? t('common.save') : t('leads.createLeadButton'))}
                 </button>
               </div>
             </div>

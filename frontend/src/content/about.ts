@@ -3,7 +3,7 @@ export const aboutContent = {
     eyebrow: 'Our Story',
     heading: 'Born From a Mission to Connect the World to the Quran',
     subheading:
-      'Alrayan Academy was founded with one conviction: every Muslim, wherever they live, deserves access to the same quality of Quran education that was once only available in Makkah and Cairo.',
+      'Azhary was founded with one conviction: every Muslim, wherever they live, deserves access to the same quality of Quran education that was once only available in Makkah and Cairo.',
   },
 
   mission: {
@@ -28,12 +28,12 @@ export const aboutContent = {
   },
 
   story: {
-    heading: 'The Story of Alrayan',
+    heading: 'The Story of Azhary',
     paragraphs: [
-      'Alrayan Academy was founded in 2015 by a small group of Al-Azhar graduates who had relocated to the West and noticed a troubling gap: the Muslim families around them desperately wanted Quran education for their children — but couldn\'t access teachers with authentic credentials.',
+      'Azhary was founded in 2015 by a small group of Al-Azhar graduates who had relocated to the West and noticed a troubling gap: the Muslim families around them desperately wanted Quran education for their children — but couldn\'t access teachers with authentic credentials.',
       'The early days were simple: a handful of teachers, a few dozen students, and a commitment to never hiring a teacher who didn\'t hold an Ijazah. That last point was non-negotiable. The Quran is not a subject to be taught by self-taught tutors — it is a living tradition passed from mouth to ear across 1,400 years, and every link in that chain matters.',
       'By 2018 we had grown to 1,000 students across 20 countries. By 2022, 5,000 students across 40 countries. Today, over 10,000 students in more than 50 countries learn with us every week — from a child in Toronto just beginning the Arabic alphabet, to a grandfather in Melbourne completing his Ijazah at age 72.',
-      'Our name, Alrayan, comes from one of the eight gates of Paradise — the gate reserved for those who fast. We chose it as a reminder: this work is an act of worship. Every lesson delivered, every student who learns a new verse, every Ijazah granted — it is all a form of sadaqah jariyah, a continuous charity that outlasts us all.',
+      'Our name, Azhary, comes from one of the eight gates of Paradise — the gate reserved for those who fast. We chose it as a reminder: this work is an act of worship. Every lesson delivered, every student who learns a new verse, every Ijazah granted — it is all a form of sadaqah jariyah, a continuous charity that outlasts us all.',
     ],
   },
 
@@ -44,7 +44,7 @@ export const aboutContent = {
     items: [
       {
         title: 'Authenticated Ijazah Chain',
-        body: 'Every teacher at Alrayan holds an Ijazah — a certified license with an unbroken chain of transmission going back through the centuries to the Prophet ﷺ. We verify every teacher\'s chain before they join. This is not optional.',
+        body: 'Every teacher at Azhary holds an Ijazah — a certified license with an unbroken chain of transmission going back through the centuries to the Prophet ﷺ. We verify every teacher\'s chain before they join. This is not optional.',
         icon: 'Link',
         stat: '100% of teachers',
       },

@@ -10,7 +10,15 @@ import {
 import { Button } from '@/components/ui/button'
 import { formatMoney } from '@/lib/money'
 import { useApprovePayroll } from '@/hooks/system/usePayrollActions'
+import { useI18n } from '@/lib/system/i18n'
 import type { Payroll } from '@/types/system/payroll'
+
+const MONTH_KEYS = [
+  'schedule.months.january', 'schedule.months.february', 'schedule.months.march',
+  'schedule.months.april', 'schedule.months.may', 'schedule.months.june',
+  'schedule.months.july', 'schedule.months.august', 'schedule.months.september',
+  'schedule.months.october', 'schedule.months.november', 'schedule.months.december',
+]
 
 interface ApprovePayrollDialogProps {
   payroll: Payroll
@@ -19,19 +27,15 @@ interface ApprovePayrollDialogProps {
   onSuccess?: () => void
 }
 
-function periodLabel(year: number, month: number): string {
-  return new Date(year, month - 1, 1).toLocaleDateString('en-US', {
-    month: 'long',
-    year: 'numeric',
-  })
-}
-
 export function ApprovePayrollDialog({
   payroll,
   open,
   onClose,
   onSuccess,
 }: ApprovePayrollDialogProps) {
+  const { t } = useI18n()
+  const periodLabel = (year: number, month: number) =>
+    `${t(MONTH_KEYS[month - 1])} ${year}`
   const approve = useApprovePayroll()
 
   async function handleApprove() {
@@ -44,24 +48,25 @@ export function ApprovePayrollDialog({
     <Dialog open={open} onOpenChange={v => !v && onClose()}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Approve Payroll</DialogTitle>
+          <DialogTitle>{t('payroll.approveTitle')}</DialogTitle>
           <DialogDescription>
-            Approve payroll for{' '}
-            <strong>{payroll.teacher?.name ?? `Teacher #${payroll.teacher_id}`}</strong>{' '}
-            ({periodLabel(payroll.period_year, payroll.period_month)})?
+            {t('payroll.approveConfirm', {
+              name: payroll.teacher?.name ?? t('payroll.teacherFallback', { id: String(payroll.teacher_id) }),
+              period: periodLabel(payroll.period_year, payroll.period_month),
+            })}
             <br />
-            Net: <strong>{formatMoney(payroll.net_salary_minor, 'EGP')}</strong>
+            {t('payroll.detail.net')}: <strong>{formatMoney(payroll.net_salary_minor, 'EGP')}</strong>
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>
-            Cancel
+            {t('common.cancel')}
           </Button>
           <Button
             onClick={handleApprove}
             disabled={approve.isPending}
           >
-            {approve.isPending ? 'Approving...' : 'Approve'}
+            {approve.isPending ? `${t('common.approve')}...` : t('common.approve')}
           </Button>
         </DialogFooter>
       </DialogContent>

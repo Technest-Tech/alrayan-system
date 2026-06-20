@@ -6,6 +6,7 @@ import type { StudentDetail, StudentStatus } from '@/types/system/student'
 import { StudentStatusBadge } from './StudentStatusBadge'
 import { useStudentTransition } from '@/hooks/system/useStudents'
 import { ApiError } from '@/lib/system/api'
+import { useI18n } from '@/lib/system/i18n'
 
 const TRANSITIONS: Record<StudentStatus, StudentStatus[]> = {
   trial:     ['active', 'cancelled'],
@@ -22,15 +23,6 @@ const BTN_STYLES: Record<string, string> = {
   cancelled: 'bg-gray-400 text-white hover:bg-gray-500',
 }
 
-const CANCELLATION_REASONS = [
-  'No longer interested',
-  'Price too high',
-  'Schedule conflict',
-  'Completed course',
-  'Moved to another provider',
-  'Other',
-]
-
 interface CancelModalProps {
   onConfirm: (reason: string, notes: string) => void
   onClose: () => void
@@ -38,8 +30,18 @@ interface CancelModalProps {
 }
 
 function CancelModal({ onConfirm, onClose, isLoading }: CancelModalProps) {
+  const { t } = useI18n()
   const [reason, setReason] = useState('')
   const [notes,  setNotes]  = useState('')
+
+  const CANCELLATION_REASONS = [
+    { key: 'students.reasonNoInterest', label: t('students.reasonNoInterest') },
+    { key: 'students.reasonPrice',      label: t('students.reasonPrice') },
+    { key: 'students.reasonSchedule',   label: t('students.reasonSchedule') },
+    { key: 'students.reasonCompleted',  label: t('students.reasonCompleted') },
+    { key: 'students.reasonMoved',      label: t('students.reasonMoved') },
+    { key: 'students.reasonOther',      label: t('students.reasonOther') },
+  ]
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -51,21 +53,21 @@ function CancelModal({ onConfirm, onClose, isLoading }: CancelModalProps) {
         <button onClick={onClose} className="absolute top-4 right-4 opacity-40 hover:opacity-70">
           <X size={16} />
         </button>
-        <h3 className="font-semibold">Cancel enrolment</h3>
+        <h3 className="font-semibold">{t('students.cancelEnrolmentTitle')}</h3>
         <div>
-          <label className="block text-sm font-medium mb-1.5">Reason</label>
+          <label className="block text-sm font-medium mb-1.5">{t('common.reason')}</label>
           <select
             value={reason}
             onChange={(e) => setReason(e.target.value)}
             className="w-full px-3 py-2 rounded-xl border text-sm outline-none"
             style={{ borderColor: 'rgb(var(--border-default, 229 233 240))', background: 'rgb(var(--surface-card, 255 255 255))' }}
           >
-            <option value="">Select a reason…</option>
-            {CANCELLATION_REASONS.map((r) => <option key={r} value={r}>{r}</option>)}
+            <option value="">{t('students.selectReason')}</option>
+            {CANCELLATION_REASONS.map((r) => <option key={r.key} value={r.label}>{r.label}</option>)}
           </select>
         </div>
         <div>
-          <label className="block text-sm font-medium mb-1.5">Internal notes (optional)</label>
+          <label className="block text-sm font-medium mb-1.5">{t('students.internalNotes')}</label>
           <textarea
             rows={3}
             value={notes}
@@ -80,14 +82,14 @@ function CancelModal({ onConfirm, onClose, isLoading }: CancelModalProps) {
             className="px-4 py-2 rounded-xl text-sm font-medium border hover:bg-black/5 transition-colors"
             style={{ borderColor: 'rgb(var(--border-default, 229 233 240))' }}
           >
-            Back
+            {t('common.back')}
           </button>
           <button
             onClick={() => onConfirm(reason, notes)}
             disabled={!reason || isLoading}
             className="px-4 py-2 rounded-xl text-sm font-semibold text-white bg-red-600 hover:bg-red-700 disabled:opacity-50 transition-colors"
           >
-            {isLoading ? 'Cancelling…' : 'Confirm cancel'}
+            {isLoading ? t('students.cancelling') : t('students.confirmCancel')}
           </button>
         </div>
       </div>
@@ -100,6 +102,7 @@ interface StudentLifecycleBarProps {
 }
 
 export function StudentLifecycleBar({ student }: StudentLifecycleBarProps) {
+  const { t } = useI18n()
   const [showCancel, setShowCancel] = useState(false)
   const transition = useStudentTransition(student.id)
   const allowed = TRANSITIONS[student.status] ?? []
@@ -130,7 +133,7 @@ export function StudentLifecycleBar({ student }: StudentLifecycleBarProps) {
         className="flex flex-wrap items-center gap-3 px-4 py-3 rounded-xl border"
         style={{ borderColor: 'rgb(var(--border-default, 229 233 240))', background: 'rgb(var(--surface-card, 255 255 255))' }}
       >
-        <span className="text-sm font-medium opacity-60 mr-1">Status</span>
+        <span className="text-sm font-medium opacity-60 mr-1">{t('common.status')}</span>
         <StudentStatusBadge status={student.status} />
 
         {allowed.length > 0 && (
@@ -143,7 +146,7 @@ export function StudentLifecycleBar({ student }: StudentLifecycleBarProps) {
                 disabled={transition.isPending}
                 className={`px-3 py-1 rounded-lg text-xs font-semibold capitalize transition-colors disabled:opacity-50 ${BTN_STYLES[to] ?? 'bg-gray-200'}`}
               >
-                {to === 'cancelled' ? 'Cancel' : `Move to ${to}`}
+                {to === 'cancelled' ? t('common.cancel') : `Move to ${to}`}
               </button>
             ))}
           </>

@@ -1,6 +1,8 @@
+'use client'
 import type { DashboardActivity } from '@/hooks/system/useDashboard'
 import { formatDistanceToNow } from '@/lib/system/date'
 import { Activity } from 'lucide-react'
+import { useI18n } from '@/lib/system/i18n'
 
 interface Props {
   items:   DashboardActivity[]
@@ -8,6 +10,8 @@ interface Props {
 }
 
 export function RecentActivity({ items, loading }: Props) {
+  const { t } = useI18n()
+
   return (
     <div
       className="rounded-2xl overflow-hidden"
@@ -17,7 +21,7 @@ export function RecentActivity({ items, loading }: Props) {
         className="px-5 py-3 border-b font-semibold text-sm"
         style={{ borderColor: 'rgb(var(--border-default, 229 233 240))' }}
       >
-        Recent activity
+        {t('dashboard.recentActivity')}
       </div>
 
       {loading ? (
@@ -27,7 +31,7 @@ export function RecentActivity({ items, loading }: Props) {
       ) : items.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-10 opacity-40 gap-2">
           <Activity size={20} />
-          <p className="text-xs">No activity yet.</p>
+          <p className="text-xs">{t('dashboard.noActivity')}</p>
         </div>
       ) : (
         <ul className="divide-y" style={{ borderColor: 'rgb(var(--border-default, 229 233 240))' }}>

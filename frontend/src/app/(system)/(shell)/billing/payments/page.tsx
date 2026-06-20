@@ -5,19 +5,21 @@ import { CreditCard, Loader2 } from 'lucide-react'
 import { PageHeader } from '@/components/system/primitives/PageHeader'
 import { api, type Paginated } from '@/lib/system/api'
 import { formatMinor } from '@/lib/money'
+import { useI18n } from '@/lib/system/i18n'
 import type { Payment, PaymentMethod } from '@/types/system/invoice'
 
-const METHOD_CONFIG: Record<PaymentMethod, { label: string; classes: string }> = {
-  bank_transfer: { label: 'Bank Transfer',  classes: 'bg-blue-50 text-blue-700' },
-  paymob:        { label: 'Paymob',         classes: 'bg-purple-50 text-purple-700' },
-  paypal:        { label: 'PayPal',         classes: 'bg-indigo-50 text-indigo-700' },
-  vodafone_cash: { label: 'Vodafone Cash',  classes: 'bg-red-50 text-red-700' },
-  instapay:      { label: 'InstaPay',       classes: 'bg-emerald-50 text-emerald-700' },
-  wallet:        { label: 'Wallet',         classes: 'bg-amber-50 text-amber-700' },
-  other:         { label: 'Other',          classes: 'bg-gray-100 text-gray-600' },
+const METHOD_CONFIG: Record<PaymentMethod, { key: string; classes: string }> = {
+  bank_transfer: { key: 'billing.method.bankTransfer', classes: 'bg-blue-50 text-blue-700' },
+  paymob:        { key: 'billing.method.paymob',       classes: 'bg-purple-50 text-purple-700' },
+  paypal:        { key: 'billing.method.paypal',       classes: 'bg-indigo-50 text-indigo-700' },
+  vodafone_cash: { key: 'billing.method.vodafoneCash', classes: 'bg-red-50 text-red-700' },
+  instapay:      { key: 'billing.method.instapay',     classes: 'bg-emerald-50 text-emerald-700' },
+  wallet:        { key: 'billing.method.wallet',       classes: 'bg-amber-50 text-amber-700' },
+  other:         { key: 'billing.method.other',        classes: 'bg-gray-100 text-gray-600' },
 }
 
 export default function PaymentsPage() {
+  const { t } = useI18n()
   const { data, isLoading } = useQuery({
     queryKey: ['system', 'payments'],
     queryFn: () => api<Paginated<Payment>>('/payments'),
@@ -33,14 +35,14 @@ export default function PaymentsPage() {
 
   return (
     <>
-      <PageHeader title="Payments" description="All recorded payments across invoices." />
+      <PageHeader title={t('billing.payments.title')} description={t('billing.payments.subtitle')} />
 
       {/* Totals */}
       {Object.keys(totalByCurrency).length > 0 && (
         <div className="flex gap-3 mb-6 flex-wrap">
           {Object.entries(totalByCurrency).map(([cur, total]) => (
             <div key={cur} className="rounded-xl border border-emerald-200 bg-emerald-50 px-5 py-3">
-              <p className="text-xs text-emerald-600 font-medium">Total collected</p>
+              <p className="text-xs text-emerald-600 font-medium">{t('billing.payments.totalCollected')}</p>
               <p className="text-xl font-bold text-emerald-800 mt-0.5 tabular-nums">
                 {formatMinor(total, cur)}
               </p>
@@ -52,19 +54,19 @@ export default function PaymentsPage() {
       {isLoading ? (
         <div className="py-20 flex flex-col items-center gap-3 text-gray-400">
           <Loader2 size={22} className="animate-spin" />
-          <p className="text-sm">Loading payments…</p>
+          <p className="text-sm">{t('billing.payments.loading')}</p>
         </div>
       ) : (
         <div className="rounded-xl border border-gray-200 overflow-hidden shadow-sm">
           <table className="min-w-full divide-y divide-gray-100">
             <thead>
               <tr className="bg-gray-50/80">
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Date</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Invoice</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Method</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Reference</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Recorded by</th>
-                <th className="px-4 py-3 text-right text-xs font-semibold text-gray-400 uppercase tracking-wider">Amount</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">{t('common.date')}</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">{t('billing.payments.colInvoice')}</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">{t('billing.payments.colMethod')}</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">{t('billing.payments.colReference')}</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">{t('billing.payments.colRecordedBy')}</th>
+                <th className="px-4 py-3 text-right text-xs font-semibold text-gray-400 uppercase tracking-wider">{t('billing.payments.colAmount')}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50 bg-white">
@@ -72,7 +74,7 @@ export default function PaymentsPage() {
                 <tr>
                   <td colSpan={6} className="px-4 py-16 text-center">
                     <CreditCard size={24} className="mx-auto mb-2 text-gray-200" />
-                    <p className="text-sm text-gray-400">No payments recorded yet.</p>
+                    <p className="text-sm text-gray-400">{t('billing.payments.emptyBody')}</p>
                   </td>
                 </tr>
               ) : (
@@ -97,7 +99,7 @@ export default function PaymentsPage() {
                       </td>
                       <td className="px-4 py-3.5">
                         <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${methodCfg.classes}`}>
-                          {methodCfg.label}
+                          {t(methodCfg.key)}
                         </span>
                       </td>
                       <td className="px-4 py-3.5 text-sm text-gray-500 font-mono">
@@ -119,10 +121,10 @@ export default function PaymentsPage() {
           {meta && meta.total > 0 && (
             <div className="border-t border-gray-100 px-4 py-3 flex items-center justify-between bg-gray-50/60">
               <span className="text-xs text-gray-400">
-                Showing {payments.length} of {meta.total} payments
+                {t('billing.payments.showingOf', { shown: String(payments.length), total: String(meta.total) })}
               </span>
               <span className="text-xs text-gray-400">
-                Page {meta.current_page} of {meta.last_page}
+                {t('billing.pageOf', { current: String(meta.current_page), last: String(meta.last_page) })}
               </span>
             </div>
           )}

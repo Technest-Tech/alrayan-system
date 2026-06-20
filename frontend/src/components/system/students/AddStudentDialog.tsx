@@ -11,6 +11,7 @@ import { CountryCombobox } from './CountryCombobox'
 import { WhatsAppInput } from './WhatsAppInput'
 import { useCreateStudent } from '@/hooks/system/useStudents'
 import { ApiError } from '@/lib/system/api'
+import { useI18n } from '@/lib/system/i18n'
 
 /* ─── Schema ───────────────────────────────────────── */
 const schema = z.object({
@@ -45,6 +46,7 @@ interface AddStudentDialogProps {
 }
 
 export function AddStudentDialog({ open, onOpenChange }: AddStudentDialogProps) {
+  const { t } = useI18n()
   const create = useCreateStudent()
   const [waDialCode, setWaDialCode]     = useState<string | undefined>(undefined)
   const [children, setChildren]         = useState([{ name: '' }])
@@ -145,10 +147,10 @@ export function AddStudentDialog({ open, onOpenChange }: AddStudentDialogProps) 
               </div>
               <div>
                 <DialogPrimitive.Title className="font-semibold text-[rgb(11,31,58)] leading-none">
-                  Enrol New Student
+                  {t('students.enrollNew')}
                 </DialogPrimitive.Title>
                 <DialogPrimitive.Description className="text-xs mt-0.5" style={{ color: 'rgb(90 100 112)' }}>
-                  Add basic info to start the trial. Enrollment details are set on activation.
+                  {t('students.enrollNewDescription')}
                 </DialogPrimitive.Description>
               </div>
               <DialogPrimitive.Close
@@ -190,10 +192,10 @@ export function AddStudentDialog({ open, onOpenChange }: AddStudentDialogProps) 
                       </div>
                       <div>
                         <p className="text-sm font-semibold" style={{ color: active ? 'rgb(14 124 90)' : 'rgb(11 31 58)' }}>
-                          {v === 'adult' ? 'Adult' : 'Child'}
+                          {v === 'adult' ? t('students.typeAdultLabel') : t('students.typeChildLabel')}
                         </p>
                         <p className="text-[11px] opacity-50 leading-tight mt-0.5">
-                          {v === 'adult' ? 'Learning for themselves' : 'Parent registers for child'}
+                          {v === 'adult' ? t('students.typeAdultHint') : t('students.typeChildHint')}
                         </p>
                       </div>
                     </label>
@@ -203,13 +205,13 @@ export function AddStudentDialog({ open, onOpenChange }: AddStudentDialogProps) 
 
               {/* ── Identity (adult) ── */}
               {studentType === 'adult' && (
-                <Section title="Identity">
+                <Section title={t('students.sectionIdentity')}>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <Field label="Full name" required error={errors.name}>
+                    <Field label={t('common.name')} required error={errors.name}>
                       <input className={inp} style={inpStyle} {...register('name')} />
                     </Field>
 
-                    <Field label="WhatsApp">
+                    <Field label={t('common.whatsapp')}>
                       <Controller
                         name="whatsapp"
                         control={control}
@@ -262,7 +264,7 @@ export function AddStudentDialog({ open, onOpenChange }: AddStudentDialogProps) 
 
               {/* ── Children list (child mode) ── */}
               {studentType === 'child' && (
-                <Section title="Children">
+                <Section title={t('students.childrenSection')}>
                   <div className="space-y-2">
                     {children.map((child, i) => (
                       <div key={i}>
@@ -270,12 +272,12 @@ export function AddStudentDialog({ open, onOpenChange }: AddStudentDialogProps) 
                           <div className="flex-1">
                             {children.length > 1 && (
                               <label className="block text-xs font-medium mb-1.5 opacity-70">
-                                Child {i + 1} name <span className="text-red-500">*</span>
+                                {t('students.childName')} {i + 1} <span className="text-red-500">*</span>
                               </label>
                             )}
                             {children.length === 1 && (
                               <label className="block text-xs font-medium mb-1.5 opacity-70">
-                                Child name <span className="text-red-500">*</span>
+                                {t('students.childName')} <span className="text-red-500">*</span>
                               </label>
                             )}
                             <input
@@ -311,7 +313,7 @@ export function AddStudentDialog({ open, onOpenChange }: AddStudentDialogProps) 
                       style={{ color: 'rgb(14 124 90)' }}
                     >
                       <PlusCircle size={13} />
-                      Add another child
+                      {t('students.addAnotherChild')}
                     </button>
                   </div>
                 </Section>
@@ -319,7 +321,7 @@ export function AddStudentDialog({ open, onOpenChange }: AddStudentDialogProps) 
 
               {/* ── Parent / Guardian (children only) — includes country & timezone ── */}
               {studentType === 'child' && (
-                <Section title="Parent / Guardian">
+                <Section title={t('students.sectionParentGuardian')}>
                   <ParentGuardianFields control={control} setValue={setValue} syncDialCode={waDialCode} />
 
                   {/* Country / Timezone moved here for child mode */}
@@ -373,7 +375,7 @@ export function AddStudentDialog({ open, onOpenChange }: AddStudentDialogProps) 
                 className="px-4 py-2 rounded-lg text-sm font-medium border hover:bg-black/5 transition-colors"
                 style={{ borderColor: 'rgb(var(--border-default,229 233 240))' }}
               >
-                Cancel
+                {t('common.cancel')}
               </DialogPrimitive.Close>
               <button
                 type="submit"
@@ -383,10 +385,10 @@ export function AddStudentDialog({ open, onOpenChange }: AddStudentDialogProps) 
                 style={{ background: 'rgb(14 124 90)' }}
               >
                 {isSubmitting
-                  ? 'Adding…'
+                  ? t('common.adding')
                   : studentType === 'child' && children.length > 1
-                    ? `Add ${children.length} Trial Students`
-                    : 'Add Trial Student'
+                    ? `${t('students.addTrialStudents')} (${children.length})`
+                    : t('students.addTrialStudent')
                 }
               </button>
             </div>

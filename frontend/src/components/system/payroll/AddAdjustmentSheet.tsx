@@ -19,22 +19,23 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import { useAddAdjustment } from '@/hooks/system/usePayrollAdjustments'
+import { useI18n } from '@/lib/system/i18n'
 import type { AdjustmentType, AdjustmentCategory } from '@/types/system/payroll'
 
-const BONUS_CATEGORIES: { value: AdjustmentCategory; label: string }[] = [
-  { value: 'performance',         label: 'Performance' },
-  { value: 'retention',           label: 'Retention' },
-  { value: 'reports_consistency', label: 'Reports consistency' },
-  { value: 'tenure',              label: 'Tenure' },
-  { value: 'other_bonus',         label: 'Other bonus' },
+const BONUS_CATEGORIES: { value: AdjustmentCategory; key: string }[] = [
+  { value: 'performance',         key: 'payroll.adjustments.performance' },
+  { value: 'retention',           key: 'payroll.adjustments.retention' },
+  { value: 'reports_consistency', key: 'payroll.adjustments.reportsConsistency' },
+  { value: 'tenure',              key: 'payroll.adjustments.tenure' },
+  { value: 'other_bonus',         key: 'payroll.adjustments.otherBonus' },
 ]
 
-const DEDUCTION_CATEGORIES: { value: AdjustmentCategory; label: string }[] = [
-  { value: 'unauthorized_absence', label: 'Unauthorized absence' },
-  { value: 'late_report',          label: 'Late report' },
-  { value: 'late_arrival',         label: 'Late arrival' },
-  { value: 'quality_issue',        label: 'Quality issue' },
-  { value: 'other_deduction',      label: 'Other deduction' },
+const DEDUCTION_CATEGORIES: { value: AdjustmentCategory; key: string }[] = [
+  { value: 'unauthorized_absence', key: 'payroll.adjustments.unauthorizedAbsence' },
+  { value: 'late_report',          key: 'payroll.adjustments.lateReport' },
+  { value: 'late_arrival',         key: 'payroll.adjustments.lateArrival' },
+  { value: 'quality_issue',        key: 'payroll.adjustments.qualityIssue' },
+  { value: 'other_deduction',      key: 'payroll.adjustments.otherDeduction' },
 ]
 
 interface AddAdjustmentSheetProps {
@@ -50,6 +51,7 @@ export function AddAdjustmentSheet({
   onClose,
   onSuccess,
 }: AddAdjustmentSheetProps) {
+  const { t } = useI18n()
   const [type, setType] = useState<AdjustmentType>('bonus')
   const [category, setCategory] = useState<AdjustmentCategory | ''>('')
   const [amountEgp, setAmountEgp] = useState('')
@@ -59,8 +61,8 @@ export function AddAdjustmentSheet({
 
   const categories = type === 'bonus' ? BONUS_CATEGORIES : DEDUCTION_CATEGORIES
 
-  function handleTypeChange(t: AdjustmentType) {
-    setType(t)
+  function handleTypeChange(nextType: AdjustmentType) {
+    setType(nextType)
     setCategory('')
   }
 
@@ -89,25 +91,25 @@ export function AddAdjustmentSheet({
     <Sheet open={open} onOpenChange={v => !v && onClose()}>
       <SheetContent side="right" className="w-full sm:max-w-md overflow-y-auto">
         <SheetHeader>
-          <SheetTitle>Add Adjustment</SheetTitle>
+          <SheetTitle>{t('payroll.adjustments.addTitle')}</SheetTitle>
         </SheetHeader>
 
         <div className="flex flex-col gap-4 px-4 py-2">
           {/* Type radio */}
           <div>
-            <Label className="mb-2 block text-sm font-medium">Type</Label>
+            <Label className="mb-2 block text-sm font-medium">{t('payroll.adjustments.type')}</Label>
             <div className="flex gap-3">
-              {(['bonus', 'deduction'] as AdjustmentType[]).map(t => (
-                <label key={t} className="flex items-center gap-2 cursor-pointer">
+              {(['bonus', 'deduction'] as AdjustmentType[]).map(opt => (
+                <label key={opt} className="flex items-center gap-2 cursor-pointer">
                   <input
                     type="radio"
                     name="adj-type"
-                    value={t}
-                    checked={type === t}
-                    onChange={() => handleTypeChange(t)}
+                    value={opt}
+                    checked={type === opt}
+                    onChange={() => handleTypeChange(opt)}
                     className="accent-emerald-600"
                   />
-                  <span className="text-sm capitalize">{t}</span>
+                  <span className="text-sm">{t(`payroll.adjustments.${opt}`)}</span>
                 </label>
               ))}
             </div>
@@ -115,18 +117,18 @@ export function AddAdjustmentSheet({
 
           {/* Category */}
           <div>
-            <Label className="mb-1.5 block text-sm font-medium">Category</Label>
+            <Label className="mb-1.5 block text-sm font-medium">{t('payroll.adjustments.category')}</Label>
             <Select
               value={category}
               onValueChange={v => setCategory(v as AdjustmentCategory)}
             >
               <SelectTrigger className="w-full">
-                <SelectValue placeholder="Select category" />
+                <SelectValue placeholder={t('payroll.adjustments.selectCategory')} />
               </SelectTrigger>
               <SelectContent>
                 {categories.map(c => (
                   <SelectItem key={c.value} value={c.value}>
-                    {c.label}
+                    {t(c.key)}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -135,7 +137,7 @@ export function AddAdjustmentSheet({
 
           {/* Amount */}
           <div>
-            <Label className="mb-1.5 block text-sm font-medium">Amount (EGP)</Label>
+            <Label className="mb-1.5 block text-sm font-medium">{t('payroll.adjustments.amountEgp')}</Label>
             <Input
               type="number"
               min="0"
@@ -148,9 +150,9 @@ export function AddAdjustmentSheet({
 
           {/* Reason */}
           <div>
-            <Label className="mb-1.5 block text-sm font-medium">Reason</Label>
+            <Label className="mb-1.5 block text-sm font-medium">{t('common.reason')}</Label>
             <Textarea
-              placeholder="Explain the reason for this adjustment..."
+              placeholder={t('payroll.adjustments.reasonPlaceholder')}
               value={reason}
               onChange={e => setReason(e.target.value)}
               rows={3}
@@ -160,13 +162,13 @@ export function AddAdjustmentSheet({
 
         <SheetFooter>
           <Button variant="outline" onClick={onClose}>
-            Cancel
+            {t('common.cancel')}
           </Button>
           <Button
             onClick={handleSubmit}
             disabled={!category || !amountEgp || !reason.trim() || addAdjustment.isPending}
           >
-            {addAdjustment.isPending ? 'Saving...' : 'Save'}
+            {addAdjustment.isPending ? t('common.saving') : t('common.save')}
           </Button>
         </SheetFooter>
       </SheetContent>

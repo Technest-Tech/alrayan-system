@@ -1,30 +1,32 @@
 'use client'
 import { PageHeader } from '@/components/system/primitives/PageHeader'
 import { useStudents } from '@/hooks/system/useStudents'
+import { useI18n } from '@/lib/system/i18n'
 
 export default function TeacherStudentsPage() {
+  const { t } = useI18n()
   const { data: result, isLoading } = useStudents({ per_page: 50 })
   const students = (result as any)?.data ?? []
 
   return (
     <>
-      <PageHeader title="My students" description="Students assigned to you." />
+      <PageHeader title={t('users.teacherMyStudents')} description={t('users.teacherMyStudentsDescription')} />
 
       {isLoading ? (
-        <div className="text-sm text-muted-foreground">Loading…</div>
+        <div className="text-sm text-muted-foreground">{t('common.loading')}</div>
       ) : students.length === 0 ? (
         <div className="rounded-lg border p-8 text-center text-sm text-muted-foreground">
-          No students assigned yet.
+          {t('users.teacherNoStudents')}
         </div>
       ) : (
         <div className="rounded-lg border overflow-hidden">
           <table className="w-full text-sm">
             <thead className="bg-muted/50">
               <tr>
-                <th className="py-2 px-3 text-left">Name</th>
-                <th className="py-2 px-3 text-left">Course</th>
-                <th className="py-2 px-3 text-left">Timezone</th>
-                <th className="py-2 px-3 text-left">Status</th>
+                <th className="py-2 px-3 text-left">{t('common.name')}</th>
+                <th className="py-2 px-3 text-left">{t('common.course')}</th>
+                <th className="py-2 px-3 text-left">{t('common.timezone')}</th>
+                <th className="py-2 px-3 text-left">{t('common.status')}</th>
               </tr>
             </thead>
             <tbody>

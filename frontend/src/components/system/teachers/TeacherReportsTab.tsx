@@ -5,6 +5,7 @@ import {
   TrendingUp, TrendingDown, Minus,
 } from 'lucide-react'
 import { useTeacherReportSummary, type MonthlySession, type ReportPeriod } from '@/hooks/system/useTeacherReports'
+import { useI18n } from '@/lib/system/i18n'
 
 interface Props { teacherId: number | string }
 
@@ -21,14 +22,6 @@ function fMonthShort(period: string) {
   const [y, m] = period.split('-')
   return new Date(Number(y), Number(m) - 1).toLocaleString('default', { month: 'short' })
 }
-
-// ── Period tabs ────────────────────────────────────────────────────────────────
-
-const PERIODS: { value: ReportPeriod; label: string }[] = [
-  { value: 30,  label: '30 days' },
-  { value: 90,  label: '90 days' },
-  { value: 180, label: '6 months' },
-]
 
 // ── KPI card ───────────────────────────────────────────────────────────────────
 
@@ -112,14 +105,16 @@ function AttendanceRing({ rate }: { rate: number | null }) {
 
 function SessionBreakdown({
   attended, absent, cancelled, scheduled, total,
+  labelAttended, labelScheduled, labelAbsent, labelCancelled, labelTitle,
 }: {
   attended: number; absent: number; cancelled: number; scheduled: number; total: number
+  labelAttended: string; labelScheduled: string; labelAbsent: string; labelCancelled: string; labelTitle: string
 }) {
   const rows = [
-    { label: 'Attended',  value: attended,  color: '#0e7c5a', bg: 'bg-emerald-50' },
-    { label: 'Scheduled', value: scheduled, color: '#94a3b8', bg: 'bg-slate-50' },
-    { label: 'Absent',    value: absent,    color: '#f59e0b', bg: 'bg-amber-50' },
-    { label: 'Cancelled', value: cancelled, color: '#ef4444', bg: 'bg-red-50' },
+    { label: labelAttended,  value: attended,  color: '#0e7c5a', bg: 'bg-emerald-50' },
+    { label: labelScheduled, value: scheduled, color: '#94a3b8', bg: 'bg-slate-50' },
+    { label: labelAbsent,    value: absent,    color: '#f59e0b', bg: 'bg-amber-50' },
+    { label: labelCancelled, value: cancelled, color: '#ef4444', bg: 'bg-red-50' },
   ]
 
   return (
@@ -127,7 +122,7 @@ function SessionBreakdown({
       className="rounded-2xl p-5 space-y-3"
       style={{ background: 'rgb(var(--surface-card, 255 255 255))', border: '1px solid rgb(var(--border-default, 229 233 240))' }}
     >
-      <p className="text-[11px] font-semibold uppercase tracking-wider opacity-40">Session breakdown</p>
+      <p className="text-[11px] font-semibold uppercase tracking-wider opacity-40">{labelTitle}</p>
       <div className="space-y-2">
         {rows.map((r) => {
           const pct = total > 0 ? Math.round((r.value / total) * 100) : 0
@@ -153,7 +148,14 @@ function SessionBreakdown({
 
 // ── Monthly bar chart ──────────────────────────────────────────────────────────
 
-function MonthlyChart({ months }: { months: MonthlySession[] }) {
+function MonthlyChart({ months, labelTitle, labelAttended, labelScheduled, labelAbsent, labelCancelled }: {
+  months: MonthlySession[]
+  labelTitle: string
+  labelAttended: string
+  labelScheduled: string
+  labelAbsent: string
+  labelCancelled: string
+}) {
   const [hovered, setHovered] = useState<string | null>(null)
   if (!months.length) return null
 
@@ -168,13 +170,13 @@ function MonthlyChart({ months }: { months: MonthlySession[] }) {
       style={{ background: 'rgb(var(--surface-card, 255 255 255))', border: '1px solid rgb(var(--border-default, 229 233 240))' }}
     >
       <div className="flex items-center justify-between mb-5">
-        <p className="text-sm font-semibold">Sessions trend</p>
+        <p className="text-sm font-semibold">{labelTitle}</p>
         <div className="flex gap-3 text-[11px]">
           {[
-            { color: '#0e7c5a', label: 'Attended' },
-            { color: '#94a3b8', label: 'Scheduled' },
-            { color: '#f59e0b', label: 'Absent' },
-            { color: '#ef4444', label: 'Cancelled' },
+            { color: '#0e7c5a', label: labelAttended },
+            { color: '#94a3b8', label: labelScheduled },
+            { color: '#f59e0b', label: labelAbsent },
+            { color: '#ef4444', label: labelCancelled },
           ].map((l) => (
             <span key={l.label} className="flex items-center gap-1.5 opacity-60">
               <span className="w-2 h-2 rounded-sm inline-block" style={{ background: l.color }} />
@@ -310,7 +312,16 @@ function MonthlyChart({ months }: { months: MonthlySession[] }) {
 
 // ── Payroll table ──────────────────────────────────────────────────────────────
 
-function PayrollTable({ payrolls }: { payrolls: { period: string; base_salary_minor: number; net_salary_minor: number; status: string }[] }) {
+function PayrollTable({ payrolls, labelTitle, labelLast, labelPeriods, labelPeriodCol, labelBase, labelNet, labelStatus }: {
+  payrolls: { period: string; base_salary_minor: number; net_salary_minor: number; status: string }[]
+  labelTitle: string
+  labelLast: string
+  labelPeriods: string
+  labelPeriodCol: string
+  labelBase: string
+  labelNet: string
+  labelStatus: string
+}) {
   if (!payrolls.length) return null
 
   const STATUS: Record<string, { cls: string; dot: string }> = {
@@ -326,8 +337,8 @@ function PayrollTable({ payrolls }: { payrolls: { period: string; base_salary_mi
       style={{ border: '1px solid rgb(var(--border-default, 229 233 240))', background: 'rgb(var(--surface-card, 255 255 255))' }}
     >
       <div className="px-5 py-4 flex items-center justify-between border-b" style={{ borderColor: 'rgb(var(--border-default, 229 233 240))' }}>
-        <p className="text-sm font-semibold">Payroll history</p>
-        <p className="text-xs opacity-40">Last {payrolls.length} periods</p>
+        <p className="text-sm font-semibold">{labelTitle}</p>
+        <p className="text-xs opacity-40">{labelLast} {payrolls.length} {labelPeriods}</p>
       </div>
       <table className="w-full text-sm">
         <thead>
@@ -335,10 +346,10 @@ function PayrollTable({ payrolls }: { payrolls: { period: string; base_salary_mi
             className="text-[11px] font-semibold uppercase tracking-wider border-b"
             style={{ borderColor: 'rgb(var(--border-default, 229 233 240))', color: 'rgb(90 100 112)' }}
           >
-            <th className="text-left px-5 py-3">Period</th>
-            <th className="text-right px-5 py-3">Base</th>
-            <th className="text-right px-5 py-3">Net</th>
-            <th className="text-left px-5 py-3">Status</th>
+            <th className="text-left px-5 py-3">{labelPeriodCol}</th>
+            <th className="text-right px-5 py-3">{labelBase}</th>
+            <th className="text-right px-5 py-3">{labelNet}</th>
+            <th className="text-left px-5 py-3">{labelStatus}</th>
           </tr>
         </thead>
         <tbody>
@@ -400,6 +411,13 @@ function Skeleton() {
 export function TeacherReportsTab({ teacherId }: Props) {
   const [period, setPeriod] = useState<ReportPeriod>(30)
   const { data, isLoading } = useTeacherReportSummary(teacherId, period)
+  const { t } = useI18n()
+
+  const PERIODS: { value: ReportPeriod; label: string }[] = [
+    { value: 30,  label: t('teachers.reports30d') },
+    { value: 90,  label: t('teachers.reports90d') },
+    { value: 180, label: t('teachers.reports6m') },
+  ]
 
   if (isLoading) return <Skeleton />
   if (!data) return null
@@ -439,33 +457,33 @@ export function TeacherReportsTab({ teacherId }: Props) {
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
         <KpiCard
           icon={<CalendarCheck size={18} />}
-          label="Total sessions"
+          label={t('teachers.totalSessions')}
           value={sessions.total}
-          sub={`${sessions.attended} attended · ${sessions.cancelled} cancelled`}
+          sub={`${sessions.attended} ${t('status.attended').toLowerCase()} · ${sessions.cancelled} ${t('status.cancelled').toLowerCase()}`}
           accent="#0e7c5a"
         />
         <KpiCard
           icon={<Clock size={18} />}
-          label="Hours taught"
+          label={t('teachers.hoursTaught')}
           value={`${sessions.hours_taught}h`}
-          sub={`Attended sessions only`}
+          sub={t('teachers.attendedOnly')}
           accent="#7c3aed"
         />
         <KpiCard
           icon={<UserCheck size={18} />}
-          label="Active students"
+          label={t('teachers.activeStudents')}
           value={active_students}
-          sub="Currently assigned"
+          sub={t('teachers.currentlyAssigned')}
           accent="#2563eb"
         />
         <KpiCard
           icon={<Plane size={18} />}
-          label="Leave taken"
+          label={t('teachers.leaveTaken')}
           value={`${leave.days_taken_this_year}d`}
           sub={
             leave.pending_requests > 0
-              ? `${leave.pending_requests} pending request${leave.pending_requests > 1 ? 's' : ''}`
-              : 'This calendar year'
+              ? `${leave.pending_requests} ${leave.pending_requests > 1 ? t('teachers.reportPendingPlural') : t('teachers.reportPendingSingular')}`
+              : t('teachers.thisCalendarYear')
           }
           accent={leave.pending_requests > 0 ? '#f59e0b' : undefined}
         />
@@ -477,12 +495,12 @@ export function TeacherReportsTab({ teacherId }: Props) {
           className="rounded-2xl p-6 flex flex-col items-center justify-center gap-3"
           style={{ background: 'rgb(var(--surface-card, 255 255 255))', border: '1px solid rgb(var(--border-default, 229 233 240))' }}
         >
-          <p className="text-[11px] font-semibold uppercase tracking-wider opacity-40 self-start">Attendance rate</p>
+          <p className="text-[11px] font-semibold uppercase tracking-wider opacity-40 self-start">{t('teachers.attendanceRate')}</p>
           <AttendanceRing rate={sessions.attendance_rate} />
           <p className="text-xs opacity-40 text-center">
             {sessions.attendance_rate !== null
-              ? `${sessions.attended} attended out of ${sessions.total} total sessions`
-              : 'No session data for this period'}
+              ? t('teachers.attendedOf', { n: String(sessions.attended), total: String(sessions.total) })
+              : t('teachers.noSessionData')}
           </p>
         </div>
 
@@ -492,14 +510,39 @@ export function TeacherReportsTab({ teacherId }: Props) {
           cancelled={sessions.cancelled}
           scheduled={sessions.scheduled}
           total={sessions.total}
+          labelTitle={t('teachers.sessionBreakdown')}
+          labelAttended={t('status.attended')}
+          labelScheduled={t('status.confirmed')}
+          labelAbsent={t('status.absent')}
+          labelCancelled={t('status.cancelled')}
         />
       </div>
 
       {/* ── Monthly trend chart ── */}
-      {monthly_sessions.length > 0 && <MonthlyChart months={monthly_sessions} />}
+      {monthly_sessions.length > 0 && (
+        <MonthlyChart
+          months={monthly_sessions}
+          labelTitle={t('teachers.sessionsTrend')}
+          labelAttended={t('status.attended')}
+          labelScheduled={t('status.confirmed')}
+          labelAbsent={t('status.absent')}
+          labelCancelled={t('status.cancelled')}
+        />
+      )}
 
       {/* ── Payroll ── */}
-      {payrolls.length > 0 && <PayrollTable payrolls={payrolls} />}
+      {payrolls.length > 0 && (
+        <PayrollTable
+          payrolls={payrolls}
+          labelTitle={t('teachers.payrollHistory')}
+          labelLast={t('teachers.reportLast')}
+          labelPeriods={t('teachers.reportPeriods')}
+          labelPeriodCol={t('teachers.salaryColumnPeriod')}
+          labelBase={t('teachers.reportColumnBase')}
+          labelNet={t('teachers.reportColumnNet')}
+          labelStatus={t('teachers.leaveColumnStatus')}
+        />
+      )}
 
       {sessions.total === 0 && monthly_sessions.length === 0 && payrolls.length === 0 && (
         <div
@@ -507,8 +550,8 @@ export function TeacherReportsTab({ teacherId }: Props) {
           style={{ borderColor: 'rgb(var(--border-default, 229 233 240))', borderStyle: 'dashed' }}
         >
           <CalendarCheck size={32} className="mx-auto mb-3 opacity-20" />
-          <p className="text-sm font-medium opacity-40">No data for this period</p>
-          <p className="text-xs opacity-25 mt-1">Try selecting a longer time range</p>
+          <p className="text-sm font-medium opacity-40">{t('teachers.reportNoData')}</p>
+          <p className="text-xs opacity-25 mt-1">{t('teachers.reportNoDataHint')}</p>
         </div>
       )}
     </div>

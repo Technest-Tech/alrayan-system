@@ -1,5 +1,6 @@
 'use client'
 import { useBulkApprove, useBulkTransfer } from '@/hooks/system/usePayrollActions'
+import { useI18n } from '@/lib/system/i18n'
 
 interface BulkApproveBarProps {
   selectedIds: number[]
@@ -7,6 +8,7 @@ interface BulkApproveBarProps {
 }
 
 export function BulkApproveBar({ selectedIds, onClear }: BulkApproveBarProps) {
+  const { t } = useI18n()
   const bulkApprove = useBulkApprove()
   const bulkTransfer = useBulkTransfer()
 
@@ -24,27 +26,27 @@ export function BulkApproveBar({ selectedIds, onClear }: BulkApproveBarProps) {
 
   return (
     <div className="flex items-center gap-3 px-4 py-2 bg-gray-800 text-white rounded-xl text-sm shadow-lg">
-      <span className="font-medium">{selectedIds.length} selected</span>
+      <span className="font-medium">{t('payroll.selectedCount', { count: String(selectedIds.length) })}</span>
       <div className="flex-1" />
       <button
         onClick={handleApprove}
         disabled={bulkApprove.isPending}
         className="px-3 py-1.5 rounded-lg bg-blue-500 hover:bg-blue-600 font-medium transition-colors disabled:opacity-50"
       >
-        {bulkApprove.isPending ? 'Approving...' : 'Approve all'}
+        {bulkApprove.isPending ? `${t('common.approve')}...` : t('payroll.approveAll')}
       </button>
       <button
         onClick={handleTransfer}
         disabled={bulkTransfer.isPending}
         className="px-3 py-1.5 rounded-lg bg-green-500 hover:bg-green-600 font-medium transition-colors disabled:opacity-50"
       >
-        {bulkTransfer.isPending ? 'Processing...' : 'Mark transferred'}
+        {bulkTransfer.isPending ? `${t('common.submitting')}...` : t('payroll.markTransferred')}
       </button>
       <button
         onClick={onClear}
         className="px-3 py-1.5 rounded-lg bg-gray-600 hover:bg-gray-500 font-medium transition-colors"
       >
-        Clear
+        {t('payroll.clear')}
       </button>
     </div>
   )

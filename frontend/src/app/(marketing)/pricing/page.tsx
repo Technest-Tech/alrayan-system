@@ -20,7 +20,7 @@ import {
 import { CheckCircle2, XCircle, Minus, Users } from 'lucide-react'
 
 export const metadata: Metadata = buildMetadata({
-  title: 'Quran Class Pricing | Transparent Plans | Alrayan Academy',
+  title: 'Quran Class Pricing | Transparent Plans | Azhary',
   description:
     'Simple, transparent pricing for online Quran classes. Plans from $30/month. Free first class, no contracts, cancel anytime.',
   path: '/pricing',

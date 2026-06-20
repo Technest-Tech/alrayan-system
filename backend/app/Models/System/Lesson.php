@@ -16,6 +16,20 @@ class Lesson extends Model
 
     protected $guarded = [];
 
+    /** Statuses that consume hours from the student's package. */
+    public const CONSUMING_STATUSES = ['attended', 'paid_absence', 'cancelled_by_student'];
+
+    /** All valid lesson statuses (consuming + non-consuming). */
+    public const STATUSES = [
+        'scheduled', 'attended', 'paid_absence', 'absent',
+        'trial_free', 'cancelled_by_student', 'cancelled_by_teacher',
+    ];
+
+    public function isConsuming(): bool
+    {
+        return in_array($this->status, self::CONSUMING_STATUSES, true);
+    }
+
     protected $casts = [
         'scheduled_at'        => 'datetime',
         'duration_minutes'    => 'integer',
@@ -35,6 +49,11 @@ class Lesson extends Model
     public function package()
     {
         return $this->belongsTo(StudentPackage::class, 'package_id');
+    }
+
+    public function allocations()
+    {
+        return $this->hasMany(LessonPackageAllocation::class, 'lesson_id')->orderBy('ordinal');
     }
 
     public function schedule()

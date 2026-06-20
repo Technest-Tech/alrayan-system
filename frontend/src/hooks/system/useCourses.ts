@@ -10,6 +10,33 @@ export function useCourses() {
   })
 }
 
+export interface CreateCoursePayload {
+  name: string
+  level?: string
+  age_group?: string | null
+  description?: string | null
+}
+
+export function useCreateCourse() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (data: CreateCoursePayload) =>
+      api<{ data: SystemCourse }>('/courses', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }).then(r => r.data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['system', 'courses'] }),
+  })
+}
+
+export function useDeleteCourse() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (id: number) => api(`/courses/${id}`, { method: 'DELETE' }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['system', 'courses'] }),
+  })
+}
+
 export function useToggleCourseActive() {
   const qc = useQueryClient()
   return useMutation({

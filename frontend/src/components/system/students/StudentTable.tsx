@@ -13,6 +13,7 @@ import { StudentStatusBadge } from './StudentStatusBadge'
 import { EmptyState } from '@/components/system/primitives/EmptyState'
 import { useStudentTransition } from '@/hooks/system/useStudents'
 import { ApiError } from '@/lib/system/api'
+import { useI18n } from '@/lib/system/i18n'
 
 type Density = 'compact' | 'default' | 'comfortable'
 
@@ -38,11 +39,11 @@ const TRANSITIONS: Record<StudentStatus, StudentStatus[]> = {
   cancelled: [],
 }
 
-const ACTION_LABELS: Partial<Record<StudentStatus, string>> = {
-  active:    'Activate',
-  paused:    'Pause',
-  suspended: 'Suspend',
-  cancelled: 'Cancel enrollment',
+const ACTION_KEYS: Partial<Record<StudentStatus, string>> = {
+  active:    'common.activate',
+  paused:    'status.paused',
+  suspended: 'status.suspended',
+  cancelled: 'students.contextCancelEnrolment',
 }
 
 const ACTION_ICONS: Partial<Record<StudentStatus, React.ReactNode>> = {
@@ -56,6 +57,7 @@ interface ActionPos { top: number; right: number }
 
 function StudentRowActions({ student }: { student: Student }) {
   const router    = useRouter()
+  const { t }     = useI18n()
   const [open, setOpen] = useState(false)
   const [pos,  setPos]  = useState<ActionPos>({ top: 0, right: 0 })
   const btnRef = useRef<HTMLButtonElement>(null)
@@ -101,18 +103,18 @@ function StudentRowActions({ student }: { student: Student }) {
     >
       <MenuItem
         icon={<ExternalLink size={14} />}
-        label="View profile"
+        label={t('students.contextViewProfile')}
         onClick={() => { setOpen(false); router.push(`/students/${student.id}`) }}
       />
       <MenuItem
         icon={<Pencil size={14} />}
-        label="Edit student"
+        label={t('students.contextEdit')}
         onClick={() => { setOpen(false); router.push(`/students/${student.id}`) }}
       />
       {student.whatsapp && (
         <MenuItem
           icon={<MessageCircle size={14} />}
-          label="Open WhatsApp"
+          label={t('students.contextWhatsApp')}
           onClick={() => {
             setOpen(false)
             window.open(`https://wa.me/${student.whatsapp!.replace(/\D/g, '')}`, '_blank')
@@ -127,7 +129,7 @@ function StudentRowActions({ student }: { student: Student }) {
             <MenuItem
               key={to}
               icon={ACTION_ICONS[to]}
-              label={ACTION_LABELS[to] ?? `Move to ${to}`}
+              label={ACTION_KEYS[to] ? t(ACTION_KEYS[to]!) : `${t('students.contextMoveTo')} ${to}`}
               onClick={() => doTransition(to)}
               danger={to === 'cancelled'}
             />
@@ -190,6 +192,7 @@ function formatSessions(s: Student) {
 }
 
 export function StudentTable({ data, isLoading, onRowClick }: StudentTableProps) {
+  const { t }     = useI18n()
   const [density, setDensity] = useState<Density>('default')
 
   const columns: ColumnDef<Student>[] = [
@@ -216,7 +219,7 @@ export function StudentTable({ data, isLoading, onRowClick }: StudentTableProps)
     },
     {
       id:     'name',
-      header: 'Student',
+      header: t('students.columnStudent'),
       cell: ({ row }) => {
         const s     = row.original
         const color = avatarColor(s.name)
@@ -247,7 +250,7 @@ export function StudentTable({ data, isLoading, onRowClick }: StudentTableProps)
                     className="shrink-0 text-[10px] font-semibold px-1.5 py-0.5 rounded-full leading-none"
                     style={{ background: 'rgb(14 124 90 / 0.1)', color: 'rgb(14 124 90)' }}
                   >
-                    Child
+                    {t('students.typeChild')}
                   </span>
                 )}
               </div>
@@ -261,21 +264,21 @@ export function StudentTable({ data, isLoading, onRowClick }: StudentTableProps)
     },
     {
       id:     'course',
-      header: 'Course',
+      header: t('common.course'),
       cell: ({ row }) => row.original.course?.name
         ? <span className="font-medium" style={{ color: 'rgb(11 31 58)' }}>{row.original.course.name}</span>
         : <span style={{ color: 'rgb(203 211 222)' }}>—</span>,
     },
     {
       id:     'teacher',
-      header: 'Teacher',
+      header: t('common.teacher'),
       cell: ({ row }) => row.original.assigned_teacher?.name
         ? <span style={{ color: 'rgb(11 31 58)' }}>{row.original.assigned_teacher.name}</span>
         : <span style={{ color: 'rgb(203 211 222)' }}>—</span>,
     },
     {
       id:     'sessions',
-      header: 'Sessions',
+      header: t('students.columnSessions'),
       cell: ({ row }) => (
         <span className="tabular-nums text-xs px-2 py-0.5 rounded-md font-medium"
           style={{ background: 'rgb(244 246 250)', color: 'rgb(11 31 58)' }}>
@@ -285,7 +288,7 @@ export function StudentTable({ data, isLoading, onRowClick }: StudentTableProps)
     },
     {
       id:     'price',
-      header: 'Price',
+      header: t('students.columnPrice'),
       cell: ({ row }) => (
         <span className="tabular-nums font-semibold text-sm" style={{ color: 'rgb(14 124 90)' }}>
           {formatPrice(row.original)}
@@ -294,7 +297,7 @@ export function StudentTable({ data, isLoading, onRowClick }: StudentTableProps)
     },
     {
       id:     'status',
-      header: 'Status',
+      header: t('common.status'),
       cell: ({ row }) => <StudentStatusBadge status={row.original.status} />,
     },
     {
@@ -313,14 +316,14 @@ export function StudentTable({ data, isLoading, onRowClick }: StudentTableProps)
     <div className="flex items-center justify-between">
       <div className="flex items-center gap-3">
         <span className="text-sm font-medium" style={{ color: 'rgb(90 100 112)' }}>
-          {data.length} {data.length === 1 ? 'student' : 'students'}
+          {data.length} {data.length === 1 ? t('students.countSingular') : t('students.countPlural')}
         </span>
         <button
           className="inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border font-medium hover:bg-black/5 transition-colors"
           style={{ borderColor: 'rgb(var(--border-default,229 233 240))', color: 'rgb(11 31 58)' }}
         >
           <Download size={12} />
-          Export
+          {t('students.exportButton')}
         </button>
       </div>
 
@@ -328,7 +331,7 @@ export function StudentTable({ data, isLoading, onRowClick }: StudentTableProps)
         {(['compact', 'default', 'comfortable'] as Density[]).map((d) => (
           <button
             key={d}
-            title={d}
+            title={t(`students.density${d.charAt(0).toUpperCase()}${d.slice(1)}` as Parameters<typeof t>[0])}
             onClick={() => setDensity(d)}
             className="p-1.5 rounded-md transition-all"
             style={density === d ? {
@@ -356,8 +359,8 @@ export function StudentTable({ data, isLoading, onRowClick }: StudentTableProps)
       emptyState={
         <EmptyState
           icon="Users"
-          title="No students found"
-          description="Try adjusting your filters or add a new student."
+          title={t('students.tableEmpty')}
+          description={t('students.tableEmptyHint')}
         />
       }
     />

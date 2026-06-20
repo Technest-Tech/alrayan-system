@@ -6,6 +6,7 @@ import {
   useStudentPackagesList, useUpdatePackage, useConfirmPackage, useDeletePackage,
 } from '@/hooks/system/usePayments'
 import { SearchableSelect } from '@/components/system/lessons/SearchableSelect'
+import { useI18n } from '@/lib/system/i18n'
 import type { PackageRow, PackageStatus } from '@/types/system/payment'
 
 /* ── Design tokens ─────────────────────────────────────── */
@@ -16,26 +17,27 @@ const TEAL_50  = '#F0FDFA'
 const TEAL_100 = '#CCFBF1'
 const TEAL_600 = '#0d9488'
 
-const STATUS_OPTIONS: { value: PackageStatus; label: string }[] = [
-  { value: 'pending',   label: 'Pending'       },
-  { value: 'paid',      label: 'Active (Paid)' },
-  { value: 'suspended', label: 'Suspended'     },
+const STATUS_OPTIONS: { value: PackageStatus; key: string }[] = [
+  { value: 'pending',   key: 'status.pending'      },
+  { value: 'paid',      key: 'payments.activePaid' },
+  { value: 'suspended', key: 'status.suspended'    },
 ]
 
-const STATUS_STYLE: Record<PackageStatus, { bg: string; color: string; label: string }> = {
-  pending:   { bg: '#FEF2F2', color: '#B91C1C',  label: 'Pending'       },
-  paid:      { bg: '#111827', color: '#ffffff',  label: 'Active (Paid)' },
-  suspended: { bg: '#F3F4F6', color: '#6B7280',  label: 'Suspended'     },
+const STATUS_STYLE: Record<PackageStatus, { bg: string; color: string; key: string }> = {
+  pending:   { bg: '#FEF2F2', color: '#B91C1C',  key: 'status.pending'      },
+  paid:      { bg: '#111827', color: '#ffffff',  key: 'payments.activePaid' },
+  suspended: { bg: '#F3F4F6', color: '#6B7280',  key: 'status.suspended'    },
 }
 
 function StatusPill({ status }: { status: PackageStatus }) {
+  const { t } = useI18n()
   const s = STATUS_STYLE[status]
   return (
     <span
       className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold whitespace-nowrap"
       style={{ background: s.bg, color: s.color }}
     >
-      {s.label}
+      {t(s.key)}
     </span>
   )
 }
@@ -53,6 +55,7 @@ interface EditState {
 }
 
 function PackageRow({ pkg, onSaved }: { pkg: PackageRow; onSaved: () => void }) {
+  const { t } = useI18n()
   const [editing, setEditing] = useState(false)
   const [edit, setEdit]       = useState<EditState>({
     package_hours:  String(pkg.package_hours),
@@ -78,8 +81,8 @@ function PackageRow({ pkg, onSaved }: { pkg: PackageRow; onSaved: () => void }) 
   async function save() {
     const hours  = parseInt(edit.package_hours, 10)
     const tariff = Math.round(parseFloat(edit.tariff_at_time) * 100)
-    if (isNaN(hours) || hours < 1) { toast.error('Hours must be at least 1.'); return }
-    if (isNaN(tariff) || tariff < 0) { toast.error('Invalid amount.'); return }
+    if (isNaN(hours) || hours < 1) { toast.error(t('payments.errHoursMin')); return }
+    if (isNaN(tariff) || tariff < 0) { toast.error(t('payments.errInvalidAmount')); return }
 
     try {
       await update.mutateAsync({
@@ -89,43 +92,43 @@ function PackageRow({ pkg, onSaved }: { pkg: PackageRow; onSaved: () => void }) 
         status:         edit.status,
         notes:          edit.notes || undefined,
       })
-      toast.success('Package updated.')
+      toast.success(t('payments.toastUpdated'))
       setEditing(false)
       onSaved()
     } catch {
-      toast.error('Failed to save.')
+      toast.error(t('payments.errSaveFailed'))
     }
   }
 
   async function handleConfirm() {
     try {
       await confirmPkg.mutateAsync(pkg.id)
-      toast.success('Package marked as paid.')
+      toast.success(t('payments.toastMarkedPaid'))
       onSaved()
     } catch {
-      toast.error('Failed to confirm.')
+      toast.error(t('payments.errConfirmFailed'))
     }
   }
 
   async function handleDelete() {
-    if (!window.confirm(`Delete Package #${pkg.package_number}? This cannot be undone.`)) return
+    if (!window.confirm(t('payments.confirmDelete', { number: String(pkg.package_number) }))) return
     try {
       await del.mutateAsync(pkg.id)
-      toast.success('Package deleted.')
+      toast.success(t('payments.toastDeleted'))
       onSaved()
     } catch (e: any) {
-      toast.error(e?.response?.data?.message ?? 'Failed to delete.')
+      toast.error(e?.response?.data?.message ?? t('payments.errDeleteFailed'))
     }
   }
 
   async function handleReset() {
-    if (!window.confirm('Reset this package back to Pending?')) return
+    if (!window.confirm(t('payments.confirmReset'))) return
     try {
       await update.mutateAsync({ id: pkg.id, status: 'pending', needs_reconfirmation: false })
-      toast.success('Package reset to pending.')
+      toast.success(t('payments.toastReset'))
       onSaved()
     } catch {
-      toast.error('Failed to reset.')
+      toast.error(t('payments.errResetFailed'))
     }
   }
 
@@ -167,7 +170,7 @@ function PackageRow({ pkg, onSaved }: { pkg: PackageRow; onSaved: () => void }) 
         {/* Status */}
         <td className="px-3 py-2.5">
           <SearchableSelect
-            options={STATUS_OPTIONS.map(o => ({ value: o.value, label: o.label }))}
+            options={STATUS_OPTIONS.map(o => ({ value: o.value, label: t(o.key) }))}
             value={edit.status}
             onChange={v => setEdit(p => ({ ...p, status: v as PackageStatus }))}
             className="w-36"
@@ -183,7 +186,7 @@ function PackageRow({ pkg, onSaved }: { pkg: PackageRow; onSaved: () => void }) 
             type="text"
             value={edit.notes}
             onChange={e => setEdit(p => ({ ...p, notes: e.target.value }))}
-            placeholder="Note…"
+            placeholder={t('payments.notePlaceholder')}
             className="w-full px-2 py-1.5 rounded-lg border text-sm outline-none focus:ring-2 focus:ring-[#0d9488] bg-white"
             style={{ borderColor: TEAL_100 }}
           />
@@ -195,14 +198,14 @@ function PackageRow({ pkg, onSaved }: { pkg: PackageRow; onSaved: () => void }) 
               onClick={save}
               disabled={isLoading}
               className="p-1.5 rounded-lg transition-colors hover:bg-teal-100/60"
-              aria-label="Save"
+              aria-label={t('common.save')}
             >
               <Check size={15} style={{ color: TEAL_600 }} />
             </button>
             <button
               onClick={() => setEditing(false)}
               className="p-1.5 rounded-lg transition-colors hover:bg-red-50"
-              aria-label="Cancel"
+              aria-label={t('common.cancel')}
             >
               <X size={15} style={{ color: '#DC2626' }} />
             </button>
@@ -230,8 +233,8 @@ function PackageRow({ pkg, onSaved }: { pkg: PackageRow; onSaved: () => void }) 
                 onClick={handleConfirm}
                 disabled={isLoading}
                 className="p-1.5 rounded-lg transition-colors hover:bg-teal-50 group"
-                aria-label="Mark as paid"
-                title="Mark as paid"
+                aria-label={t('payments.markAsPaid')}
+                title={t('payments.markAsPaid')}
               >
                 <CheckCircle2 size={15} style={{ color: TEAL_600 }} />
               </button>
@@ -239,7 +242,7 @@ function PackageRow({ pkg, onSaved }: { pkg: PackageRow; onSaved: () => void }) 
                 onClick={handleDelete}
                 disabled={isLoading}
                 className="p-1.5 rounded-lg transition-colors hover:bg-red-50"
-                aria-label="Delete package"
+                aria-label={t('payments.deletePackage')}
               >
                 <Trash2 size={15} style={{ color: '#DC2626' }} />
               </button>
@@ -250,8 +253,8 @@ function PackageRow({ pkg, onSaved }: { pkg: PackageRow; onSaved: () => void }) 
               onClick={handleReset}
               disabled={isLoading}
               className="p-1.5 rounded-lg transition-colors hover:bg-red-50"
-              aria-label="Reset to pending"
-              title="Reset to pending"
+              aria-label={t('payments.resetToPending')}
+              title={t('payments.resetToPending')}
             >
               <RotateCcw size={15} style={{ color: '#DC2626' }} />
             </button>
@@ -259,7 +262,7 @@ function PackageRow({ pkg, onSaved }: { pkg: PackageRow; onSaved: () => void }) 
           <button
             onClick={startEdit}
             className="p-1.5 rounded-lg transition-colors hover:bg-black/5"
-            aria-label="Edit package"
+            aria-label={t('payments.editPackage')}
           >
             <Pencil size={14} style={{ color: MUTED }} />
           </button>

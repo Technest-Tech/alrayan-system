@@ -4,6 +4,7 @@ namespace Tests;
 
 use App\Models\System\Teacher;
 use App\Models\User;
+use App\Support\System\Permissions\DefaultRoles;
 use App\Support\System\Permissions\PermissionRegistry;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Spatie\Permission\Models\Permission;
@@ -31,8 +32,30 @@ abstract class SystemTestCase extends TestCase
         $admin = Role::firstOrCreate(['name' => 'admin', 'guard_name' => 'web']);
         $admin->syncPermissions(PermissionRegistry::all());
 
-        Role::firstOrCreate(['name' => 'teacher', 'guard_name' => 'web']);
-        Role::firstOrCreate(['name' => 'supervisor', 'guard_name' => 'web']);
+        foreach (['supervisor', 'quality', 'accountant'] as $role) {
+            Role::firstOrCreate(['name' => $role, 'guard_name' => 'web'])
+                ->givePermissionTo(DefaultRoles::forRole($role));
+        }
+
+        foreach (['teacher', 'parent', 'student'] as $role) {
+            Role::firstOrCreate(['name' => $role, 'guard_name' => 'web']);
+        }
+    }
+
+    /**
+     * Create a staff user with the given role and its default permissions.
+     */
+    protected function staffUser(string $role): User
+    {
+        $user = User::factory()->create([
+            'role'      => $role,
+            'is_active' => true,
+            'status'    => 'active',
+        ]);
+
+        $user->syncRoles([$role]);
+
+        return $user;
     }
 
     protected function adminUser(): User

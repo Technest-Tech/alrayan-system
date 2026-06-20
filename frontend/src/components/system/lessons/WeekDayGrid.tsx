@@ -1,6 +1,7 @@
 'use client'
 import { useState, useRef, useEffect, useMemo } from 'react'
 import type { Lesson } from '@/types/system/lesson'
+import { lessonBlockStyle, displaySessionHours } from '@/lib/system/lessonStatus'
 
 /* ── Layout constants ─────────────────────────────────── */
 const SLOT_H  = 32   // px per 30-min slot
@@ -32,15 +33,6 @@ function lessonPos(lesson: Lesson, gridStart: number) {
     height: Math.max(SLOT_H * 0.9, hSlots * SLOT_H - 2),
     hidden: topSlot < 0,
   }
-}
-
-function blockStyle(lesson: Lesson) {
-  const paid = lesson.package?.status === 'paid'
-  if (lesson.status === 'scheduled')
-    return { bg: 'transparent', color: MUTED,     border: `1px solid ${BORDER}` }
-  if (paid)
-    return { bg: '#F0FDF4',     color: '#15803D',  border: '1px solid #BBF7D0' }
-  return   { bg: '#FEF2F2',     color: '#B91C1C',  border: '1px solid #FECACA' }
 }
 
 /* ── Props ─────────────────────────────────────────────── */
@@ -241,11 +233,8 @@ export function WeekDayGrid({ days, lessons, showFullDay = false, onLessonClick,
                 {dayLessons.map(lesson => {
                   const pos  = lessonPos(lesson, gridStart)
                   if (pos.hidden || pos.top >= totalH) return null
-                  const bs   = blockStyle(lesson)
-                  const paid = lesson.package?.status === 'paid'
-                  const num  = paid || lesson.status === 'attended'
-                    ? lesson.session_number_hours
-                    : '0.0'
+                  const bs   = lessonBlockStyle(lesson)
+                  const num  = displaySessionHours(lesson)
 
                   return (
                     <div

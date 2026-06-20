@@ -6,18 +6,20 @@ import { TeacherTable } from '@/components/system/teachers/TeacherTable'
 import { AddTeacherDialog } from '@/components/system/teachers/AddTeacherDialog'
 import { useTeachers } from '@/hooks/system/useTeachers'
 import { useUrlFilters } from '@/lib/system/filters'
+import { useI18n } from '@/lib/system/i18n'
 import type { Teacher } from '@/types/system/teacher'
 
 const STATUS_PILLS = [
-  { value: '',  label: 'All' },
-  { value: '1', label: 'Active' },
-  { value: '0', label: 'Inactive' },
+  { value: '',  key: 'common.all' },
+  { value: '1', key: 'status.active' },
+  { value: '0', key: 'status.inactive' },
 ]
 
 const selStyle = { borderColor: 'rgb(var(--border-default,229 233 240))', background: '#fff' }
 
 export default function TeachersPage() {
-  const router = useRouter()
+  const router  = useRouter()
+  const { t }   = useI18n()
   const [dialogOpen, setDialogOpen] = useState(false)
   const { filters, setFilter } = useUrlFilters(['q', 'is_active'])
 
@@ -42,8 +44,8 @@ export default function TeachersPage() {
       {/* ── Header ── */}
       <div className="flex items-start justify-between mb-6">
         <div>
-          <h1 className="text-xl font-semibold" style={{ color: 'rgb(11 31 58)' }}>Teachers</h1>
-          <p className="text-sm mt-0.5" style={{ color: 'rgb(90 100 112)' }}>Manage your teaching staff and availability.</p>
+          <h1 className="text-xl font-semibold" style={{ color: 'rgb(11 31 58)' }}>{t('teachers.title')}</h1>
+          <p className="text-sm mt-0.5" style={{ color: 'rgb(90 100 112)' }}>{t('teachers.subtitle')}</p>
         </div>
         <button
           onClick={() => setDialogOpen(true)}
@@ -51,15 +53,15 @@ export default function TeachersPage() {
           style={{ background: 'rgb(14 124 90)' }}
         >
           <Plus size={15} />
-          Add Teacher
+          {t('teachers.addTeacher')}
         </button>
       </div>
 
       {/* ── Stat cards ── */}
       <div className="grid grid-cols-3 gap-3 mb-5">
-        <StatCard icon={<Users size={15} />}         label="Total"    value={stats.total}    accent="#0B1F3A" />
-        <StatCard icon={<GraduationCap size={15} />} label="Active"   value={stats.active}   accent="rgb(14 124 90)" />
-        <StatCard icon={<UserX size={15} />}         label="Inactive" value={stats.inactive} accent="rgb(90 100 112)" />
+        <StatCard icon={<Users size={15} />}         label={t('common.total')}      value={stats.total}    accent="#0B1F3A" />
+        <StatCard icon={<GraduationCap size={15} />} label={t('status.active')}     value={stats.active}   accent="rgb(14 124 90)" />
+        <StatCard icon={<UserX size={15} />}         label={t('status.inactive')}   value={stats.inactive} accent="rgb(90 100 112)" />
       </div>
 
       {/* ── Filters card ── */}
@@ -89,7 +91,7 @@ export default function TeachersPage() {
                   border: '1px solid rgb(var(--border-default,229 233 240))',
                 }}
               >
-                {p.label}
+                {t(p.key)}
               </button>
             )
           })}
@@ -102,7 +104,7 @@ export default function TeachersPage() {
             <input
               value={filters.q}
               onChange={e => setFilter('q', e.target.value)}
-              placeholder="Search teachers…"
+              placeholder={t('teachers.search')}
               className="w-full pl-8 pr-3 py-2 rounded-lg border text-sm outline-none focus:ring-2 focus:ring-[rgb(14,124,90)] transition-shadow"
               style={selStyle}
             />

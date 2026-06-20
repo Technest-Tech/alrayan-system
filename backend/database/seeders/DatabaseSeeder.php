@@ -20,7 +20,7 @@ class DatabaseSeeder extends Seeder
         $admin = User::firstOrCreate(
             ['email' => 'admin@alrayan-academy.com'],
             [
-                'name'      => 'Alrayan Admin',
+                'name'      => 'Azhary Admin',
                 'password'  => bcrypt('password'),
                 'role'      => 'admin',
                 'is_active' => true,

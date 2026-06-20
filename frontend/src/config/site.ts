@@ -1,6 +1,6 @@
 export const siteConfig = {
-  name: 'Alrayan Academy',
-  nameArabic: 'الريان',
+  name: 'Azhary',
+  nameArabic: 'أزهري',
   tagline: 'Learn Quran Online — 1-on-1 Classes with Certified Teachers',
   description:
     'Premium online Quran, Arabic language, and Islamic studies academy. 1-on-1 classes with certified teachers from Al-Azhar. Free trial available.',

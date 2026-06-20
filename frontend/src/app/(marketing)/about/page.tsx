@@ -19,9 +19,9 @@ import {
 } from 'lucide-react'
 
 export const metadata: Metadata = buildMetadata({
-  title: 'About Alrayan Academy | Our Story, Mission & Teachers',
+  title: 'About Azhary | Our Story, Mission & Teachers',
   description:
-    'Learn how Alrayan Academy connects Muslims worldwide with Al-Azhar certified Quran teachers. Our story, mission, teaching approach, and full teacher team.',
+    'Learn how Azhary connects Muslims worldwide with Al-Azhar certified Quran teachers. Our story, mission, teaching approach, and full teacher team.',
   path: '/about',
 })
 
@@ -212,7 +212,7 @@ export default function AboutPage() {
               Meet Our Scholars
             </h2>
             <p className="text-muted-text text-lg max-w-xl mx-auto">
-              Every teacher at Alrayan holds an Ijazah or equivalent certification. Less than 10% of applicants pass our vetting process.
+              Every teacher at Azhary holds an Ijazah or equivalent certification. Less than 10% of applicants pass our vetting process.
             </p>
           </div>
 

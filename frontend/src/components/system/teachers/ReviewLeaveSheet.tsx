@@ -6,6 +6,7 @@ import type { TeacherLeave } from '@/types/system/teacher'
 import { useApproveLeave, useRejectLeave } from '@/hooks/system/useTeacherLeaves'
 import { StatusBadge } from '@/components/system/primitives/StatusBadge'
 import { ApiError } from '@/lib/system/api'
+import { useI18n } from '@/lib/system/i18n'
 
 interface ReviewLeaveSheetProps {
   leave: TeacherLeave | null
@@ -16,6 +17,7 @@ export function ReviewLeaveSheet({ leave, onClose }: ReviewLeaveSheetProps) {
   const [reviewNote, setReviewNote] = useState('')
   const approve = useApproveLeave()
   const reject  = useRejectLeave()
+  const { t } = useI18n()
 
   if (!leave) return null
 
@@ -23,7 +25,7 @@ export function ReviewLeaveSheet({ leave, onClose }: ReviewLeaveSheetProps) {
     if (!leave) return
     try {
       await approve.mutateAsync({ id: leave.id, review_note: reviewNote || undefined })
-      toast.success('Leave approved.')
+      toast.success(t('teachers.leaveApproved'))
       onClose()
     } catch (e) {
       toast.error(e instanceof ApiError ? e.message : 'Failed to approve leave.')
@@ -34,7 +36,7 @@ export function ReviewLeaveSheet({ leave, onClose }: ReviewLeaveSheetProps) {
     if (!leave) return
     try {
       await reject.mutateAsync({ id: leave.id, review_note: reviewNote || undefined })
-      toast.success('Leave rejected.')
+      toast.success(t('teachers.leaveRejected'))
       onClose()
     } catch (e) {
       toast.error(e instanceof ApiError ? e.message : 'Failed to reject leave.')
@@ -55,7 +57,7 @@ export function ReviewLeaveSheet({ leave, onClose }: ReviewLeaveSheetProps) {
           className="flex items-center justify-between px-6 py-4 border-b shrink-0"
           style={{ background: 'rgb(var(--surface-card, 255 255 255))', borderColor: 'rgb(var(--border-default, 229 233 240))' }}
         >
-          <h2 className="font-semibold">Leave request</h2>
+          <h2 className="font-semibold">{t('teachers.reviewLeaveTitle')}</h2>
           <button onClick={onClose} className="p-1 rounded-lg hover:bg-black/5 transition-colors">
             <X size={18} />
           </button>
@@ -68,26 +70,26 @@ export function ReviewLeaveSheet({ leave, onClose }: ReviewLeaveSheetProps) {
           >
             {leave.teacher_name && (
               <div>
-                <p className="text-xs font-semibold opacity-50 uppercase tracking-wide">Teacher</p>
+                <p className="text-xs font-semibold opacity-50 uppercase tracking-wide">{t('teachers.leaveColumnTeacher')}</p>
                 <p className="font-medium">{leave.teacher_name}</p>
               </div>
             )}
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <p className="text-xs font-semibold opacity-50 uppercase tracking-wide">Start</p>
+                <p className="text-xs font-semibold opacity-50 uppercase tracking-wide">{t('teachers.reviewColumnStart')}</p>
                 <p className="font-medium">{leave.start_date}</p>
               </div>
               <div>
-                <p className="text-xs font-semibold opacity-50 uppercase tracking-wide">End</p>
+                <p className="text-xs font-semibold opacity-50 uppercase tracking-wide">{t('teachers.reviewColumnEnd')}</p>
                 <p className="font-medium">{leave.end_date}</p>
               </div>
             </div>
             <div>
-              <p className="text-xs font-semibold opacity-50 uppercase tracking-wide">Reason</p>
+              <p className="text-xs font-semibold opacity-50 uppercase tracking-wide">{t('common.reason')}</p>
               <p className="text-sm mt-0.5">{leave.reason}</p>
             </div>
             <div className="flex items-center gap-2">
-              <p className="text-xs font-semibold opacity-50 uppercase tracking-wide">Status</p>
+              <p className="text-xs font-semibold opacity-50 uppercase tracking-wide">{t('common.status')}</p>
               <StatusBadge value={leave.status} />
             </div>
           </div>
@@ -97,7 +99,7 @@ export function ReviewLeaveSheet({ leave, onClose }: ReviewLeaveSheetProps) {
               className="rounded-xl p-4 text-sm"
               style={{ background: 'rgb(var(--surface-card, 255 255 255))', border: '1px solid rgb(var(--border-default, 229 233 240))' }}
             >
-              <p className="text-xs font-semibold opacity-50 uppercase tracking-wide mb-1">Review note</p>
+              <p className="text-xs font-semibold opacity-50 uppercase tracking-wide mb-1">{t('teachers.reviewNote')}</p>
               <p>{leave.review_note}</p>
               {leave.reviewed_by_name && (
                 <p className="text-xs opacity-40 mt-1">— {leave.reviewed_by_name}</p>
@@ -107,12 +109,12 @@ export function ReviewLeaveSheet({ leave, onClose }: ReviewLeaveSheetProps) {
 
           {isPending && (
             <div>
-              <label className="block text-sm font-medium mb-1.5">Review note (optional)</label>
+              <label className="block text-sm font-medium mb-1.5">{t('teachers.reviewNote')} ({t('common.optional')})</label>
               <textarea
                 rows={3}
                 value={reviewNote}
                 onChange={(e) => setReviewNote(e.target.value)}
-                placeholder="Add a note visible to the teacher…"
+                placeholder={t('teachers.reviewNotePlaceholder')}
                 className="w-full px-3 py-2 rounded-xl border text-sm outline-none focus:ring-2 focus:ring-[rgb(14,124,90)]"
                 style={{ borderColor: 'rgb(var(--border-default, 229 233 240))', background: 'rgb(var(--surface-card, 255 255 255))' }}
               />
@@ -132,7 +134,7 @@ export function ReviewLeaveSheet({ leave, onClose }: ReviewLeaveSheetProps) {
               style={{ borderColor: 'rgb(var(--border-default, 229 233 240))' }}
             >
               <XCircle size={15} />
-              Reject
+              {t('teachers.leaveReject')}
             </button>
             <button
               onClick={handleApprove}
@@ -141,7 +143,7 @@ export function ReviewLeaveSheet({ leave, onClose }: ReviewLeaveSheetProps) {
               style={{ background: 'rgb(14 124 90)' }}
             >
               <Check size={15} />
-              Approve
+              {t('teachers.leaveApprove')}
             </button>
           </div>
         )}

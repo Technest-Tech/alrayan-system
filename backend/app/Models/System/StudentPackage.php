@@ -33,10 +33,17 @@ class StudentPackage extends Model
         return $this->hasMany(Lesson::class, 'package_id');
     }
 
+    public function allocations()
+    {
+        return $this->hasMany(LessonPackageAllocation::class, 'package_id');
+    }
+
+    /**
+     * Hours consumed in this package — the single source of truth.
+     * Split-aware: a boundary lesson contributes only its in-package portion via allocations.
+     */
     public function getConsumedHoursAttribute(): float
     {
-        return (float) Lesson::where('package_id', $this->id)
-            ->whereNotIn('status', ['cancelled'])
-            ->sum(\Illuminate\Support\Facades\DB::raw('duration_minutes / 60.0'));
+        return (float) LessonPackageAllocation::where('package_id', $this->id)->sum('hours');
     }
 }

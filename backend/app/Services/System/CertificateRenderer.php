@@ -14,9 +14,9 @@ class CertificateRenderer
 
         $data = [
             'certificate'  => $certificate,
-            'academy_name' => Setting::get('academy.name', 'Alrayan Academy'),
+            'academy_name' => Setting::get('academy.name', 'Azhary'),
             'academy_logo' => Setting::get('academy.logo_path'),
-            'footer_text'  => Setting::get('academy.footer_text', 'Thank you for choosing Alrayan Academy.'),
+            'footer_text'  => Setting::get('academy.footer_text', 'Thank you for choosing Azhary.'),
             'support_email'=> Setting::get('academy.support_email', ''),
             'type_label'   => $this->typeLabel($certificate->type),
             'preview'      => $preview,

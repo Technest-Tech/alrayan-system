@@ -2,6 +2,7 @@
 import { useRef, useEffect, useState } from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import type { Session } from '@/types/system/session'
+import { useI18n } from '@/lib/system/i18n'
 
 const HOUR_HEIGHT = 72            // px per hour — taller for better readability in single-day view
 const START_HOUR  = 6             // 6 AM
@@ -121,6 +122,7 @@ export function CalendarView({
   onEventClick,
   initialView = 'timeGridDay',
 }: CalendarViewProps) {
+  const { t } = useI18n()
   const [view, setView]           = useState<View>(initialView === 'dayGridMonth' ? 'month' : 'day')
   const [currentDate, setCurrentDate] = useState(new Date())
   const scrollRef = useRef<HTMLDivElement>(null)
@@ -156,7 +158,7 @@ export function CalendarView({
             className="w-7 h-7 rounded-full border-2 animate-spin"
             style={{ borderColor: 'rgb(14 124 90 / 0.2)', borderTopColor: 'rgb(14 124 90)' }}
           />
-          <p className="text-sm" style={{ color: 'rgb(90 100 112)' }}>Loading schedule…</p>
+          <p className="text-sm" style={{ color: 'rgb(90 100 112)' }}>{t('schedule.calendarView.loading')}</p>
         </div>
       </div>
     )
@@ -168,7 +170,7 @@ export function CalendarView({
       <div className="flex items-center justify-between px-5 py-3" style={{ borderBottom: '1px solid #E8E2D5' }}>
         <div className="flex items-center gap-1">
           <NavBtn onClick={() => navigate(-1)}><ChevronLeft size={15} /></NavBtn>
-          <NavBtn onClick={() => setCurrentDate(new Date())} label>Today</NavBtn>
+          <NavBtn onClick={() => setCurrentDate(new Date())} label>{t('schedule.calendarView.today')}</NavBtn>
           <NavBtn onClick={() => navigate(1)}><ChevronRight size={15} /></NavBtn>
           <span className="ml-2 text-sm font-semibold" style={{ color: 'rgb(11 31 58)' }}>
             {rangeLabel()}
@@ -184,13 +186,13 @@ export function CalendarView({
             <button
               key={v}
               onClick={() => setView(v)}
-              className="px-3 py-1 text-xs font-medium capitalize rounded-md transition-all"
+              className="px-3 py-1 text-xs font-medium rounded-md transition-all"
               style={view === v
                 ? { background: '#fff', color: 'rgb(11 31 58)', boxShadow: '0 1px 3px rgb(11 31 58 / 0.08)' }
                 : { color: 'rgb(90 100 112)' }
               }
             >
-              {v}
+              {v === 'day' ? t('schedule.view.day') : t('schedule.view.month')}
             </button>
           ))}
         </div>
@@ -331,6 +333,7 @@ function EventChip({
   colors:   { bg: string; border: string; text: string }
   onClick:  () => void
 }) {
+  const { t } = useI18n()
   const pct   = 100 / colCount
   const left  = `calc(${col * pct}% + ${GAP}px)`
   const width = `calc(${pct}% - ${GAP * 2}px)`
@@ -361,7 +364,7 @@ function EventChip({
         overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
         fontSize: 12, fontWeight: 600, color: c.text, lineHeight: 1,
       }}>
-        {s.student?.name ?? 'Student'}
+        {s.student?.name ?? t('schedule.calendarView.studentFallback')}
       </span>
 
       {/* Time — never shrinks or wraps */}
@@ -384,6 +387,7 @@ function MonthView({
   currentDate:   Date
   onEventClick?: (s: Session) => void
 }) {
+  const { t }    = useI18n()
   const now      = new Date()
   const y        = currentDate.getFullYear()
   const m        = currentDate.getMonth()
@@ -404,13 +408,13 @@ function MonthView({
     <div>
       {/* Day name header */}
       <div className="grid grid-cols-7" style={{ borderBottom: '1px solid #E8E2D5', background: '#FAFAFA' }}>
-        {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((d, i) => (
+        {['days.sun', 'days.mon', 'days.tue', 'days.wed', 'days.thu', 'days.fri', 'days.sat'].map((dayKey, i) => (
           <div
-            key={d}
+            key={dayKey}
             className="py-2 text-center text-[10px] font-bold uppercase tracking-wider"
             style={{ color: 'rgb(90 100 112)', borderRight: i < 6 ? '1px solid #E8E2D5' : undefined }}
           >
-            {d}
+            {t(dayKey)}
           </div>
         ))}
       </div>
@@ -458,7 +462,7 @@ function MonthView({
                     })}
                     {evts.length > 3 && (
                       <p className="text-[10px] px-1 font-medium" style={{ color: 'rgb(90 100 112)' }}>
-                        +{evts.length - 3} more
+                        {t('schedule.calendarView.moreCount', { count: String(evts.length - 3) })}
                       </p>
                     )}
                   </div>

@@ -21,9 +21,9 @@ export const homeContent = {
   ],
 
   whyUs: {
-    eyebrow: 'Why Alrayan Academy',
+    eyebrow: 'Why Azhary',
     heading: 'Scholars, Not Just Teachers',
-    body: "Every teacher at Alrayan holds an authenticated Ijazah — a chain of transmission going back to the Prophet ﷺ. We don't hire tutors; we partner with certified scholars.",
+    body: "Every teacher at Azhary holds an authenticated Ijazah — a chain of transmission going back to the Prophet ﷺ. We don't hire tutors; we partner with certified scholars.",
     items: [
       {
         icon: 'BookOpen',

@@ -110,7 +110,18 @@ class LessonScheduleController extends Controller
     {
         $this->authorize('delete', $lessonSchedule);
 
+        // Remove still-pending (not-yet-delivered) generated lessons; keep historical/attended ones.
+        $student = $lessonSchedule->student;
+        \App\Models\System\Lesson::where('schedule_id', $lessonSchedule->id)
+            ->where('status', 'scheduled')
+            ->where('scheduled_at', '>=', now())
+            ->delete();
+
         $lessonSchedule->delete();
+
+        if ($student) {
+            app(\App\Services\System\PackageService::class)->rebuild($student);
+        }
 
         return response()->noContent();
     }

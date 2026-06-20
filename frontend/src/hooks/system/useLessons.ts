@@ -160,6 +160,33 @@ export function useCreateLessonSchedule() {
   })
 }
 
+/* ─── Update lesson schedule ─────────────────────────────── */
+export function useUpdateLessonSchedule() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, ...data }: Partial<StoreLessonSchedulePayload> & { id: number }) =>
+      api<LessonSchedule>(`/lesson-schedules/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['system', 'lesson-schedules'] })
+      qc.invalidateQueries({ queryKey: ['system', 'calendar'] })
+      qc.invalidateQueries({ queryKey: ['system', 'lessons'] })
+    },
+  })
+}
+
+/* ─── Delete lesson schedule (and its future lessons) ────── */
+export function useDeleteLessonSchedule() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (id: number) => api(`/lesson-schedules/${id}`, { method: 'DELETE' }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['system', 'lesson-schedules'] })
+      qc.invalidateQueries({ queryKey: ['system', 'calendar'] })
+      qc.invalidateQueries({ queryKey: ['system', 'lessons'] })
+    },
+  })
+}
+
 /* ─── Update student package ─────────────────────────────── */
 export function useUpdateStudentPackage() {
   const qc = useQueryClient()

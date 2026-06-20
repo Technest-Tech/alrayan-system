@@ -6,6 +6,7 @@ import { LeadKanban } from '@/components/system/leads/LeadKanban'
 import { AddLeadDialog } from '@/components/system/leads/AddLeadDialog'
 import { useLeads } from '@/hooks/system/useLeads'
 import { useQueryClient } from '@tanstack/react-query'
+import { useI18n } from '@/lib/system/i18n'
 
 /* ── Islamic 8-point star ──────────────────────── */
 const STAR_PATH = 'M50,5 L57.65,31.52 L81.82,18.18 L68.48,42.35 L95,50 L68.48,57.65 L81.82,81.82 L57.65,68.48 L50,95 L42.35,68.48 L18.18,81.82 L31.52,57.65 L5,50 L31.52,42.35 L18.18,18.18 L42.35,31.52 Z'
@@ -29,6 +30,7 @@ function GoldDivider() {
 }
 
 export default function CrmPage() {
+  const { t } = useI18n()
   const [dialogOpen, setDialogOpen] = useState(false)
   const [filters,    setFilters]    = useState<Record<string, string>>({})
   const qc     = useQueryClient()
@@ -77,10 +79,10 @@ export default function CrmPage() {
                   className="text-2xl font-bold text-white leading-none"
                   style={{ fontFamily: "'Cormorant Garamond', Georgia, serif", letterSpacing: '-0.01em' }}
                 >
-                  CRM
+                  {t('leads.crmTitle')}
                 </h1>
                 <p className="text-xs mt-0.5" style={{ color: 'rgba(201,162,75,0.7)' }}>
-                  Lead Management Pipeline
+                  {t('leads.crmSubtitle')}
                 </p>
               </div>
             </div>
@@ -98,7 +100,7 @@ export default function CrmPage() {
                 }}
               >
                 <RefreshCw size={12} className={isFetching ? 'animate-spin' : ''} />
-                Refresh
+                {t('leads.refresh')}
               </button>
 
               <button
@@ -111,7 +113,7 @@ export default function CrmPage() {
                 }}
               >
                 <BarChart2 size={12} />
-                Statistics
+                {t('leads.statistics')}
               </button>
 
               <button
@@ -123,7 +125,7 @@ export default function CrmPage() {
                 }}
               >
                 <Plus size={13} />
-                Add Lead
+                {t('leads.addLead')}
               </button>
             </div>
           </div>

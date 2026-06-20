@@ -4,6 +4,7 @@ import {
   UserCheck, UserX, Pause, Play, BookOpen, CreditCard,
   MessageSquare, Bell, Settings, Circle,
 } from 'lucide-react'
+import { useI18n } from '@/lib/system/i18n'
 
 const EVENT_ICONS: Record<string, React.ElementType> = {
   enrolled:       UserCheck,
@@ -17,23 +18,25 @@ const EVENT_ICONS: Record<string, React.ElementType> = {
   notification:   Bell,
 }
 
-function timeAgo(dateStr: string) {
-  const diff = Date.now() - new Date(dateStr).getTime()
-  const mins  = Math.floor(diff / 60000)
-  const hours = Math.floor(diff / 3600000)
-  const days  = Math.floor(diff / 86400000)
-  if (mins < 2)   return 'just now'
-  if (mins < 60)  return `${mins}m ago`
-  if (hours < 24) return `${hours}h ago`
-  return `${days}d ago`
-}
-
 interface StudentTimelineProps {
   entries: StudentTimelineEntry[]
   isLoading: boolean
 }
 
 export function StudentTimeline({ entries, isLoading }: StudentTimelineProps) {
+  const { t } = useI18n()
+
+  function timeAgo(dateStr: string) {
+    const diff = Date.now() - new Date(dateStr).getTime()
+    const mins  = Math.floor(diff / 60000)
+    const hours = Math.floor(diff / 3600000)
+    const days  = Math.floor(diff / 86400000)
+    if (mins < 2)   return t('students.timelineJustNow')
+    if (mins < 60)  return t('students.timelineMinAgo', { n: String(mins) })
+    if (hours < 24) return t('students.timelineHourAgo', { n: String(hours) })
+    return t('students.timelineDayAgo', { n: String(days) })
+  }
+
   if (isLoading) {
     return (
       <div className="space-y-3">
@@ -51,7 +54,7 @@ export function StudentTimeline({ entries, isLoading }: StudentTimelineProps) {
   }
 
   if (!entries.length) {
-    return <p className="text-sm opacity-40 text-center py-10">No timeline events yet.</p>
+    return <p className="text-sm opacity-40 text-center py-10">{t('students.timelineEmpty')}</p>
   }
 
   return (

@@ -16,7 +16,7 @@ class MessageTemplateSeeder extends Seeder
                 'label'               => 'Welcome message to new student',
                 'body'                => "Assalamu alaikum {student_name}! Welcome to {academy_name}. Your first session with {assigned_teacher} is at {first_session_time}. We can't wait to begin this journey with you.",
                 'available_variables' => ['student_name', 'academy_name', 'assigned_teacher', 'first_session_time'],
-                'example_values'      => ['student_name' => 'Sarah Ahmed', 'academy_name' => 'Alrayan Academy', 'assigned_teacher' => 'Sh. Hassan', 'first_session_time' => 'Mon Jun 14 18:00 EDT'],
+                'example_values'      => ['student_name' => 'Sarah Ahmed', 'academy_name' => 'Azhary', 'assigned_teacher' => 'Sh. Hassan', 'first_session_time' => 'Mon Jun 14 18:00 EDT'],
             ],
             [
                 'key'                 => 'session_reminder_student',

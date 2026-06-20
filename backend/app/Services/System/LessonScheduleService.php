@@ -32,6 +32,7 @@ class LessonScheduleService
 
                     if ($exists) continue;
 
+                    // Placeholder package just to satisfy the FK — rebuild() reassigns below.
                     $package = $pkgSvc->resolvePackageForLesson($student, $scheduledAt);
 
                     Lesson::create([
@@ -45,11 +46,12 @@ class LessonScheduleService
                         'status'           => 'scheduled',
                         'added_by'         => auth()->id(),
                     ]);
-
-                    $pkgSvc->recalculateSessionNumbers($package->id);
                 }
             }
         });
+
+        // Re-distribute once after the whole batch (avoids O(n²) per-lesson rebuilds).
+        $pkgSvc->rebuild($student);
     }
 
     /** Get all occurrence dates for a schedule within the horizon. */

@@ -20,7 +20,7 @@ class BlogPostSeeder extends Seeder
                 'excerpt'         => 'A practical checklist covering Ijazah credentials, teaching style, trial lessons, and scheduling flexibility — so you choose the right teacher from the start.',
                 'category'        => 'tips-guides',
                 'reading_minutes' => 6,
-                'seo_title'       => 'How to Choose an Online Quran Teacher | 7-Point Checklist | Alrayan',
+                'seo_title'       => 'How to Choose an Online Quran Teacher | 7-Point Checklist | Azhary',
                 'seo_description' => 'Not all online Quran teachers are equal. Use our 7-point checklist — credentials, trial class, teaching style, schedule, and more — to find the right fit.',
                 'body'            => <<<'HTML'
 <p>Finding the right Quran teacher online can feel overwhelming. A quick search returns hundreds of platforms, each claiming to have the "best" certified teachers. How do you know who is genuinely qualified — and who is right for you specifically?</p>
@@ -40,7 +40,7 @@ class BlogPostSeeder extends Seeder
 <li>Expose you or your child to the teacher's correction style</li>
 <li>Give the teacher enough time to assess your current level</li>
 </ul>
-<p>Be cautious of platforms that offer only a 10-minute "call" — that is a sales call, not a trial lesson. At Alrayan Academy, every trial class is a full session with zero obligation.</p>
+<p>Be cautious of platforms that offer only a 10-minute "call" — that is a sales call, not a trial lesson. At Azhary, every trial class is a full session with zero obligation.</p>
 
 <h2>3. Experience with Your Specific Age Group or Level</h2>
 <p>Teaching a 6-year-old and teaching a 40-year-old beginner require completely different skills. Ask specifically:</p>
@@ -72,7 +72,7 @@ class BlogPostSeeder extends Seeder
 <p>Any reputable teacher or academy should let you try before you commit financially. If a platform asks for payment before a trial class, that is a red flag. A teacher who is confident in their teaching does not need to lock you in before you experience their class.</p>
 
 <h2>Summary</h2>
-<p>The right Quran teacher has verified credentials, a structured teaching approach, experience with your level, and a scheduling setup that works for your life. The trial class is your best evaluation tool — use it fully. At Alrayan Academy, every student receives a free, no-obligation first class with a certified teacher before making any commitment.</p>
+<p>The right Quran teacher has verified credentials, a structured teaching approach, experience with your level, and a scheduling setup that works for your life. The trial class is your best evaluation tool — use it fully. At Azhary, every student receives a free, no-obligation first class with a certified teacher before making any commitment.</p>
 HTML,
             ],
             [
@@ -81,7 +81,7 @@ HTML,
                 'excerpt'         => 'What Tajweed is, why it matters, the six key rule categories every beginner must know, and how to practice them daily — without feeling overwhelmed.',
                 'category'        => 'tajweed',
                 'reading_minutes' => 8,
-                'seo_title'       => 'Tajweed Rules for Beginners | Complete Guide | Alrayan Academy',
+                'seo_title'       => 'Tajweed Rules for Beginners | Complete Guide | Azhary',
                 'seo_description' => 'Learn the essential Tajweed rules — Madd, Noon Sakinah, Meem Sakinah, Qalqala, and more — explained clearly for beginners with practical examples.',
                 'body'            => <<<'HTML'
 <p>Tajweed (تجويد) means "to make something excellent." In the context of Quran recitation, Tajweed is the set of rules that govern how each letter of the Quran is pronounced — its articulation point, characteristics, and how it interacts with surrounding letters.</p>
@@ -157,7 +157,7 @@ HTML,
                 'excerpt'         => 'Research, teacher experience, and 10,000+ student outcomes suggest online 1-on-1 classes can outperform group in-person tuition — here is why.',
                 'category'        => 'quran-learning',
                 'reading_minutes' => 5,
-                'seo_title'       => 'Is Online Quran Learning Effective? | Research & Results | Alrayan',
+                'seo_title'       => 'Is Online Quran Learning Effective? | Research & Results | Azhary',
                 'seo_description' => 'Can you really learn the Quran online as effectively as in-person? We look at the research, real student outcomes, and what makes the difference.',
                 'body'            => <<<'HTML'
 <p>When online Quran learning first emerged, it was viewed with skepticism by many scholars and parents. The concern was reasonable: Tajweed requires live correction, and group mosque classes had worked for centuries. What could a video call offer that an in-person class could not?</p>
@@ -191,7 +191,7 @@ HTML,
 <p>For most students aged 5 and above, online 1-on-1 learning is as effective as in-person, and often more so due to the individual attention and scheduling flexibility it enables.</p>
 
 <h2>Our Experience Across 10,000 Students</h2>
-<p>At Alrayan Academy, we have watched students complete their Noorani Qaida, finish their Tajweed certification, and complete full Hifz — all entirely online. We have students who were told by local teachers that they "could not be taught" who have thrived in our 1-on-1 format. We have adults who started from zero in their 40s and now recite Surah Al-Baqarah with confidence.</p>
+<p>At Azhary, we have watched students complete their Noorani Qaida, finish their Tajweed certification, and complete full Hifz — all entirely online. We have students who were told by local teachers that they "could not be taught" who have thrived in our 1-on-1 format. We have adults who started from zero in their 40s and now recite Surah Al-Baqarah with confidence.</p>
 <p>The medium is not the obstacle. The quality of the teacher and the consistency of the student are everything.</p>
 HTML,
             ],
@@ -201,7 +201,7 @@ HTML,
                 'excerpt'         => 'Why most scholars recommend Noorani Qaida as the foundation, and the rare cases where a student can skip straight to direct Quran reading.',
                 'category'        => 'quran-learning',
                 'reading_minutes' => 4,
-                'seo_title'       => 'Noorani Qaida vs. Direct Quran Reading | Which First? | Alrayan',
+                'seo_title'       => 'Noorani Qaida vs. Direct Quran Reading | Which First? | Azhary',
                 'seo_description' => 'Should beginners start with Noorani Qaida or go straight to the Quran? We explain the difference, the benefits of each path, and which is right for your child.',
                 'body'            => <<<'HTML'
 <p>One of the most common questions from parents enrolling their children in Quran classes is: "Do they have to do Noorani Qaida, or can they start reading the Quran directly?" It is a fair question, especially for parents whose children are eager to "get to the real thing."</p>
@@ -250,7 +250,7 @@ HTML,
                 'excerpt'         => 'Realistic timelines based on daily study hours, age, and prior Quran knowledge — from 1 year to 5 years, with the factors that make the biggest difference.',
                 'category'        => 'hifz-memorization',
                 'reading_minutes' => 7,
-                'seo_title'       => 'How Long Does Hifz Take? | Quran Memorization Timeline | Alrayan',
+                'seo_title'       => 'How Long Does Hifz Take? | Quran Memorization Timeline | Azhary',
                 'seo_description' => 'How long does it really take to memorize the Quran? Realistic timelines for children, adults, and part-time students — with the factors that matter most.',
                 'body'            => <<<'HTML'
 <p>The Quran contains 6,236 verses across 114 surahs and 30 Juz. Memorizing it completely is one of the most profound and demanding acts of Islamic devotion — and one of the most common questions we receive is: "How long will it take?"</p>

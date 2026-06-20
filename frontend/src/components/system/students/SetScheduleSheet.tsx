@@ -2,6 +2,7 @@
 import { useState } from 'react'
 import { X, CalendarDays } from 'lucide-react'
 import { RecurringPatternBuilder } from '@/components/system/schedule/RecurringPatternBuilder'
+import { useI18n } from '@/lib/system/i18n'
 import type { StudentDetail } from '@/types/system/student'
 
 interface Props {
@@ -11,6 +12,7 @@ interface Props {
 }
 
 export function SetScheduleSheet({ student, open, onClose }: Props) {
+  const { t } = useI18n()
   const [includedSiblings, setIncludedSiblings] = useState<Set<number>>(new Set())
 
   function toggleSibling(id: number) {
@@ -42,8 +44,8 @@ export function SetScheduleSheet({ student, open, onClose }: Props) {
             <CalendarDays size={16} style={{ color: 'rgb(14 124 90)' }} />
           </div>
           <div>
-            <p className="font-semibold text-sm" style={{ color: 'rgb(11 31 58)' }}>Set Weekly Timetable</p>
-            <p className="text-xs" style={{ color: 'rgb(90 100 112)' }}>{student.name} · {student.sessions_per_month} sessions/month</p>
+            <p className="font-semibold text-sm" style={{ color: 'rgb(11 31 58)' }}>{t('students.weeklySchedule')}</p>
+            <p className="text-xs" style={{ color: 'rgb(90 100 112)' }}>{student.name} · {student.sessions_per_month} {t('teachers.sessionsPerMonthShort')}</p>
           </div>
           <button
             onClick={onClose}
@@ -61,7 +63,7 @@ export function SetScheduleSheet({ student, open, onClose }: Props) {
               className="rounded-xl p-4 space-y-3"
               style={{ background: '#fff', border: '1px solid rgb(var(--border-default,229 233 240))' }}
             >
-              <p className="text-[11px] font-semibold uppercase tracking-widest opacity-40">Apply same timetable to siblings?</p>
+              <p className="text-[11px] font-semibold uppercase tracking-widest opacity-40">{t('students.applyToSiblings')}</p>
               {student.siblings.map(sib => (
                 <label key={sib.id} className="flex items-center gap-3 cursor-pointer group">
                   <input
@@ -80,14 +82,14 @@ export function SetScheduleSheet({ student, open, onClose }: Props) {
                   </div>
                   {includedSiblings.has(sib.id) && (
                     <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full" style={{ background: 'rgb(14 124 90 / 0.1)', color: 'rgb(14 124 90)' }}>
-                      Included
+                      {t('students.siblingIncluded')}
                     </span>
                   )}
                 </label>
               ))}
               {includedSiblings.size > 0 && (
                 <p className="text-[11px] opacity-40">
-                  The same pattern will be saved for all selected siblings.
+                  {t('students.applySiblingsHint')}
                 </p>
               )}
             </div>

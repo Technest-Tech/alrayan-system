@@ -11,24 +11,25 @@ import { PageHeader } from '@/components/system/primitives/PageHeader'
 import { useInvoice, useVoidInvoice, useSendInvoice } from '@/hooks/system/useInvoice'
 import { useRecordPayment } from '@/hooks/system/useRecordPayment'
 import { formatMinor } from '@/lib/money'
+import { useI18n } from '@/lib/system/i18n'
 import type { Invoice, PaymentMethod } from '@/types/system/invoice'
 
-const STATUS_CONFIG: Record<string, { label: string; classes: string; dot: string; icon: React.ReactNode }> = {
-  draft:   { label: 'Draft',   classes: 'bg-gray-100 text-gray-600',       dot: 'bg-gray-400',    icon: <FileText size={13} /> },
-  sent:    { label: 'Sent',    classes: 'bg-blue-50 text-blue-700',         dot: 'bg-blue-500',    icon: <Clock size={13} /> },
-  paid:    { label: 'Paid',    classes: 'bg-emerald-50 text-emerald-700',   dot: 'bg-emerald-500', icon: <CheckCircle2 size={13} /> },
-  overdue: { label: 'Overdue', classes: 'bg-red-50 text-red-700',           dot: 'bg-red-500',     icon: <AlertTriangle size={13} /> },
-  void:    { label: 'Void',    classes: 'bg-gray-100 text-gray-400',        dot: 'bg-gray-300',    icon: <Ban size={13} /> },
+const STATUS_CONFIG: Record<string, { key: string; classes: string; dot: string; icon: React.ReactNode }> = {
+  draft:   { key: 'billing.status.draft',   classes: 'bg-gray-100 text-gray-600',       dot: 'bg-gray-400',    icon: <FileText size={13} /> },
+  sent:    { key: 'billing.status.sent',    classes: 'bg-blue-50 text-blue-700',         dot: 'bg-blue-500',    icon: <Clock size={13} /> },
+  paid:    { key: 'billing.status.paid',    classes: 'bg-emerald-50 text-emerald-700',   dot: 'bg-emerald-500', icon: <CheckCircle2 size={13} /> },
+  overdue: { key: 'billing.status.overdue', classes: 'bg-red-50 text-red-700',           dot: 'bg-red-500',     icon: <AlertTriangle size={13} /> },
+  void:    { key: 'billing.status.void',    classes: 'bg-gray-100 text-gray-400',        dot: 'bg-gray-300',    icon: <Ban size={13} /> },
 }
 
-const PAYMENT_METHODS: { value: PaymentMethod; label: string }[] = [
-  { value: 'bank_transfer', label: 'Bank Transfer' },
-  { value: 'paymob',        label: 'Paymob' },
-  { value: 'paypal',        label: 'PayPal' },
-  { value: 'vodafone_cash', label: 'Vodafone Cash' },
-  { value: 'instapay',      label: 'InstaPay' },
-  { value: 'wallet',        label: 'Wallet' },
-  { value: 'other',         label: 'Other' },
+const PAYMENT_METHODS: { value: PaymentMethod; key: string }[] = [
+  { value: 'bank_transfer', key: 'billing.method.bankTransfer' },
+  { value: 'paymob',        key: 'billing.method.paymob' },
+  { value: 'paypal',        key: 'billing.method.paypal' },
+  { value: 'vodafone_cash', key: 'billing.method.vodafoneCash' },
+  { value: 'instapay',      key: 'billing.method.instapay' },
+  { value: 'wallet',        key: 'billing.method.wallet' },
+  { value: 'other',         key: 'billing.method.other' },
 ]
 
 function BlurModal({
@@ -73,6 +74,7 @@ function RecordPaymentModal({
   onSuccess: () => void
   onClose: () => void
 }) {
+  const { t } = useI18n()
   const { mutateAsync, isPending, error } = useRecordPayment(invoice.id)
   const [method, setMethod] = useState<PaymentMethod>('bank_transfer')
   const [reference, setReference] = useState('')
@@ -92,7 +94,7 @@ function RecordPaymentModal({
   }
 
   return (
-    <BlurModal title="Record Payment" subtitle={`Full amount: ${formatMinor(invoice.total_minor, invoice.currency)}`} onClose={onClose}>
+    <BlurModal title={t('billing.invoices.recordPaymentTitle')} subtitle={t('billing.invoices.fullAmount', { amount: formatMinor(invoice.total_minor, invoice.currency) })} onClose={onClose}>
       <div className="px-6 py-5 space-y-4">
         {error && (
           <div className="rounded-xl bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
@@ -101,42 +103,42 @@ function RecordPaymentModal({
         )}
 
         <div className="rounded-xl bg-emerald-50 border border-emerald-200 px-4 py-3">
-          <p className="text-xs text-emerald-600 font-medium">Amount to record</p>
+          <p className="text-xs text-emerald-600 font-medium">{t('billing.invoices.amountToRecord')}</p>
           <p className="text-xl font-bold text-emerald-800 mt-0.5">
             {formatMinor(invoice.total_minor, invoice.currency)}
           </p>
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1.5">Payment method</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1.5">{t('billing.invoices.paymentMethod')}</label>
           <select
             value={method}
             onChange={e => setMethod(e.target.value as PaymentMethod)}
             className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
           >
             {PAYMENT_METHODS.map(m => (
-              <option key={m.value} value={m.value}>{m.label}</option>
+              <option key={m.value} value={m.value}>{t(m.key)}</option>
             ))}
           </select>
         </div>
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1.5">
-            Reference
-            <span className="ml-1.5 text-xs font-normal text-gray-400">optional</span>
+            {t('billing.invoices.reference')}
+            <span className="ml-1.5 text-xs font-normal text-gray-400">{t('common.optional')}</span>
           </label>
           <input
             value={reference}
             onChange={e => setReference(e.target.value)}
             className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent placeholder:text-gray-400"
-            placeholder="Bank ref, transaction ID…"
+            placeholder={t('billing.invoices.referencePlaceholder')}
           />
         </div>
       </div>
 
       <div className="flex justify-end gap-3 px-6 py-4 border-t border-gray-100">
         <button onClick={onClose} className="px-4 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-100 rounded-xl transition-colors">
-          Cancel
+          {t('common.cancel')}
         </button>
         <button
           onClick={submit}
@@ -144,7 +146,7 @@ function RecordPaymentModal({
           className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-white text-sm font-semibold disabled:opacity-50 hover:opacity-90 transition-opacity"
           style={{ background: 'rgb(14 124 90)' }}
         >
-          {isPending ? <><Loader2 size={14} className="animate-spin" /> Recording…</> : <><CreditCard size={14} /> Record payment</>}
+          {isPending ? <><Loader2 size={14} className="animate-spin" /> {t('billing.invoices.recording')}</> : <><CreditCard size={14} /> {t('billing.invoices.recordPayment')}</>}
         </button>
       </div>
     </BlurModal>
@@ -160,6 +162,7 @@ function VoidModal({
   onSuccess: () => void
   onClose: () => void
 }) {
+  const { t } = useI18n()
   const { mutateAsync, isPending, error } = useVoidInvoice(invoiceId)
   const [reason, setReason] = useState('')
 
@@ -174,7 +177,7 @@ function VoidModal({
   }
 
   return (
-    <BlurModal title="Void Invoice" subtitle="This action cannot be undone." onClose={onClose}>
+    <BlurModal title={t('billing.invoices.voidTitle')} subtitle={t('billing.invoices.voidSubtitle')} onClose={onClose}>
       <div className="px-6 py-5 space-y-4">
         {error && (
           <div className="rounded-xl bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
@@ -182,29 +185,29 @@ function VoidModal({
           </div>
         )}
         <div className="rounded-xl bg-amber-50 border border-amber-200 px-4 py-3 text-sm text-amber-700">
-          Voiding an invoice marks it as cancelled and removes it from the student&apos;s outstanding balance.
+          {t('billing.invoices.voidWarning')}
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1.5">Reason for voiding</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1.5">{t('billing.invoices.voidReasonLabel')}</label>
           <textarea
             value={reason}
             onChange={e => setReason(e.target.value)}
             rows={3}
             className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-red-400 focus:border-transparent resize-none placeholder:text-gray-400"
-            placeholder="e.g. Student cancelled, duplicate invoice…"
+            placeholder={t('billing.invoices.voidReasonPlaceholder')}
           />
         </div>
       </div>
       <div className="flex justify-end gap-3 px-6 py-4 border-t border-gray-100">
         <button onClick={onClose} className="px-4 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-100 rounded-xl transition-colors">
-          Cancel
+          {t('common.cancel')}
         </button>
         <button
           onClick={submit}
           disabled={isPending || !reason.trim()}
           className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-red-600 text-white text-sm font-semibold disabled:opacity-50 hover:bg-red-700 transition-colors"
         >
-          {isPending ? <><Loader2 size={14} className="animate-spin" /> Voiding…</> : <><Ban size={14} /> Void invoice</>}
+          {isPending ? <><Loader2 size={14} className="animate-spin" /> {t('billing.invoices.voiding')}</> : <><Ban size={14} /> {t('billing.invoices.voidInvoice')}</>}
         </button>
       </div>
     </BlurModal>

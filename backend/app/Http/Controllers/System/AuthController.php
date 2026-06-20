@@ -106,6 +106,7 @@ class AuthController extends Controller
             'role'        => $user->role,
             'permissions' => $user->getAllPermissions()->pluck('name'),
             'is_active'   => $user->is_active,
+            'teacher_id'  => $user->teacher?->id,
         ];
     }
 }

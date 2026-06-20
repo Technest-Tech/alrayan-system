@@ -21,7 +21,7 @@ import {
 import type { LucideIcon } from 'lucide-react'
 
 export const metadata: Metadata = buildMetadata({
-  title: 'Online Quran & Arabic Courses | Alrayan Academy',
+  title: 'Online Quran & Arabic Courses | Azhary',
   description:
     'Browse all Quran, Tajweed, Hifz, Arabic, and Islamic Studies courses. 1-on-1 online classes with certified teachers. Free trial available.',
   path: '/courses',

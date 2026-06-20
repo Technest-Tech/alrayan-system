@@ -66,7 +66,7 @@ export const countriesData: CountryData[] = [
       {
         icon: 'Users',
         title: 'Serving 10,000+ Families Worldwide',
-        body: "From Dearborn to Houston to New York, thousands of American Muslim families trust Alrayan Academy for their children's Quran education.",
+        body: "From Dearborn to Houston to New York, thousands of American Muslim families trust Azhary for their children's Quran education.",
       },
     ],
     timezone: {
@@ -139,7 +139,7 @@ export const countriesData: CountryData[] = [
       },
     ],
     seo: {
-      title: 'Online Quran Classes USA | Certified Teachers | Alrayan Academy',
+      title: 'Online Quran Classes USA | Certified Teachers | Azhary',
       description:
         'Learn Quran online in the USA with certified Al-Azhar teachers. All US time zones, 1-on-1 classes, free first lesson. Join thousands of American Muslim families.',
     },
@@ -205,7 +205,7 @@ export const countriesData: CountryData[] = [
         location: 'Birmingham, UK',
         country: 'uk',
         quote:
-          "I've tried several online academies. Alrayan is the only one where I felt genuinely supported. The free trial convinced me immediately — the quality is exceptional.",
+          "I've tried several online academies. Azhary is the only one where I felt genuinely supported. The free trial convinced me immediately — the quality is exceptional.",
         course: 'Arabic for Non-Arabs',
         rating: 5,
       },
@@ -215,7 +215,7 @@ export const countriesData: CountryData[] = [
         location: 'Manchester, UK',
         country: 'uk',
         quote:
-          'My daughter was struggling with Tajweed at madrassa. Within two months of 1-on-1 sessions with Alrayan, her teacher at madrassa commented on the improvement. Highly recommend.',
+          'My daughter was struggling with Tajweed at madrassa. Within two months of 1-on-1 sessions with Azhary, her teacher at madrassa commented on the improvement. Highly recommend.',
         course: 'Tajweed Course',
         rating: 5,
       },
@@ -238,12 +238,12 @@ export const countriesData: CountryData[] = [
         a: 'Yes. A large portion of our UK students are adults who learned Quran as children but want to correct their Tajweed or complete the full Quran with proper pronunciation. We offer dedicated Tajweed courses for adults.',
       },
       {
-        q: 'Can I get an Ijazah certificate through Alrayan Academy?',
+        q: 'Can I get an Ijazah certificate through Azhary?',
         a: 'Yes. Our Ijazah program is available for students who have memorized the Quran (Huffaz) and want to receive a certified chain of transmission. The process typically takes 6–12 months of dedicated sessions. UK students have completed their Ijazah with us.',
       },
     ],
     seo: {
-      title: 'Online Quran Classes UK | Certified Teachers | Alrayan Academy',
+      title: 'Online Quran Classes UK | Certified Teachers | Azhary',
       description:
         'Online Quran classes in the UK with Al-Azhar certified teachers. GMT & BST scheduling, female teachers available, free trial class. Serving England, Scotland, Wales & NI.',
     },
@@ -309,7 +309,7 @@ export const countriesData: CountryData[] = [
         location: 'Calgary, AB',
         country: 'canada',
         quote:
-          'Calgary is not well served by local Islamic schools. Alrayan filled that gap perfectly. My children now have consistent, high-quality Quran instruction from home.',
+          'Calgary is not well served by local Islamic schools. Azhary filled that gap perfectly. My children now have consistent, high-quality Quran instruction from home.',
         course: 'Quran for Kids',
         rating: 5,
       },
@@ -347,7 +347,7 @@ export const countriesData: CountryData[] = [
       },
     ],
     seo: {
-      title: 'Online Quran Classes Canada | Certified Teachers | Alrayan Academy',
+      title: 'Online Quran Classes Canada | Certified Teachers | Azhary',
       description:
         'Online Quran classes in Canada with Al-Azhar certified teachers. All Canadian time zones, 1-on-1 sessions, free first class. Serving Ontario, BC, Alberta & all provinces.',
     },
@@ -377,7 +377,7 @@ export const countriesData: CountryData[] = [
       {
         icon: 'Heart',
         title: 'School Holiday Availability',
-        body: 'Unlike local Islamic schools and weekend classes that close for holidays, Alrayan Academy runs year-round. We are fully available during Australian school holidays and public holidays.',
+        body: 'Unlike local Islamic schools and weekend classes that close for holidays, Azhary runs year-round. We are fully available during Australian school holidays and public holidays.',
       },
       {
         icon: 'BookOpen',
@@ -413,7 +413,7 @@ export const countriesData: CountryData[] = [
         location: 'Sydney, NSW',
         country: 'australia',
         quote:
-          "We tried local tutors but found it hard to be consistent. Alrayan's fixed weekly schedule and WhatsApp reminders kept us on track. My son completed his first Juz in six months.",
+          "We tried local tutors but found it hard to be consistent. Azhary's fixed weekly schedule and WhatsApp reminders kept us on track. My son completed his first Juz in six months.",
         course: 'Hifz / Memorization',
         rating: 5,
       },
@@ -451,7 +451,7 @@ export const countriesData: CountryData[] = [
       },
     ],
     seo: {
-      title: 'Online Quran Classes Australia | Certified Teachers | Alrayan Academy',
+      title: 'Online Quran Classes Australia | Certified Teachers | Azhary',
       description:
         'Online Quran classes in Australia with certified Al-Azhar teachers. AEST, ACST & AWST scheduling, free first class. Serving Sydney, Melbourne, Brisbane, Perth & more.',
     },
