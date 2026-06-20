@@ -61,7 +61,7 @@ export function PayrollAdjustmentsList({
                 <button
                   onClick={() => onDelete(adj.id)}
                   className="ml-1 text-gray-300 hover:text-red-500 transition-colors"
-                  title="Delete adjustment"
+                  title={t('payroll.adjustments.deleteTitle')}
                 >
                   <Trash2 size={13} />
                 </button>
@@ -75,8 +75,8 @@ export function PayrollAdjustmentsList({
 
   return (
     <div>
-      {renderGroup(bonuses, 'Bonuses', '+', 'bg-green-100 text-green-700')}
-      {renderGroup(deductions, 'Deductions', '-', 'bg-red-100 text-red-600')}
+      {renderGroup(bonuses, t('payroll.adjustments.bonuses'), '+', 'bg-green-100 text-green-700')}
+      {renderGroup(deductions, t('payroll.adjustments.deductions'), '-', 'bg-red-100 text-red-600')}
     </div>
   )
 }

@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react'
 import { PageHeader } from '@/components/system/primitives/PageHeader'
 import { usePricingSettings, useUpdatePricingSettings } from '@/hooks/system/usePricingSettings'
+import { useI18n } from '@/lib/system/i18n'
 
 interface BillingFormState {
   invoice_prefix: string
@@ -11,6 +12,7 @@ interface BillingFormState {
 }
 
 export default function BillingSettingsPage() {
+  const { t } = useI18n()
   const { data: settings, isLoading } = usePricingSettings()
   const { mutateAsync, isPending } = useUpdatePricingSettings()
 
@@ -37,21 +39,21 @@ export default function BillingSettingsPage() {
     setMessage(null)
     try {
       await mutateAsync(form)
-      setMessage({ type: 'success', text: 'Billing settings saved.' })
+      setMessage({ type: 'success', text: t('settings.billing.saved') })
     } catch (e: unknown) {
-      setMessage({ type: 'error', text: e instanceof Error ? e.message : 'Failed to save.' })
+      setMessage({ type: 'error', text: e instanceof Error ? e.message : t('settings.billing.saveFailed') })
     }
   }
 
   if (isLoading) {
-    return <div className="py-20 text-center text-sm opacity-40">Loading…</div>
+    return <div className="py-20 text-center text-sm opacity-40">{t('common.loading')}</div>
   }
 
   return (
     <>
       <PageHeader
-        title="Billing"
-        description="Invoice timing, numbering, and auto-suspension thresholds."
+        title={t('settings.billing.title')}
+        description={t('settings.billing.subtitle')}
       />
       <div className="max-w-lg space-y-6">
         {message && (
@@ -61,18 +63,18 @@ export default function BillingSettingsPage() {
         )}
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Invoice number prefix</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">{t('settings.billing.invoicePrefix')}</label>
           <input
             value={form.invoice_prefix}
             onChange={e => setForm(f => ({ ...f, invoice_prefix: e.target.value }))}
             className="w-32 rounded-xl border border-gray-300 px-3 py-2 text-sm"
             placeholder="INV"
           />
-          <p className="mt-1 text-xs text-gray-400">e.g. "INV" → INV-2026-0001</p>
+          <p className="mt-1 text-xs text-gray-400">{t('settings.billing.invoicePrefixHint')}</p>
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Default due window (days)</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">{t('settings.billing.dueWindow')}</label>
           <input
             type="number"
             min={1}
@@ -80,12 +82,12 @@ export default function BillingSettingsPage() {
             onChange={e => setForm(f => ({ ...f, invoice_due_days: Number(e.target.value) }))}
             className="w-24 rounded-xl border border-gray-300 px-3 py-2 text-sm"
           />
-          <p className="mt-1 text-xs text-gray-400">Days after issue before an invoice becomes overdue.</p>
+          <p className="mt-1 text-xs text-gray-400">{t('settings.billing.dueWindowHint')}</p>
         </div>
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
-            Auto-suspend after (months unpaid)
+            {t('settings.billing.autoSuspend')}
           </label>
           <input
             type="number"
@@ -95,7 +97,7 @@ export default function BillingSettingsPage() {
             className="w-24 rounded-xl border border-gray-300 px-3 py-2 text-sm"
           />
           <p className="mt-1 text-xs text-gray-400">
-            Student is automatically suspended when this many consecutive invoices are overdue.
+            {t('settings.billing.autoSuspendHint')}
           </p>
         </div>
 
@@ -107,10 +109,10 @@ export default function BillingSettingsPage() {
               onChange={e => setForm(f => ({ ...f, invoice_send_on_create: e.target.checked }))}
               className="rounded"
             />
-            <span className="text-sm text-gray-700">Auto-send invoices to students on creation</span>
+            <span className="text-sm text-gray-700">{t('settings.billing.autoSend')}</span>
           </label>
           <p className="mt-1 ml-6 text-xs text-gray-400">
-            Sends the invoice email immediately after it is generated.
+            {t('settings.billing.autoSendHint')}
           </p>
         </div>
 
@@ -122,7 +124,7 @@ export default function BillingSettingsPage() {
             className="px-4 py-2 rounded-xl text-white text-sm font-semibold disabled:opacity-50"
             style={{ background: 'rgb(14 124 90)' }}
           >
-            {isPending ? 'Saving…' : 'Save changes'}
+            {isPending ? t('common.saving') : t('common.save')}
           </button>
         </div>
       </div>

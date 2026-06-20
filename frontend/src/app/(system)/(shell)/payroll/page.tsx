@@ -11,6 +11,7 @@ import { MarkTransferredDialog } from '@/components/system/payroll/MarkTransferr
 import { usePayrolls } from '@/hooks/system/usePayrolls'
 import { useRecalculate } from '@/hooks/system/usePayrollActions'
 import { formatMoney } from '@/lib/money'
+import { useI18n } from '@/lib/system/i18n'
 import type { Payroll } from '@/types/system/payroll'
 
 function currentPeriod(): string {
@@ -19,6 +20,7 @@ function currentPeriod(): string {
 }
 
 export default function PayrollPage() {
+  const { t } = useI18n()
   const router = useRouter()
   const [period, setPeriod] = useState(currentPeriod())
   const [selectedIds, setSelectedIds] = useState<number[]>([])
@@ -55,8 +57,8 @@ export default function PayrollPage() {
   return (
     <>
       <PageHeader
-        title="Payroll"
-        description="Teacher payroll and disbursements."
+        title={t('payroll.title')}
+        description={t('payroll.description')}
         actions={
           <button
             onClick={handleRecalculate}
@@ -64,7 +66,7 @@ export default function PayrollPage() {
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium border border-gray-200 hover:bg-gray-50 transition-colors disabled:opacity-50"
           >
             <RefreshCw size={14} className={recalculate.isPending ? 'animate-spin' : ''} />
-            Recalculate pending
+            {t('payroll.recalculatePending')}
           </button>
         }
       />
@@ -80,11 +82,11 @@ export default function PayrollPage() {
       )}
 
       {isLoading ? (
-        <div className="py-20 text-center text-sm opacity-40">Loading...</div>
+        <div className="py-20 text-center text-sm opacity-40">{t('common.loading')}</div>
       ) : error ? (
         <div className="py-10 text-center text-sm text-red-500">{(error as Error).message}</div>
       ) : payrolls.length === 0 ? (
-        <div className="py-20 text-center text-sm opacity-40">No payrolls for this period.</div>
+        <div className="py-20 text-center text-sm opacity-40">{t('payroll.emptyPeriod')}</div>
       ) : (
         <div className="rounded-xl border overflow-hidden">
           <table className="min-w-full divide-y divide-gray-200 text-sm">
@@ -98,13 +100,13 @@ export default function PayrollPage() {
                     className="accent-emerald-600"
                   />
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Teacher</th>
-                <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wide">Sessions</th>
-                <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wide">Minutes</th>
-                <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wide">Base EGP</th>
-                <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wide">Net EGP</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Status</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Actions</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">{t('common.teacher')}</th>
+                <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wide">{t('common.sessions')}</th>
+                <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wide">{t('common.minutes')}</th>
+                <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wide">{t('payroll.columnBaseEgp')}</th>
+                <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wide">{t('payroll.columnNetEgp')}</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">{t('common.status')}</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">{t('common.actions')}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100 bg-white">
@@ -126,7 +128,7 @@ export default function PayrollPage() {
                     />
                   </td>
                   <td className="px-4 py-3 font-medium">
-                    {p.teacher?.name ?? `Teacher #${p.teacher_id}`}
+                    {p.teacher?.name ?? t('payroll.teacherFallback', { id: String(p.teacher_id) })}
                   </td>
                   <td className="px-4 py-3 text-center tabular-nums">{p.total_sessions}</td>
                   <td className="px-4 py-3 text-center tabular-nums">{p.total_minutes}</td>
@@ -145,7 +147,7 @@ export default function PayrollPage() {
                           onClick={() => setApprovePayroll(p)}
                           className="text-xs text-blue-600 hover:text-blue-800 font-medium"
                         >
-                          Approve
+                          {t('common.approve')}
                         </button>
                       )}
                       {p.status === 'approved' && (
@@ -153,7 +155,7 @@ export default function PayrollPage() {
                           onClick={() => setTransferPayroll(p)}
                           className="text-xs text-green-700 hover:text-green-900 font-medium"
                         >
-                          Mark transferred
+                          {t('payroll.markTransferred')}
                         </button>
                       )}
                     </div>

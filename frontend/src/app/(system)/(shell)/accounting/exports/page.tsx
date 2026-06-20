@@ -2,8 +2,10 @@
 import { useState } from 'react'
 import { PageHeader } from '@/components/system/primitives/PageHeader'
 import { useExportKinds, useQueueExport } from '@/hooks/system/useExports'
+import { useI18n } from '@/lib/system/i18n'
 
 export default function ExportsPage() {
+  const { t } = useI18n()
   const { data: kinds, isLoading } = useExportKinds()
   const { mutate: queue, isPending } = useQueueExport()
   const [queued, setQueued] = useState<Set<string>>(new Set())
@@ -17,8 +19,8 @@ export default function ExportsPage() {
   return (
     <>
       <PageHeader
-        title="Exports"
-        description="Queue a CSV export. You'll receive an in-app notification when it's ready."
+        title={t('accounting.exports.title')}
+        description={t('accounting.exports.subtitle')}
       />
 
       <div className="mt-6 max-w-lg space-y-2">
@@ -32,14 +34,14 @@ export default function ExportsPage() {
             style={{ background: 'rgb(var(--surface-card))', border: '1px solid rgb(var(--border-default))' }}>
             <span className="text-sm font-medium">{k.label}</span>
             {queued.has(k.kind) ? (
-              <span className="text-xs text-green-600">Queued</span>
+              <span className="text-xs text-green-600">{t('accounting.exports.queued')}</span>
             ) : (
               <button
                 onClick={() => request(k.kind)}
                 disabled={isPending}
                 className="px-3 py-1.5 text-sm rounded-lg border disabled:opacity-40"
                 style={{ borderColor: 'rgb(var(--border-default))' }}>
-                Export
+                {t('accounting.exports.export')}
               </button>
             )}
           </div>

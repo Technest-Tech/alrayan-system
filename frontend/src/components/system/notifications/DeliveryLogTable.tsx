@@ -4,6 +4,7 @@ import type { WassenderLog } from '@/types/system/wassenderLog'
 import { Badge } from '@/components/ui/badge'
 import { DeliveryLogDrawer } from './DeliveryLogDrawer'
 import { formatDistanceToNow } from 'date-fns'
+import { useI18n } from '@/lib/system/i18n'
 
 const STATUS_VARIANT: Record<string, 'default' | 'secondary' | 'destructive' | 'outline'> = {
   queued: 'secondary',
@@ -11,6 +12,14 @@ const STATUS_VARIANT: Record<string, 'default' | 'secondary' | 'destructive' | '
   sent: 'default',
   failed: 'destructive',
   dead: 'destructive',
+}
+
+const STATUS_KEYS: Record<string, string> = {
+  queued: 'notifications.deliveryLog.status.queued',
+  sending: 'notifications.deliveryLog.status.sending',
+  sent: 'notifications.deliveryLog.status.sent',
+  failed: 'notifications.deliveryLog.status.failed',
+  dead: 'notifications.deliveryLog.status.dead',
 }
 
 interface Props {
@@ -21,6 +30,7 @@ interface Props {
 }
 
 export function DeliveryLogTable({ logs, isLoading, filters, onFiltersChange }: Props) {
+  const { t } = useI18n()
   const [selected, setSelected] = useState<WassenderLog | null>(null)
 
   return (
@@ -29,7 +39,7 @@ export function DeliveryLogTable({ logs, isLoading, filters, onFiltersChange }: 
         <div className="flex gap-2">
           <input
             type="text"
-            placeholder="Template key…"
+            placeholder={t('notifications.deliveryLog.templateKeyPlaceholder')}
             className="h-8 text-sm border rounded px-2 w-44"
             value={filters.template_key ?? ''}
             onChange={e => onFiltersChange({ ...filters, template_key: e.target.value || undefined })}
@@ -39,12 +49,12 @@ export function DeliveryLogTable({ logs, isLoading, filters, onFiltersChange }: 
             value={filters.status ?? ''}
             onChange={e => onFiltersChange({ ...filters, status: e.target.value || undefined })}
           >
-            <option value="">All statuses</option>
-            <option value="queued">Queued</option>
-            <option value="sending">Sending</option>
-            <option value="sent">Sent</option>
-            <option value="failed">Failed</option>
-            <option value="dead">Dead</option>
+            <option value="">{t('notifications.deliveryLog.allStatuses')}</option>
+            <option value="queued">{t('notifications.deliveryLog.status.queued')}</option>
+            <option value="sending">{t('notifications.deliveryLog.status.sending')}</option>
+            <option value="sent">{t('notifications.deliveryLog.status.sent')}</option>
+            <option value="failed">{t('notifications.deliveryLog.status.failed')}</option>
+            <option value="dead">{t('notifications.deliveryLog.status.dead')}</option>
           </select>
         </div>
 
@@ -52,19 +62,19 @@ export function DeliveryLogTable({ logs, isLoading, filters, onFiltersChange }: 
           <table className="w-full text-sm">
             <thead className="bg-muted text-muted-foreground">
               <tr>
-                <th className="text-left px-4 py-2">ID</th>
-                <th className="text-left px-4 py-2">Template</th>
-                <th className="text-left px-4 py-2">Recipient</th>
-                <th className="text-left px-4 py-2">Status</th>
-                <th className="text-left px-4 py-2">Attempts</th>
-                <th className="text-left px-4 py-2">Created</th>
+                <th className="text-left px-4 py-2">{t('notifications.deliveryLog.colId')}</th>
+                <th className="text-left px-4 py-2">{t('notifications.deliveryLog.colTemplate')}</th>
+                <th className="text-left px-4 py-2">{t('notifications.deliveryLog.colRecipient')}</th>
+                <th className="text-left px-4 py-2">{t('common.status')}</th>
+                <th className="text-left px-4 py-2">{t('notifications.deliveryLog.colAttempts')}</th>
+                <th className="text-left px-4 py-2">{t('notifications.deliveryLog.colCreated')}</th>
               </tr>
             </thead>
             <tbody className="divide-y">
               {isLoading && (
                 <tr>
                   <td colSpan={6} className="px-4 py-6 text-center text-muted-foreground">
-                    Loading…
+                    {t('common.loading')}
                   </td>
                 </tr>
               )}
@@ -78,11 +88,13 @@ export function DeliveryLogTable({ logs, isLoading, filters, onFiltersChange }: 
                   <td className="px-4 py-2 font-mono text-xs">{log.template_key ?? '—'}</td>
                   <td className="px-4 py-2 text-muted-foreground">
                     {log.whatsapp_group
-                      ? log.whatsapp_group.linked_name ?? `Group #${log.whatsapp_group.id}`
+                      ? log.whatsapp_group.linked_name ?? t('notifications.deliveryLog.group', { id: String(log.whatsapp_group.id) })
                       : log.recipient_phone ?? '—'}
                   </td>
                   <td className="px-4 py-2">
-                    <Badge variant={STATUS_VARIANT[log.status] ?? 'secondary'}>{log.status}</Badge>
+                    <Badge variant={STATUS_VARIANT[log.status] ?? 'secondary'}>
+                      {STATUS_KEYS[log.status] ? t(STATUS_KEYS[log.status]) : log.status}
+                    </Badge>
                   </td>
                   <td className="px-4 py-2 text-muted-foreground">{log.attempt_count}</td>
                   <td className="px-4 py-2 text-muted-foreground">
@@ -93,7 +105,7 @@ export function DeliveryLogTable({ logs, isLoading, filters, onFiltersChange }: 
               {!isLoading && logs.length === 0 && (
                 <tr>
                   <td colSpan={6} className="px-4 py-6 text-center text-muted-foreground">
-                    No delivery logs found.
+                    {t('notifications.deliveryLog.empty')}
                   </td>
                 </tr>
               )}

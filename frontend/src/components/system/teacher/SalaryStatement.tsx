@@ -1,16 +1,11 @@
+'use client'
 import { formatMoney } from '@/lib/money'
 import { PayrollStatusBadge } from '@/components/system/payroll/PayrollStatusBadge'
 import type { Payroll } from '@/types/system/payroll'
+import { useI18n } from '@/lib/system/i18n'
 
 interface SalaryStatementProps {
   payroll: Payroll
-}
-
-const DURATION_LABELS: Record<string, string> = {
-  '30': '30 min',
-  '45': '45 min',
-  '60': '60 min',
-  '90': '90 min',
 }
 
 function periodLabel(year: number, month: number): string {
@@ -21,6 +16,7 @@ function periodLabel(year: number, month: number): string {
 }
 
 export function SalaryStatement({ payroll }: SalaryStatementProps) {
+  const { t } = useI18n()
   const adjustments = payroll.adjustments ?? []
   const bonuses = adjustments.filter(a => a.type === 'bonus')
   const deductions = adjustments.filter(a => a.type === 'deduction')
@@ -31,7 +27,7 @@ export function SalaryStatement({ payroll }: SalaryStatementProps) {
       {/* Header */}
       <div className="px-5 py-4 border-b bg-gray-50 flex items-center justify-between gap-4">
         <div>
-          <p className="text-xs text-gray-400 uppercase tracking-wide font-medium">Salary Statement</p>
+          <p className="text-xs text-gray-400 uppercase tracking-wide font-medium">{t('teachers.salaryStatement')}</p>
           <h3 className="text-base font-semibold">{periodLabel(payroll.period_year, payroll.period_month)}</h3>
         </div>
         <PayrollStatusBadge status={payroll.status} />
@@ -40,17 +36,17 @@ export function SalaryStatement({ payroll }: SalaryStatementProps) {
       <div className="px-5 py-4 divide-y divide-gray-100 text-sm">
         {/* Sessions */}
         <div className="pb-4">
-          <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-2">Sessions</p>
+          <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-2">{t('common.sessions')}</p>
           <div className="space-y-1.5">
             {Object.entries(breakdown).map(([dur, sessions]) => (
               <div key={dur} className="flex justify-between text-gray-700">
-                <span>{DURATION_LABELS[dur] ?? `${dur} min`}</span>
-                <span className="tabular-nums">{sessions} session{sessions !== 1 ? 's' : ''}</span>
+                <span>{t('teacher.salary.durationMin', { n: String(dur) })}</span>
+                <span className="tabular-nums">{String(sessions)} {sessions !== 1 ? t('teachers.salarySessionPlural') : t('teachers.salarySessionSingular')}</span>
               </div>
             ))}
             <div className="flex justify-between font-medium pt-1 border-t">
-              <span>Total</span>
-              <span className="tabular-nums">{payroll.total_sessions} sessions ({payroll.total_minutes} min)</span>
+              <span>{t('common.total')}</span>
+              <span className="tabular-nums">{t('teacher.salary.totalSessionsMinutes', { sessions: String(payroll.total_sessions), minutes: String(payroll.total_minutes) })}</span>
             </div>
           </div>
         </div>
@@ -58,7 +54,7 @@ export function SalaryStatement({ payroll }: SalaryStatementProps) {
         {/* Base salary */}
         <div className="py-4">
           <div className="flex justify-between font-medium">
-            <span>Base salary</span>
+            <span>{t('teachers.salaryBase')}</span>
             <span className="tabular-nums">{formatMoney(payroll.base_salary_minor, 'EGP')}</span>
           </div>
         </div>
@@ -66,7 +62,7 @@ export function SalaryStatement({ payroll }: SalaryStatementProps) {
         {/* Bonuses */}
         {bonuses.length > 0 && (
           <div className="py-4">
-            <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-2">Bonuses</p>
+            <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-2">{t('teacher.salary.bonuses')}</p>
             <div className="space-y-1.5">
               {bonuses.map(adj => (
                 <div key={adj.id} className="flex justify-between text-green-700">
@@ -75,7 +71,7 @@ export function SalaryStatement({ payroll }: SalaryStatementProps) {
                 </div>
               ))}
               <div className="flex justify-between font-medium text-green-700 pt-1 border-t border-green-100">
-                <span>Total bonuses</span>
+                <span>{t('teachers.salaryTotalBonuses')}</span>
                 <span className="tabular-nums">+{formatMoney(payroll.bonuses_minor, 'EGP')}</span>
               </div>
             </div>
@@ -85,7 +81,7 @@ export function SalaryStatement({ payroll }: SalaryStatementProps) {
         {/* Deductions */}
         {deductions.length > 0 && (
           <div className="py-4">
-            <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-2">Deductions</p>
+            <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-2">{t('teacher.salary.deductions')}</p>
             <div className="space-y-1.5">
               {deductions.map(adj => (
                 <div key={adj.id} className="flex justify-between text-red-600">
@@ -94,7 +90,7 @@ export function SalaryStatement({ payroll }: SalaryStatementProps) {
                 </div>
               ))}
               <div className="flex justify-between font-medium text-red-600 pt-1 border-t border-red-100">
-                <span>Total deductions</span>
+                <span>{t('teachers.salaryTotalDeductions')}</span>
                 <span className="tabular-nums">-{formatMoney(payroll.deductions_minor, 'EGP')}</span>
               </div>
             </div>
@@ -104,7 +100,7 @@ export function SalaryStatement({ payroll }: SalaryStatementProps) {
         {/* Net */}
         <div className="pt-4">
           <div className="flex justify-between text-base font-bold">
-            <span>Net salary</span>
+            <span>{t('teachers.salaryNet')}</span>
             <span className="tabular-nums">{formatMoney(payroll.net_salary_minor, 'EGP')}</span>
           </div>
         </div>
@@ -113,7 +109,7 @@ export function SalaryStatement({ payroll }: SalaryStatementProps) {
       {/* Transfer info */}
       {payroll.transfer_reference && (
         <div className="px-5 py-3 border-t bg-green-50 text-xs text-green-700">
-          Transfer reference:{' '}
+          {t('teachers.salaryTransferRef')}{' '}
           <span className="font-mono font-medium">{payroll.transfer_reference}</span>
           {payroll.transferred_at && (
             <span className="ml-2 text-green-500">

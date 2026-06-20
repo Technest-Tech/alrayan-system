@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { PageHeader } from '@/components/system/primitives/PageHeader'
 import { MoneyDisplay } from '@/components/system/primitives/MoneyDisplay'
 import { useProfitLoss } from '@/hooks/system/useProfitLoss'
+import { useI18n } from '@/lib/system/i18n'
 import type { PnlMonthRow } from '@/types/system/pnl'
 
 function Cell({ value, base }: { value: number; base: string }) {
@@ -10,6 +11,7 @@ function Cell({ value, base }: { value: number; base: string }) {
 }
 
 export default function ProfitLossPage() {
+  const { t } = useI18n()
   const currentYear = new Date().getFullYear()
   const [year, setYear] = useState(currentYear)
   const from = `${year}-01-01`
@@ -20,20 +22,20 @@ export default function ProfitLossPage() {
   const totals = data?.totals
   const base   = data?.base_currency ?? 'EGP'
 
-  const rowDefs: Array<{ key: keyof PnlMonthRow; label: string; cls?: string }> = [
-    { key: 'revenue',    label: 'Revenue',    cls: 'font-medium' },
-    { key: 'salaries',   label: 'Salaries',   cls: 'text-orange-600' },
-    { key: 'bonuses',    label: 'Bonuses',    cls: 'text-orange-500' },
-    { key: 'expenses',   label: 'Expenses',   cls: 'text-orange-500' },
-    { key: 'net_profit', label: 'Net Profit', cls: 'font-bold text-green-600' },
+  const rowDefs: Array<{ key: keyof PnlMonthRow; labelKey: string; cls?: string }> = [
+    { key: 'revenue',    labelKey: 'accounting.profitLoss.revenue',   cls: 'font-medium' },
+    { key: 'salaries',   labelKey: 'accounting.profitLoss.salaries',  cls: 'text-orange-600' },
+    { key: 'bonuses',    labelKey: 'accounting.profitLoss.bonuses',   cls: 'text-orange-500' },
+    { key: 'expenses',   labelKey: 'accounting.profitLoss.expenses',  cls: 'text-orange-500' },
+    { key: 'net_profit', labelKey: 'accounting.profitLoss.netProfit', cls: 'font-bold text-green-600' },
   ]
 
   return (
     <>
-      <PageHeader title="Profit & Loss" description={`Values in ${base}. FX at today's rate.`} />
+      <PageHeader title={t('accounting.profitLoss.title')} description={t('accounting.profitLoss.subtitle', { currency: base })} />
 
       <div className="flex items-center gap-3 mt-6">
-        <label className="text-sm font-medium">Year</label>
+        <label className="text-sm font-medium">{t('accounting.common.year')}</label>
         <select value={year} onChange={e => setYear(Number(e.target.value))}
           className="rounded-lg border px-3 py-1.5 text-sm" style={{ borderColor: 'rgb(var(--border-default))' }}>
           {[currentYear, currentYear - 1, currentYear - 2].map(y => <option key={y} value={y}>{y}</option>)}
@@ -44,9 +46,9 @@ export default function ProfitLossPage() {
         <table className="min-w-full text-sm">
           <thead style={{ background: 'rgb(var(--surface-card-2))' }}>
             <tr>
-              <th className="px-4 py-3 text-left font-medium w-28">Category</th>
+              <th className="px-4 py-3 text-left font-medium w-28">{t('accounting.common.category')}</th>
               {rows.map(r => <th key={r.month} className="px-3 py-3 text-right font-medium whitespace-nowrap">{r.month_label}</th>)}
-              <th className="px-4 py-3 text-right font-medium">Total</th>
+              <th className="px-4 py-3 text-right font-medium">{t('common.total')}</th>
             </tr>
           </thead>
           <tbody>
@@ -59,7 +61,7 @@ export default function ProfitLossPage() {
             ))}
             {!isLoading && rowDefs.map(def => (
               <tr key={def.key} className={def.cls} style={{ borderTop: '1px solid rgb(var(--border-default))' }}>
-                <td className="px-4 py-2.5 font-medium">{def.label}</td>
+                <td className="px-4 py-2.5 font-medium">{t(def.labelKey)}</td>
                 {rows.map(r => <Cell key={r.month} value={r[def.key] as number} base={base} />)}
                 <Cell value={(totals?.[def.key as keyof typeof totals] as number) ?? 0} base={base} />
               </tr>

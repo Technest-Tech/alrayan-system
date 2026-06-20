@@ -24,6 +24,7 @@ class Lead extends Model
     public function followUps()          { return $this->hasMany(LeadFollowUp::class)->latest('due_at'); }
     public function trialBooking()       { return $this->belongsTo(TrialBooking::class); }
     public function convertedToStudent() { return $this->belongsTo(Student::class, 'converted_to_student_id'); }
+    public function student()            { return $this->belongsTo(Student::class, 'student_id'); }
     public function supervisor()         { return $this->belongsTo(User::class, 'assigned_supervisor_id'); }
     public function courseInterest()     { return $this->belongsTo(Course::class, 'course_interest_id'); }
 

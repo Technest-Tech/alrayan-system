@@ -1,5 +1,6 @@
 'use client'
 import { PERMISSION_GROUPS } from '@/lib/system/permissions'
+import { useI18n } from '@/lib/system/i18n'
 
 interface Props {
   selected:  string[]
@@ -12,12 +13,13 @@ function toggle(arr: string[], value: string): string[] {
 }
 
 export function PermissionMatrix({ selected, onChange, disabled }: Props) {
+  const { t } = useI18n()
   return (
     <div className="space-y-4">
       {Object.entries(PERMISSION_GROUPS).map(([group, actions]) => (
         <div key={group}>
-          <p className="text-xs font-semibold uppercase tracking-wide opacity-60 mb-1.5 capitalize">
-            {group.replace(/_/g, ' ')}
+          <p className="text-xs font-semibold uppercase tracking-wide opacity-60 mb-1.5">
+            {t(`users.permGroup.${group}`)}
           </p>
           <div className="flex flex-wrap gap-2">
             {actions.map((action) => {
@@ -41,7 +43,7 @@ export function PermissionMatrix({ selected, onChange, disabled }: Props) {
                     disabled={disabled}
                     onChange={() => onChange(toggle(selected, perm))}
                   />
-                  <span>{action.replace(/_/g, ' ')}</span>
+                  <span>{t(`users.permAction.${action}`)}</span>
                 </label>
               )
             })}

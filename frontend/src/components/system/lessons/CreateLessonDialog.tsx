@@ -2,6 +2,7 @@
 import { X, BookOpen } from 'lucide-react'
 import { LessonForm } from './LessonForm'
 import type { Lesson } from '@/types/system/lesson'
+import { useI18n } from '@/lib/system/i18n'
 
 const BORDER   = 'rgb(var(--border-default,229 233 240))'
 const NAVY     = 'rgb(11 31 58)'
@@ -24,6 +25,7 @@ interface Props {
 }
 
 export function CreateLessonDialog({ open, onOpenChange, lesson, prefill, onSuccess }: Props) {
+  const { t } = useI18n()
   if (!open) return null
 
   function handleSuccess() {
@@ -56,13 +58,13 @@ export function CreateLessonDialog({ open, onOpenChange, lesson, prefill, onSucc
                 <BookOpen size={14} style={{ color: TEAL_600 }} />
               </div>
               <h2 className="text-base font-semibold" style={{ color: NAVY }}>
-                {lesson ? 'Edit Lesson' : 'Create Lesson'}
+                {lesson ? t('lessons.detail.editLesson') : t('lessons.form.createLesson')}
               </h2>
             </div>
             <button
               onClick={() => onOpenChange(false)}
               className="p-1.5 rounded-lg hover:bg-black/5 transition-colors"
-              aria-label="Close"
+              aria-label={t('lessons.close')}
             >
               <X size={18} />
             </button>

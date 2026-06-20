@@ -35,8 +35,11 @@ export function middleware(req: NextRequest) {
     list.some(p => pathname === p || pathname.startsWith(p + '/'))
 
   if (isAppHost(host)) {
-    if (matchesPath(MARKETING_PATHS)) {
-      return NextResponse.rewrite(new URL('/not-found', req.url))
+    // The app host is the Azhary admin console — it has no public marketing
+    // site. Send the root and any stray marketing path to the admin entry
+    // point; the login page forwards already-authenticated users to /dashboard.
+    if (pathname === '/' || matchesPath(MARKETING_PATHS)) {
+      return NextResponse.redirect(new URL('/login', req.url))
     }
     return NextResponse.next()
   }

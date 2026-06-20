@@ -3,6 +3,7 @@ import { X as XIcon, User, GraduationCap, CalendarDays, Clock, BookOpen, FileTex
 import { toast } from 'sonner'
 import type { Lesson } from '@/types/system/lesson'
 import { useDeleteLesson, useDeleteLessonSchedule } from '@/hooks/system/useLessons'
+import { useI18n } from '@/lib/system/i18n'
 
 const BORDER   = 'rgb(var(--border-default,229 233 240))'
 const NAVY     = 'rgb(11 31 58)'
@@ -30,6 +31,7 @@ function Info({ icon, label, value }: { icon: React.ReactNode; label: string; va
 }
 
 export function ScheduleDetailsModal({ lesson, open, onClose, onAddReport, onEditSchedule, onChanged }: Props) {
+  const { t } = useI18n()
   const deleteLesson   = useDeleteLesson()
   const deleteSchedule = useDeleteLessonSchedule()
 
@@ -42,17 +44,17 @@ export function ScheduleDetailsModal({ lesson, open, onClose, onAddReport, onEdi
 
   async function handleDeleteOccurrence() {
     if (!lesson) return
-    if (!confirm('Delete this single occurrence?')) return
+    if (!confirm(t('lessons.scheduleDetails.confirmDeleteOccurrence'))) return
     await deleteLesson.mutateAsync(lesson.id)
-    toast.success('Occurrence deleted.')
+    toast.success(t('lessons.scheduleDetails.toastOccurrenceDeleted'))
     onChanged(); onClose()
   }
 
   async function handleDeleteSchedule() {
     if (!lesson?.schedule_id) return
-    if (!confirm('Delete the entire schedule and all its upcoming lessons?')) return
+    if (!confirm(t('lessons.scheduleDetails.confirmDeleteSchedule'))) return
     await deleteSchedule.mutateAsync(lesson.schedule_id)
-    toast.success('Schedule deleted.')
+    toast.success(t('lessons.scheduleDetails.toastScheduleDeleted'))
     onChanged(); onClose()
   }
 
@@ -62,19 +64,19 @@ export function ScheduleDetailsModal({ lesson, open, onClose, onAddReport, onEdi
         <div className="h-0.5" style={{ background: `linear-gradient(to right, #7C3AED, #A78BFA, transparent)` }} />
         <div className="px-6 pt-5 pb-6">
           <div className="flex items-center justify-between mb-5">
-            <h2 className="text-base font-bold" style={{ color: NAVY }}>Schedule Details</h2>
-            <button onClick={onClose} className="p-1 rounded-lg hover:bg-black/5" aria-label="Close">
+            <h2 className="text-base font-bold" style={{ color: NAVY }}>{t('lessons.scheduleDetails.title')}</h2>
+            <button onClick={onClose} className="p-1 rounded-lg hover:bg-black/5" aria-label={t('lessons.close')}>
               <XIcon size={16} style={{ color: MUTED }} />
             </button>
           </div>
 
           <div className="grid grid-cols-2 gap-3 mb-5">
-            <Info icon={<User size={13} />}          label="Student"    value={lesson.student.name} />
-            <Info icon={<GraduationCap size={13} />} label="Teacher"    value={lesson.teacher.name} />
-            <Info icon={<CalendarDays size={13} />}  label="Date"       value={dateLabel} />
-            <Info icon={<Clock size={13} />}         label="Start Time" value={timeLabel} />
-            <Info icon={<Clock size={13} />}         label="Duration"   value={durLabel} />
-            <Info icon={<BookOpen size={13} />}      label="Subject"    value={lesson.subject?.name ?? '—'} />
+            <Info icon={<User size={13} />}          label={t('lessons.form.fieldStudent')} value={lesson.student.name} />
+            <Info icon={<GraduationCap size={13} />} label={t('common.teacher')}            value={lesson.teacher.name} />
+            <Info icon={<CalendarDays size={13} />}  label={t('common.date')}               value={dateLabel} />
+            <Info icon={<Clock size={13} />}         label={t('lessons.schedule.startTime')} value={timeLabel} />
+            <Info icon={<Clock size={13} />}         label={t('common.duration')}           value={durLabel} />
+            <Info icon={<BookOpen size={13} />}      label={t('lessons.form.fieldSubject')}  value={lesson.subject?.name ?? '—'} />
           </div>
 
           {/* Add report — turns the occurrence into a delivered lesson */}
@@ -83,7 +85,7 @@ export function ScheduleDetailsModal({ lesson, open, onClose, onAddReport, onEdi
             className="w-full inline-flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold text-white transition-opacity hover:opacity-90 mb-3"
             style={{ background: TEAL_600 }}
           >
-            <FileText size={15} /> Add Report
+            <FileText size={15} /> {t('lessons.scheduleDetails.addReport')}
           </button>
 
           <div className="flex flex-wrap gap-2">
@@ -92,7 +94,7 @@ export function ScheduleDetailsModal({ lesson, open, onClose, onAddReport, onEdi
               className="flex-1 inline-flex items-center justify-center gap-2 py-2 rounded-xl text-sm font-medium border transition-colors hover:bg-black/[0.03]"
               style={{ borderColor: BORDER, color: NAVY }}
             >
-              <Pencil size={14} /> Edit Schedule
+              <Pencil size={14} /> {t('lessons.scheduleDetails.editSchedule')}
             </button>
             <button
               onClick={handleDeleteOccurrence}
@@ -100,7 +102,7 @@ export function ScheduleDetailsModal({ lesson, open, onClose, onAddReport, onEdi
               className="flex-1 inline-flex items-center justify-center gap-2 py-2 rounded-xl text-sm font-medium border transition-colors hover:bg-red-50 disabled:opacity-50"
               style={{ borderColor: '#FECACA', color: '#DC2626' }}
             >
-              <Trash2 size={14} /> Delete this occurrence
+              <Trash2 size={14} /> {t('lessons.scheduleDetails.deleteOccurrence')}
             </button>
             <button
               onClick={handleDeleteSchedule}
@@ -108,7 +110,7 @@ export function ScheduleDetailsModal({ lesson, open, onClose, onAddReport, onEdi
               className="flex-1 inline-flex items-center justify-center gap-2 py-2 rounded-xl text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50"
               style={{ background: '#DC2626' }}
             >
-              <Trash2 size={14} /> Delete entire schedule
+              <Trash2 size={14} /> {t('lessons.scheduleDetails.deleteSchedule')}
             </button>
           </div>
         </div>

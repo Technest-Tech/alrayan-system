@@ -8,39 +8,31 @@ use Illuminate\Validation\ValidationException;
 
 class LeadPipelineService
 {
-    // closed is terminal — only reachable via LeadToStudentConverter
-    private const TRANSITIONS = [
-        'new_lead'          => ['interested', 'waiting_for_trial', 'not_interested', 'lost'],
-        'interested'        => ['waiting_for_trial', 'waiting_for_payment', 'not_interested', 'lost'],
-        'waiting_for_trial' => ['waiting_for_payment', 'interested', 'not_interested', 'lost'],
-        'waiting_for_payment' => ['interested', 'waiting_for_trial', 'not_interested', 'lost'],
-        'closed'            => [],  // terminal — only via LeadToStudentConverter
-        'not_interested'    => ['interested', 'new_lead'],  // reopen — admin only
-        'lost'              => ['interested', 'new_lead'],  // reopen — admin only
+    /**
+     * The open pipeline statuses a lead can move freely between (in any direction,
+     * including staying on the same status — a no-op). `closed` is intentionally
+     * excluded: it is terminal and only reached through the conversion/completion flow
+     * (LeadToStudentConverter), which finalises the student's payment + package.
+     */
+    public const OPEN_STATUSES = [
+        'new_lead', 'interested', 'waiting_for_trial', 'waiting_for_payment',
+        'not_interested', 'lost',
     ];
 
     public function canTransition(Lead $lead, string $toStatus, User $actor): bool
     {
-        $from = $lead->status;
-
-        if ($toStatus === 'closed') return false;  // must use convert flow
-
-        $allowed = self::TRANSITIONS[$from] ?? [];
-
-        if (!in_array($toStatus, $allowed, true)) {
+        // A converted (closed) lead is terminal — it can't be moved back through the pipeline.
+        if ($lead->status === 'closed') {
             return false;
         }
 
-        // Reopening from terminal/negative states requires admin
-        $order = ['new_lead', 'interested', 'waiting_for_trial', 'waiting_for_payment'];
-        $fromIdx = array_search($from, $order);
-        $toIdx   = array_search($toStatus, $order);
-
-        if ($fromIdx !== false && $toIdx !== false && $toIdx < $fromIdx) {
-            return $actor->hasRole('admin');
+        // `closed` is reached only through the conversion flow, never a direct status edit.
+        if ($toStatus === 'closed') {
+            return false;
         }
 
-        return true;
+        // Otherwise any movement among the open statuses is permitted (free movement).
+        return in_array($toStatus, self::OPEN_STATUSES, true);
     }
 
     public function transition(Lead $lead, string $toStatus, User $actor, array $extra = []): Lead

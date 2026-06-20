@@ -131,6 +131,38 @@ class LeadEndpointsTest extends SystemTestCase
             'email'  => 'sara@example.com',
             'status' => 'new_lead',
         ]);
+
+        // A new lead provisions a real student (+ user, role=student) with no payment data yet.
+        $lead = \App\Models\System\Lead::where('email', 'sara@example.com')->firstOrFail();
+        $this->assertNotNull($lead->student_id);
+        $this->assertDatabaseHas('sys_students', ['id' => $lead->student_id, 'status' => 'trial']);
+    }
+
+    public function test_lead_assigned_teacher_flows_onto_provisioned_student(): void
+    {
+        $teacher = Teacher::factory()->create();
+
+        $this->actingAs($this->adminUser(), 'sanctum')
+            ->postJson('/api/system/leads', [
+                'name'                => 'Yousef Ali',
+                'source'              => 'manual_entry',
+                'assigned_teacher_id' => $teacher->id,
+            ])
+            ->assertCreated();
+
+        $lead = \App\Models\System\Lead::where('name', 'Yousef Ali')->firstOrFail();
+
+        // The teacher is set on the student (not the lead) so it's filterable in the calendar.
+        $this->assertDatabaseHas('sys_students', [
+            'id'                  => $lead->student_id,
+            'assigned_teacher_id' => $teacher->id,
+        ]);
+
+        // The student list endpoint filters by that teacher.
+        $this->actingAs($this->adminUser(), 'sanctum')
+            ->getJson("/api/system/students?filter[assigned_teacher_id]={$teacher->id}")
+            ->assertOk()
+            ->assertJsonPath('data.0.id', $lead->student_id);
     }
 
     public function test_create_lead_persists_extended_fields(): void
@@ -209,15 +241,17 @@ class LeadEndpointsTest extends SystemTestCase
         $this->assertDatabaseHas('sys_leads', ['id' => $lead->id, 'status' => 'interested']);
     }
 
-    public function test_update_rejects_illegal_status_transition(): void
+    public function test_lead_can_move_freely_between_open_statuses(): void
     {
-        // new_lead -> waiting_for_payment is not an allowed transition
+        // Free movement: new_lead -> waiting_for_payment (skipping stages) is now allowed.
         $lead = Lead::factory()->newLead()->create();
 
         $this->actingAs($this->adminUser(), 'sanctum')
             ->patchJson("/api/system/leads/{$lead->id}", ['status' => 'waiting_for_payment'])
-            ->assertStatus(422)
-            ->assertJsonValidationErrors(['status']);
+            ->assertOk()
+            ->assertJsonPath('data.status', 'waiting_for_payment');
+
+        $this->assertDatabaseHas('sys_leads', ['id' => $lead->id, 'status' => 'waiting_for_payment']);
     }
 
     public function test_status_cannot_be_set_to_closed_via_update(): void
@@ -240,15 +274,25 @@ class LeadEndpointsTest extends SystemTestCase
             ->assertJsonPath('data.status', 'interested');
     }
 
-    public function test_non_admin_cannot_reopen_to_earlier_stage(): void
+    public function test_supervisor_can_move_owned_lead_backward(): void
     {
-        // supervisor owns the lead (so the update policy passes), but reopening
-        // to an earlier pipeline stage is admin-only and must be rejected by the pipeline.
+        // Free movement: a supervisor who owns the lead can move it to any open status,
+        // including an earlier pipeline stage.
         $supervisor = $this->supervisorUser();
         $lead = Lead::factory()->interested()->create(['assigned_supervisor_id' => $supervisor->id]);
 
         $this->actingAs($supervisor, 'sanctum')
             ->patchJson("/api/system/leads/{$lead->id}", ['status' => 'new_lead'])
+            ->assertOk()
+            ->assertJsonPath('data.status', 'new_lead');
+    }
+
+    public function test_closed_lead_cannot_be_moved_back_through_pipeline(): void
+    {
+        $lead = Lead::factory()->closed()->create();
+
+        $this->actingAs($this->adminUser(), 'sanctum')
+            ->patchJson("/api/system/leads/{$lead->id}", ['status' => 'interested'])
             ->assertStatus(422)
             ->assertJsonValidationErrors(['status']);
     }
@@ -353,9 +397,9 @@ class LeadEndpointsTest extends SystemTestCase
                 'assigned_teacher_id'  => $teacher->id,
                 'timezone'             => 'Africa/Cairo',
                 'student_type'         => 'adult',
-                'sessions_per_month'   => 8,
                 'session_duration_min' => 60,
-                'monthly_price_minor'  => 120000,
+                'package_hours'        => 8,
+                'package_price_minor'  => 120000,
                 'currency'             => 'EGP',
             ])
             ->assertOk()
@@ -365,7 +409,21 @@ class LeadEndpointsTest extends SystemTestCase
             'id'     => $lead->id,
             'status' => 'closed',
         ]);
-        $this->assertDatabaseHas('sys_students', ['lead_id' => $lead->id]);
+        $this->assertDatabaseHas('sys_students', [
+            'lead_id'               => $lead->id,
+            'package_hours_default' => 8,
+            'hourly_rate_minor'     => 120000,
+        ]);
+
+        // A starting package is seeded from the entered hours/tariff (package-based, no monthly price).
+        $student = \App\Models\System\Student::where('lead_id', $lead->id)->firstOrFail();
+        $this->assertDatabaseHas('sys_student_packages', [
+            'student_id'     => $student->id,
+            'package_number' => 1,
+            'package_hours'  => 8,
+            'tariff_at_time' => 120000,
+            'status'         => 'pending',
+        ]);
     }
 
     public function test_cannot_convert_already_closed_lead(): void
@@ -380,9 +438,9 @@ class LeadEndpointsTest extends SystemTestCase
                 'assigned_teacher_id'  => $teacher->id,
                 'timezone'             => 'Africa/Cairo',
                 'student_type'         => 'adult',
-                'sessions_per_month'   => 8,
                 'session_duration_min' => 60,
-                'monthly_price_minor'  => 120000,
+                'package_hours'        => 8,
+                'package_price_minor'  => 120000,
                 'currency'             => 'EGP',
             ])
             ->assertStatus(422)

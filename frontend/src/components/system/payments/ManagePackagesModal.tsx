@@ -281,6 +281,7 @@ interface Props {
 }
 
 export function ManagePackagesModal({ studentId, studentName, open, onClose }: Props) {
+  const { t } = useI18n()
   const { data: packages = [], refetch } = useStudentPackagesList(studentId)
   const update = useUpdatePackage()
 
@@ -291,11 +292,11 @@ export function ManagePackagesModal({ studentId, studentName, open, onClose }: P
     const latest = packages[packages.length - 1]
     try {
       await update.mutateAsync({ id: latest.id, notes: noteText.trim() })
-      toast.success('Note saved.')
+      toast.success(t('payments.toastNoteSaved'))
       setNoteText('')
       refetch()
     } catch {
-      toast.error('Failed to save note.')
+      toast.error(t('payments.errNoteFailed'))
     }
   }
 
@@ -323,13 +324,13 @@ export function ManagePackagesModal({ studentId, studentName, open, onClose }: P
                 <Package size={14} style={{ color: TEAL_600 }} />
               </div>
               <div>
-                <h2 className="text-base font-semibold" style={{ color: NAVY }}>Manage Packages</h2>
+                <h2 className="text-base font-semibold" style={{ color: NAVY }}>{t('payments.managePackages')}</h2>
                 {studentName && (
                   <p className="text-xs mt-0.5" style={{ color: MUTED }}>{studentName}</p>
                 )}
               </div>
             </div>
-            <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-black/5 transition-colors" aria-label="Close">
+            <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-black/5 transition-colors" aria-label={t('common.dismiss')}>
               <X size={18} />
             </button>
           </div>
@@ -339,7 +340,15 @@ export function ManagePackagesModal({ studentId, studentName, open, onClose }: P
             <table className="w-full">
               <thead>
                 <tr style={{ background: '#F9FAFB', borderBottom: `1px solid ${BORDER}` }}>
-                  {['Package #', 'Hours', 'Amount', 'Status', 'Paid At', 'Notes', 'Actions'].map(h => (
+                  {[
+                    t('payments.colPackageNo'),
+                    t('payments.colHours'),
+                    t('payments.colAmount'),
+                    t('common.status'),
+                    t('payments.colPaidAt'),
+                    t('common.notes'),
+                    t('common.actions'),
+                  ].map(h => (
                     <th
                       key={h}
                       className="px-3 py-2.5 text-left text-xs font-semibold whitespace-nowrap"
@@ -354,7 +363,7 @@ export function ManagePackagesModal({ studentId, studentName, open, onClose }: P
                 {packages.length === 0 ? (
                   <tr>
                     <td colSpan={7} className="px-4 py-8 text-center text-sm" style={{ color: MUTED }}>
-                      No packages found for this student.
+                      {t('payments.noPackages')}
                     </td>
                   </tr>
                 ) : (
@@ -375,7 +384,7 @@ export function ManagePackagesModal({ studentId, studentName, open, onClose }: P
                   value={noteText}
                   onChange={e => setNoteText(e.target.value)}
                   onKeyDown={e => e.key === 'Enter' && saveNote()}
-                  placeholder="Add note to current package…"
+                  placeholder={t('payments.addNotePlaceholder')}
                   className="w-full px-3 py-2.5 rounded-xl border text-sm outline-none focus:ring-2 focus:ring-[#0d9488] transition-shadow"
                   style={{ borderColor: BORDER }}
                 />
@@ -386,7 +395,7 @@ export function ManagePackagesModal({ studentId, studentName, open, onClose }: P
                 className="px-4 py-2.5 rounded-xl text-sm font-medium text-white disabled:opacity-40 transition-opacity hover:opacity-90"
                 style={{ background: TEAL_600 }}
               >
-                Save Note
+                {t('payments.saveNote')}
               </button>
             </div>
           </div>

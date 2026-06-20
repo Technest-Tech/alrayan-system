@@ -1,5 +1,6 @@
 'use client'
 import { BookOpen, Repeat, Clock, X as XIcon } from 'lucide-react'
+import { useI18n } from '@/lib/system/i18n'
 
 const BORDER   = 'rgb(var(--border-default,229 233 240))'
 const NAVY     = 'rgb(11 31 58)'
@@ -37,6 +38,7 @@ function fmtDuration(min: number): string {
 }
 
 export function CreateNewChooser({ open, selection, onChooseLesson, onChooseSchedule, onClose }: Props) {
+  const { t } = useI18n()
   if (!open || !selection) return null
 
   return (
@@ -51,9 +53,9 @@ export function CreateNewChooser({ open, selection, onChooseLesson, onChooseSche
           {/* Header */}
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-base font-bold flex items-center gap-2" style={{ color: NAVY }}>
-              📅 Create New
+              📅 {t('lessons.chooser.title')}
             </h2>
-            <button onClick={onClose} className="p-1 rounded-lg hover:bg-black/5" aria-label="Close">
+            <button onClick={onClose} className="p-1 rounded-lg hover:bg-black/5" aria-label={t('lessons.close')}>
               <XIcon size={16} style={{ color: MUTED }} />
             </button>
           </div>
@@ -62,17 +64,17 @@ export function CreateNewChooser({ open, selection, onChooseLesson, onChooseSche
           <div className="rounded-xl px-4 py-3 mb-5 space-y-1.5" style={{ background: TEAL_50, border: `1px solid ${TEAL_100}` }}>
             <div className="flex items-center gap-2 text-sm" style={{ color: NAVY }}>
               <Clock size={14} style={{ color: TEAL_600 }} />
-              <span style={{ color: MUTED }}>Selected Date:</span>
+              <span style={{ color: MUTED }}>{t('lessons.chooser.selectedDate')}</span>
               <span className="font-semibold">{fmtSelected(selection)}</span>
             </div>
             <div className="flex items-center gap-2 text-sm" style={{ color: NAVY }}>
               <Clock size={14} style={{ color: TEAL_600 }} />
-              <span style={{ color: MUTED }}>Duration:</span>
+              <span style={{ color: MUTED }}>{t('common.duration')}:</span>
               <span className="font-semibold">{fmtDuration(selection.durationMinutes)}</span>
             </div>
           </div>
 
-          <p className="text-center text-sm mb-4" style={{ color: MUTED }}>What would you like to create?</p>
+          <p className="text-center text-sm mb-4" style={{ color: MUTED }}>{t('lessons.chooser.question')}</p>
 
           {/* Choices */}
           <div className="grid grid-cols-2 gap-3">
@@ -84,8 +86,8 @@ export function CreateNewChooser({ open, selection, onChooseLesson, onChooseSche
               <div className="w-11 h-11 mx-auto rounded-full flex items-center justify-center mb-2" style={{ background: TEAL_50 }}>
                 <BookOpen size={20} style={{ color: TEAL_600 }} />
               </div>
-              <div className="text-sm font-semibold" style={{ color: NAVY }}>Create Lesson</div>
-              <div className="text-xs mt-0.5" style={{ color: MUTED }}>Create a single lesson</div>
+              <div className="text-sm font-semibold" style={{ color: NAVY }}>{t('lessons.form.createLesson')}</div>
+              <div className="text-xs mt-0.5" style={{ color: MUTED }}>{t('lessons.chooser.lessonDesc')}</div>
             </button>
 
             <button
@@ -96,13 +98,13 @@ export function CreateNewChooser({ open, selection, onChooseLesson, onChooseSche
               <div className="w-11 h-11 mx-auto rounded-full flex items-center justify-center mb-2" style={{ background: '#F5F3FF' }}>
                 <Repeat size={20} style={{ color: '#7C3AED' }} />
               </div>
-              <div className="text-sm font-semibold" style={{ color: NAVY }}>Create Schedule</div>
-              <div className="text-xs mt-0.5" style={{ color: MUTED }}>Create a recurring schedule</div>
+              <div className="text-sm font-semibold" style={{ color: NAVY }}>{t('lessons.schedule.createSchedule')}</div>
+              <div className="text-xs mt-0.5" style={{ color: MUTED }}>{t('lessons.chooser.scheduleDesc')}</div>
             </button>
           </div>
 
           <button onClick={onClose} className="w-full mt-4 py-2 text-sm font-medium" style={{ color: MUTED }}>
-            Cancel
+            {t('common.cancel')}
           </button>
         </div>
       </div>

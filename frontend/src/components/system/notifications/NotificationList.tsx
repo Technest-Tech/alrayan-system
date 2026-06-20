@@ -4,6 +4,7 @@ import { useMarkRead, useMarkAllRead } from '@/hooks/system/useNotifications'
 import { formatDistanceToNow } from 'date-fns'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
+import { useI18n } from '@/lib/system/i18n'
 
 interface Props {
   notifications: SysNotification[]
@@ -11,6 +12,7 @@ interface Props {
 }
 
 export function NotificationList({ notifications, isLoading }: Props) {
+  const { t } = useI18n()
   const markRead = useMarkRead()
   const markAllRead = useMarkAllRead()
 
@@ -31,13 +33,13 @@ export function NotificationList({ notifications, isLoading }: Props) {
       {unread.length > 0 && (
         <div className="flex justify-end">
           <Button variant="ghost" size="sm" onClick={() => markAllRead.mutate()}>
-            Mark all read
+            {t('notifications.inbox.markAllRead')}
           </Button>
         </div>
       )}
 
       {notifications.length === 0 && (
-        <p className="text-sm text-muted-foreground text-center py-12">No notifications yet.</p>
+        <p className="text-sm text-muted-foreground text-center py-12">{t('notifications.inbox.empty')}</p>
       )}
 
       <div className="border rounded divide-y">
@@ -65,7 +67,7 @@ export function NotificationList({ notifications, isLoading }: Props) {
               )}
               {n.link && (
                 <Link href={n.link} className="text-xs text-primary hover:underline mt-0.5 inline-block">
-                  View →
+                  {t('common.view')} →
                 </Link>
               )}
             </div>
@@ -75,7 +77,7 @@ export function NotificationList({ notifications, isLoading }: Props) {
                 className="text-xs text-muted-foreground hover:text-foreground shrink-0"
                 onClick={() => markRead.mutate(n.id)}
               >
-                Dismiss
+                {t('common.dismiss')}
               </button>
             )}
           </div>

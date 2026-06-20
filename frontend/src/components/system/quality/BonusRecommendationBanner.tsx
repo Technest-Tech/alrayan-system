@@ -2,6 +2,7 @@
 import { Sparkles } from 'lucide-react'
 import { formatMoney } from '@/lib/money'
 import { useApplyBonus } from '@/hooks/system/useQualityTeacher'
+import { useI18n } from '@/lib/system/i18n'
 import type { QualityReview } from '@/types/system/quality'
 
 interface BonusRecommendationBannerProps {
@@ -15,6 +16,7 @@ export function BonusRecommendationBanner({
   teacherId,
   onApplied,
 }: BonusRecommendationBannerProps) {
+  const { t } = useI18n()
   const applyBonus = useApplyBonus()
 
   if (review.bonus_recommendation_minor <= 0) return null
@@ -28,7 +30,7 @@ export function BonusRecommendationBanner({
     <div className="flex items-center gap-3 rounded-xl border border-yellow-200 bg-yellow-50 px-4 py-3">
       <Sparkles size={16} className="text-yellow-600 shrink-0" />
       <p className="flex-1 text-sm text-yellow-800">
-        Recommended bonus:{' '}
+        {t('quality.bonus.recommended')}{' '}
         <strong>{formatMoney(review.bonus_recommendation_minor, 'EGP')}</strong>
       </p>
       <button
@@ -36,7 +38,7 @@ export function BonusRecommendationBanner({
         disabled={applyBonus.isPending}
         className="shrink-0 px-3 py-1.5 rounded-lg bg-yellow-500 hover:bg-yellow-600 text-white text-xs font-semibold transition-colors disabled:opacity-50"
       >
-        {applyBonus.isPending ? 'Applying...' : 'Apply to payroll'}
+        {applyBonus.isPending ? t('quality.bonus.applying') : t('quality.bonus.apply')}
       </button>
     </div>
   )

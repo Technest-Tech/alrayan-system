@@ -2,8 +2,10 @@
 import { useState, useEffect } from 'react'
 import { PageHeader } from '@/components/system/primitives/PageHeader'
 import { useFxRates, useUpdateFxRates } from '@/hooks/system/useFxRates'
+import { useI18n } from '@/lib/system/i18n'
 
 export default function FxRatesPage() {
+  const { t } = useI18n()
   const { data: rates, isLoading } = useFxRates()
   const { mutateAsync, isPending } = useUpdateFxRates()
   const [edits, setEdits] = useState<Record<string, string>>({})
@@ -29,16 +31,16 @@ export default function FxRatesPage() {
 
   return (
     <>
-      <PageHeader title="FX Rates" description="Exchange rates used for multi-currency P&L." />
+      <PageHeader title={t('settings.fxRates.title')} description={t('settings.fxRates.subtitle')} />
 
       <form onSubmit={save} className="mt-6 max-w-md space-y-3">
         <div className="rounded-2xl overflow-hidden" style={{ border: '1px solid rgb(var(--border-default))' }}>
           <table className="w-full text-sm">
             <thead style={{ background: 'rgb(var(--surface-card-2))' }}>
               <tr>
-                <th className="px-4 py-3 text-left font-medium">Pair</th>
-                <th className="px-4 py-3 text-left font-medium">Rate</th>
-                <th className="px-4 py-3 text-left font-medium">Updated</th>
+                <th className="px-4 py-3 text-left font-medium">{t('settings.fxRates.pair')}</th>
+                <th className="px-4 py-3 text-left font-medium">{t('settings.fxRates.rate')}</th>
+                <th className="px-4 py-3 text-left font-medium">{t('settings.fxRates.updated')}</th>
               </tr>
             </thead>
             <tbody>
@@ -67,7 +69,7 @@ export default function FxRatesPage() {
                   </td>
                   <td className="px-4 py-3 text-xs opacity-50">
                     {r.is_stale
-                      ? <span className="text-amber-600 font-medium">Stale</span>
+                      ? <span className="text-amber-600 font-medium">{t('settings.fxRates.stale')}</span>
                       : r.updated_at
                         ? new Date(r.updated_at).toLocaleDateString()
                         : '—'
@@ -83,9 +85,9 @@ export default function FxRatesPage() {
           <button type="submit" disabled={isPending || isLoading}
             className="px-5 py-2 rounded-xl text-sm font-medium text-white disabled:opacity-40"
             style={{ background: 'rgb(var(--accent))' }}>
-            {isPending ? 'Saving…' : 'Save rates'}
+            {isPending ? t('common.saving') : t('settings.fxRates.saveRates')}
           </button>
-          {saved && <span className="text-sm text-green-600">Saved.</span>}
+          {saved && <span className="text-sm text-green-600">{t('settings.fxRates.saved')}</span>}
         </div>
       </form>
     </>

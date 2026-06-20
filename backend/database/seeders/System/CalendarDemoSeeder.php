@@ -216,7 +216,7 @@ class CalendarDemoSeeder extends Seeder
         $start = Carbon::now()->subWeeks(20)->startOfWeek()->addDays(2)->setTime(16, 0); // Tue 16:00
 
         // First lesson is a free trial (non-consuming → shows 0.0).
-        $this->makeLesson($s, $t, $start->copy(), 60, 'trial_free', 'Quran', 'Trial lesson — level assessment');
+        $this->makeLesson($s, $t, $start->copy(), 60, 'trial', 'Quran', 'Trial lesson — level assessment');
 
         for ($i = 1; $i <= 18; $i++) {
             $when = $start->copy()->addWeeks($i);
@@ -255,7 +255,7 @@ class CalendarDemoSeeder extends Seeder
         $s = $this->makeStudent('Mariam Saleh', 'mariam.s@alrayan.test', $t, 4, 1000, $guardian);
         $start = Carbon::now()->subWeeks(16)->startOfWeek()->addDays(1)->setTime(15, 0); // Mon 15:00
 
-        $this->makeLesson($s, $t, $start->copy(), 60, 'trial_free', 'Quran', 'Trial lesson — getting to know the student');
+        $this->makeLesson($s, $t, $start->copy(), 60, 'trial', 'Quran', 'Trial lesson — getting to know the student');
 
         // Mixed 30/60/90-min lessons against tiny 4h packages → frequent boundary splits.
         $durations = [60, 90, 30, 60, 90, 60, 30, 90, 60, 60];

@@ -3,8 +3,10 @@ import { PageHeader } from '@/components/system/primitives/PageHeader'
 import { TodaySessionsList } from '@/components/system/teacher/TodaySessionsList'
 import { MissingReportsBanner } from '@/components/system/teacher/MissingReportsBanner'
 import { useSessions } from '@/hooks/system/useSessions'
+import { useI18n } from '@/lib/system/i18n'
 
 export default function TeacherTodayPage() {
+  const { t } = useI18n()
   const today = new Date().toISOString().split('T')[0]
 
   // teacher_id is injected by the API based on auth token;
@@ -20,13 +22,13 @@ export default function TeacherTodayPage() {
 
   return (
     <>
-      <PageHeader title="Today" description={dateLabel} />
+      <PageHeader title={t('teacher.today.title')} description={dateLabel} />
 
       <div className="space-y-4">
         <MissingReportsBanner teacherId={0} />
 
         {isLoading ? (
-          <div className="text-sm text-muted-foreground">Loading sessions…</div>
+          <div className="text-sm text-muted-foreground">{t('teacher.today.loadingSessions')}</div>
         ) : (
           <TodaySessionsList sessions={sessions} onUpdate={refetch} />
         )}

@@ -9,7 +9,8 @@ export const LESSON_STATUSES: { value: LessonStatus; label: string }[] = [
   { value: 'scheduled',            label: 'Scheduled'           },
   { value: 'absent',               label: 'Absent'              },
   { value: 'cancelled_by_teacher', label: 'Cancelled (Teacher)' },
-  { value: 'trial_free',           label: 'Trial / Free'        },
+  { value: 'trial',                label: 'Trial Lesson'        },
+  { value: 'free',                 label: 'Free Lesson'         },
 ]
 
 export const STATUS_LABEL: Record<LessonStatus, string> = {
@@ -17,7 +18,8 @@ export const STATUS_LABEL: Record<LessonStatus, string> = {
   attended:             'Attended',
   paid_absence:         'Paid Absence',
   absent:               'Absent',
-  trial_free:           'Trial / Free',
+  trial:                'Trial Lesson',
+  free:                 'Free Lesson',
   cancelled_by_student: 'Cancelled (Student)',
   cancelled_by_teacher: 'Cancelled (Teacher)',
 }
@@ -28,7 +30,8 @@ export const STATUS_PILL: Record<LessonStatus, { bg: string; color: string }> = 
   attended:             { bg: '#F0FDF4', color: '#15803D' },
   paid_absence:         { bg: '#FFF7ED', color: '#C2410C' },
   absent:               { bg: '#FEF2F2', color: '#B91C1C' },
-  trial_free:           { bg: '#FEF9C3', color: '#A16207' },
+  trial:                { bg: '#FEF9C3', color: '#A16207' },
+  free:                 { bg: '#ECFEFF', color: '#0E7490' },
   cancelled_by_student: { bg: '#FEF2F2', color: '#B91C1C' },
   cancelled_by_teacher: { bg: '#F3F4F6', color: '#6B7280' },
 }
@@ -53,7 +56,7 @@ const GREY    = { bg: '#F3F4F6', color: '#6B7280', border: '1px solid #E5E7EB' }
 
 export function lessonBlockStyle(lesson: Lesson): { bg: string; color: string; border: string } {
   if (lesson.status === 'scheduled')            return lesson.schedule_id ? PURPLE : NEUTRAL
-  if (lesson.status === 'trial_free')           return NEUTRAL
+  if (lesson.status === 'trial' || lesson.status === 'free') return NEUTRAL
   if (lesson.status === 'cancelled_by_teacher') return GREY
   return lesson.package?.status === 'paid' ? GREEN : RED
 }

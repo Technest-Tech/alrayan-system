@@ -10,6 +10,7 @@ import {
   useDeleteLessonEvaluation,
 } from '@/hooks/system/useLessons'
 import type { LessonEvaluation } from '@/types/system/lesson'
+import { useI18n } from '@/lib/system/i18n'
 
 const BORDER = 'rgb(var(--border-default,229 233 240))'
 const NAVY   = 'rgb(11 31 58)'
@@ -27,11 +28,12 @@ interface EditRowProps {
 }
 
 function EditRow({ initial, onSave, onCancel, isPending }: EditRowProps) {
+  const { t } = useI18n()
   const [label,     setLabel]     = useState(initial?.label ?? '')
   const [sortOrder, setSortOrder] = useState(initial?.sort_order ?? 0)
 
   async function handleSave() {
-    if (!label.trim()) { toast.error('Label is required.'); return }
+    if (!label.trim()) { toast.error(t('settings.lessonEvaluations.labelRequired')); return }
     await onSave({ label: label.trim(), sort_order: Number(sortOrder) })
   }
 
@@ -43,7 +45,7 @@ function EditRow({ initial, onSave, onCancel, isPending }: EditRowProps) {
           style={inpStyle}
           value={label}
           onChange={e => setLabel(e.target.value)}
-          placeholder="e.g. Excellent"
+          placeholder={t('settings.lessonEvaluations.labelPlaceholder')}
           autoFocus
         />
       </td>
@@ -63,7 +65,7 @@ function EditRow({ initial, onSave, onCancel, isPending }: EditRowProps) {
             onClick={onCancel}
             className="p-1.5 rounded-md hover:bg-black/5 transition-colors"
             style={{ color: MUTED }}
-            aria-label="Cancel"
+            aria-label={t('common.cancel')}
           >
             <X size={14} />
           </button>
@@ -74,7 +76,7 @@ function EditRow({ initial, onSave, onCancel, isPending }: EditRowProps) {
             style={{ background: '#0d9488' }}
           >
             <Save size={12} />
-            {isPending ? 'Saving…' : 'Save'}
+            {isPending ? t('common.saving') : t('settings.lessonEvaluations.saveShort')}
           </button>
         </div>
       </td>
@@ -84,6 +86,7 @@ function EditRow({ initial, onSave, onCancel, isPending }: EditRowProps) {
 
 /* ─── Page ──────────────────────────────────────────────── */
 export default function LessonEvaluationsPage() {
+  const { t } = useI18n()
   const { data: evaluations = [], isLoading } = useLessonEvaluations()
   const { mutateAsync: createEval, isPending: creating } = useCreateLessonEvaluation()
   const { mutateAsync: updateEval, isPending: updating } = useUpdateLessonEvaluation()
@@ -94,27 +97,27 @@ export default function LessonEvaluationsPage() {
 
   async function handleCreate(data: { label: string; sort_order: number }) {
     await createEval(data)
-    toast.success('Evaluation created.')
+    toast.success(t('settings.lessonEvaluations.created'))
     setAddOpen(false)
   }
 
   async function handleUpdate(id: number, data: { label: string; sort_order: number }) {
     await updateEval({ id, ...data })
-    toast.success('Evaluation updated.')
+    toast.success(t('settings.lessonEvaluations.updated'))
     setEditId(null)
   }
 
   function handleDelete(ev: LessonEvaluation) {
-    if (!confirm(`Delete evaluation "${ev.label}"? This cannot be undone.`)) return
+    if (!confirm(t('settings.lessonEvaluations.deleteConfirm', { label: ev.label }))) return
     deleteEval(ev.id)
-    toast.success('Evaluation deleted.')
+    toast.success(t('settings.lessonEvaluations.deleted'))
   }
 
   return (
     <>
       <PageHeader
-        title="Lesson Evaluations"
-        description="Manage evaluation labels used to rate lesson quality (e.g. Excellent, Good, Needs Improvement)."
+        title={t('settings.lessonEvaluations.title')}
+        description={t('settings.lessonEvaluations.subtitle')}
         actions={
           <button
             onClick={() => setAddOpen(true)}
@@ -122,7 +125,7 @@ export default function LessonEvaluationsPage() {
             style={{ background: '#0d9488' }}
           >
             <Plus size={14} />
-            Add Evaluation
+            {t('settings.lessonEvaluations.addEvaluation')}
           </button>
         }
       />
@@ -131,13 +134,17 @@ export default function LessonEvaluationsPage() {
         <table className="w-full text-sm">
           <thead style={{ background: '#F9FAFB' }}>
             <tr>
-              {['Label', 'Sort Order', ''].map(h => (
+              {[
+                { key: 'label', label: t('settings.lessonEvaluations.colLabel') },
+                { key: 'sort', label: t('settings.lessonEvaluations.colSort') },
+                { key: 'actions', label: '' },
+              ].map(h => (
                 <th
-                  key={h}
+                  key={h.key}
                   className="px-4 py-3 text-left text-xs font-semibold"
                   style={{ color: MUTED, borderBottom: `1px solid ${BORDER}` }}
                 >
-                  {h}
+                  {h.label}
                 </th>
               ))}
             </tr>
@@ -167,7 +174,7 @@ export default function LessonEvaluationsPage() {
             {!isLoading && !addOpen && evaluations.length === 0 && (
               <tr>
                 <td colSpan={3} className="px-4 py-8 text-center text-sm" style={{ color: MUTED }}>
-                  No evaluations yet. Click "Add Evaluation" to create one.
+                  {t('settings.lessonEvaluations.empty')}
                 </td>
               </tr>
             )}
@@ -192,14 +199,14 @@ export default function LessonEvaluationsPage() {
                         onClick={() => setEditId(ev.id)}
                         className="p-1.5 rounded-md hover:bg-black/5 transition-colors"
                         style={{ color: MUTED }}
-                        aria-label="Edit"
+                        aria-label={t('common.edit')}
                       >
                         <Pencil size={14} />
                       </button>
                       <button
                         onClick={() => handleDelete(ev)}
                         className="p-1.5 rounded-md hover:bg-red-50 transition-colors text-red-500"
-                        aria-label="Delete"
+                        aria-label={t('common.delete')}
                       >
                         <Trash2 size={14} />
                       </button>

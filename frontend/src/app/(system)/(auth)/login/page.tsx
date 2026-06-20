@@ -51,15 +51,17 @@ export default function LoginPage() {
 
         {/* Content */}
         <div className="relative z-10 flex flex-col h-full px-16 py-14">
-          {/* Logo */}
+          {/* Logo — on a white chip so the brand mark reads on the dark panel */}
           <div>
-            <Image
-              src="/logo/alrayan-white.svg"
-              alt="Azhary"
-              width={200}
-              height={52}
-              priority
-            />
+            <div className="inline-flex items-center justify-center rounded-2xl bg-white p-3 shadow-lg">
+              <Image
+                src="/logo/azhary.png"
+                alt="Azhary"
+                width={72}
+                height={72}
+                priority
+              />
+            </div>
           </div>
 
           {/* Centre text */}
@@ -127,10 +129,10 @@ export default function LoginPage() {
             {/* Logo — full colour, centered */}
             <div className="flex justify-center mb-8">
               <Image
-                src="/logo/alrayan-full.svg"
+                src="/logo/azhary.png"
                 alt="Azhary"
-                width={180}
-                height={47}
+                width={120}
+                height={120}
                 priority
               />
             </div>

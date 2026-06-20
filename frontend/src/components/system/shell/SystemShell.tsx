@@ -4,9 +4,10 @@ import { usePathname, useRouter } from 'next/navigation'
 import { Sidebar } from './Sidebar'
 import { Topbar } from './Topbar'
 import { useUser } from '@/lib/system/auth'
-import { ApiError } from '@/lib/system/api'
+import { ApiError, clearToken } from '@/lib/system/api'
 import { can } from '@/lib/system/permissions'
 import { SYSTEM_NAV } from '@/lib/system/nav'
+import { useI18n } from '@/lib/system/i18n'
 import type { AuthUser } from '@/types/system/auth'
 import type { NavSection } from '@/lib/system/nav'
 
@@ -22,17 +23,18 @@ function FullPageSpinner() {
 }
 
 function FullPageError({ error }: { error: unknown }) {
-  const message = error instanceof Error ? error.message : 'Unexpected error'
+  const { t } = useI18n()
+  const message = error instanceof Error ? error.message : t('shell.unexpectedError')
   return (
     <div className="min-h-screen flex items-center justify-center" style={{ background: 'rgb(var(--surface-bg, 244 246 250))' }}>
       <div className="text-center space-y-3">
-        <p className="text-sm font-medium opacity-70">Failed to load session</p>
+        <p className="text-sm font-medium opacity-70">{t('shell.failedToLoadSession')}</p>
         <p className="text-xs opacity-40">{message}</p>
         <button
           onClick={() => window.location.reload()}
           className="text-xs px-4 py-2 rounded-lg border opacity-60 hover:opacity-100 transition-opacity"
         >
-          Retry
+          {t('shell.retry')}
         </button>
       </div>
     </div>
@@ -84,6 +86,7 @@ export function SystemShell({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (!isLoading && isUnauthorized) {
+      clearToken()
       router.push('/login?from=' + encodeURIComponent(pathname))
     }
   }, [isUnauthorized, isLoading, pathname, router])

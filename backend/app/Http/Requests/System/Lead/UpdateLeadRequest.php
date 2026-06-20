@@ -33,6 +33,7 @@ class UpdateLeadRequest extends FormRequest
             'rejection_reason'       => 'sometimes|nullable|in:price,schedule,not_interested,no_response,other',
             'is_family_lead'         => 'sometimes|nullable|boolean',
             'assigned_supervisor_id' => 'sometimes|nullable|exists:users,id',
+            'assigned_teacher_id'    => 'sometimes|nullable|exists:sys_teachers,id',
             'payload'                => 'sometimes|nullable|array',
         ];
     }

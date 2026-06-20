@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react'
 import { Building2, Phone, Globe, CheckCircle2 } from 'lucide-react'
 import { TimezoneSelect } from '@/components/system/primitives/TimezoneSelect'
 import { useAcademy, useUpdateAcademy, type AcademySettings } from '@/hooks/system/useAcademy'
+import { useI18n } from '@/lib/system/i18n'
 
 const BORDER = 'rgb(var(--border-default, 229 233 240))'
 const CARD = 'rgb(var(--surface-card, 255 255 255))'
@@ -10,7 +11,7 @@ const ACCENT = 'rgb(var(--accent))'
 
 interface Field {
   key: keyof AcademySettings
-  label: string
+  labelKey: string
   type?: string
   required?: boolean
   placeholder?: string
@@ -18,36 +19,37 @@ interface Field {
 }
 
 interface Group {
-  title: string
-  description: string
+  titleKey: string
+  descriptionKey: string
   icon: React.ReactNode
   fields: Field[]
 }
 
 const GROUPS: Group[] = [
   {
-    title: 'Identity',
-    description: 'How your academy appears across the system and on certificates.',
+    titleKey: 'settings.general.identity',
+    descriptionKey: 'settings.general.identityDesc',
     icon: <Building2 size={18} />,
     fields: [
-      { key: 'academy.name', label: 'Academy name', required: true, full: true },
-      { key: 'academy.footer_text', label: 'Certificate footer text', full: true },
+      { key: 'academy.name', labelKey: 'settings.general.academyName', required: true, full: true },
+      { key: 'academy.footer_text', labelKey: 'settings.general.footerText', full: true },
     ],
   },
   {
-    title: 'Contact',
-    description: 'Details students and guardians use to reach you.',
+    titleKey: 'settings.general.contact',
+    descriptionKey: 'settings.general.contactDesc',
     icon: <Phone size={18} />,
     fields: [
-      { key: 'academy.support_email', label: 'Support email', type: 'email' },
-      { key: 'academy.support_phone', label: 'Support phone' },
-      { key: 'academy.support_whatsapp', label: 'WhatsApp number' },
-      { key: 'academy.address', label: 'Address', full: true },
+      { key: 'academy.support_email', labelKey: 'settings.general.supportEmail', type: 'email' },
+      { key: 'academy.support_phone', labelKey: 'settings.general.supportPhone' },
+      { key: 'academy.support_whatsapp', labelKey: 'settings.general.whatsappNumber' },
+      { key: 'academy.address', labelKey: 'settings.general.address', full: true },
     ],
   },
 ]
 
 export function GeneralSettingsSection() {
+  const { t } = useI18n()
   const { data: settings, isLoading } = useAcademy()
   const { mutateAsync, isPending } = useUpdateAcademy()
   const [form, setForm] = useState<Partial<AcademySettings>>({})
@@ -70,7 +72,7 @@ export function GeneralSettingsSection() {
     <form onSubmit={submit} className="space-y-5">
       {GROUPS.map(group => (
         <section
-          key={group.title}
+          key={group.titleKey}
           className="rounded-2xl p-6"
           style={{ background: CARD, border: `1px solid ${BORDER}`, boxShadow: '0 1px 2px rgb(11 31 58 / 0.04)' }}
         >
@@ -83,9 +85,9 @@ export function GeneralSettingsSection() {
             </div>
             <div>
               <h3 className="font-bold text-base" style={{ color: 'rgb(15 23 42)' }}>
-                {group.title}
+                {t(group.titleKey)}
               </h3>
-              <p className="text-xs mt-0.5 opacity-55">{group.description}</p>
+              <p className="text-xs mt-0.5 opacity-55">{t(group.descriptionKey)}</p>
             </div>
           </div>
 
@@ -93,7 +95,7 @@ export function GeneralSettingsSection() {
             {group.fields.map(f => (
               <div key={f.key} className={f.full ? 'sm:col-span-2' : ''}>
                 <label className="block text-sm font-medium mb-1.5">
-                  {f.label}
+                  {t(f.labelKey)}
                   {f.required && <span className="text-red-500"> *</span>}
                 </label>
                 <input
@@ -126,15 +128,15 @@ export function GeneralSettingsSection() {
           </div>
           <div>
             <h3 className="font-bold text-base" style={{ color: 'rgb(15 23 42)' }}>
-              Localization
+              {t('settings.general.localization')}
             </h3>
-            <p className="text-xs mt-0.5 opacity-55">Default timezone used for scheduling and reports.</p>
+            <p className="text-xs mt-0.5 opacity-55">{t('settings.general.localizationDesc')}</p>
           </div>
         </div>
 
         <div className="max-w-xs">
           <label className="block text-sm font-medium mb-1.5">
-            Default timezone<span className="text-red-500"> *</span>
+            {t('settings.general.defaultTimezone')}<span className="text-red-500"> *</span>
           </label>
           <TimezoneSelect
             value={(form['academy.default_timezone'] as string) ?? ''}
@@ -152,11 +154,11 @@ export function GeneralSettingsSection() {
           className="px-6 py-2.5 rounded-xl text-sm font-semibold text-white disabled:opacity-40 transition-opacity"
           style={{ background: ACCENT }}
         >
-          {isPending ? 'Saving…' : 'Save settings'}
+          {isPending ? t('common.saving') : t('settings.general.saveSettings')}
         </button>
         {saved && (
           <span className="flex items-center gap-1.5 text-sm font-medium text-green-600">
-            <CheckCircle2 size={16} /> Saved
+            <CheckCircle2 size={16} /> {t('settings.general.saved')}
           </span>
         )}
       </div>

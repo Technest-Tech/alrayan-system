@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react'
 import { useQuery, useMutation } from '@tanstack/react-query'
 import { api } from '@/lib/system/api'
 import { PageHeader } from '@/components/system/primitives/PageHeader'
+import { useI18n } from '@/lib/system/i18n'
 import type { PaymobSettings } from '@/types/system/paymob'
 
 interface PaymobFormState {
@@ -13,6 +14,7 @@ interface PaymobFormState {
 }
 
 export default function PaymobSettingsPage() {
+  const { t } = useI18n()
   const { data: settings, isLoading } = useQuery({
     queryKey: ['system', 'integrations', 'paymob'],
     queryFn: () => api<PaymobSettings>('/integrations/paymob'),
@@ -60,11 +62,11 @@ export default function PaymobSettingsPage() {
       if (form.webhook_hmac_secret) payload.webhook_hmac_secret = form.webhook_hmac_secret
 
       await save(payload)
-      setMessage({ type: 'success', text: 'Paymob settings saved.' })
+      setMessage({ type: 'success', text: t('settings.integrations.paymob.savedMessage') })
       // Clear secret fields after save
       setForm(f => ({ ...f, api_key: '', webhook_hmac_secret: '' }))
     } catch (e: unknown) {
-      setMessage({ type: 'error', text: e instanceof Error ? e.message : 'Failed to save.' })
+      setMessage({ type: 'error', text: e instanceof Error ? e.message : t('settings.integrations.paymob.saveErrorMessage') })
     }
   }
 
@@ -74,19 +76,19 @@ export default function PaymobSettingsPage() {
       const result = await testConnection()
       setTestResult(result)
     } catch {
-      setTestResult({ ok: false, message: 'Connection test failed.' })
+      setTestResult({ ok: false, message: t('settings.integrations.paymob.testFailedMessage') })
     }
   }
 
   if (isLoading) {
-    return <div className="py-20 text-center text-sm opacity-40">Loading…</div>
+    return <div className="py-20 text-center text-sm opacity-40">{t('common.loading')}</div>
   }
 
   return (
     <>
       <PageHeader
-        title="Paymob"
-        description="Online payment gateway integration. Webhook is verified by HMAC-SHA512."
+        title={t('settings.integrations.paymob.title')}
+        description={t('settings.integrations.paymob.subtitle')}
       />
       <div className="max-w-lg space-y-6">
         {message && (
@@ -97,21 +99,21 @@ export default function PaymobSettingsPage() {
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
-            API key
-            <span className="ml-1 text-xs font-normal text-gray-400">(leave blank to keep current)</span>
+            {t('settings.integrations.apiKey')}
+            <span className="ml-1 text-xs font-normal text-gray-400">{t('settings.integrations.leaveBlankToKeep')}</span>
           </label>
           <input
             type="password"
             value={form.api_key}
             onChange={e => setForm(f => ({ ...f, api_key: e.target.value }))}
             className="w-full rounded-xl border border-gray-300 px-3 py-2 text-sm"
-            placeholder="Paste new API key to update"
+            placeholder={t('settings.integrations.paymob.apiKeyPlaceholder')}
             autoComplete="off"
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Integration ID</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">{t('settings.integrations.paymob.integrationId')}</label>
           <input
             value={form.integration_id}
             onChange={e => setForm(f => ({ ...f, integration_id: e.target.value }))}
@@ -121,7 +123,7 @@ export default function PaymobSettingsPage() {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Iframe ID</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">{t('settings.integrations.paymob.iframeId')}</label>
           <input
             value={form.public_iframe_id}
             onChange={e => setForm(f => ({ ...f, public_iframe_id: e.target.value }))}
@@ -132,22 +134,22 @@ export default function PaymobSettingsPage() {
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
-            Webhook HMAC secret
-            <span className="ml-1 text-xs font-normal text-gray-400">(leave blank to keep current)</span>
+            {t('settings.integrations.paymob.hmacSecret')}
+            <span className="ml-1 text-xs font-normal text-gray-400">{t('settings.integrations.leaveBlankToKeep')}</span>
           </label>
           <input
             type="password"
             value={form.webhook_hmac_secret}
             onChange={e => setForm(f => ({ ...f, webhook_hmac_secret: e.target.value }))}
             className="w-full rounded-xl border border-gray-300 px-3 py-2 text-sm"
-            placeholder="Paste new HMAC secret to update"
+            placeholder={t('settings.integrations.paymob.hmacSecretPlaceholder')}
             autoComplete="off"
           />
         </div>
 
         {settings?.webhook_url && (
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Webhook URL</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">{t('settings.integrations.paymob.webhookUrl')}</label>
             <div className="flex items-center gap-2">
               <code className="flex-1 text-xs bg-gray-50 rounded-xl px-3 py-2 text-gray-700 break-all border border-gray-200">
                 {settings.webhook_url}
@@ -157,11 +159,11 @@ export default function PaymobSettingsPage() {
                 onClick={() => navigator.clipboard.writeText(settings.webhook_url)}
                 className="text-xs text-blue-600 hover:underline shrink-0"
               >
-                Copy
+                {t('settings.integrations.copy')}
               </button>
             </div>
             <p className="mt-1 text-xs text-gray-400">
-              Configure this URL in your Paymob dashboard under Transaction Notifications.
+              {t('settings.integrations.paymob.webhookHint')}
             </p>
           </div>
         )}
@@ -180,7 +182,7 @@ export default function PaymobSettingsPage() {
             className="px-4 py-2 rounded-xl text-white text-sm font-semibold disabled:opacity-50"
             style={{ background: 'rgb(14 124 90)' }}
           >
-            {saving ? 'Saving…' : 'Save settings'}
+            {saving ? t('common.saving') : t('settings.integrations.saveSettings')}
           </button>
           <button
             type="button"
@@ -188,7 +190,7 @@ export default function PaymobSettingsPage() {
             disabled={testing}
             className="px-4 py-2 rounded-xl border border-gray-300 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
           >
-            {testing ? 'Testing…' : 'Test connection'}
+            {testing ? t('settings.integrations.testing') : t('settings.integrations.testConnection')}
           </button>
         </div>
       </div>

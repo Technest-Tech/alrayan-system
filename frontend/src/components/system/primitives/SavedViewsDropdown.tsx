@@ -4,6 +4,7 @@ import { Bookmark, ChevronDown, Plus, Trash2 } from 'lucide-react'
 import { useSavedViews, useCreateSavedView, useDeleteSavedView } from '@/hooks/system/useSavedViews'
 import { toast } from 'sonner'
 import { ApiError } from '@/lib/system/api'
+import { useI18n } from '@/lib/system/i18n'
 
 interface SavedViewsDropdownProps {
   context: string
@@ -11,6 +12,7 @@ interface SavedViewsDropdownProps {
 }
 
 export function SavedViewsDropdown({ context, onApply }: SavedViewsDropdownProps) {
+  const { t } = useI18n()
   const [open, setOpen] = useState(false)
   const [saving, setSaving] = useState(false)
   const [newName, setNewName] = useState('')
@@ -37,20 +39,20 @@ export function SavedViewsDropdown({ context, onApply }: SavedViewsDropdownProps
     const params = window.location.search.replace(/^\?/, '')
     try {
       await createView.mutateAsync({ name: newName.trim(), params })
-      toast.success('View saved.')
+      toast.success(t('savedViews.toastSaved'))
       setSaving(false)
       setNewName('')
     } catch (e) {
-      toast.error(e instanceof ApiError ? e.message : 'Failed to save view.')
+      toast.error(e instanceof ApiError ? e.message : t('savedViews.toastSaveFailed'))
     }
   }
 
   async function handleDelete(id: string, name: string) {
     try {
       await deleteView.mutateAsync(id)
-      toast.success(`"${name}" deleted.`)
+      toast.success(t('savedViews.toastDeleted', { name }))
     } catch (e) {
-      toast.error(e instanceof ApiError ? e.message : 'Failed to delete view.')
+      toast.error(e instanceof ApiError ? e.message : t('savedViews.toastDeleteFailed'))
     }
   }
 
@@ -62,7 +64,7 @@ export function SavedViewsDropdown({ context, onApply }: SavedViewsDropdownProps
         style={{ borderColor: 'rgb(var(--border-default, 229 233 240))', background: 'rgb(var(--surface-card, 255 255 255))' }}
       >
         <Bookmark size={14} />
-        Saved views
+        {t('savedViews.button')}
         <ChevronDown size={12} className="opacity-50" />
       </button>
 
@@ -91,7 +93,7 @@ export function SavedViewsDropdown({ context, onApply }: SavedViewsDropdownProps
               ))}
             </ul>
           ) : (
-            <p className="px-3 py-4 text-xs opacity-50 text-center">No saved views yet.</p>
+            <p className="px-3 py-4 text-xs opacity-50 text-center">{t('savedViews.empty')}</p>
           )}
 
           <div
@@ -105,7 +107,7 @@ export function SavedViewsDropdown({ context, onApply }: SavedViewsDropdownProps
                   value={newName}
                   onChange={(e) => setNewName(e.target.value)}
                   onKeyDown={(e) => { if (e.key === 'Enter') handleSave(); if (e.key === 'Escape') { setSaving(false); setNewName('') } }}
-                  placeholder="View name…"
+                  placeholder={t('savedViews.namePlaceholder')}
                   className="flex-1 text-xs px-2 py-1 rounded-lg border outline-none focus:ring-2 focus:ring-[rgb(14,124,90)]"
                   style={{ borderColor: 'rgb(var(--border-default, 229 233 240))' }}
                 />
@@ -115,7 +117,7 @@ export function SavedViewsDropdown({ context, onApply }: SavedViewsDropdownProps
                   className="text-xs px-2 py-1 rounded-lg text-white font-medium disabled:opacity-50"
                   style={{ background: 'rgb(14 124 90)' }}
                 >
-                  Save
+                  {t('savedViews.save')}
                 </button>
               </div>
             ) : (
@@ -124,7 +126,7 @@ export function SavedViewsDropdown({ context, onApply }: SavedViewsDropdownProps
                 className="flex items-center gap-1.5 text-xs opacity-60 hover:opacity-100 transition-opacity w-full"
               >
                 <Plus size={12} />
-                Save current view
+                {t('savedViews.saveCurrent')}
               </button>
             )}
           </div>

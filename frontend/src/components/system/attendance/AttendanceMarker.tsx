@@ -1,6 +1,7 @@
 'use client'
 import type { Session } from '@/types/system/session'
 import { useMarkAttendance } from '@/hooks/system/useSessions'
+import { useI18n } from '@/lib/system/i18n'
 
 interface Props {
   session: Session
@@ -8,14 +9,15 @@ interface Props {
 }
 
 export function AttendanceMarker({ session, onUpdate }: Props) {
+  const { t } = useI18n()
   const mark = useMarkAttendance()
 
   if (session.status !== 'scheduled') {
     const labels: Record<string, string> = {
-      attended: '✅ Attended',
-      absent:   '❌ Absent',
-      cancelled:'⊘ Cancelled',
-      pending_substitute: '🟠 Sub needed',
+      attended: `✅ ${t('status.attended')}`,
+      absent:   `❌ ${t('status.absent')}`,
+      cancelled:`⊘ ${t('status.cancelled')}`,
+      pending_substitute: `🟠 ${t('attendance.subNeeded')}`,
     }
     return <span className="text-xs text-muted-foreground">{labels[session.status] ?? session.status}</span>
   }
@@ -29,7 +31,7 @@ export function AttendanceMarker({ session, onUpdate }: Props) {
       <button
         onClick={() => handle('attended')}
         disabled={mark.isPending}
-        title="Mark attended"
+        title={t('attendance.markAttended')}
         className="px-2 py-1 text-xs rounded bg-green-100 text-green-800 hover:bg-green-200"
       >
         ✓
@@ -37,7 +39,7 @@ export function AttendanceMarker({ session, onUpdate }: Props) {
       <button
         onClick={() => handle('absent')}
         disabled={mark.isPending}
-        title="Mark absent"
+        title={t('attendance.markAbsent')}
         className="px-2 py-1 text-xs rounded bg-red-100 text-red-800 hover:bg-red-200"
       >
         ✗

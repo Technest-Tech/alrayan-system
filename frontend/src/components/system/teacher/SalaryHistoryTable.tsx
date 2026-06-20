@@ -1,6 +1,8 @@
+'use client'
 import { formatMoney } from '@/lib/money'
 import { PayrollStatusBadge } from '@/components/system/payroll/PayrollStatusBadge'
 import type { Payroll } from '@/types/system/payroll'
+import { useI18n } from '@/lib/system/i18n'
 
 interface SalaryHistoryTableProps {
   history: Payroll[]
@@ -16,8 +18,9 @@ function periodLabel(year: number, month: number): string {
 }
 
 export function SalaryHistoryTable({ history, onSelect, selectedId }: SalaryHistoryTableProps) {
+  const { t } = useI18n()
   if (history.length === 0) {
-    return <p className="py-8 text-center text-sm opacity-40">No salary history yet.</p>
+    return <p className="py-8 text-center text-sm opacity-40">{t('teachers.salaryNoHistory')}</p>
   }
 
   return (
@@ -25,10 +28,10 @@ export function SalaryHistoryTable({ history, onSelect, selectedId }: SalaryHist
       <table className="min-w-full divide-y divide-gray-200 text-sm">
         <thead className="bg-gray-50">
           <tr>
-            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Period</th>
-            <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wide">Net EGP</th>
-            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Status</th>
-            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Reference</th>
+            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">{t('teachers.salaryColumnPeriod')}</th>
+            <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wide">{t('teachers.salaryColumnNetEGP')}</th>
+            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">{t('teachers.salaryColumnStatus')}</th>
+            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">{t('teachers.salaryColumnReference')}</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-gray-100 bg-white">

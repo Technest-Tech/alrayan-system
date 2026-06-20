@@ -1,3 +1,6 @@
+'use client'
+import { useI18n } from '@/lib/system/i18n'
+
 interface Props {
   allTypes: Record<string, string[]>
   mutedTypes: string[]
@@ -5,10 +8,12 @@ interface Props {
 }
 
 export function PreferenceMatrix({ allTypes, mutedTypes, onChange }: Props) {
+  const { t } = useI18n()
+
   const toggle = (type: string) => {
     onChange(
       mutedTypes.includes(type)
-        ? mutedTypes.filter(t => t !== type)
+        ? mutedTypes.filter(x => x !== type)
         : [...mutedTypes, type]
     )
   }
@@ -16,7 +21,7 @@ export function PreferenceMatrix({ allTypes, mutedTypes, onChange }: Props) {
   const groups = Object.entries(allTypes)
 
   if (groups.length === 0) {
-    return <p className="text-sm text-muted-foreground">No notification types configured.</p>
+    return <p className="text-sm text-muted-foreground">{t('notifications.preferences.empty')}</p>
   }
 
   return (

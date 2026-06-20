@@ -8,18 +8,19 @@ import { QualityScoreBadge } from '@/components/system/quality/QualityScoreBadge
 import { BonusRecommendationBanner } from '@/components/system/quality/BonusRecommendationBanner'
 import { ManualReviewSheet } from '@/components/system/quality/ManualReviewSheet'
 import { useQualityTeacher } from '@/hooks/system/useQualityTeacher'
+import { useI18n } from '@/lib/system/i18n'
 import type { QualityReview } from '@/types/system/quality'
 
 interface Props {
   params: Promise<{ teacherId: string }>
 }
 
-function periodLabel(year: number, month: number): string {
-  return new Date(year, month - 1, 1).toLocaleDateString('en-US', {
-    month: 'short',
-    year: 'numeric',
-  })
-}
+const MONTH_KEYS = [
+  'schedule.months.january', 'schedule.months.february', 'schedule.months.march',
+  'schedule.months.april', 'schedule.months.may', 'schedule.months.june',
+  'schedule.months.july', 'schedule.months.august', 'schedule.months.september',
+  'schedule.months.october', 'schedule.months.november', 'schedule.months.december',
+]
 
 function ScoreCard({ label, score }: { label: string; score: number }) {
   return (
@@ -31,26 +32,30 @@ function ScoreCard({ label, score }: { label: string; score: number }) {
 }
 
 export default function QualityTeacherPage({ params }: Props) {
+  const { t } = useI18n()
   const { teacherId } = use(params)
   const { data, isLoading, error, refetch } = useQualityTeacher(teacherId)
   const [reviewSheetOpen, setReviewSheetOpen] = useState(false)
 
+  const periodLabel = (year: number, month: number) =>
+    `${t(MONTH_KEYS[month - 1])} ${year}`
+
   const reviews: QualityReview[] = data?.data ?? []
   const latest = reviews[0] ?? null
 
-  const teacherName = `Teacher #${teacherId}`
+  const teacherName = t('quality.teacherFallback', { id: String(teacherId) })
 
   return (
     <>
       <div className="flex items-center gap-2 text-sm text-gray-500 mb-4">
-        <Link href="/quality" className="hover:text-gray-900 transition-colors">Quality</Link>
+        <Link href="/quality" className="hover:text-gray-900 transition-colors">{t('quality.title')}</Link>
         <ChevronRight size={14} />
         <span className="text-gray-900 font-medium">{teacherName}</span>
       </div>
 
       <PageHeader
         title={teacherName}
-        description="Quality review history."
+        description={t('quality.reviewHistoryDescription')}
         actions={
           <button
             onClick={() => setReviewSheetOpen(true)}
@@ -58,13 +63,13 @@ export default function QualityTeacherPage({ params }: Props) {
             style={{ background: 'rgb(14 124 90)' }}
           >
             <Plus size={14} />
-            Submit manual review
+            {t('quality.submitManualReview')}
           </button>
         }
       />
 
       {isLoading ? (
-        <div className="py-20 text-center text-sm opacity-40">Loading...</div>
+        <div className="py-20 text-center text-sm opacity-40">{t('common.loading')}</div>
       ) : error ? (
         <div className="py-10 text-center text-sm text-red-500">{(error as Error).message}</div>
       ) : (
@@ -73,18 +78,20 @@ export default function QualityTeacherPage({ params }: Props) {
           {latest && (
             <div>
               <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-3">
-                Latest Score — {periodLabel(latest.period_year, latest.period_month)}
+                {t('quality.latestScore')} — {periodLabel(latest.period_year, latest.period_month)}
               </p>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
-                <ScoreCard label="Attendance" score={latest.attendance_score} />
-                <ScoreCard label="Reports" score={latest.reports_score} />
-                <ScoreCard label="Retention" score={latest.retention_score} />
-                <ScoreCard label="Punctuality" score={latest.punctuality_score} />
+                <ScoreCard label={t('quality.metrics.attendance')} score={latest.attendance_score} />
+                <ScoreCard label={t('quality.metrics.reports')} score={latest.reports_score} />
+                <ScoreCard label={t('quality.metrics.retention')} score={latest.retention_score} />
+                <ScoreCard label={t('quality.metrics.punctuality')} score={latest.punctuality_score} />
               </div>
               <div className="flex items-center gap-3 rounded-xl bg-gray-50 border px-4 py-3">
-                <span className="text-sm font-medium text-gray-700">Overall</span>
+                <span className="text-sm font-medium text-gray-700">{t('quality.metrics.overall')}</span>
                 <QualityScoreBadge score={latest.overall_score} />
-                <span className="text-xs text-gray-400 capitalize ml-auto">{latest.source} review</span>
+                <span className="text-xs text-gray-400 ml-auto">
+                  {t(latest.source === 'manual' ? 'quality.source.manualReview' : 'quality.source.autoReview')}
+                </span>
               </div>
             </div>
           )}
@@ -100,18 +107,18 @@ export default function QualityTeacherPage({ params }: Props) {
 
           {/* Review history */}
           <div>
-            <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-3">Review History</p>
+            <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-3">{t('quality.reviewHistory')}</p>
             {reviews.length === 0 ? (
-              <p className="py-8 text-center text-sm opacity-40">No reviews yet.</p>
+              <p className="py-8 text-center text-sm opacity-40">{t('quality.noReviews')}</p>
             ) : (
               <div className="rounded-xl border overflow-hidden">
                 <table className="min-w-full divide-y divide-gray-200 text-sm">
                   <thead className="bg-gray-50">
                     <tr>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Period</th>
-                      <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wide">Source</th>
-                      <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wide">Overall</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Notes</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">{t('quality.period')}</th>
+                      <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wide">{t('quality.sourceLabel')}</th>
+                      <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wide">{t('quality.metrics.overall')}</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">{t('common.notes')}</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100 bg-white">
@@ -122,7 +129,7 @@ export default function QualityTeacherPage({ params }: Props) {
                         </td>
                         <td className="px-4 py-3 text-center">
                           <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${r.source === 'manual' ? 'bg-purple-100 text-purple-700' : 'bg-gray-100 text-gray-600'}`}>
-                            {r.source}
+                            {t(r.source === 'manual' ? 'quality.source.manual' : 'quality.source.auto')}
                           </span>
                         </td>
                         <td className="px-4 py-3 text-center">

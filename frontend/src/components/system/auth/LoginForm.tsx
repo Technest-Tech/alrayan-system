@@ -1,9 +1,9 @@
 'use client'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { api, ApiError, setToken } from '@/lib/system/api'
+import { api, ApiError, getToken, setToken } from '@/lib/system/api'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { toast } from 'sonner'
 import { useQueryClient } from '@tanstack/react-query'
@@ -19,6 +19,12 @@ export function LoginForm() {
   const params      = useSearchParams()
   const queryClient = useQueryClient()
   const [showPw, setShowPw] = useState(false)
+
+  // Already signed in? Skip the form and go straight to the dashboard. If the
+  // token is stale the shell clears it on the 401 and bounces back here.
+  useEffect(() => {
+    if (getToken()) router.replace(params.get('from') ?? '/dashboard')
+  }, [router, params])
 
   const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<FormValues>({
     resolver: zodResolver(schema),

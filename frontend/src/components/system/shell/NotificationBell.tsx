@@ -3,8 +3,10 @@ import { useState } from 'react'
 import { Bell } from 'lucide-react'
 import { useUnreadCount, useNotifications, useMarkAllRead } from '@/hooks/system/useNotifications'
 import { formatDistanceToNow } from '@/lib/system/date'
+import { useI18n } from '@/lib/system/i18n'
 
 export function NotificationBell() {
+  const { t } = useI18n()
   const [open, setOpen] = useState(false)
   const { data: unread }        = useUnreadCount()
   const { data: notifications } = useNotifications()
@@ -17,7 +19,7 @@ export function NotificationBell() {
     <div className="relative">
       <button
         className="relative p-2 rounded-lg hover:bg-black/5 transition-colors"
-        title="Notifications"
+        title={t('shell.notifications')}
         onClick={() => setOpen((o) => !o)}
       >
         <Bell size={18} />
@@ -42,13 +44,13 @@ export function NotificationBell() {
               className="flex items-center justify-between px-4 py-3 border-b"
               style={{ borderColor: 'rgb(var(--border-default, 229 233 240))' }}
             >
-              <span className="font-semibold">Notifications</span>
+              <span className="font-semibold">{t('shell.notifications')}</span>
               {count > 0 && (
                 <button
                   onClick={() => markAll.mutate()}
                   className="text-xs opacity-60 hover:opacity-90 transition-opacity"
                 >
-                  Mark all read
+                  {t('shell.markAllRead')}
                 </button>
               )}
             </div>
@@ -57,7 +59,7 @@ export function NotificationBell() {
               {items.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-10 opacity-50">
                   <Bell size={24} className="mb-2 opacity-40" />
-                  <p className="text-xs">You&apos;re all caught up.</p>
+                  <p className="text-xs">{t('shell.allCaughtUp')}</p>
                 </div>
               ) : (
                 items.slice(0, 10).map((n) => (

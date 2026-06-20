@@ -14,13 +14,14 @@ import { WhatsAppInput } from '@/components/system/students/WhatsAppInput'
 import { useCreateStudent } from '@/hooks/system/useStudents'
 import { useCourses } from '@/hooks/system/useCourses'
 import { useTeachers } from '@/hooks/system/useTeachers'
+import { useI18n } from '@/lib/system/i18n'
 import { ApiError } from '@/lib/system/api'
 
 const schema = z.object({
-  name:                  z.string().min(1, 'Name is required'),
+  name:                  z.string().min(1, 'name'),
   whatsapp:              z.string().optional(),
-  country:               z.string().min(1, 'Country is required'),
-  timezone:              z.string().min(1, 'Timezone is required'),
+  country:               z.string().min(1, 'country'),
+  timezone:              z.string().min(1, 'timezone'),
   student_type:          z.enum(['child', 'adult']),
   guardian_id:           z.number().optional(),
   guardian_name:         z.string().optional(),
@@ -35,10 +36,10 @@ const schema = z.object({
   whatsapp_group_link:   z.string().optional(),
 }).superRefine((data, ctx) => {
   if (data.student_type === 'child' && !data.guardian_id && !data.guardian_name) {
-    ctx.addIssue({ code: 'custom', message: 'Parent name is required', path: ['guardian_name'] })
+    ctx.addIssue({ code: 'custom', message: 'guardian_name', path: ['guardian_name'] })
   }
   if (data.student_type === 'child' && !data.guardian_id && !data.guardian_whatsapp) {
-    ctx.addIssue({ code: 'custom', message: 'Parent WhatsApp is required', path: ['guardian_whatsapp'] })
+    ctx.addIssue({ code: 'custom', message: 'guardian_whatsapp', path: ['guardian_whatsapp'] })
   }
 })
 
@@ -54,7 +55,17 @@ const SECTION_TITLE = 'text-sm font-semibold opacity-60 uppercase tracking-wide 
 const CURRENCIES = ['USD', 'EGP', 'GBP', 'EUR', 'SAR', 'AED']
 const DURATIONS  = [30, 45, 60]
 
+// Maps a zod error message token to an i18n key under students.*
+const ERROR_KEYS: Record<string, string> = {
+  name:              'students.errorNameRequired',
+  country:           'students.errorCountryRequired',
+  timezone:          'students.errorTimezoneRequired',
+  guardian_name:     'students.errorParentNameRequired',
+  guardian_whatsapp: 'students.errorParentWhatsAppRequired',
+}
+
 export default function NewStudentPage() {
+  const { t }   = useI18n()
   const router  = useRouter()
   const create  = useCreateStudent()
   const { data: courses = [] }  = useCourses()
@@ -78,16 +89,23 @@ export default function NewStudentPage() {
 
   const studentType = watch('student_type')
 
+  const fieldError = (key: string) => {
+    const raw = errors[key]?.message
+    if (!raw) return null
+    const i18nKey = ERROR_KEYS[String(raw)]
+    return i18nKey ? t(i18nKey) : String(raw)
+  }
+
   async function onSubmit(values: FormValues) {
     try {
       const student = await create.mutateAsync(values as Record<string, unknown>)
-      toast.success('Student created.')
+      toast.success(t('students.toastCreated'))
       router.push(`/students/${student.id}`)
     } catch (e) {
       if (e instanceof ApiError && e.errors) {
         Object.values(e.errors).flat().forEach((m) => toast.error(m))
       } else {
-        toast.error(e instanceof ApiError ? e.message : 'Failed to create student.')
+        toast.error(e instanceof ApiError ? e.message : t('students.toastCreateError'))
       }
     }
   }
@@ -97,31 +115,31 @@ export default function NewStudentPage() {
       <div className="flex items-center gap-2 mb-6 text-sm opacity-50">
         <Link href="/students" className="hover:opacity-100 flex items-center gap-1">
           <ChevronLeft size={14} />
-          Students
+          {t('students.title')}
         </Link>
         <span>/</span>
-        <span className="opacity-100">New student</span>
+        <span className="opacity-100">{t('students.newStudentTitle')}</span>
       </div>
 
-      <PageHeader title="New student" description="Fill in the details to enrol a student." />
+      <PageHeader title={t('students.newStudentTitle')} description={t('students.newStudentSubtitle')} />
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-5 max-w-3xl">
         <div className={SECTION_CLS} style={SECTION_STYLE}>
-          <p className={SECTION_TITLE}>Identity</p>
+          <p className={SECTION_TITLE}>{t('students.sectionIdentity')}</p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium mb-1.5">Full name *</label>
+              <label className="block text-sm font-medium mb-1.5">{t('students.fullNameLabel')} *</label>
               <input className={inputCls} style={inputStyle} {...register('name')} />
-              {errors.name && <p className="text-red-500 text-xs mt-1">{String(errors.name.message)}</p>}
+              {errors.name && <p className="text-red-500 text-xs mt-1">{fieldError('name')}</p>}
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-1.5">Student type *</label>
+              <label className="block text-sm font-medium mb-1.5">{t('students.studentTypeLabel')} *</label>
               <div className="flex gap-4 pt-1.5">
                 {(['adult', 'child'] as const).map((v) => (
                   <label key={v} className="flex items-center gap-2 text-sm cursor-pointer">
                     <input type="radio" value={v} {...register('student_type')} className="accent-[rgb(14,124,90)]" />
-                    {v === 'adult' ? 'Adult (self)' : 'Child (has parent)'}
+                    {v === 'adult' ? t('students.typeAdultLabel') : t('students.typeChildLabel')}
                   </label>
                 ))}
               </div>
@@ -129,7 +147,7 @@ export default function NewStudentPage() {
 
             {studentType === 'adult' && (
               <div>
-                <label className="block text-sm font-medium mb-1.5">WhatsApp</label>
+                <label className="block text-sm font-medium mb-1.5">{t('common.whatsapp')}</label>
                 <Controller
                   name="whatsapp"
                   control={control}
@@ -146,7 +164,7 @@ export default function NewStudentPage() {
             )}
 
             <div>
-              <label className="block text-sm font-medium mb-1.5">Country *</label>
+              <label className="block text-sm font-medium mb-1.5">{t('common.country')} *</label>
               <Controller
                 name="country"
                 control={control}
@@ -161,11 +179,11 @@ export default function NewStudentPage() {
                   />
                 )}
               />
-              {errors.country && <p className="text-red-500 text-xs mt-1">{String(errors.country.message)}</p>}
+              {errors.country && <p className="text-red-500 text-xs mt-1">{fieldError('country')}</p>}
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-1.5">Timezone *</label>
+              <label className="block text-sm font-medium mb-1.5">{t('common.timezone')} *</label>
               <Controller
                 name="timezone"
                 control={control}
@@ -173,13 +191,13 @@ export default function NewStudentPage() {
                   <input
                     className={inputCls}
                     style={inputStyle}
-                    placeholder="e.g. Africa/Cairo"
+                    placeholder={t('students.timezonePlaceholder')}
                     {...field}
                     value={field.value ?? ''}
                   />
                 )}
               />
-              {errors.timezone && <p className="text-red-500 text-xs mt-1">{String(errors.timezone.message)}</p>}
+              {errors.timezone && <p className="text-red-500 text-xs mt-1">{fieldError('timezone')}</p>}
             </div>
 
           </div>
@@ -192,60 +210,60 @@ export default function NewStudentPage() {
         )}
 
         <div className={SECTION_CLS} style={SECTION_STYLE}>
-          <p className={SECTION_TITLE}>Enrollment</p>
+          <p className={SECTION_TITLE}>{t('students.sectionEnrollment')}</p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium mb-1.5">Course</label>
+              <label className="block text-sm font-medium mb-1.5">{t('common.course')}</label>
               <select className={inputCls} style={inputStyle} {...register('course_id')}>
-                <option value="">Select course…</option>
+                <option value="">{t('students.selectCourse')}</option>
                 {courses.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1.5">Teacher</label>
+              <label className="block text-sm font-medium mb-1.5">{t('common.teacher')}</label>
               <select className={inputCls} style={inputStyle} {...register('assigned_teacher_id')}>
-                <option value="">Assign later</option>
-                {teachers.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
+                <option value="">{t('students.assignLater')}</option>
+                {teachers.map((tch) => <option key={tch.id} value={tch.id}>{tch.name}</option>)}
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1.5">Sessions / month *</label>
+              <label className="block text-sm font-medium mb-1.5">{t('students.sessionsPerMonth')} *</label>
               <input type="number" min="1" className={inputCls} style={inputStyle} {...register('sessions_per_month')} />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1.5">Session duration *</label>
+              <label className="block text-sm font-medium mb-1.5">{t('students.sessionDuration')} *</label>
               <select className={inputCls} style={inputStyle} {...register('session_duration_min')}>
-                {DURATIONS.map((d) => <option key={d} value={d}>{d} minutes</option>)}
+                {DURATIONS.map((d) => <option key={d} value={d}>{String(d)} {t('common.minutes')}</option>)}
               </select>
             </div>
           </div>
         </div>
 
         <div className={SECTION_CLS} style={SECTION_STYLE}>
-          <p className={SECTION_TITLE}>Pricing</p>
+          <p className={SECTION_TITLE}>{t('students.sectionPricing')}</p>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div>
-              <label className="block text-sm font-medium mb-1.5">Currency</label>
+              <label className="block text-sm font-medium mb-1.5">{t('common.currency')}</label>
               <select className={inputCls} style={inputStyle} {...register('currency')}>
                 {CURRENCIES.map((c) => <option key={c} value={c}>{c}</option>)}
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1.5">Monthly price (minor units)</label>
+              <label className="block text-sm font-medium mb-1.5">{t('students.monthlyPriceMinor')}</label>
               <input type="number" min="0" className={inputCls} style={inputStyle} {...register('monthly_price_minor')} />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1.5">Discount (%)</label>
+              <label className="block text-sm font-medium mb-1.5">{t('students.discount')}</label>
               <input type="number" min="0" max="100" className={inputCls} style={inputStyle} {...register('custom_discount_pct')} />
             </div>
           </div>
         </div>
 
         <div className={SECTION_CLS} style={SECTION_STYLE}>
-          <p className={SECTION_TITLE}>WhatsApp group</p>
+          <p className={SECTION_TITLE}>{t('students.sectionWhatsAppGroup')}</p>
           <div>
-            <label className="block text-sm font-medium mb-1.5">Group link</label>
-            <input className={inputCls} style={inputStyle} placeholder="https://chat.whatsapp.com/…" {...register('whatsapp_group_link')} />
+            <label className="block text-sm font-medium mb-1.5">{t('students.whatsAppGroupLink')}</label>
+            <input className={inputCls} style={inputStyle} placeholder={t('students.whatsAppGroupLinkPlaceholder')} {...register('whatsapp_group_link')} />
           </div>
         </div>
 
@@ -255,7 +273,7 @@ export default function NewStudentPage() {
             className="px-4 py-2 rounded-xl text-sm font-medium border hover:bg-black/5 transition-colors"
             style={{ borderColor: 'rgb(var(--border-default, 229 233 240))' }}
           >
-            Cancel
+            {t('common.cancel')}
           </Link>
           <button
             type="submit"
@@ -263,7 +281,7 @@ export default function NewStudentPage() {
             className="px-5 py-2 rounded-xl text-sm font-semibold text-white disabled:opacity-60 transition-opacity"
             style={{ background: 'rgb(14 124 90)' }}
           >
-            {isSubmitting ? 'Creating…' : 'Create student'}
+            {isSubmitting ? t('common.creating') : t('students.createStudent')}
           </button>
         </div>
       </form>

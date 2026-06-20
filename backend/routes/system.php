@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\System\AccountingController;
 use App\Http\Controllers\System\AcademyInfoController;
+use App\Http\Controllers\System\SectionsController;
 use App\Http\Controllers\System\AuditLogController;
 use App\Http\Controllers\System\AuthController;
 use App\Http\Controllers\System\BackupsController;
@@ -503,6 +504,12 @@ Route::prefix('system')->name('system.')->group(function () {
             Route::put('/settings/academy',          [AcademyInfoController::class, 'update'])->name('settings.academy.update');
             Route::post('/settings/academy/logo',    [AcademyInfoController::class, 'uploadLogo'])->name('settings.academy.logo');
         });
+
+        // Settings — Lead sections
+        Route::middleware('system.can:settings.view')
+            ->get('/settings/sections', [SectionsController::class, 'show'])->name('settings.sections');
+        Route::middleware('system.can:settings.edit')
+            ->put('/settings/sections', [SectionsController::class, 'update'])->name('settings.sections.update');
 
         // Settings — FX rates
         Route::middleware('system.can:settings.view')

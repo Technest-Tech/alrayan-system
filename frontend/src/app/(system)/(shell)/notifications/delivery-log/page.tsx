@@ -3,8 +3,10 @@ import { useState } from 'react'
 import { PageHeader } from '@/components/system/primitives/PageHeader'
 import { DeliveryLogTable } from '@/components/system/notifications/DeliveryLogTable'
 import { useWassenderLogs } from '@/hooks/system/useWassenderLogs'
+import { useI18n } from '@/lib/system/i18n'
 
 export default function DeliveryLogPage() {
+  const { t } = useI18n()
   const [filters, setFilters] = useState<{ template_key?: string; status?: string }>({})
   const { data, isLoading } = useWassenderLogs(filters)
   const logs = data?.data ?? []
@@ -12,7 +14,10 @@ export default function DeliveryLogPage() {
 
   return (
     <>
-      <PageHeader title="WhatsApp delivery log" description={`${total} total messages logged.`} />
+      <PageHeader
+        title={t('notifications.deliveryLog.title')}
+        description={t('notifications.deliveryLog.subtitle', { count: String(total) })}
+      />
       <DeliveryLogTable logs={logs} isLoading={isLoading} filters={filters} onFiltersChange={setFilters} />
     </>
   )

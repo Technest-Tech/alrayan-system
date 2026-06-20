@@ -2,6 +2,10 @@
 import { useState, useRef, useEffect, useMemo } from 'react'
 import type { Lesson } from '@/types/system/lesson'
 import { lessonBlockStyle, displaySessionHours } from '@/lib/system/lessonStatus'
+import { useI18n } from '@/lib/system/i18n'
+
+/* Short weekday i18n keys, indexed by Date.getDay() (0 = Sunday). */
+const DAY_KEYS = ['days.sun', 'days.mon', 'days.tue', 'days.wed', 'days.thu', 'days.fri', 'days.sat']
 
 /* ── Layout constants ─────────────────────────────────── */
 const SLOT_H  = 32   // px per 30-min slot
@@ -58,6 +62,7 @@ interface Selection {
 }
 
 export function WeekDayGrid({ days, lessons, showFullDay = false, onLessonClick, onCellSelect }: Props) {
+  const { t } = useI18n()
   const gridStart  = showFullDay ? 0  : 6
   const gridEnd    = showFullDay ? 24 : 23
   const totalSlots = (gridEnd - gridStart) * 2
@@ -141,7 +146,7 @@ export function WeekDayGrid({ days, lessons, showFullDay = false, onLessonClick,
                 background:  isToday ? '#F0FDFA' : undefined,
               }}
             >
-              {day.toLocaleDateString('en-US', { weekday: 'short' })}{' '}
+              {t(DAY_KEYS[day.getDay()])}{' '}
               <span style={{ fontWeight: isToday ? 700 : 500 }}>
                 {day.getMonth() + 1}/{day.getDate()}
               </span>
@@ -259,7 +264,7 @@ export function WeekDayGrid({ days, lessons, showFullDay = false, onLessonClick,
                       </div>
                       {pos.height >= SLOT_H * 1.5 && (
                         <div className="text-xs opacity-60 truncate leading-tight">
-                          {lesson.duration_minutes}min
+                          {t('lessons.form.minutesShort', { n: String(lesson.duration_minutes) })}
                         </div>
                       )}
                     </div>

@@ -1,13 +1,14 @@
 'use client'
 import { useRef, useState } from 'react'
-import { Mic, Upload } from 'lucide-react'
+import { Mic, Upload, GraduationCap, BookOpen, BookMarked, Smile, Gamepad2, Brain } from 'lucide-react'
 import { SearchableSelect } from './SearchableSelect'
 import { toast } from 'sonner'
 import { useLessonSubjects, useLessonEvaluations, useCreateLesson, useUpdateLesson } from '@/hooks/system/useLessons'
 import { useTeachers } from '@/hooks/system/useTeachers'
 import { useStudents } from '@/hooks/system/useStudents'
-import type { Lesson, LessonStatus, StoreLessonPayload } from '@/types/system/lesson'
+import type { Lesson, LessonStatus, StoreLessonPayload, TrialEvaluation } from '@/types/system/lesson'
 import { LESSON_STATUSES } from '@/lib/system/lessonStatus'
+import { useI18n } from '@/lib/system/i18n'
 
 /* ── Design tokens ────────────────────────────────────────── */
 const BORDER   = 'rgb(var(--border-default,229 233 240))'
@@ -59,8 +60,68 @@ function Field({ label, required, children }: { label: string; required?: boolea
 /* ── Form constants ──────────────────────────────────────── */
 const STATUSES = LESSON_STATUSES
 
+/* Map lesson-status enum values → i18n keys (labels come from lessonStatus.ts which we don't translate). */
+const STATUS_KEY: Record<LessonStatus, string> = {
+  attended:             'status.attended',
+  paid_absence:         'lessons.status.paidAbsence',
+  cancelled_by_student: 'lessons.status.cancelledByStudent',
+  scheduled:            'status.scheduled',
+  absent:               'status.absent',
+  cancelled_by_teacher: 'lessons.status.cancelledByTeacher',
+  trial:                'lessons.status.trial',
+  free:                 'lessons.status.free',
+}
+
 const HOUR_OPTIONS   = [0, 1, 2, 3]
 const MINUTE_OPTIONS = [0, 30]
+
+/* ── Trial-lesson evaluation options ─────────────────────── */
+const STUDENT_LEVELS    = ['Beginner', 'Elementary', 'Intermediate', 'Advanced']
+const READING_ABILITIES = ['Cannot read', 'Weak', 'Average', 'Good', 'Excellent']
+const BEHAVIOR_OPTS     = ['Cheerful', 'Calm', 'Shy', 'Confident', 'Quick Tempered', 'Distracted', 'Disciplined', 'Needs Encouragement']
+const MOTIVATION_OPTS   = ['Loves Learning', 'Very Cooperative', 'Forced by Parents', 'Loses Focus Quickly', 'Loves Challenges', 'Prefers Play']
+const LEARNING_OPTS     = ['Visual', 'Auditory', 'Kinesthetic', 'Quick Learner', 'Needs Repetition', 'Fears Mistakes']
+
+/* Multi-select chip group used across the trial evaluation. */
+function ChipGroup({
+  title, icon, options, value, onChange, accent, accentBg,
+}: {
+  title: string
+  icon: React.ReactNode
+  options: string[]
+  value: string[]
+  onChange: (v: string[]) => void
+  accent: string
+  accentBg: string
+}) {
+  const toggle = (o: string) => onChange(value.includes(o) ? value.filter(x => x !== o) : [...value, o])
+  return (
+    <div className="rounded-xl p-3" style={{ background: accentBg, border: `1px solid ${accent}22` }}>
+      <div className="flex items-center gap-2 mb-2.5">
+        <span style={{ color: accent }}>{icon}</span>
+        <span className="text-sm font-semibold" style={{ color: NAVY }}>{title}</span>
+      </div>
+      <div className="flex flex-wrap gap-1.5">
+        {options.map(o => {
+          const on = value.includes(o)
+          return (
+            <button
+              key={o}
+              type="button"
+              onClick={() => toggle(o)}
+              className="px-2.5 py-1 rounded-full text-xs font-medium border transition-colors"
+              style={on
+                ? { background: accent, color: '#fff', borderColor: accent }
+                : { background: '#fff', color: accent, borderColor: `${accent}55` }}
+            >
+              {o}
+            </button>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
 
 interface Prefill {
   scheduledAt?:     string
@@ -77,12 +138,18 @@ interface Props {
 }
 
 export function LessonForm({ initialValues, prefill, onSuccess, onCancel }: Props) {
+  const { t } = useI18n()
   const isEdit = !!initialValues
+
+  /* Teacher / student selection — declared early so the student list can filter by teacher. */
+  const [teacherId, setTeacherId] = useState(initialValues ? String(initialValues.teacher_id) : prefill?.teacherId ? String(prefill.teacherId) : '')
+  const [studentId, setStudentId] = useState(initialValues ? String(initialValues.student_id) : prefill?.studentId ? String(prefill.studentId) : '')
 
   const { data: subjects    = [] } = useLessonSubjects()
   const { data: evaluations = [] } = useLessonEvaluations()
   const { data: teachersData }     = useTeachers()
-  const { data: studentsData }     = useStudents({ per_page: 500 })
+  // When a teacher is selected, only load students assigned to that teacher.
+  const { data: studentsData }     = useStudents({ per_page: 500, assigned_teacher_id: teacherId || undefined })
   const teachers = teachersData?.data ?? []
   const students = studentsData?.data ?? []
 
@@ -91,8 +158,6 @@ export function LessonForm({ initialValues, prefill, onSuccess, onCancel }: Prop
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   /* ── Form state ─────────────────────────────────────────── */
-  const [teacherId,    setTeacherId]    = useState(initialValues ? String(initialValues.teacher_id) : prefill?.teacherId ? String(prefill.teacherId) : '')
-  const [studentId,    setStudentId]    = useState(initialValues ? String(initialValues.student_id) : prefill?.studentId ? String(prefill.studentId) : '')
   const [status,       setStatus]       = useState<LessonStatus>(initialValues?.status ?? 'scheduled')
   const [evaluationId, setEvaluationId] = useState(initialValues?.evaluation_id ? String(initialValues.evaluation_id) : '')
   const [subjectId,    setSubjectId]    = useState(initialValues?.subject_id ? String(initialValues.subject_id) : '')
@@ -114,18 +179,21 @@ export function LessonForm({ initialValues, prefill, onSuccess, onCancel }: Prop
   const [homework,       setHomework]       = useState(initialValues?.homework ?? '')
   const [souvenirImage,  setSouvenirImage]  = useState<File | null>(null)
   const [subjectDetails, setSubjectDetails] = useState<Record<string, string>>(initialValues?.subject_details ?? {})
+  const [trial,          setTrial]          = useState<TrialEvaluation>(initialValues?.trial_evaluation ?? {})
 
   const selectedSubject = subjects.find(s => String(s.id) === subjectId)
+  const setTrialField = <K extends keyof TrialEvaluation>(k: K, v: TrialEvaluation[K]) =>
+    setTrial(p => ({ ...p, [k]: v }))
 
   /* ── Submit ─────────────────────────────────────────────── */
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!teacherId || !studentId || !scheduledAt) {
-      toast.error('Please fill in required fields.')
+      toast.error(t('lessons.form.toastRequiredFields'))
       return
     }
     const durationMinutes = durationH * 60 + durationM
-    if (durationMinutes === 0) { toast.error('Duration must be greater than 0.'); return }
+    if (durationMinutes === 0) { toast.error(t('lessons.form.toastDurationPositive')); return }
 
     const payload: StoreLessonPayload = {
       teacher_id:      Number(teacherId),
@@ -139,19 +207,23 @@ export function LessonForm({ initialValues, prefill, onSuccess, onCancel }: Prop
       notes:           notes          || undefined,
       homework:        homework       || undefined,
       subject_details: Object.keys(subjectDetails).length ? subjectDetails : undefined,
+      trial_evaluation: status === 'trial' && Object.keys(trial).length ? trial : undefined,
     }
 
     try {
       if (isEdit) {
         await updateLesson.mutateAsync({ id: initialValues.id, ...payload })
-        toast.success('Lesson updated.')
+        toast.success(t('lessons.form.toastUpdated'))
       } else {
         await createLesson.mutateAsync(payload)
-        toast.success('Lesson created.')
+        toast.success(t('lessons.form.toastCreated'))
       }
+      // Trial lessons send an evaluation report to the student's WhatsApp + email.
+      // TODO: wire to the messaging integration; stubbed for now.
+      if (status === 'trial') toast.info(t('lessons.form.trial.reportQueued'))
       onSuccess?.()
     } catch {
-      toast.error('Something went wrong. Please try again.')
+      toast.error(t('lessons.form.toastError'))
     }
   }
 
@@ -162,60 +234,62 @@ export function LessonForm({ initialValues, prefill, onSuccess, onCancel }: Prop
     <form onSubmit={handleSubmit} className="space-y-4">
 
       {/* ── Participants ─────────────────────────────────── */}
-      <SectionCard title="Participants">
+      <SectionCard title={t('lessons.form.sectionParticipants')}>
         <div className="grid grid-cols-2 gap-3 mb-3">
-          <Field label="Status">
+          <Field label={t('common.status')}>
             <SearchableSelect
-              options={STATUSES.map(s => ({ value: s.value, label: s.label }))}
+              options={STATUSES.map(s => ({ value: s.value, label: t(STATUS_KEY[s.value]) }))}
               value={status}
               onChange={v => setStatus(v as LessonStatus)}
             />
           </Field>
-          <Field label="Evaluation">
+          <Field label={t('lessons.form.fieldEvaluation')}>
             <SearchableSelect
               options={evaluations.map(ev => ({ value: String(ev.id), label: ev.label }))}
               value={evaluationId}
               onChange={setEvaluationId}
-              placeholder="— None —"
+              placeholder={t('lessons.form.noneOption')}
               clearable
             />
           </Field>
         </div>
         <div className="grid grid-cols-2 gap-3">
-          <Field label="Teacher" required>
+          <Field label={t('common.teacher')} required>
             <SearchableSelect
-              options={teachers.map(t => ({ value: String(t.id), label: t.name ?? `Teacher #${t.id}` }))}
+              options={teachers.map(tc => ({ value: String(tc.id), label: tc.name ?? t('lessons.teacherFallback', { id: String(tc.id) }) }))}
               value={teacherId}
-              onChange={setTeacherId}
-              placeholder="Select teacher…"
+              onChange={v => { if (v !== teacherId) setStudentId(''); setTeacherId(v) }}
+              placeholder={t('lessons.form.selectTeacher')}
             />
           </Field>
-          <Field label="Student" required>
+          <Field label={t('lessons.form.fieldStudent')} required>
             <SearchableSelect
               options={students.map(s => ({ value: String(s.id), label: s.name }))}
               value={studentId}
               onChange={setStudentId}
-              placeholder="Select student…"
+              placeholder={teacherId && students.length === 0
+                ? t('lessons.form.noStudentsForTeacher')
+                : t('lessons.form.selectStudent')}
             />
           </Field>
         </div>
       </SectionCard>
 
       {/* ── Schedule ─────────────────────────────────────── */}
-      <SectionCard title="Schedule">
+      <SectionCard title={t('lessons.form.sectionSchedule')}>
         <div className="grid grid-cols-[1fr_auto] gap-3 items-end mb-3">
-          <Field label="Subject">
+          <Field label={t('lessons.form.fieldSubject')}>
             <SearchableSelect
               options={subjects.map(s => ({ value: String(s.id), label: s.name }))}
               value={subjectId}
               onChange={v => { setSubjectId(v); setSubjectDetails({}) }}
-              placeholder="Subject"
+              placeholder={t('lessons.form.fieldSubject')}
               clearable
             />
           </Field>
           {/* Duration */}
           <div>
-            <label className="text-xs font-medium block mb-1.5" style={{ color: MUTED }}>Duration</label>
+            <label className="text-xs font-medium block mb-1.5" style={{ color: MUTED }}>{t('common.duration')}</label>
             <div className="flex items-center gap-1.5">
               <select
                 className="px-2.5 py-2.5 rounded-xl border text-sm outline-none focus:ring-2 focus:ring-[#0d9488] bg-white"
@@ -223,7 +297,7 @@ export function LessonForm({ initialValues, prefill, onSuccess, onCancel }: Prop
                 value={durationH}
                 onChange={e => setDurationH(Number(e.target.value))}
               >
-                {HOUR_OPTIONS.map(h => <option key={h} value={h}>{h}h</option>)}
+                {HOUR_OPTIONS.map(h => <option key={h} value={h}>{t('lessons.form.hoursShort', { n: String(h) })}</option>)}
               </select>
               <span style={{ color: MUTED }}>:</span>
               <select
@@ -232,12 +306,12 @@ export function LessonForm({ initialValues, prefill, onSuccess, onCancel }: Prop
                 value={durationM}
                 onChange={e => setDurationM(Number(e.target.value))}
               >
-                {MINUTE_OPTIONS.map(m => <option key={m} value={m}>{String(m).padStart(2,'0')}min</option>)}
+                {MINUTE_OPTIONS.map(m => <option key={m} value={m}>{t('lessons.form.minutesShort', { n: String(m).padStart(2,'0') })}</option>)}
               </select>
             </div>
           </div>
         </div>
-        <Field label="Date" required>
+        <Field label={t('common.date')} required>
           <input
             type="datetime-local"
             className={inp}
@@ -250,7 +324,7 @@ export function LessonForm({ initialValues, prefill, onSuccess, onCancel }: Prop
 
       {/* ── Subject-specific fields ───────────────────────── */}
       {selectedSubject?.fields && selectedSubject.fields.length > 0 && (
-        <SectionCard title={`${selectedSubject.name} Details`}>
+        <SectionCard title={t('lessons.form.subjectDetailsTitle', { subject: selectedSubject.name })}>
           <div className="space-y-3">
             {selectedSubject.fields.map(f => (
               <Field key={f.key} label={f.label}>
@@ -259,7 +333,7 @@ export function LessonForm({ initialValues, prefill, onSuccess, onCancel }: Prop
                     options={f.options.map(o => ({ value: o, label: o }))}
                     value={subjectDetails[f.key] ?? ''}
                     onChange={v => setSubjectDetails(p => ({ ...p, [f.key]: v }))}
-                    placeholder="— Select —"
+                    placeholder={t('lessons.form.selectOption')}
                     clearable
                   />
                 ) : (
@@ -277,13 +351,104 @@ export function LessonForm({ initialValues, prefill, onSuccess, onCancel }: Prop
         </SectionCard>
       )}
 
+      {/* ── Trial Lesson Evaluation (only for trial lessons) ── */}
+      {status === 'trial' && (
+        <SectionCard title={t('lessons.form.trial.sectionTitle')}>
+          <div className="grid grid-cols-3 gap-3 mb-4">
+            <div>
+              <label className="flex items-center gap-1.5 text-xs font-medium block mb-1.5" style={{ color: MUTED }}>
+                <GraduationCap size={13} style={{ color: '#7C3AED' }} />{t('lessons.form.trial.studentLevel')}
+              </label>
+              <SearchableSelect
+                options={STUDENT_LEVELS.map(o => ({ value: o, label: o }))}
+                value={trial.student_level ?? ''}
+                onChange={v => setTrialField('student_level', v)}
+                placeholder={t('lessons.form.trial.selectLevel')}
+                clearable
+              />
+            </div>
+            <div>
+              <label className="flex items-center gap-1.5 text-xs font-medium block mb-1.5" style={{ color: MUTED }}>
+                <BookOpen size={13} style={{ color: TEAL_600 }} />{t('lessons.form.trial.readingAbility')}
+              </label>
+              <SearchableSelect
+                options={READING_ABILITIES.map(o => ({ value: o, label: o }))}
+                value={trial.reading_ability ?? ''}
+                onChange={v => setTrialField('reading_ability', v)}
+                placeholder={t('lessons.form.trial.selectReading')}
+                clearable
+              />
+            </div>
+            <div>
+              <label className="flex items-center gap-1.5 text-xs font-medium block mb-1.5" style={{ color: MUTED }}>
+                <BookMarked size={13} style={{ color: '#DB2777' }} />{t('lessons.form.trial.memorizationLevel')}
+              </label>
+              <input
+                className={inp}
+                style={inpStyle}
+                value={trial.memorization_level ?? ''}
+                onChange={e => setTrialField('memorization_level', e.target.value)}
+                placeholder={t('lessons.form.trial.memorizationPlaceholder')}
+              />
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            <ChipGroup
+              title={t('lessons.form.trial.behavior')}
+              icon={<Smile size={15} />}
+              options={BEHAVIOR_OPTS}
+              value={trial.behavior ?? []}
+              onChange={v => setTrialField('behavior', v)}
+              accent="#B45309" accentBg="#FFFBEB"
+            />
+            <div className="grid grid-cols-2 gap-3">
+              <ChipGroup
+                title={t('lessons.form.trial.motivation')}
+                icon={<Gamepad2 size={15} />}
+                options={MOTIVATION_OPTS}
+                value={trial.motivation ?? []}
+                onChange={v => setTrialField('motivation', v)}
+                accent="#15803D" accentBg="#F0FDF4"
+              />
+              <ChipGroup
+                title={t('lessons.form.trial.learningStyle')}
+                icon={<Brain size={15} />}
+                options={LEARNING_OPTS}
+                value={trial.learning_style ?? []}
+                onChange={v => setTrialField('learning_style', v)}
+                accent="#2563EB" accentBg="#EFF6FF"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <Field label={t('lessons.form.trial.expectations')}>
+                <textarea
+                  className={inp} style={inpStyle} rows={3}
+                  placeholder={t('lessons.form.trial.expectationsPlaceholder')}
+                  value={trial.expectations ?? ''}
+                  onChange={e => setTrialField('expectations', e.target.value)}
+                />
+              </Field>
+              <Field label={t('lessons.form.trial.teacherNotes')}>
+                <textarea
+                  className={inp} style={inpStyle} rows={3}
+                  placeholder={t('lessons.form.trial.teacherNotesPlaceholder')}
+                  value={trial.teacher_notes ?? ''}
+                  onChange={e => setTrialField('teacher_notes', e.target.value)}
+                />
+              </Field>
+            </div>
+          </div>
+        </SectionCard>
+      )}
+
       {/* ── Lesson Report ─────────────────────────────────── */}
-      <SectionCard title="Lesson Report">
+      <SectionCard title={t('lessons.form.sectionReport')}>
         {/* Content */}
         <div className="mb-4">
           <div className="flex items-center justify-between mb-1.5">
-            <label className="text-xs font-medium" style={{ color: MUTED }}>Content</label>
-            <button type="button" className="p-1 rounded-lg hover:bg-teal-100/60 transition-colors" aria-label="Voice input">
+            <label className="text-xs font-medium" style={{ color: MUTED }}>{t('lessons.form.fieldContent')}</label>
+            <button type="button" className="p-1 rounded-lg hover:bg-teal-100/60 transition-colors" aria-label={t('lessons.form.voiceInput')}>
               <Mic size={13} style={{ color: TEAL_400 }} />
             </button>
           </div>
@@ -291,7 +456,7 @@ export function LessonForm({ initialValues, prefill, onSuccess, onCancel }: Prop
             className={inp}
             style={inpStyle}
             rows={3}
-            placeholder="What was covered in this lesson…"
+            placeholder={t('lessons.form.contentPlaceholder')}
             value={content}
             onChange={e => setContent(e.target.value)}
           />
@@ -301,14 +466,14 @@ export function LessonForm({ initialValues, prefill, onSuccess, onCancel }: Prop
         <div className="grid grid-cols-2 gap-3 mb-4">
           <div>
             <div className="flex items-center justify-between mb-1.5">
-              <label className="text-xs font-medium" style={{ color: MUTED }}>Notes</label>
+              <label className="text-xs font-medium" style={{ color: MUTED }}>{t('common.notes')}</label>
               <div className="flex items-center gap-1">
                 {initialValues?.notes && (
                   <button type="button" className="text-xs font-medium underline" style={{ color: TEAL_600 }} onClick={() => setNotes(initialValues.notes ?? '')}>
-                    Use last
+                    {t('lessons.form.useLast')}
                   </button>
                 )}
-                <button type="button" className="p-1 rounded-lg hover:bg-teal-100/60 transition-colors" aria-label="Voice input">
+                <button type="button" className="p-1 rounded-lg hover:bg-teal-100/60 transition-colors" aria-label={t('lessons.form.voiceInput')}>
                   <Mic size={13} style={{ color: TEAL_400 }} />
                 </button>
               </div>
@@ -317,7 +482,7 @@ export function LessonForm({ initialValues, prefill, onSuccess, onCancel }: Prop
               className={inp}
               style={inpStyle}
               rows={4}
-              placeholder="Notes for the teacher or student…"
+              placeholder={t('lessons.form.notesPlaceholder')}
               value={notes}
               onChange={e => setNotes(e.target.value)}
             />
@@ -325,14 +490,14 @@ export function LessonForm({ initialValues, prefill, onSuccess, onCancel }: Prop
 
           <div>
             <div className="flex items-center justify-between mb-1.5">
-              <label className="text-xs font-medium" style={{ color: MUTED }}>Homework</label>
+              <label className="text-xs font-medium" style={{ color: MUTED }}>{t('lessons.form.fieldHomework')}</label>
               <div className="flex items-center gap-1">
                 {initialValues?.homework && (
                   <button type="button" className="text-xs font-medium underline" style={{ color: TEAL_600 }} onClick={() => setHomework(initialValues.homework ?? '')}>
-                    Use last
+                    {t('lessons.form.useLast')}
                   </button>
                 )}
-                <button type="button" className="p-1 rounded-lg hover:bg-teal-100/60 transition-colors" aria-label="Voice input">
+                <button type="button" className="p-1 rounded-lg hover:bg-teal-100/60 transition-colors" aria-label={t('lessons.form.voiceInput')}>
                   <Mic size={13} style={{ color: TEAL_400 }} />
                 </button>
               </div>
@@ -341,7 +506,7 @@ export function LessonForm({ initialValues, prefill, onSuccess, onCancel }: Prop
               className={inp}
               style={inpStyle}
               rows={4}
-              placeholder="Assigned homework…"
+              placeholder={t('lessons.form.homeworkPlaceholder')}
               value={homework}
               onChange={e => setHomework(e.target.value)}
             />
@@ -351,7 +516,7 @@ export function LessonForm({ initialValues, prefill, onSuccess, onCancel }: Prop
         {/* Souvenir Image */}
         <div>
           <label className="text-xs font-medium block mb-1.5" style={{ color: MUTED }}>
-            🎁 Souvenir Image
+            🎁 {t('lessons.form.souvenirImage')}
           </label>
           <div
             className="rounded-2xl border-2 border-dashed p-8 text-center cursor-pointer transition-colors hover:border-[#0d9488] group"
@@ -379,7 +544,7 @@ export function LessonForm({ initialValues, prefill, onSuccess, onCancel }: Prop
                   style={{ color: MUTED }}
                   onClick={e => { e.stopPropagation(); setSouvenirImage(null) }}
                 >
-                  Remove
+                  {t('lessons.form.remove')}
                 </button>
               </div>
             ) : (
@@ -387,9 +552,9 @@ export function LessonForm({ initialValues, prefill, onSuccess, onCancel }: Prop
                 <div className="w-10 h-10 rounded-full flex items-center justify-center mb-1 transition-colors group-hover:bg-teal-100" style={{ background: TEAL_50 }}>
                   <Upload size={18} style={{ color: TEAL_400 }} />
                 </div>
-                <p className="text-sm font-medium" style={{ color: NAVY }}>Upload Image</p>
-                <p className="text-xs" style={{ color: MUTED }}>Click or drag and drop</p>
-                <p className="text-xs" style={{ color: MUTED }}>PNG, JPG, GIF up to 3MB</p>
+                <p className="text-sm font-medium" style={{ color: NAVY }}>{t('lessons.form.uploadImage')}</p>
+                <p className="text-xs" style={{ color: MUTED }}>{t('lessons.form.clickOrDrag')}</p>
+                <p className="text-xs" style={{ color: MUTED }}>{t('lessons.form.uploadHint')}</p>
               </div>
             )}
           </div>
@@ -415,7 +580,7 @@ export function LessonForm({ initialValues, prefill, onSuccess, onCancel }: Prop
             className="px-5 py-2.5 rounded-xl text-sm font-medium border hover:bg-black/5 transition-colors"
             style={{ borderColor: BORDER, color: NAVY }}
           >
-            Cancel
+            {t('common.cancel')}
           </button>
         )}
         <button
@@ -424,7 +589,7 @@ export function LessonForm({ initialValues, prefill, onSuccess, onCancel }: Prop
           className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50"
           style={{ background: TEAL_600 }}
         >
-          {isPending ? 'Saving…' : isEdit ? 'Update Lesson' : 'Create Lesson'}
+          {isPending ? t('common.saving') : isEdit ? t('lessons.form.updateLesson') : t('lessons.form.createLesson')}
         </button>
       </div>
     </form>

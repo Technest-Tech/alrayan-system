@@ -15,25 +15,26 @@ import { useSendInvoice } from '@/hooks/system/useInvoice'
 import { useStudents } from '@/hooks/system/useStudents'
 import { useStudentBillingState } from '@/hooks/system/useStudentBillingState'
 import { formatMinor } from '@/lib/money'
+import { useI18n } from '@/lib/system/i18n'
 import type { Invoice, InvoiceStatus, InvoiceType } from '@/types/system/invoice'
 import type { Student } from '@/types/system/student'
 
-const STATUS_CONFIG: Record<InvoiceStatus, { label: string; classes: string; dot: string }> = {
-  draft:   { label: 'Draft',   classes: 'bg-gray-100 text-gray-600',     dot: 'bg-gray-400' },
-  sent:    { label: 'Sent',    classes: 'bg-blue-50 text-blue-700',       dot: 'bg-blue-500' },
-  paid:    { label: 'Paid',    classes: 'bg-emerald-50 text-emerald-700', dot: 'bg-emerald-500' },
-  overdue: { label: 'Overdue', classes: 'bg-red-50 text-red-700',         dot: 'bg-red-500' },
-  void:    { label: 'Void',    classes: 'bg-gray-100 text-gray-400',      dot: 'bg-gray-300' },
+const STATUS_CONFIG: Record<InvoiceStatus, { key: string; classes: string; dot: string }> = {
+  draft:   { key: 'billing.status.draft',   classes: 'bg-gray-100 text-gray-600',     dot: 'bg-gray-400' },
+  sent:    { key: 'billing.status.sent',    classes: 'bg-blue-50 text-blue-700',       dot: 'bg-blue-500' },
+  paid:    { key: 'billing.status.paid',    classes: 'bg-emerald-50 text-emerald-700', dot: 'bg-emerald-500' },
+  overdue: { key: 'billing.status.overdue', classes: 'bg-red-50 text-red-700',         dot: 'bg-red-500' },
+  void:    { key: 'billing.status.void',    classes: 'bg-gray-100 text-gray-400',      dot: 'bg-gray-300' },
 }
 
 const ALL_STATUSES: InvoiceStatus[] = ['draft', 'sent', 'paid', 'overdue', 'void']
 
 type CreateInvoiceType = 'advance' | 'reactivation' | 'manual'
 
-const TYPE_CONFIG: { value: CreateInvoiceType; label: string; desc: string }[] = [
-  { value: 'advance',      label: 'Advance',      desc: 'Pro-rata for remaining days this month' },
-  { value: 'reactivation', label: 'Reactivation', desc: 'Outstanding balance + pro-rata' },
-  { value: 'manual',       label: 'Custom',       desc: 'Write a message & amount for this student' },
+const TYPE_CONFIG: { value: CreateInvoiceType; labelKey: string; descKey: string }[] = [
+  { value: 'advance',      labelKey: 'billing.invoices.typeAdvance',      descKey: 'billing.invoices.typeAdvanceDesc' },
+  { value: 'reactivation', labelKey: 'billing.invoices.typeReactivation', descKey: 'billing.invoices.typeReactivationDesc' },
+  { value: 'manual',       labelKey: 'billing.invoices.typeCustom',       descKey: 'billing.invoices.typeCustomDesc' },
 ]
 
 function toMinor(str: string): number {
@@ -75,34 +76,37 @@ function normalisePhone(raw: string | null | undefined): string | null {
   return digits.length >= 7 ? digits : null
 }
 
-function buildAutoFooter(inv: Invoice): string {
+type Translator = (key: string, vars?: Record<string, string>) => string
+
+function buildAutoFooter(inv: Invoice, t: Translator): string {
   const studentName = inv.student?.name ?? inv.snapshot?.student_name ?? '—'
   const amount  = formatMinor(inv.total_minor, inv.currency)
   const due     = new Date(inv.due_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
   const issued  = inv.issued_at
     ? new Date(inv.issued_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
     : new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
-  const course  = inv.snapshot?.course_name ? `\nCourse: ${inv.snapshot.course_name}` : ''
-  return [``, `──────────────────`, `Student: ${studentName}`, `Date: ${issued}${course}`, `Amount: ${amount}`, `Due: ${due}`, ``, `— Azhary`].join('\n')
+  const course  = inv.snapshot?.course_name ? `\n${t('billing.wa.courseLine', { course: String(inv.snapshot.course_name) })}` : ''
+  return [``, `──────────────────`, t('billing.wa.studentLine', { name: studentName }), `${t('billing.wa.dateLine', { date: issued })}${course}`, t('billing.wa.amountLine', { amount }), t('billing.wa.dueLine', { due }), ``, t('billing.wa.signature')].join('\n')
 }
 
-function buildWhatsAppMessage(inv: Invoice, kind: 'invoice' | 'reminder'): string {
-  const studentName = inv.student?.name ?? inv.snapshot?.student_name ?? 'there'
+function buildWhatsAppMessage(inv: Invoice, kind: 'invoice' | 'reminder', t: Translator): string {
+  const studentName = inv.student?.name ?? inv.snapshot?.student_name ?? t('billing.wa.thereFallback')
   const description = inv.description ?? inv.snapshot?.description
   if (kind === 'reminder') {
     const amount = formatMinor(inv.total_minor, inv.currency)
     const due    = new Date(inv.due_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
-    const course = inv.snapshot?.course_name ? ` for ${inv.snapshot.course_name}` : ''
-    return [`Hi ${studentName},`, ``, `This is a friendly reminder about your payment${course}.`, `Amount due: ${amount}`, `Due date: ${due}`, ``, `Please let us know once the payment has been made. Jazak Allahu khairan.`, ``, `— Azhary`].join('\n')
+    const course = inv.snapshot?.course_name ? t('billing.wa.forCourse', { course: String(inv.snapshot.course_name) }) : ''
+    return [t('billing.wa.reminderGreeting', { name: studentName }), ``, t('billing.wa.reminderBody', { course }), t('billing.wa.amountDue', { amount }), t('billing.wa.dueDate', { due }), ``, t('billing.wa.reminderClosing'), ``, t('billing.wa.signature')].join('\n')
   }
-  if (description) return `As-salamu alaikum ${studentName},\n\n${description}${buildAutoFooter(inv)}`
-  const course = inv.snapshot?.course_name ? ` for ${inv.snapshot.course_name}` : ''
-  return [`As-salamu alaikum ${studentName},`, ``, `Your invoice${course} is ready.`].join('\n') + buildAutoFooter(inv)
+  if (description) return `${t('billing.wa.salaamGreeting', { name: studentName })}\n\n${description}${buildAutoFooter(inv, t)}`
+  const course = inv.snapshot?.course_name ? t('billing.wa.forCourse', { course: String(inv.snapshot.course_name) }) : ''
+  return [t('billing.wa.salaamGreeting', { name: studentName }), ``, t('billing.wa.invoiceReady', { course })].join('\n') + buildAutoFooter(inv, t)
 }
 
 // ─── New invoice modal ────────────────────────────────────────────────────────
 
 function NewInvoiceModal({ onClose, onCreated }: { onClose: () => void; onCreated: (id: number) => void }) {
+  const { t } = useI18n()
   const { mutateAsync, isPending } = useCreateInvoice()
   const [query, setQuery]                 = useState('')
   const [debouncedQuery, setDebouncedQuery] = useState('')
@@ -116,7 +120,7 @@ function NewInvoiceModal({ onClose, onCreated }: { onClose: () => void; onCreate
   const [formError, setFormError]         = useState<string | null>(null)
   const dropdownRef = useRef<HTMLDivElement>(null)
 
-  useEffect(() => { const t = setTimeout(() => setDebouncedQuery(query), 320); return () => clearTimeout(t) }, [query])
+  useEffect(() => { const timer = setTimeout(() => setDebouncedQuery(query), 320); return () => clearTimeout(timer) }, [query])
   useEffect(() => {
     const h = (e: MouseEvent) => { if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) setDropdownOpen(false) }
     document.addEventListener('mousedown', h); return () => document.removeEventListener('mousedown', h)
@@ -135,11 +139,11 @@ function NewInvoiceModal({ onClose, onCreated }: { onClose: () => void; onCreate
   const selectStudent = (s: Student) => { setSelectedStudent(s); setQuery(s.name); setDropdownOpen(false) }
 
   const submit = async () => {
-    if (!selectedStudent) return setFormError('Please select a student.')
+    if (!selectedStudent) return setFormError(t('billing.invoices.errSelectStudent'))
     if (type === 'manual') {
-      if (!dueAt) return setFormError('Due date is required.')
-      if (!manualDescription.trim()) return setFormError('Description is required.')
-      if (!manualAmountStr || manualAmountMinor === 0) return setFormError('Amount is required.')
+      if (!dueAt) return setFormError(t('billing.invoices.errDueRequired'))
+      if (!manualDescription.trim()) return setFormError(t('billing.invoices.errDescRequired'))
+      if (!manualAmountStr || manualAmountMinor === 0) return setFormError(t('billing.invoices.errAmountRequired'))
     }
     setFormError(null)
     try {
@@ -150,15 +154,15 @@ function NewInvoiceModal({ onClose, onCreated }: { onClose: () => void; onCreate
         lines: type === 'manual' ? [{ description: manualDescription.trim(), kind: 'adjustment' as const, quantity: 1, unit_price_minor: manualAmountMinor, line_total_minor: manualAmountMinor }] : undefined,
       })
       onCreated(invoice.id)
-    } catch (e: unknown) { setFormError(e instanceof Error ? e.message : 'Failed to create invoice.') }
+    } catch (e: unknown) { setFormError(e instanceof Error ? e.message : t('billing.invoices.createFailed')) }
   }
 
   const previewFooter = type === 'manual' && manualDescription.trim() ? (() => {
-    const name   = selectedStudent?.name ?? 'Student Name'
+    const name   = selectedStudent?.name ?? t('billing.invoices.studentNameFallback')
     const amount = manualAmountMinor > 0 ? formatMinor(manualAmountMinor, currency) : `${currency} 0.00`
-    const due    = dueAt ? new Date(dueAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Due date'
+    const due    = dueAt ? new Date(dueAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : t('billing.invoices.dueDate')
     const today  = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
-    return `As-salamu alaikum ${name},\n\n${manualDescription.trim()}\n\n──────────────────\nStudent: ${name}\nDate: ${today}\nAmount: ${amount}\nDue: ${due}\n\n— Azhary`
+    return `${t('billing.wa.salaamGreeting', { name })}\n\n${manualDescription.trim()}\n\n──────────────────\n${t('billing.wa.studentLine', { name })}\n${t('billing.wa.dateLine', { date: today })}\n${t('billing.wa.amountLine', { amount })}\n${t('billing.wa.dueLine', { due })}\n\n${t('billing.wa.signature')}`
   })() : null
 
   return (
@@ -166,17 +170,17 @@ function NewInvoiceModal({ onClose, onCreated }: { onClose: () => void; onCreate
       <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
       <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-xl max-h-[92vh] flex flex-col">
         <div className="flex items-start justify-between px-6 pt-6 pb-4 border-b border-gray-100 shrink-0">
-          <div><h2 className="text-lg font-semibold text-gray-900">New Invoice</h2><p className="text-sm text-gray-400 mt-0.5">Create a billing invoice for a student</p></div>
+          <div><h2 className="text-lg font-semibold text-gray-900">{t('billing.invoices.newModalTitle')}</h2><p className="text-sm text-gray-400 mt-0.5">{t('billing.invoices.newModalSubtitle')}</p></div>
           <button onClick={onClose} className="rounded-lg p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors mt-0.5"><X size={18} /></button>
         </div>
         <div className="px-6 py-5 space-y-5 overflow-y-auto flex-1">
           {formError && <div className="rounded-xl bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">{formError}</div>}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">Student</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">{t('billing.invoices.studentLabel')}</label>
             <div ref={dropdownRef} className="relative">
               <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
               <input value={query} onChange={e => { setQuery(e.target.value); setSelectedStudent(null); setDropdownOpen(true) }} onFocus={() => debouncedQuery && setDropdownOpen(true)}
-                className="w-full rounded-xl border border-gray-200 pl-9 pr-9 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent placeholder:text-gray-400" placeholder="Search by name or email…" />
+                className="w-full rounded-xl border border-gray-200 pl-9 pr-9 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent placeholder:text-gray-400" placeholder={t('billing.invoices.searchStudentPlaceholder')} />
               {searchLoading && debouncedQuery && <Loader2 size={15} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 animate-spin" />}
               {selectedStudent && !searchLoading && <CheckCircle2 size={15} className="absolute right-3 top-1/2 -translate-y-1/2 text-emerald-500" />}
               {dropdownOpen && students.length > 0 && (
@@ -192,44 +196,44 @@ function NewInvoiceModal({ onClose, onCreated }: { onClose: () => void; onCreate
             </div>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Invoice type</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">{t('billing.invoices.invoiceType')}</label>
             <div className="grid grid-cols-3 gap-2">
-              {TYPE_CONFIG.map(t => (
-                <button key={t.value} onClick={() => setType(t.value)} className={`rounded-xl border-2 p-3 text-left transition-all ${type === t.value ? 'border-emerald-500 bg-emerald-50' : 'border-gray-200 hover:border-gray-300 bg-white'}`}>
-                  <p className={`text-sm font-semibold ${type === t.value ? 'text-emerald-700' : 'text-gray-700'}`}>{t.label}</p>
-                  <p className="text-xs text-gray-400 mt-1 leading-relaxed">{t.desc}</p>
+              {TYPE_CONFIG.map(opt => (
+                <button key={opt.value} onClick={() => setType(opt.value)} className={`rounded-xl border-2 p-3 text-left transition-all ${type === opt.value ? 'border-emerald-500 bg-emerald-50' : 'border-gray-200 hover:border-gray-300 bg-white'}`}>
+                  <p className={`text-sm font-semibold ${type === opt.value ? 'text-emerald-700' : 'text-gray-700'}`}>{t(opt.labelKey)}</p>
+                  <p className="text-xs text-gray-400 mt-1 leading-relaxed">{t(opt.descKey)}</p>
                 </button>
               ))}
             </div>
           </div>
           {type !== 'manual' && selectedStudent && billingPreview && (
             <div className="rounded-xl bg-gray-50 border border-gray-200 p-4 space-y-2.5">
-              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Billing Preview</p>
+              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">{t('billing.invoices.billingPreview')}</p>
               {billingPreview.outstanding.map(o => (
-                <div key={o.number} className="flex justify-between text-sm"><span className="text-gray-500">Outstanding #{o.number}</span><span className="font-semibold text-red-600">{formatMinor(o.amount_minor, billingPreview.currency)}</span></div>
+                <div key={o.number} className="flex justify-between text-sm"><span className="text-gray-500">{t('billing.invoices.outstandingNumber', { number: String(o.number) })}</span><span className="font-semibold text-red-600">{formatMinor(o.amount_minor, billingPreview.currency)}</span></div>
               ))}
               {billingPreview.pro_rata && (
-                <div className="flex justify-between text-sm"><span className="text-gray-500">Pro-rata ({billingPreview.pro_rata.remaining_days}/{billingPreview.pro_rata.days_in_month} days)</span><span className="font-medium text-gray-800">{formatMinor(billingPreview.pro_rata.amount_minor, billingPreview.currency)}</span></div>
+                <div className="flex justify-between text-sm"><span className="text-gray-500">{t('billing.invoices.proRataDays', { remaining: String(billingPreview.pro_rata.remaining_days), total: String(billingPreview.pro_rata.days_in_month) })}</span><span className="font-medium text-gray-800">{formatMinor(billingPreview.pro_rata.amount_minor, billingPreview.currency)}</span></div>
               )}
-              <div className="flex justify-between text-sm font-bold border-t border-gray-200 pt-2.5"><span className="text-gray-700">Estimated total</span><span className="text-gray-900">{formatMinor(billingPreview.total_minor, billingPreview.currency)}</span></div>
+              <div className="flex justify-between text-sm font-bold border-t border-gray-200 pt-2.5"><span className="text-gray-700">{t('billing.invoices.estimatedTotal')}</span><span className="text-gray-900">{formatMinor(billingPreview.total_minor, billingPreview.currency)}</span></div>
             </div>
           )}
           {type === 'advance' && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">Effective from<span className="ml-1.5 text-xs font-normal text-gray-400">optional — defaults to today</span></label>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">{t('billing.invoices.effectiveFrom')}<span className="ml-1.5 text-xs font-normal text-gray-400">{t('billing.invoices.effectiveFromHintInline')}</span></label>
               <input type="date" value={effectiveFrom} onChange={e => setEffectiveFrom(e.target.value)} className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent" />
             </div>
           )}
           {type === 'manual' && (
             <>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">Due date</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">{t('billing.invoices.dueDate')}</label>
                 <input type="date" value={dueAt} onChange={e => setDueAt(e.target.value)} className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent" />
               </div>
               <div>
                 <div className="flex items-center justify-between mb-1.5">
-                  <label className="text-sm font-medium text-gray-700">Amount</label>
-                  {selectedStudent?.currency ? <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 border border-emerald-200 px-2 py-0.5 text-[11px] font-semibold text-emerald-700 uppercase tracking-wider">{selectedStudent.currency}</span> : <span className="text-[11px] text-gray-400">select a student first</span>}
+                  <label className="text-sm font-medium text-gray-700">{t('billing.invoices.amount')}</label>
+                  {selectedStudent?.currency ? <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 border border-emerald-200 px-2 py-0.5 text-[11px] font-semibold text-emerald-700 uppercase tracking-wider">{selectedStudent.currency}</span> : <span className="text-[11px] text-gray-400">{t('billing.invoices.selectStudentFirst')}</span>}
                 </div>
                 <div className="flex items-center rounded-xl border border-gray-200 overflow-hidden focus-within:ring-2 focus-within:ring-emerald-500 focus-within:border-transparent">
                   <span className="px-3 py-2.5 text-sm font-semibold text-gray-500 bg-gray-50 border-r border-gray-200 shrink-0">{selectedStudent?.currency ?? '—'}</span>
@@ -238,12 +242,12 @@ function NewInvoiceModal({ onClose, onCreated }: { onClose: () => void; onCreate
                 {manualAmountMinor > 0 && <p className="text-xs text-emerald-700 font-semibold mt-1 text-right tabular-nums">{formatMinor(manualAmountMinor, currency)}</p>}
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">Message / Description<span className="ml-1.5 text-xs font-normal text-gray-400">sent to the student via WhatsApp</span></label>
-                <textarea value={manualDescription} onChange={e => setManualDescription(e.target.value)} rows={4} className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent resize-none placeholder:text-gray-400" placeholder="e.g. Monthly tuition for May 2026, includes 8 sessions…" />
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">{t('billing.invoices.messageDescription')}<span className="ml-1.5 text-xs font-normal text-gray-400">{t('billing.invoices.messageDescriptionHint')}</span></label>
+                <textarea value={manualDescription} onChange={e => setManualDescription(e.target.value)} rows={4} className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent resize-none placeholder:text-gray-400" placeholder={t('billing.invoices.messageDescriptionPlaceholder')} />
               </div>
               {previewFooter && (
                 <div>
-                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">WhatsApp preview — auto-appended details</p>
+                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">{t('billing.invoices.waPreviewLabel')}</p>
                   <pre className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-[11px] leading-relaxed text-gray-600 whitespace-pre-wrap font-sans overflow-x-auto">{previewFooter}</pre>
                 </div>
               )}
@@ -251,9 +255,9 @@ function NewInvoiceModal({ onClose, onCreated }: { onClose: () => void; onCreate
           )}
         </div>
         <div className="flex justify-end gap-3 px-6 py-4 border-t border-gray-100 shrink-0">
-          <button onClick={onClose} className="px-4 py-2.5 text-sm font-medium text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-xl transition-colors">Cancel</button>
+          <button onClick={onClose} className="px-4 py-2.5 text-sm font-medium text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-xl transition-colors">{t('common.cancel')}</button>
           <button onClick={submit} disabled={isPending || !selectedStudent} className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-white text-sm font-semibold disabled:opacity-50 transition-opacity hover:opacity-90" style={{ background: 'rgb(14 124 90)' }}>
-            {isPending ? <><Loader2 size={14} className="animate-spin" />Creating…</> : <>Create invoice</>}
+            {isPending ? <><Loader2 size={14} className="animate-spin" />{t('common.creating')}</> : <>{t('billing.invoices.createInvoice')}</>}
           </button>
         </div>
       </div>
@@ -264,8 +268,9 @@ function NewInvoiceModal({ onClose, onCreated }: { onClose: () => void; onCreate
 // ─── WhatsApp preview modal ───────────────────────────────────────────────────
 
 function WhatsAppPreviewModal({ invoice, kind, onClose }: { invoice: Invoice; kind: 'invoice' | 'reminder'; onClose: () => void }) {
+  const { t } = useI18n()
   const phone = normalisePhone(invoice.student?.whatsapp ?? invoice.student?.phone)
-  const [message, setMessage] = useState(() => buildWhatsAppMessage(invoice, kind))
+  const [message, setMessage] = useState(() => buildWhatsAppMessage(invoice, kind, t))
   useEffect(() => {
     const h = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
     document.addEventListener('keydown', h); return () => document.removeEventListener('keydown', h)
@@ -280,25 +285,25 @@ function WhatsAppPreviewModal({ invoice, kind, onClose }: { invoice: Invoice; ki
       <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
       <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg">
         <div className="flex items-start justify-between px-6 pt-6 pb-4 border-b border-gray-100">
-          <div><h3 className="text-base font-semibold text-gray-900">{kind === 'reminder' ? 'Send WhatsApp Reminder' : 'Send Invoice via WhatsApp'}</h3><p className="text-sm text-gray-400 mt-0.5">{invoice.invoice_number} · {invoice.student?.name ?? '—'}</p></div>
+          <div><h3 className="text-base font-semibold text-gray-900">{kind === 'reminder' ? t('billing.invoices.waReminderTitle') : t('billing.invoices.waInvoiceTitle')}</h3><p className="text-sm text-gray-400 mt-0.5">{invoice.invoice_number} · {invoice.student?.name ?? '—'}</p></div>
           <button onClick={onClose} className="rounded-lg p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"><X size={17} /></button>
         </div>
         <div className="px-6 py-5 space-y-4">
-          {!phone && <div className="rounded-xl bg-amber-50 border border-amber-200 px-4 py-3 text-sm text-amber-800">This student has no WhatsApp or phone number on file.</div>}
+          {!phone && <div className="rounded-xl bg-amber-50 border border-amber-200 px-4 py-3 text-sm text-amber-800">{t('billing.invoices.noContactWarning')}</div>}
           <div>
-            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1.5">To</p>
+            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1.5">{t('billing.invoices.toLabel')}</p>
             <div className="flex items-center gap-2 text-sm text-gray-800"><Phone size={13} className="text-emerald-600" /><span className="font-mono">{phone ? `+${phone}` : '—'}</span><span className="text-gray-400">·</span><span>{invoice.student?.name ?? '—'}</span></div>
           </div>
           <div>
-            <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1.5">Message</label>
+            <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1.5">{t('billing.invoices.messageLabel')}</label>
             <textarea value={message} onChange={e => setMessage(e.target.value)} rows={9} className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm font-mono leading-relaxed focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent resize-y" />
-            <p className="text-[11px] text-gray-400 mt-1.5">Opens WhatsApp Web/app with the message pre-filled. You confirm and tap send there.</p>
+            <p className="text-[11px] text-gray-400 mt-1.5">{t('billing.invoices.waHint')}</p>
           </div>
         </div>
         <div className="flex justify-end gap-3 px-6 py-4 border-t border-gray-100">
-          <button onClick={onClose} className="px-4 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-100 rounded-xl transition-colors">Cancel</button>
+          <button onClick={onClose} className="px-4 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-100 rounded-xl transition-colors">{t('common.cancel')}</button>
           <button onClick={open} disabled={!phone} className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-white text-sm font-semibold disabled:opacity-50 hover:opacity-90 transition-opacity" style={{ background: kind === 'reminder' ? 'rgb(180 83 9)' : 'rgb(22 163 74)' }}>
-            <WhatsAppIcon size={14} />Open in WhatsApp
+            <WhatsAppIcon size={14} />{t('billing.invoices.openInWhatsApp')}
           </button>
         </div>
       </div>
@@ -317,6 +322,7 @@ function WhatsAppIcon({ size = 14 }: { size?: number }) {
 // ─── Invoice row ──────────────────────────────────────────────────────────────
 
 function InvoiceRow({ inv, onWhatsApp }: { inv: Invoice; onWhatsApp: (inv: Invoice, kind: 'invoice' | 'reminder') => void }) {
+  const { t } = useI18n()
   const cfg         = STATUS_CONFIG[inv.status]
   const hours       = totalHoursFromInvoice(inv)
   const studentName = inv.student?.name ?? inv.snapshot?.student_name ?? '—'
@@ -331,11 +337,11 @@ function InvoiceRow({ inv, onWhatsApp }: { inv: Invoice; onWhatsApp: (inv: Invoi
   const [resendDone, setResendDone] = useState(false)
 
   let dispatch: { label: string; cls: string; icon: React.ReactNode }
-  if      (inv.status === 'paid')    dispatch = { label: 'Paid',            cls: 'bg-emerald-50 text-emerald-700 border-emerald-200', icon: <CheckCircle2 size={11} /> }
-  else if (inv.status === 'void')    dispatch = { label: 'Cancelled',       cls: 'bg-gray-50 text-gray-500 border-gray-200',          icon: <X size={11} /> }
-  else if (inv.status === 'overdue') dispatch = { label: 'Reminder needed', cls: 'bg-red-50 text-red-700 border-red-200',             icon: <BellRing size={11} /> }
-  else if (inv.issued_at)            dispatch = { label: 'Sent',            cls: 'bg-blue-50 text-blue-700 border-blue-200',          icon: <Send size={11} /> }
-  else                               dispatch = { label: 'Not sent',        cls: 'bg-amber-50 text-amber-700 border-amber-200',       icon: <Bell size={11} /> }
+  if      (inv.status === 'paid')    dispatch = { label: t('billing.status.paid'),          cls: 'bg-emerald-50 text-emerald-700 border-emerald-200', icon: <CheckCircle2 size={11} /> }
+  else if (inv.status === 'void')    dispatch = { label: t('status.cancelled'),             cls: 'bg-gray-50 text-gray-500 border-gray-200',          icon: <X size={11} /> }
+  else if (inv.status === 'overdue') dispatch = { label: t('billing.dispatch.reminderNeeded'), cls: 'bg-red-50 text-red-700 border-red-200',           icon: <BellRing size={11} /> }
+  else if (inv.issued_at)            dispatch = { label: t('billing.status.sent'),          cls: 'bg-blue-50 text-blue-700 border-blue-200',          icon: <Send size={11} /> }
+  else                               dispatch = { label: t('billing.dispatch.notSent'),     cls: 'bg-amber-50 text-amber-700 border-amber-200',       icon: <Bell size={11} /> }
 
   const handleResend = async () => {
     try { await resend(); setResendDone(true); setTimeout(() => setResendDone(false), 2000) } catch { /* surfaced by hook */ }
@@ -349,7 +355,7 @@ function InvoiceRow({ inv, onWhatsApp }: { inv: Invoice; onWhatsApp: (inv: Invoi
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2 flex-wrap">
               <span className="text-[10px] uppercase tracking-wider font-semibold text-gray-400">{inv.type}</span>
-              <span className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[11px] font-medium ${cfg.classes}`}><span className={`w-1.5 h-1.5 rounded-full ${cfg.dot}`} />{cfg.label}</span>
+              <span className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[11px] font-medium ${cfg.classes}`}><span className={`w-1.5 h-1.5 rounded-full ${cfg.dot}`} />{t(cfg.key)}</span>
               <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-medium ${dispatch.cls}`}>{dispatch.icon}{dispatch.label}</span>
             </div>
             <p className="text-sm font-semibold text-gray-900 mt-1 truncate">{studentName}</p>
@@ -364,42 +370,42 @@ function InvoiceRow({ inv, onWhatsApp }: { inv: Invoice; onWhatsApp: (inv: Invoi
           {hours && (
             <div className="text-right">
               <div className="inline-flex items-center gap-1 text-sm font-semibold text-gray-800 tabular-nums"><Clock size={13} className="text-gray-400" />{fmtHours(hours.hours)}</div>
-              <p className="text-[10px] text-gray-400 uppercase tracking-wider">{hours.sessions} sessions</p>
+              <p className="text-[10px] text-gray-400 uppercase tracking-wider">{t('billing.invoices.sessionsCount', { count: String(hours.sessions) })}</p>
             </div>
           )}
           <div className="text-right">
             <p className="text-base font-bold text-gray-900 tabular-nums">{formatMinor(inv.total_minor, inv.currency)}</p>
-            <p className="text-[10px] text-gray-400 uppercase tracking-wider">{inv.currency} · total</p>
+            <p className="text-[10px] text-gray-400 uppercase tracking-wider">{inv.currency} · {t('common.total').toLowerCase()}</p>
           </div>
           <div className="text-right">
             <p className="text-xs font-semibold text-gray-700 inline-flex items-center gap-1"><Calendar size={11} className="text-gray-400" />{due.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</p>
             <p className={`text-[10px] uppercase tracking-wider ${inv.status === 'paid' || inv.status === 'void' ? 'text-gray-400' : dueDays < 0 ? 'text-red-500 font-semibold' : dueDays <= 3 ? 'text-amber-600 font-semibold' : 'text-gray-400'}`}>
-              {inv.status === 'paid' || inv.status === 'void' ? 'due date' : dueDays < 0 ? `${Math.abs(dueDays)}d overdue` : dueDays === 0 ? 'due today' : `in ${dueDays}d`}
+              {inv.status === 'paid' || inv.status === 'void' ? t('billing.invoices.dueDateShort') : dueDays < 0 ? t('billing.invoices.daysOverdueShort', { days: String(Math.abs(dueDays)) }) : dueDays === 0 ? t('billing.invoices.dueToday') : t('billing.invoices.dueInDays', { days: String(dueDays) })}
             </p>
           </div>
         </div>
       </div>
       <div className="border-t border-gray-100 bg-gray-50/60 px-5 py-2.5 flex items-center gap-1.5 flex-wrap">
-        <Link href={`/billing/invoices/${inv.id}`} className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-gray-700 hover:bg-white hover:shadow-sm border border-transparent hover:border-gray-200 transition-all"><Eye size={12} />View</Link>
+        <Link href={`/billing/invoices/${inv.id}`} className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-gray-700 hover:bg-white hover:shadow-sm border border-transparent hover:border-gray-200 transition-all"><Eye size={12} />{t('common.view')}</Link>
         {inv.status !== 'void' && inv.status !== 'paid' && (
           <button onClick={() => onWhatsApp(inv, 'invoice')} disabled={!hasContact} className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-emerald-700 hover:bg-emerald-50 border border-transparent hover:border-emerald-200 transition-all disabled:opacity-40 disabled:cursor-not-allowed">
-            <WhatsAppIcon size={12} />WhatsApp
+            <WhatsAppIcon size={12} />{t('common.whatsapp')}
           </button>
         )}
         {(inv.status === 'draft' || inv.status === 'sent') && (
           <button onClick={handleResend} disabled={resending} className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-blue-700 hover:bg-blue-50 border border-transparent hover:border-blue-200 transition-all disabled:opacity-50">
             {resending ? <Loader2 size={12} className="animate-spin" /> : resendDone ? <CheckCircle2 size={12} /> : <Mail size={12} />}
-            {resendDone ? 'Sent' : inv.status === 'sent' ? 'Resend email' : 'Send email'}
+            {resendDone ? t('billing.status.sent') : inv.status === 'sent' ? t('billing.invoices.resendEmail') : t('billing.invoices.sendEmail')}
           </button>
         )}
         {(inv.status === 'sent' || inv.status === 'overdue') && (
           <button onClick={() => onWhatsApp(inv, 'reminder')} disabled={!hasContact} className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-amber-700 hover:bg-amber-50 border border-transparent hover:border-amber-200 transition-all disabled:opacity-40 disabled:cursor-not-allowed">
-            <BellRing size={12} />Send reminder
+            <BellRing size={12} />{t('billing.invoices.sendReminder')}
           </button>
         )}
         {(inv.status === 'sent' || inv.status === 'overdue') && (
           <Link href={`/billing/invoices/${inv.id}`} className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-emerald-700 hover:bg-emerald-50 border border-transparent hover:border-emerald-200 transition-all">
-            <CreditCard size={12} />Record payment
+            <CreditCard size={12} />{t('billing.invoices.recordPayment')}
           </Link>
         )}
         <div className="flex-1" />
@@ -415,23 +421,23 @@ type TabKey = 'automatic' | 'pro' | 'manual'
 
 const TABS: {
   key: TabKey
-  label: string
+  labelKey: string
   types: InvoiceType[]
   Icon: React.ComponentType<{ size?: number; className?: string }>
   color: { tab: string; activeTab: string; indicator: string; iconBg: string; activeAll: string }
 }[] = [
   {
-    key: 'automatic', label: 'Automatic', types: ['monthly'],
+    key: 'automatic', labelKey: 'billing.tabs.automatic', types: ['monthly'],
     Icon: RefreshCw,
     color: { tab: 'text-gray-500 hover:text-blue-600 hover:bg-blue-50', activeTab: 'text-blue-700', indicator: 'bg-blue-600', iconBg: 'text-blue-600', activeAll: 'bg-blue-700 text-white' },
   },
   {
-    key: 'pro', label: 'Pro', types: ['advance', 'reactivation'],
+    key: 'pro', labelKey: 'billing.tabs.pro', types: ['advance', 'reactivation'],
     Icon: Zap,
     color: { tab: 'text-gray-500 hover:text-purple-600 hover:bg-purple-50', activeTab: 'text-purple-700', indicator: 'bg-purple-600', iconBg: 'text-purple-600', activeAll: 'bg-purple-700 text-white' },
   },
   {
-    key: 'manual', label: 'Manual', types: ['manual'],
+    key: 'manual', labelKey: 'billing.tabs.manual', types: ['manual'],
     Icon: PenLine,
     color: { tab: 'text-gray-500 hover:text-amber-600 hover:bg-amber-50', activeTab: 'text-amber-700', indicator: 'bg-amber-500', iconBg: 'text-amber-600', activeAll: 'bg-amber-600 text-white' },
   },
@@ -446,6 +452,7 @@ function SectionContent({
   tab: typeof TABS[number]
   onWhatsApp: (inv: Invoice, kind: 'invoice' | 'reminder') => void
 }) {
+  const { t } = useI18n()
   const [statusFilter, setStatusFilter] = useState<InvoiceStatus | undefined>()
   const [searchTerm, setSearchTerm]     = useState('')
 
@@ -476,10 +483,10 @@ function SectionContent({
   const { color } = tab
 
   const statCards = [
-    { label: 'Total',   value: allData?.meta?.total,     icon: <FileText size={15} className="text-gray-400" /> },
-    { label: 'Paid',    value: paidData?.meta?.total,    icon: <CheckCircle2 size={15} className="text-emerald-500" />, status: 'paid'    as InvoiceStatus },
-    { label: 'Pending', value: sentData?.meta?.total,    icon: <Receipt size={15} className="text-blue-500" />,         status: 'sent'    as InvoiceStatus },
-    { label: 'Overdue', value: overdueData?.meta?.total, icon: <AlertTriangle size={15} className="text-red-500" />,    status: 'overdue' as InvoiceStatus },
+    { id: 'total',   label: t('common.total'),               value: allData?.meta?.total,     icon: <FileText size={15} className="text-gray-400" /> },
+    { id: 'paid',    label: t('billing.status.paid'),         value: paidData?.meta?.total,    icon: <CheckCircle2 size={15} className="text-emerald-500" />, status: 'paid'    as InvoiceStatus },
+    { id: 'pending', label: t('billing.invoices.statPending'), value: sentData?.meta?.total,    icon: <Receipt size={15} className="text-blue-500" />,         status: 'sent'    as InvoiceStatus },
+    { id: 'overdue', label: t('billing.status.overdue'),      value: overdueData?.meta?.total, icon: <AlertTriangle size={15} className="text-red-500" />,    status: 'overdue' as InvoiceStatus },
   ]
 
   return (
@@ -490,13 +497,13 @@ function SectionContent({
           const active = card.status && statusFilter === card.status
           return (
             <button
-              key={card.label}
+              key={card.id}
               onClick={() => card.status && setStatusFilter(f => f === card.status ? undefined : card.status)}
               className={`rounded-xl border p-4 text-left transition-all hover:shadow-sm ${active ? 'border-emerald-300 bg-emerald-50 ring-1 ring-emerald-300' : 'border-gray-200 bg-white hover:border-gray-300'}`}
             >
               <div className="flex items-center justify-between mb-3">
                 {card.icon}
-                {active && <span className="text-[10px] font-semibold text-emerald-600 uppercase tracking-wide">Active</span>}
+                {active && <span className="text-[10px] font-semibold text-emerald-600 uppercase tracking-wide">{t('status.active')}</span>}
               </div>
               <p className="text-2xl font-bold text-gray-900 tabular-nums">{card.value ?? '—'}</p>
               <p className="text-xs text-gray-400 mt-0.5">{card.label}</p>
@@ -512,7 +519,7 @@ function SectionContent({
           <input
             value={searchTerm}
             onChange={e => setSearchTerm(e.target.value)}
-            placeholder="Search invoice #, student, course…"
+            placeholder={t('billing.invoices.searchPlaceholder')}
             className="w-full rounded-xl border border-gray-200 bg-white pl-9 pr-9 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent placeholder:text-gray-400"
           />
           {searchTerm && (
@@ -520,12 +527,12 @@ function SectionContent({
           )}
         </div>
         <div className="flex items-center gap-1.5 flex-wrap">
-          <button onClick={() => setStatusFilter(undefined)} className={`rounded-full px-3.5 py-1.5 text-xs font-medium transition-colors ${!statusFilter ? color.activeAll : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'}`}>All</button>
+          <button onClick={() => setStatusFilter(undefined)} className={`rounded-full px-3.5 py-1.5 text-xs font-medium transition-colors ${!statusFilter ? color.activeAll : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'}`}>{t('common.all')}</button>
           {ALL_STATUSES.map(s => {
             const cfg    = STATUS_CONFIG[s]
             const active = statusFilter === s
             return (
-              <button key={s} onClick={() => setStatusFilter(f => f === s ? undefined : s)} className={`rounded-full px-3.5 py-1.5 text-xs font-medium transition-colors ${active ? cfg.classes : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'}`}>{cfg.label}</button>
+              <button key={s} onClick={() => setStatusFilter(f => f === s ? undefined : s)} className={`rounded-full px-3.5 py-1.5 text-xs font-medium transition-colors ${active ? cfg.classes : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'}`}>{t(cfg.key)}</button>
             )
           })}
         </div>
@@ -533,14 +540,14 @@ function SectionContent({
 
       {/* Invoice list */}
       {isLoading ? (
-        <div className="py-20 flex flex-col items-center justify-center gap-3 text-gray-400"><Loader2 size={22} className="animate-spin" /><p className="text-sm">Loading invoices…</p></div>
+        <div className="py-20 flex flex-col items-center justify-center gap-3 text-gray-400"><Loader2 size={22} className="animate-spin" /><p className="text-sm">{t('billing.invoices.loadingList')}</p></div>
       ) : error ? (
         <div className="py-10 text-center text-sm text-red-500">{(error as Error).message}</div>
       ) : invoices.length === 0 ? (
         <div className="py-20 flex flex-col items-center gap-3">
           <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center"><FileText size={22} className="text-gray-300" /></div>
-          <p className="text-sm text-gray-400 font-medium">{searchTerm ? 'No invoices match your search' : 'No invoices found'}</p>
-          {(statusFilter || searchTerm) && <button onClick={() => { setStatusFilter(undefined); setSearchTerm('') }} className="text-sm text-emerald-600 hover:underline">Clear filters</button>}
+          <p className="text-sm text-gray-400 font-medium">{searchTerm ? t('billing.invoices.noMatch') : t('billing.invoices.noInvoices')}</p>
+          {(statusFilter || searchTerm) && <button onClick={() => { setStatusFilter(undefined); setSearchTerm('') }} className="text-sm text-emerald-600 hover:underline">{t('billing.invoices.clearFilters')}</button>}
         </div>
       ) : (
         <>
@@ -549,8 +556,8 @@ function SectionContent({
           </div>
           {meta && (
             <div className="mt-5 px-1 flex items-center justify-between">
-              <span className="text-xs text-gray-400">Showing {invoices.length}{searchTerm ? ' filtered' : ''} of {meta.total} invoices</span>
-              <span className="text-xs text-gray-400">Page {meta.current_page} of {meta.last_page}</span>
+              <span className="text-xs text-gray-400">{searchTerm ? t('billing.invoices.showingFilteredOf', { shown: String(invoices.length), total: String(meta.total) }) : t('billing.invoices.showingOf', { shown: String(invoices.length), total: String(meta.total) })}</span>
+              <span className="text-xs text-gray-400">{t('billing.pageOf', { current: String(meta.current_page), last: String(meta.last_page) })}</span>
             </div>
           )}
         </>
@@ -562,6 +569,7 @@ function SectionContent({
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function InvoicesPage() {
+  const { t } = useI18n()
   const router = useRouter()
   const [activeTab, setActiveTab]   = useState<TabKey>('automatic')
   const [showNewModal, setShowNewModal] = useState(false)
@@ -578,13 +586,13 @@ export default function InvoicesPage() {
     manual:    manualCount?.meta?.total,
   }
 
-  const currentTab = TABS.find(t => t.key === activeTab)!
+  const currentTab = TABS.find(tab => tab.key === activeTab)!
 
   return (
     <>
       <PageHeader
-        title="Invoices"
-        description="Manage automatic monthly bills, pro-rata advance invoices, and custom manual charges."
+        title={t('billing.invoices.pageTitle')}
+        description={t('billing.invoices.pageDescription')}
         actions={
           <button
             onClick={() => setShowNewModal(true)}
@@ -592,7 +600,7 @@ export default function InvoicesPage() {
             style={{ background: 'rgb(14 124 90)' }}
           >
             <Plus size={16} />
-            New invoice
+            {t('billing.invoices.newInvoice')}
           </button>
         }
       />
@@ -609,7 +617,7 @@ export default function InvoicesPage() {
               className={`relative flex items-center gap-2 px-4 py-3 text-sm font-medium rounded-t-lg transition-colors ${active ? tab.color.activeTab + ' bg-white' : tab.color.tab}`}
             >
               <tab.Icon size={15} className={active ? tab.color.iconBg : ''} />
-              {tab.label}
+              {t(tab.labelKey)}
               {count !== undefined && (
                 <span className={`text-[11px] font-semibold px-1.5 py-0.5 rounded-full tabular-nums ${active ? 'bg-gray-100 text-gray-600' : 'bg-gray-100 text-gray-500'}`}>
                   {count}

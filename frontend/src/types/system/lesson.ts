@@ -40,7 +40,8 @@ export type LessonStatus =
   | 'attended'
   | 'paid_absence'
   | 'absent'
-  | 'trial_free'
+  | 'trial'
+  | 'free'
   | 'cancelled_by_student'
   | 'cancelled_by_teacher'
 
@@ -72,6 +73,7 @@ export interface Lesson {
   homework: string | null
   souvenir_image: string | null
   subject_details: Record<string, string> | null
+  trial_evaluation: TrialEvaluation | null
   added_by_name: string | null
   teacher: LessonTeacher
   student: LessonStudent
@@ -119,6 +121,19 @@ export interface StoreLessonPayload {
   notes?: string
   homework?: string
   subject_details?: Record<string, string>
+  trial_evaluation?: TrialEvaluation
+}
+
+/** Trial-lesson assessment captured when a lesson's status is `trial`. */
+export interface TrialEvaluation {
+  student_level?: string
+  reading_ability?: string
+  memorization_level?: string
+  behavior?: string[]
+  motivation?: string[]
+  learning_style?: string[]
+  expectations?: string
+  teacher_notes?: string
 }
 
 export interface StoreLessonSchedulePayload {

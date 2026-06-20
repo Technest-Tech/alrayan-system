@@ -1,6 +1,7 @@
 'use client'
 import { useRef, useState, useEffect, useCallback } from 'react'
 import { Check, ChevronDown, Search, X } from 'lucide-react'
+import { useI18n } from '@/lib/system/i18n'
 
 export interface SelectOption {
   value: string
@@ -24,7 +25,9 @@ const TEAL_50  = '#F0FDFA'
 const TEAL_100 = '#CCFBF1'
 const TEAL_600 = '#0d9488'
 
-export function SearchableSelect({ options, value, onChange, placeholder = 'Select…', clearable, className, style }: Props) {
+export function SearchableSelect({ options, value, onChange, placeholder, clearable, className, style }: Props) {
+  const { t } = useI18n()
+  placeholder = placeholder ?? t('lessons.selectPlaceholder')
   const [open,  setOpen]  = useState(false)
   const [query, setQuery] = useState('')
   const [pos,   setPos]   = useState<{ top?: number; bottom?: number; left: number; width: number } | null>(null)
@@ -140,7 +143,7 @@ export function SearchableSelect({ options, value, onChange, placeholder = 'Sele
                 type="text"
                 value={query}
                 onChange={e => setQuery(e.target.value)}
-                placeholder="Search…"
+                placeholder={t('common.search')}
                 className="flex-1 text-sm outline-none bg-transparent min-w-0"
                 style={{ color: NAVY }}
               />
@@ -154,7 +157,7 @@ export function SearchableSelect({ options, value, onChange, placeholder = 'Sele
             {/* Option list */}
             <div className="overflow-y-auto" style={{ maxHeight: 200 }}>
               {filtered.length === 0 ? (
-                <p className="text-sm text-center py-4" style={{ color: MUTED }}>No results</p>
+                <p className="text-sm text-center py-4" style={{ color: MUTED }}>{t('common.noResults')}</p>
               ) : filtered.map(o => (
                 <button
                   key={o.value}

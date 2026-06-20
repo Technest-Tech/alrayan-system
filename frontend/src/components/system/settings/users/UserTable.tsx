@@ -12,6 +12,7 @@ import {
 import { useSystemUser } from '@/components/system/shell/SystemShell'
 import { EditUserSheet } from './EditUserSheet'
 import { ApiError } from '@/lib/system/api'
+import { useI18n } from '@/lib/system/i18n'
 
 const ROLE_COLORS: Record<string, string> = {
   admin:      'text-purple-600 bg-purple-50',
@@ -20,6 +21,7 @@ const ROLE_COLORS: Record<string, string> = {
 }
 
 export function UserTable() {
+  const { t }       = useI18n()
   const me          = useSystemUser()
   const { data, isLoading } = useUsers()
   const deactivate  = useDeactivateUser()
@@ -34,9 +36,9 @@ export function UserTable() {
     setMenuOpen(null)
     try {
       await deactivate.mutateAsync(user.id)
-      toast.success(`${user.name} deactivated.`)
+      toast.success(t('users.toastDeactivated', { name: user.name }))
     } catch (e) {
-      toast.error(e instanceof ApiError ? e.message : 'Something went wrong.')
+      toast.error(e instanceof ApiError ? e.message : t('users.toastError'))
     }
   }
 
@@ -44,9 +46,9 @@ export function UserTable() {
     setMenuOpen(null)
     try {
       await activate.mutateAsync(user.id)
-      toast.success(`${user.name} reactivated.`)
+      toast.success(t('users.toastReactivated', { name: user.name }))
     } catch (e) {
-      toast.error(e instanceof ApiError ? e.message : 'Something went wrong.')
+      toast.error(e instanceof ApiError ? e.message : t('users.toastError'))
     }
   }
 
@@ -54,9 +56,9 @@ export function UserTable() {
     setMenuOpen(null)
     try {
       await resend.mutateAsync(user.id)
-      toast.success(`Invite resent to ${user.email}.`)
+      toast.success(t('users.toastInviteResent', { email: user.email }))
     } catch (e) {
-      toast.error(e instanceof ApiError ? e.message : 'Something went wrong.')
+      toast.error(e instanceof ApiError ? e.message : t('users.toastError'))
     }
   }
 
@@ -82,10 +84,10 @@ export function UserTable() {
               className="border-b text-xs font-semibold uppercase tracking-wide opacity-50"
               style={{ borderColor: 'rgb(var(--border-default, 229 233 240))' }}
             >
-              <th className="text-left px-5 py-3">Name</th>
-              <th className="text-left px-5 py-3">Role</th>
-              <th className="text-left px-5 py-3">Permissions</th>
-              <th className="text-left px-5 py-3">Status</th>
+              <th className="text-left px-5 py-3">{t('users.columnName')}</th>
+              <th className="text-left px-5 py-3">{t('users.columnRole')}</th>
+              <th className="text-left px-5 py-3">{t('users.columnPermissions')}</th>
+              <th className="text-left px-5 py-3">{t('users.columnStatus')}</th>
               <th className="px-5 py-3" />
             </tr>
           </thead>
@@ -103,20 +105,20 @@ export function UserTable() {
                   </div>
                 </td>
                 <td className="px-5 py-3">
-                  <span className={`text-xs px-2 py-0.5 rounded-full font-medium capitalize ${ROLE_COLORS[user.role] ?? ''}`}>
-                    {user.role}
+                  <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${ROLE_COLORS[user.role] ?? ''}`}>
+                    {t(`users.role.${user.role}`)}
                   </span>
                 </td>
                 <td className="px-5 py-3 opacity-60">
                   {user.role === 'admin'
-                    ? 'All'
+                    ? t('common.all')
                     : user.role === 'teacher'
                     ? '—'
-                    : `${user.permissions?.length ?? 0} of ${Object.values({}).length}`}
+                    : `${user.permissions?.length ?? 0} ${t('common.of')} ${Object.values({}).length}`}
                 </td>
                 <td className="px-5 py-3">
                   <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${user.is_active ? 'text-green-600 bg-green-50' : 'text-gray-400 bg-gray-100'}`}>
-                    {user.is_active ? 'Active' : 'Inactive'}
+                    {user.is_active ? t('status.active') : t('status.inactive')}
                   </span>
                 </td>
                 <td className="px-5 py-3 relative">
@@ -138,13 +140,13 @@ export function UserTable() {
                           onClick={() => { setEditing(user); setMenuOpen(null) }}
                           className="w-full text-left px-3 py-2 hover:bg-black/5 transition-colors"
                         >
-                          Edit
+                          {t('common.edit')}
                         </button>
                         <button
                           onClick={() => handleResend(user)}
                           className="w-full text-left px-3 py-2 hover:bg-black/5 transition-colors"
                         >
-                          Resend invite
+                          {t('users.resendInvite')}
                         </button>
                         {user.is_active ? (
                           <button
@@ -152,14 +154,14 @@ export function UserTable() {
                             disabled={me?.id === user.id}
                             className="w-full text-left px-3 py-2 hover:bg-black/5 transition-colors text-red-600 disabled:opacity-30 disabled:cursor-not-allowed"
                           >
-                            Deactivate
+                            {t('common.deactivate')}
                           </button>
                         ) : (
                           <button
                             onClick={() => handleActivate(user)}
                             className="w-full text-left px-3 py-2 hover:bg-black/5 transition-colors text-green-600"
                           >
-                            Activate
+                            {t('common.activate')}
                           </button>
                         )}
                       </div>
@@ -172,7 +174,7 @@ export function UserTable() {
         </table>
 
         {users.length === 0 && (
-          <div className="py-16 text-center opacity-40 text-sm">No users yet.</div>
+          <div className="py-16 text-center opacity-40 text-sm">{t('users.settingsTableEmpty')}</div>
         )}
       </div>
 

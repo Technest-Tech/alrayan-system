@@ -8,6 +8,9 @@ import { toast } from 'sonner'
 import { useNotes, useUpdateNote, useDeleteNote } from '@/hooks/system/useNotes'
 import type { Note, NoteType } from '@/types/system/note'
 import { ApiError } from '@/lib/system/api'
+import { useI18n } from '@/lib/system/i18n'
+
+type TFn = (key: string, vars?: Record<string, string>) => string
 
 type NoteContext = 'students' | 'teachers'
 type SortOrder = 'newest' | 'oldest'
@@ -23,15 +26,15 @@ function fullDate(dateStr: string) {
   })
 }
 
-function timeAgo(dateStr: string) {
+function timeAgo(dateStr: string, t: TFn) {
   const diff = Date.now() - new Date(dateStr).getTime()
   const mins  = Math.floor(diff / 60000)
   const hours = Math.floor(diff / 3600000)
   const days  = Math.floor(diff / 86400000)
-  if (mins  < 2)  return 'just now'
-  if (mins  < 60) return `${mins}m ago`
-  if (hours < 24) return `${hours}h ago`
-  if (days  <  7) return `${days}d ago`
+  if (mins  < 2)  return t('notes.justNow')
+  if (mins  < 60) return t('notes.minutesAgo', { n: String(mins) })
+  if (hours < 24) return t('notes.hoursAgo', { n: String(hours) })
+  if (days  <  7) return t('notes.daysAgo', { n: String(days) })
   return fullDate(dateStr).split(',')[0]
 }
 
@@ -54,7 +57,7 @@ function avatarColor(name: string | null): string {
 // ── Type config ────────────────────────────────────────────────────────────────
 
 const NOTE_TYPE_CONFIG: Record<NoteType, {
-  label: string
+  labelKey: string
   icon: React.ReactNode
   borderColor: string
   bgClass: string
@@ -63,7 +66,7 @@ const NOTE_TYPE_CONFIG: Record<NoteType, {
   chipIdle: string
 }> = {
   general: {
-    label: 'General',
+    labelKey: 'notes.typeGeneral',
     icon: <FileText size={10} />,
     borderColor: 'transparent',
     bgClass: '',
@@ -72,7 +75,7 @@ const NOTE_TYPE_CONFIG: Record<NoteType, {
     chipIdle: 'text-gray-500 border-gray-200 hover:border-gray-400',
   },
   hr: {
-    label: 'HR',
+    labelKey: 'notes.typeHr',
     icon: <Briefcase size={10} />,
     borderColor: 'rgb(37 99 235)',
     bgClass: 'bg-blue-50/40',
@@ -81,7 +84,7 @@ const NOTE_TYPE_CONFIG: Record<NoteType, {
     chipIdle: 'text-blue-600 border-blue-200 hover:border-blue-400',
   },
   performance: {
-    label: 'Performance',
+    labelKey: 'notes.typePerformance',
     icon: <TrendingUp size={10} />,
     borderColor: 'rgb(147 51 234)',
     bgClass: 'bg-purple-50/40',
@@ -90,7 +93,7 @@ const NOTE_TYPE_CONFIG: Record<NoteType, {
     chipIdle: 'text-purple-600 border-purple-200 hover:border-purple-400',
   },
   warning: {
-    label: 'Warning',
+    labelKey: 'notes.typeWarning',
     icon: <AlertTriangle size={10} />,
     borderColor: 'rgb(239 68 68)',
     bgClass: 'bg-red-50/50',
@@ -99,7 +102,7 @@ const NOTE_TYPE_CONFIG: Record<NoteType, {
     chipIdle: 'text-red-500 border-red-200 hover:border-red-400',
   },
   commendation: {
-    label: 'Commendation',
+    labelKey: 'notes.typeCommendation',
     icon: <Star size={10} />,
     borderColor: 'rgb(16 185 129)',
     bgClass: 'bg-emerald-50/50',
@@ -120,6 +123,7 @@ interface NoteItemProps {
 }
 
 function NoteItem({ note, context, entityId }: NoteItemProps) {
+  const { t } = useI18n()
   const [editing,      setEditing]      = useState(false)
   const [editBody,     setEditBody]     = useState(note.body)
   const [editType,     setEditType]     = useState<NoteType>(note.note_type)
@@ -137,10 +141,10 @@ function NoteItem({ note, context, entityId }: NoteItemProps) {
     if (!editBody.trim()) return
     try {
       await updateNote.mutateAsync({ id: note.id, body: editBody.trim(), note_type: editType })
-      toast.success('Note saved.')
+      toast.success(t('notes.toastSaved'))
       setEditing(false)
     } catch (e) {
-      toast.error(e instanceof ApiError ? e.message : 'Failed to save note.')
+      toast.error(e instanceof ApiError ? e.message : t('notes.toastSaveFailed'))
     }
   }
 
@@ -148,7 +152,7 @@ function NoteItem({ note, context, entityId }: NoteItemProps) {
     try {
       await deleteNote.mutateAsync(note.id)
     } catch (e) {
-      toast.error(e instanceof ApiError ? e.message : 'Failed to delete note.')
+      toast.error(e instanceof ApiError ? e.message : t('notes.toastDeleteFailed'))
       setConfirmDel(false)
     }
   }
@@ -157,7 +161,7 @@ function NoteItem({ note, context, entityId }: NoteItemProps) {
     try {
       await updateNote.mutateAsync({ id: note.id, pinned: !note.pinned })
     } catch (e) {
-      toast.error(e instanceof ApiError ? e.message : 'Failed.')
+      toast.error(e instanceof ApiError ? e.message : t('notes.toastFailed'))
     }
   }
 
@@ -194,7 +198,7 @@ function NoteItem({ note, context, entityId }: NoteItemProps) {
               {initials(note.author_name)}
             </div>
 
-            <span className="font-semibold text-sm leading-none">{note.author_name ?? 'Unknown'}</span>
+            <span className="font-semibold text-sm leading-none">{note.author_name ?? t('notes.unknownAuthor')}</span>
 
             {note.author_role && (
               <span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium bg-gray-100 text-gray-500 uppercase tracking-wide">
@@ -205,13 +209,13 @@ function NoteItem({ note, context, entityId }: NoteItemProps) {
             {/* Type badge (always shown) */}
             <span className={`inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full font-semibold ${cfg.badgeClass}`}>
               {cfg.icon}
-              {cfg.label}
+              {t(cfg.labelKey)}
             </span>
 
             {note.pinned && (
               <span className="inline-flex items-center gap-0.5 text-[10px] font-semibold text-amber-600">
                 <Pin size={9} className="fill-amber-500" />
-                Pinned
+                {t('notes.pinned')}
               </span>
             )}
           </div>
@@ -222,7 +226,7 @@ function NoteItem({ note, context, entityId }: NoteItemProps) {
               <button
                 onClick={togglePin}
                 disabled={updateNote.isPending}
-                title={note.pinned ? 'Unpin' : 'Pin to top'}
+                title={note.pinned ? t('notes.unpin') : t('notes.pinToTop')}
                 className={`p-1.5 rounded-lg transition-colors ${note.pinned ? 'text-amber-500 hover:bg-amber-50' : 'text-gray-400 hover:bg-black/5 hover:text-amber-500'}`}
               >
                 <Pin size={13} className={note.pinned ? 'fill-amber-400' : ''} />
@@ -245,8 +249,8 @@ function NoteItem({ note, context, entityId }: NoteItemProps) {
 
         {/* Timestamp */}
         <p className="text-[11px] opacity-40 mt-1 ml-9.5" title={fullDate(note.created_at)}>
-          {timeAgo(note.created_at)}
-          {note.updated_at !== note.created_at && ' · edited'}
+          {timeAgo(note.created_at, t)}
+          {note.updated_at !== note.created_at && ` · ${t('notes.edited')}`}
         </p>
 
         {/* Body */}
@@ -262,19 +266,19 @@ function NoteItem({ note, context, entityId }: NoteItemProps) {
             />
             {/* Type picker in edit mode */}
             <div className="flex items-center gap-1.5 flex-wrap">
-              {ALL_TYPES.map((t) => {
-                const tc = NOTE_TYPE_CONFIG[t]
+              {ALL_TYPES.map((nt) => {
+                const tc = NOTE_TYPE_CONFIG[nt]
                 return (
                   <button
-                    key={t}
+                    key={nt}
                     type="button"
-                    onClick={() => setEditType(t)}
+                    onClick={() => setEditType(nt)}
                     className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-[11px] font-medium border transition-all ${
-                      editType === t ? tc.chipActive : tc.chipIdle
+                      editType === nt ? tc.chipActive : tc.chipIdle
                     }`}
                   >
                     {tc.icon}
-                    {tc.label}
+                    {t(tc.labelKey)}
                   </button>
                 )
               })}
@@ -287,7 +291,7 @@ function NoteItem({ note, context, entityId }: NoteItemProps) {
                 style={{ background: 'rgb(14 124 90)' }}
               >
                 <Check size={12} />
-                {updateNote.isPending ? 'Saving…' : 'Save'}
+                {updateNote.isPending ? t('common.saving') : t('notes.save')}
               </button>
               <button
                 onClick={() => setEditing(false)}
@@ -295,26 +299,26 @@ function NoteItem({ note, context, entityId }: NoteItemProps) {
                 style={{ borderColor: 'rgb(var(--border-default, 229 233 240))' }}
               >
                 <X size={12} />
-                Cancel
+                {t('common.cancel')}
               </button>
             </div>
           </div>
         ) : confirmDel ? (
           <div className="mt-3 flex items-center gap-2">
-            <span className="text-sm text-red-600 font-medium">Delete this note?</span>
+            <span className="text-sm text-red-600 font-medium">{t('notes.deleteConfirm')}</span>
             <button
               onClick={handleDelete}
               disabled={deleteNote.isPending}
               className="px-3 py-1.5 rounded-xl text-xs font-semibold bg-red-500 text-white disabled:opacity-50"
             >
-              {deleteNote.isPending ? 'Deleting…' : 'Delete'}
+              {deleteNote.isPending ? t('common.deleting') : t('common.delete')}
             </button>
             <button
               onClick={() => setConfirmDel(false)}
               className="px-3 py-1.5 rounded-xl text-xs font-medium border hover:bg-black/5 transition-colors"
               style={{ borderColor: 'rgb(var(--border-default, 229 233 240))' }}
             >
-              Cancel
+              {t('common.cancel')}
             </button>
           </div>
         ) : (
@@ -325,7 +329,7 @@ function NoteItem({ note, context, entityId }: NoteItemProps) {
                 onClick={() => setExpanded((v) => !v)}
                 className="mt-1.5 inline-flex items-center gap-1 text-xs font-medium opacity-50 hover:opacity-80 transition-opacity"
               >
-                {expanded ? <><ChevronUp size={12} /> Show less</> : <><ChevronDown size={12} /> Show more</>}
+                {expanded ? <><ChevronUp size={12} /> {t('notes.showLess')}</> : <><ChevronDown size={12} /> {t('notes.showMore')}</>}
               </button>
             )}
           </div>
@@ -354,6 +358,7 @@ interface NotesListProps {
 }
 
 export function NotesList({ context, entityId }: NotesListProps) {
+  const { t } = useI18n()
   const [filter,    setFilter]    = useState<NoteType | 'all'>('all')
   const [search,    setSearch]    = useState('')
   const [sortOrder, setSortOrder] = useState<SortOrder>('newest')
@@ -377,7 +382,7 @@ export function NotesList({ context, entityId }: NotesListProps) {
 
   const pinned   = filtered.filter((n) => n.pinned)
   const unpinned = filtered.filter((n) => !n.pinned)
-  const typesPresent = ALL_TYPES.filter((t) => allNotes.some((n) => n.note_type === t))
+  const typesPresent = ALL_TYPES.filter((nt) => allNotes.some((n) => n.note_type === nt))
   const pinnedCount = allNotes.filter((n) => n.pinned).length
 
   if (isLoading) {
@@ -401,9 +406,9 @@ export function NotesList({ context, entityId }: NotesListProps) {
         <div className="flex items-center gap-3 flex-1 min-w-0">
           <div className="flex-1">
             <p className="text-sm font-semibold">
-              {allNotes.length} note{allNotes.length !== 1 ? 's' : ''}
+              {t('notes.countNotes', { n: String(allNotes.length) })}
               {pinnedCount > 0 && (
-                <span className="ml-1.5 text-amber-600 font-medium">· {pinnedCount} pinned</span>
+                <span className="ml-1.5 text-amber-600 font-medium">· {t('notes.countPinned', { n: String(pinnedCount) })}</span>
               )}
             </p>
           </div>
@@ -416,7 +421,7 @@ export function NotesList({ context, entityId }: NotesListProps) {
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search notes…"
+            placeholder={t('notes.searchPlaceholder')}
             className="w-full pl-8 pr-3 py-1.5 rounded-xl border text-sm outline-none focus:ring-2 focus:ring-[rgb(14,124,90)] transition-shadow bg-transparent"
             style={{ borderColor: 'rgb(var(--border-default, 229 233 240))' }}
           />
@@ -427,10 +432,10 @@ export function NotesList({ context, entityId }: NotesListProps) {
           onClick={() => setSortOrder((v) => v === 'newest' ? 'oldest' : 'newest')}
           className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-medium hover:bg-black/5 transition-colors shrink-0"
           style={{ borderColor: 'rgb(var(--border-default, 229 233 240))' }}
-          title={sortOrder === 'newest' ? 'Showing newest first' : 'Showing oldest first'}
+          title={sortOrder === 'newest' ? t('notes.showingNewest') : t('notes.showingOldest')}
         >
           {sortOrder === 'newest' ? <SortDesc size={13} /> : <SortAsc size={13} />}
-          {sortOrder === 'newest' ? 'Newest' : 'Oldest'}
+          {sortOrder === 'newest' ? t('notes.newest') : t('notes.oldest')}
         </button>
       </div>
 
@@ -445,21 +450,21 @@ export function NotesList({ context, entityId }: NotesListProps) {
                 : 'text-gray-500 border-gray-200 hover:border-gray-400'
             }`}
           >
-            All ({allNotes.length})
+            {t('notes.filterAll', { n: String(allNotes.length) })}
           </button>
-          {typesPresent.map((t) => {
-            const tc = NOTE_TYPE_CONFIG[t]
-            const cnt = allNotes.filter((n) => n.note_type === t).length
+          {typesPresent.map((nt) => {
+            const tc = NOTE_TYPE_CONFIG[nt]
+            const cnt = allNotes.filter((n) => n.note_type === nt).length
             return (
               <button
-                key={t}
-                onClick={() => setFilter(filter === t ? 'all' : t)}
+                key={nt}
+                onClick={() => setFilter(filter === nt ? 'all' : nt)}
                 className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium border transition-all ${
-                  filter === t ? tc.chipActive : tc.chipIdle
+                  filter === nt ? tc.chipActive : tc.chipIdle
                 }`}
               >
                 {tc.icon}
-                {tc.label} ({cnt})
+                {t(tc.labelKey)} ({cnt})
               </button>
             )
           })}
@@ -470,19 +475,19 @@ export function NotesList({ context, entityId }: NotesListProps) {
       {allNotes.length === 0 && (
         <div className="rounded-2xl border py-12 text-center" style={{ borderColor: 'rgb(var(--border-default, 229 233 240))', borderStyle: 'dashed' }}>
           <FileText size={28} className="mx-auto mb-2 opacity-20" />
-          <p className="text-sm font-medium opacity-40">No notes yet</p>
-          <p className="text-xs opacity-25 mt-0.5">Add the first note above</p>
+          <p className="text-sm font-medium opacity-40">{t('notes.emptyTitle')}</p>
+          <p className="text-xs opacity-25 mt-0.5">{t('notes.emptySubtitle')}</p>
         </div>
       )}
 
       {allNotes.length > 0 && filtered.length === 0 && (
-        <p className="text-sm opacity-40 text-center py-6">No notes match your search.</p>
+        <p className="text-sm opacity-40 text-center py-6">{t('notes.noMatch')}</p>
       )}
 
       {/* ── Pinned section ── */}
       {pinned.length > 0 && (
         <>
-          <Divider label={`Pinned · ${pinned.length}`} />
+          <Divider label={`${t('notes.pinnedSection')} · ${pinned.length}`} />
           <div className="space-y-2.5">
             {pinned.map((note) => (
               <NoteItem key={note.id} note={note} context={context} entityId={entityId} />
@@ -494,7 +499,7 @@ export function NotesList({ context, entityId }: NotesListProps) {
       {/* ── Regular notes section ── */}
       {unpinned.length > 0 && (
         <>
-          {pinned.length > 0 && <Divider label={`Notes · ${unpinned.length}`} />}
+          {pinned.length > 0 && <Divider label={`${t('common.notes')} · ${unpinned.length}`} />}
           <div className="space-y-2.5">
             {unpinned.map((note) => (
               <NoteItem key={note.id} note={note} context={context} entityId={entityId} />

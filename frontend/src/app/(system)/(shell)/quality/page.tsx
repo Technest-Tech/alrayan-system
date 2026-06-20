@@ -5,9 +5,11 @@ import { PageHeader } from '@/components/system/primitives/PageHeader'
 import { QualityLeaderboard } from '@/components/system/quality/QualityLeaderboard'
 import { useQualityLeaderboard } from '@/hooks/system/useQualityLeaderboard'
 import { api } from '@/lib/system/api'
+import { useI18n } from '@/lib/system/i18n'
 import { useQueryClient } from '@tanstack/react-query'
 
 export default function QualityPage() {
+  const { t } = useI18n()
   const { data: entries, isLoading, error } = useQualityLeaderboard()
   const qc = useQueryClient()
   const [recomputing, setRecomputing] = useState(false)
@@ -18,9 +20,9 @@ export default function QualityPage() {
     try {
       await api<{ message: string }>('/quality/recompute', { method: 'POST' })
       await qc.invalidateQueries({ queryKey: ['system', 'quality'] })
-      setToast('Quality scores recomputed successfully.')
+      setToast(t('quality.recomputeSuccess'))
     } catch {
-      setToast('Failed to recompute. Please try again.')
+      setToast(t('quality.recomputeError'))
     } finally {
       setRecomputing(false)
       setTimeout(() => setToast(null), 3000)
@@ -30,8 +32,8 @@ export default function QualityPage() {
   return (
     <>
       <PageHeader
-        title="Quality"
-        description="Teacher quality scores and performance reviews."
+        title={t('quality.title')}
+        description={t('quality.description')}
         actions={
           <button
             onClick={handleRecompute}
@@ -39,7 +41,7 @@ export default function QualityPage() {
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium border border-gray-200 hover:bg-gray-50 transition-colors disabled:opacity-50"
           >
             <RefreshCw size={14} className={recomputing ? 'animate-spin' : ''} />
-            Recompute scores
+            {t('quality.recompute')}
           </button>
         }
       />
@@ -51,7 +53,7 @@ export default function QualityPage() {
       )}
 
       {isLoading ? (
-        <div className="py-20 text-center text-sm opacity-40">Loading...</div>
+        <div className="py-20 text-center text-sm opacity-40">{t('common.loading')}</div>
       ) : error ? (
         <div className="py-10 text-center text-sm text-red-500">{(error as Error).message}</div>
       ) : (

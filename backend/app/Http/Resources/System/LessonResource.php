@@ -28,6 +28,7 @@ class LessonResource extends JsonResource
             'homework'             => $this->homework,
             'souvenir_image'       => $this->souvenir_image,
             'subject_details'      => $this->subject_details,
+            'trial_evaluation'     => $this->trial_evaluation,
 
             'teacher'    => $this->whenLoaded('teacher', fn() => $this->teacher ? [
                 'id'   => $this->teacher->id,

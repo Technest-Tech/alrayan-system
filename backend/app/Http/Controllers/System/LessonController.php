@@ -86,6 +86,7 @@ class LessonController extends Controller
             'homework'         => $request->homework,
             'souvenir_image'   => $request->souvenir_image,
             'subject_details'  => $request->subject_details,
+            'trial_evaluation' => $request->trial_evaluation,
         ]);
 
         // Re-distribute the whole student chronologically (splits, session numbers, completion).
@@ -113,6 +114,7 @@ class LessonController extends Controller
             'homework',
             'souvenir_image',
             'subject_details',
+            'trial_evaluation',
         ]));
 
         // A date / duration / status change can shift every package — re-distribute.

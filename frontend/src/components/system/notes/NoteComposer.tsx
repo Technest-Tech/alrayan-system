@@ -5,6 +5,7 @@ import { toast } from 'sonner'
 import { useAddNote } from '@/hooks/system/useNotes'
 import type { NoteType } from '@/types/system/note'
 import { ApiError } from '@/lib/system/api'
+import { useI18n } from '@/lib/system/i18n'
 
 type NoteContext = 'students' | 'teachers'
 
@@ -16,38 +17,38 @@ interface NoteComposerProps {
 
 const MAX_CHARS = 5000
 
-const NOTE_TYPES: { value: NoteType; label: string; icon: React.ReactNode; activeClass: string; chipClass: string }[] = [
+const NOTE_TYPES: { value: NoteType; labelKey: string; icon: React.ReactNode; activeClass: string; chipClass: string }[] = [
   {
     value: 'general',
-    label: 'General',
+    labelKey: 'notes.typeGeneral',
     icon: <FileText size={11} />,
     activeClass: 'bg-gray-800 text-white border-gray-800',
     chipClass: 'text-gray-500 border-gray-200 hover:border-gray-400 hover:text-gray-700',
   },
   {
     value: 'hr',
-    label: 'HR',
+    labelKey: 'notes.typeHr',
     icon: <Briefcase size={11} />,
     activeClass: 'bg-blue-600 text-white border-blue-600',
     chipClass: 'text-blue-600 border-blue-200 hover:border-blue-400',
   },
   {
     value: 'performance',
-    label: 'Performance',
+    labelKey: 'notes.typePerformance',
     icon: <TrendingUp size={11} />,
     activeClass: 'bg-purple-600 text-white border-purple-600',
     chipClass: 'text-purple-600 border-purple-200 hover:border-purple-400',
   },
   {
     value: 'warning',
-    label: 'Warning',
+    labelKey: 'notes.typeWarning',
     icon: <AlertTriangle size={11} />,
     activeClass: 'bg-red-500 text-white border-red-500',
     chipClass: 'text-red-500 border-red-200 hover:border-red-400',
   },
   {
     value: 'commendation',
-    label: 'Commendation',
+    labelKey: 'notes.typeCommendation',
     icon: <Star size={11} />,
     activeClass: 'bg-emerald-600 text-white border-emerald-600',
     chipClass: 'text-emerald-600 border-emerald-200 hover:border-emerald-400',
@@ -55,6 +56,7 @@ const NOTE_TYPES: { value: NoteType; label: string; icon: React.ReactNode; activ
 ]
 
 export function NoteComposer({ context, entityId, onAdded }: NoteComposerProps) {
+  const { t } = useI18n()
   const [body,     setBody]     = useState('')
   const [focused,  setFocused]  = useState(false)
   const [noteType, setNoteType] = useState<NoteType>('general')
@@ -78,11 +80,11 @@ export function NoteComposer({ context, entityId, onAdded }: NoteComposerProps) 
       setNoteType('general')
       onAdded?.()
     } catch (err) {
-      toast.error(err instanceof ApiError ? err.message : 'Failed to add note.')
+      toast.error(err instanceof ApiError ? err.message : t('notes.toastAddFailed'))
     }
   }
 
-  const selectedType = NOTE_TYPES.find((t) => t.value === noteType)!
+  const selectedType = NOTE_TYPES.find((nt) => nt.value === noteType)!
 
   return (
     <form onSubmit={handleSubmit}>
@@ -120,7 +122,7 @@ export function NoteComposer({ context, entityId, onAdded }: NoteComposerProps) 
           onChange={(e) => setBody(e.target.value)}
           onFocus={() => setFocused(true)}
           onBlur={() => setFocused(false)}
-          placeholder="Add a note…"
+          placeholder={t('notes.composerPlaceholder')}
           rows={expanded ? 4 : 1}
           className="w-full px-4 py-3.5 text-sm outline-none resize-none bg-transparent transition-all leading-relaxed"
           style={{ minHeight: '48px' }}
@@ -136,18 +138,18 @@ export function NoteComposer({ context, entityId, onAdded }: NoteComposerProps) 
 
             {/* Type row */}
             <div className="flex items-center gap-1.5 flex-wrap">
-              <span className="text-[11px] font-medium opacity-40 mr-1 uppercase tracking-wide">Type</span>
-              {NOTE_TYPES.map((t) => (
+              <span className="text-[11px] font-medium opacity-40 mr-1 uppercase tracking-wide">{t('notes.typeLabel')}</span>
+              {NOTE_TYPES.map((nt) => (
                 <button
-                  key={t.value}
+                  key={nt.value}
                   type="button"
-                  onClick={() => setNoteType(t.value)}
+                  onClick={() => setNoteType(nt.value)}
                   className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium border transition-all ${
-                    noteType === t.value ? t.activeClass : t.chipClass
+                    noteType === nt.value ? nt.activeClass : nt.chipClass
                   }`}
                 >
-                  {t.icon}
-                  {t.label}
+                  {nt.icon}
+                  {t(nt.labelKey)}
                 </button>
               ))}
             </div>
@@ -166,7 +168,7 @@ export function NoteComposer({ context, entityId, onAdded }: NoteComposerProps) 
                   }`}
                 >
                   <Pin size={12} className={pinned ? 'fill-amber-500 text-amber-500' : ''} />
-                  {pinned ? 'Pinned' : 'Pin'}
+                  {pinned ? t('notes.pinned') : t('notes.pin')}
                 </button>
 
                 {/* Char count */}
@@ -180,7 +182,7 @@ export function NoteComposer({ context, entityId, onAdded }: NoteComposerProps) 
               </div>
 
               <div className="flex items-center gap-2">
-                <span className="text-[11px] opacity-25 hidden sm:block">⌘ Return to save</span>
+                <span className="text-[11px] opacity-25 hidden sm:block">{t('notes.returnToSave')}</span>
                 <button
                   type="submit"
                   disabled={!body.trim() || overLimit || addNote.isPending}
@@ -188,7 +190,7 @@ export function NoteComposer({ context, entityId, onAdded }: NoteComposerProps) 
                   style={{ background: noteType === 'warning' ? 'rgb(239 68 68)' : 'rgb(14 124 90)' }}
                 >
                   <Send size={11} />
-                  {addNote.isPending ? 'Saving…' : 'Add note'}
+                  {addNote.isPending ? t('common.saving') : t('notes.addNote')}
                 </button>
               </div>
             </div>

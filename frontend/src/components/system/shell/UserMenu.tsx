@@ -3,8 +3,10 @@ import { useState } from 'react'
 import { ChevronDown, LogOut, User } from 'lucide-react'
 import { useSystemUser } from './SystemShell'
 import { logout } from '@/lib/system/auth'
+import { useI18n } from '@/lib/system/i18n'
 
 export function UserMenu() {
+  const { t } = useI18n()
   const [open, setOpen] = useState(false)
   const user = useSystemUser()
 
@@ -26,7 +28,7 @@ export function UserMenu() {
         <div className="w-7 h-7 rounded-full bg-[rgb(11,31,58)] text-white flex items-center justify-center text-xs font-bold">
           {initials}
         </div>
-        <span className="hidden sm:block">{user?.name ?? 'Account'}</span>
+        <span className="hidden sm:block">{user?.name ?? t('shell.account')}</span>
         <ChevronDown size={14} className="opacity-50" />
       </button>
 
@@ -50,14 +52,14 @@ export function UserMenu() {
             </div>
             <button className="w-full flex items-center gap-2 px-3 py-2 hover:bg-black/5 transition-colors">
               <User size={14} />
-              Profile
+              {t('shell.profile')}
             </button>
             <button
               onClick={handleLogout}
               className="w-full flex items-center gap-2 px-3 py-2 hover:bg-black/5 transition-colors text-red-600"
             >
               <LogOut size={14} />
-              Sign out
+              {t('shell.signOut')}
             </button>
           </div>
         </>

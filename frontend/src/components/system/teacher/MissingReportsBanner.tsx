@@ -1,7 +1,9 @@
 'use client'
 import { useSessions } from '@/hooks/system/useSessions'
+import { useI18n } from '@/lib/system/i18n'
 
 export function MissingReportsBanner({ teacherId }: { teacherId: number }) {
+  const { t } = useI18n()
   const yesterday = new Date()
   yesterday.setDate(yesterday.getDate() - 1)
   const from = yesterday.toISOString().split('T')[0]
@@ -17,9 +19,11 @@ export function MissingReportsBanner({ teacherId }: { teacherId: number }) {
 
   if (missing.length === 0) return null
 
+  const label = missing.length !== 1 ? t('teachers.missingPlural') : t('teachers.missingSingular')
+
   return (
     <div className="rounded-md bg-orange-50 border border-orange-200 px-4 py-3 text-sm text-orange-800 flex items-center justify-between">
-      <span>⚠ {missing.length} missing session report{missing.length !== 1 ? 's' : ''} from past sessions</span>
+      <span>⚠ {String(missing.length)} {label} {t('teachers.fromPastSessions')}</span>
     </div>
   )
 }

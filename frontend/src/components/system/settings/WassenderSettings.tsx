@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { toast } from 'sonner'
+import { useI18n } from '@/lib/system/i18n'
 
 interface WassenderConfig {
   api_key: string
@@ -15,6 +16,7 @@ interface WassenderConfig {
 }
 
 export function WassenderSettings() {
+  const { t } = useI18n()
   const { data, isLoading } = useQuery({
     queryKey: ['system', 'wassender-config'],
     queryFn: () => api<{ data: WassenderConfig }>('/wassender/integration').then(r => r.data),
@@ -28,8 +30,8 @@ export function WassenderSettings() {
   const update = useMutation({
     mutationFn: (payload: WassenderConfig) =>
       api<{ message: string }>('/wassender/integration', { method: 'PUT', body: JSON.stringify(payload) }),
-    onSuccess: () => toast.success('Wassender settings saved.'),
-    onError: () => toast.error('Failed to save settings.'),
+    onSuccess: () => toast.success(t('settings.integrations.wassender.savedToast')),
+    onError: () => toast.error(t('settings.integrations.wassender.saveErrorToast')),
   })
 
   const test = useMutation({
@@ -40,30 +42,30 @@ export function WassenderSettings() {
     },
     onError: () => {
       setTestResult('fail')
-      toast.error('Connection test failed.')
+      toast.error(t('settings.integrations.wassender.testFailedToast'))
     },
   })
 
-  if (isLoading) return <p className="text-sm text-muted-foreground p-4">Loading…</p>
+  if (isLoading) return <p className="text-sm text-muted-foreground p-4">{t('common.loading')}</p>
 
   return (
     <div className="max-w-lg space-y-5">
       <div className="space-y-1">
-        <Label>API key</Label>
+        <Label>{t('settings.integrations.apiKey')}</Label>
         <Input
           type="password"
-          placeholder={form.api_key === '***' ? 'Saved (hidden)' : ''}
+          placeholder={form.api_key === '***' ? t('settings.integrations.savedHidden') : ''}
           value={form.api_key === '***' ? '' : form.api_key}
           onChange={e => setForm(p => ({ ...p, api_key: e.target.value }))}
           autoComplete="off"
         />
         {form.api_key === '***' && (
-          <p className="text-xs text-muted-foreground">Leave blank to keep the existing key.</p>
+          <p className="text-xs text-muted-foreground">{t('settings.integrations.wassender.keepExistingKey')}</p>
         )}
       </div>
 
       <div className="space-y-1">
-        <Label>Instance ID</Label>
+        <Label>{t('settings.integrations.wassender.instanceId')}</Label>
         <Input
           value={form.instance_id}
           onChange={e => setForm(p => ({ ...p, instance_id: e.target.value }))}
@@ -79,7 +81,7 @@ export function WassenderSettings() {
           className="h-4 w-4"
         />
         <label htmlFor="wassender-enabled" className="text-sm cursor-pointer">
-          Enable Wassender (send real WhatsApp messages)
+          {t('settings.integrations.wassender.enableLabel')}
         </label>
       </div>
 
@@ -88,17 +90,17 @@ export function WassenderSettings() {
           onClick={() => update.mutate(form)}
           disabled={update.isPending}
         >
-          {update.isPending ? 'Saving…' : 'Save'}
+          {update.isPending ? t('common.saving') : t('common.save')}
         </Button>
         <Button
           variant="outline"
           onClick={() => { setTestResult(null); test.mutate() }}
           disabled={test.isPending}
         >
-          {test.isPending ? 'Testing…' : 'Test connection'}
+          {test.isPending ? t('settings.integrations.testing') : t('settings.integrations.testConnection')}
         </Button>
-        {testResult === 'ok' && <Badge className="bg-green-600 text-white">Connected</Badge>}
-        {testResult === 'fail' && <Badge variant="destructive">Failed</Badge>}
+        {testResult === 'ok' && <Badge className="bg-green-600 text-white">{t('settings.integrations.connected')}</Badge>}
+        {testResult === 'fail' && <Badge variant="destructive">{t('settings.integrations.failed')}</Badge>}
       </div>
     </div>
   )

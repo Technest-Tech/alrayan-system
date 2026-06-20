@@ -33,6 +33,7 @@ class StoreLeadRequest extends FormRequest
             'rejection_reason'       => 'nullable|in:price,schedule,not_interested,no_response,other',
             'is_family_lead'         => 'nullable|boolean',
             'assigned_supervisor_id' => 'nullable|exists:users,id',
+            'assigned_teacher_id'    => 'nullable|exists:sys_teachers,id',
             'payload'                => 'nullable|array',
         ];
     }

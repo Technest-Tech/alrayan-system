@@ -3,6 +3,7 @@ import type { Session } from '@/types/system/session'
 import { AttendanceMarker } from '@/components/system/attendance/AttendanceMarker'
 import { SessionReportForm } from '@/components/system/session-reports/SessionReportForm'
 import { useState } from 'react'
+import { useI18n } from '@/lib/system/i18n'
 
 interface Props {
   sessions: Session[]
@@ -10,12 +11,13 @@ interface Props {
 }
 
 export function TodaySessionsList({ sessions, onUpdate }: Props) {
+  const { t } = useI18n()
   const [reportOpen, setReportOpen] = useState<number | null>(null)
 
   if (sessions.length === 0) {
     return (
       <div className="rounded-lg border p-8 text-center text-sm text-muted-foreground">
-        No sessions scheduled for today. 🎉
+        {t('teachers.todayNoSessions')}
       </div>
     )
   }
@@ -31,7 +33,7 @@ export function TodaySessionsList({ sessions, onUpdate }: Props) {
                 {' — '}{s.student?.name}
               </div>
               <div className="text-xs text-muted-foreground">
-                {s.duration_min} min · {s.student?.timezone}
+                {t('teacher.today.minShort', { n: String(s.duration_min) })} · {s.student?.timezone}
               </div>
             </div>
 
@@ -43,7 +45,7 @@ export function TodaySessionsList({ sessions, onUpdate }: Props) {
                   rel="noopener noreferrer"
                   className="text-xs px-2 py-1 rounded border hover:bg-muted"
                 >
-                  Open Zoom
+                  {t('teachers.todayOpenZoom')}
                 </a>
               )}
               <AttendanceMarker session={s} onUpdate={onUpdate} />
@@ -64,18 +66,18 @@ export function TodaySessionsList({ sessions, onUpdate }: Props) {
                   onClick={() => setReportOpen(s.id)}
                   className="text-xs text-orange-700 underline"
                 >
-                  📝 Submit report
+                  📝 {t('teachers.todaySubmitReport')}
                 </button>
               )}
             </div>
           )}
 
           {s.status === 'attended' && s.has_report && (
-            <div className="text-xs text-green-700">✅ Report submitted</div>
+            <div className="text-xs text-green-700">✅ {t('teachers.todayReportSubmitted')}</div>
           )}
 
           {s.report_overdue_at && !s.has_report && (
-            <div className="text-xs text-orange-700">⚠ Report overdue</div>
+            <div className="text-xs text-orange-700">⚠ {t('teachers.todayReportOverdue')}</div>
           )}
         </div>
       ))}

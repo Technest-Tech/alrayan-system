@@ -15,8 +15,11 @@ use App\Http\Resources\System\StudentDetailResource;
 use App\Models\System\Lead;
 use App\Services\System\LeadPipelineService;
 use App\Services\System\LeadToStudentConverter;
+use App\Services\System\StudentCreator;
+use App\Support\System\Setting;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Spatie\QueryBuilder\AllowedFilter;
 use Spatie\QueryBuilder\QueryBuilder;
 
@@ -25,6 +28,7 @@ class LeadController extends Controller
     public function __construct(
         private LeadPipelineService $pipeline,
         private LeadToStudentConverter $converter,
+        private StudentCreator $studentCreator,
     ) {}
 
     public function index(Request $request): \Illuminate\Http\Resources\Json\AnonymousResourceCollection
@@ -59,12 +63,41 @@ class LeadController extends Controller
         return new LeadDetailResource($lead);
     }
 
-    public function store(StoreLeadRequest $request): LeadDetailResource
+    public function store(StoreLeadRequest $request): JsonResponse
     {
         $this->authorize('create', Lead::class);
-        $lead = Lead::create($request->validated());
-        $lead->refresh();
-        return new LeadDetailResource($lead);
+
+        $data = $request->validated();
+        // assigned_teacher_id isn't a lead column — it flows onto the provisioned student.
+        $teacherId = $data['assigned_teacher_id'] ?? null;
+        unset($data['assigned_teacher_id']);
+
+        $lead = DB::transaction(function () use ($data, $teacherId, $request) {
+            $lead = Lead::create($data);
+
+            // Every new lead is provisioned as a real student (+ user, role=student) up front,
+            // with NO payment/package details yet. Payment is finalised later on close/convert.
+            $student = $this->studentCreator->create([
+                'name'                => $lead->name,
+                'email'               => $lead->email,
+                'whatsapp'            => $lead->whatsapp ?? $lead->phone,
+                'gender'              => $lead->gender,
+                'country'             => $lead->country,
+                'timezone'            => Setting::get('academy.default_timezone', 'UTC'),
+                'student_type'        => 'adult',
+                'status'              => 'trial',
+                'source'              => 'lead',
+                'assigned_teacher_id' => $teacherId,
+            ], $request->user()?->id);
+
+            $lead->update(['student_id' => $student->id]);
+
+            return $lead->refresh();
+        });
+
+        return (new LeadDetailResource($lead->load(['supervisor', 'courseInterest', 'student'])))
+            ->response()
+            ->setStatusCode(201);
     }
 
     public function update(UpdateLeadRequest $request, Lead $lead): LeadDetailResource
@@ -76,6 +109,16 @@ class LeadController extends Controller
         if (isset($data['status'])) {
             $this->pipeline->transition($lead, $data['status'], $request->user());
             unset($data['status']);
+        }
+
+        // assigned_teacher_id isn't a lead column — propagate any (re)assignment to the
+        // linked student so it stays filterable by teacher in the calendar.
+        if (array_key_exists('assigned_teacher_id', $data)) {
+            $teacherId = $data['assigned_teacher_id'];
+            unset($data['assigned_teacher_id']);
+            if ($teacherId && $lead->student) {
+                $lead->student->update(['assigned_teacher_id' => $teacherId]);
+            }
         }
 
         $lead->update($data);

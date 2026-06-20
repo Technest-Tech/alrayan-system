@@ -5,6 +5,19 @@ import type { Lesson } from '@/types/system/lesson'
 import { useDeleteLesson } from '@/hooks/system/useLessons'
 import { LessonForm } from './LessonForm'
 import { STATUS_PILL, STATUS_LABEL } from '@/lib/system/lessonStatus'
+import { useI18n } from '@/lib/system/i18n'
+
+/* Map lesson-status enum values → i18n keys (labels in lessonStatus.ts are not translated). */
+const STATUS_KEY: Record<string, string> = {
+  scheduled:            'status.scheduled',
+  attended:             'status.attended',
+  paid_absence:         'lessons.status.paidAbsence',
+  absent:               'status.absent',
+  trial:                'lessons.status.trial',
+  free:                 'lessons.status.free',
+  cancelled_by_student: 'lessons.status.cancelledByStudent',
+  cancelled_by_teacher: 'lessons.status.cancelledByTeacher',
+}
 
 const BORDER   = 'rgb(var(--border-default,229 233 240))'
 const NAVY     = 'rgb(11 31 58)'
@@ -30,8 +43,9 @@ function formatMinutes(min: number) {
 }
 
 function Pill({ status }: { status: string }) {
+  const { t } = useI18n()
   const s = STATUS_PILL[status as keyof typeof STATUS_PILL] ?? { bg: '#F3F4F6', color: '#6B7280' }
-  const label = STATUS_LABEL[status as keyof typeof STATUS_LABEL] ?? status
+  const label = STATUS_KEY[status] ? t(STATUS_KEY[status]) : (STATUS_LABEL[status as keyof typeof STATUS_LABEL] ?? status)
   return (
     <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium" style={{ background: s.bg, color: s.color }}>
       {label}
@@ -73,12 +87,13 @@ interface Props {
 }
 
 export function LessonDetailDrawer({ lesson, open, onClose, onUpdate }: Props) {
+  const { t } = useI18n()
   const [editing, setEditing] = useState(false)
   const deleteLesson = useDeleteLesson()
 
   async function handleDelete() {
     if (!lesson) return
-    if (!confirm('Delete this lesson? This cannot be undone.')) return
+    if (!confirm(t('lessons.detail.deleteConfirm'))) return
     await deleteLesson.mutateAsync(lesson.id)
     onUpdate?.()
     onClose()
@@ -105,7 +120,7 @@ export function LessonDetailDrawer({ lesson, open, onClose, onUpdate }: Props) {
               <BookOpen size={14} style={{ color: TEAL_600 }} />
             </div>
             <div>
-              <h2 className="text-base font-semibold" style={{ color: NAVY }}>Lesson Details</h2>
+              <h2 className="text-base font-semibold" style={{ color: NAVY }}>{t('lessons.detail.title')}</h2>
               {lesson && (
                 <p className="text-sm mt-0.5" style={{ color: MUTED }}>
                   {lesson.student.name} — {lesson.teacher.name}
@@ -116,7 +131,7 @@ export function LessonDetailDrawer({ lesson, open, onClose, onUpdate }: Props) {
           <button
             onClick={onClose}
             className="p-1.5 rounded-lg hover:bg-black/5 transition-colors ml-4 shrink-0"
-            aria-label="Close"
+            aria-label={t('lessons.close')}
           >
             <X size={18} />
           </button>
@@ -126,17 +141,17 @@ export function LessonDetailDrawer({ lesson, open, onClose, onUpdate }: Props) {
         {lesson && !editing && (
           <div className="flex-1 overflow-y-auto px-5 pb-6">
             {/* Participants */}
-            <SectionTitle>Participants</SectionTitle>
-            <InfoRow icon={<User size={14} />} label="Student" value={lesson.student.name} />
-            <InfoRow icon={<GraduationCap size={14} />} label="Teacher" value={lesson.teacher.name} />
-            <InfoRow icon={<CalendarDays size={14} />} label="Date" value={formatDate(lesson.scheduled_at)} />
-            <InfoRow icon={<Clock size={14} />} label="Duration" value={formatMinutes(lesson.duration_minutes)} />
+            <SectionTitle>{t('lessons.form.sectionParticipants')}</SectionTitle>
+            <InfoRow icon={<User size={14} />} label={t('lessons.form.fieldStudent')} value={lesson.student.name} />
+            <InfoRow icon={<GraduationCap size={14} />} label={t('common.teacher')} value={lesson.teacher.name} />
+            <InfoRow icon={<CalendarDays size={14} />} label={t('common.date')} value={formatDate(lesson.scheduled_at)} />
+            <InfoRow icon={<Clock size={14} />} label={t('common.duration')} value={formatMinutes(lesson.duration_minutes)} />
             {lesson.added_by_name && (
-              <InfoRow icon={<User size={14} />} label="Added by" value={lesson.added_by_name} />
+              <InfoRow icon={<User size={14} />} label={t('lessons.detail.addedBy')} value={lesson.added_by_name} />
             )}
 
             {/* Package Progress */}
-            <SectionTitle>Package Progress</SectionTitle>
+            <SectionTitle>{t('lessons.detail.packageProgress')}</SectionTitle>
             <div className="flex flex-wrap gap-2 mb-3">
               <Pill status={lesson.status} />
               {lesson.evaluation && (
@@ -151,24 +166,24 @@ export function LessonDetailDrawer({ lesson, open, onClose, onUpdate }: Props) {
                   color: lesson.package.status === 'paid' ? '#15803D' : '#B91C1C',
                 }}
               >
-                {lesson.package.status === 'paid' ? 'Paid' : 'Pending'}
+                {lesson.package.status === 'paid' ? t('lessons.detail.paid') : t('status.pending')}
               </span>
             </div>
 
             <div className="rounded-xl border p-4 space-y-2.5" style={{ borderColor: TEAL_100, background: TEAL_50 }}>
               <div className="flex justify-between text-sm">
-                <span style={{ color: MUTED }}>Package Number</span>
+                <span style={{ color: MUTED }}>{t('lessons.detail.packageNumber')}</span>
                 <span className="font-medium" style={{ color: NAVY }}>#{lesson.package.package_number}</span>
               </div>
               <div className="flex justify-between text-sm">
-                <span style={{ color: MUTED }}>Session Number</span>
+                <span style={{ color: MUTED }}>{t('lessons.detail.sessionNumber')}</span>
                 <span className="font-medium" style={{ color: NAVY }}>{lesson.session_number_hours}h</span>
               </div>
 
               {/* Progress bar */}
               <div>
                 <div className="flex justify-between text-xs mb-1.5" style={{ color: MUTED }}>
-                  <span>Progress</span>
+                  <span>{t('lessons.detail.progress')}</span>
                   <span>
                     {lesson.package.consumed_hours}h / {lesson.package.package_hours}h
                     {' · '}
@@ -189,12 +204,12 @@ export function LessonDetailDrawer({ lesson, open, onClose, onUpdate }: Props) {
               {/* Admin config row */}
               <div className="pt-1">
                 <div className="flex items-center justify-between text-xs" style={{ color: MUTED }}>
-                  <span className="font-semibold uppercase tracking-wider">Package Config (Admin)</span>
+                  <span className="font-semibold uppercase tracking-wider">{t('lessons.detail.packageConfig')}</span>
                   <ChevronRight size={12} />
                 </div>
                 <div className="mt-2 flex gap-4 text-xs">
-                  <span style={{ color: MUTED }}>Tariff: <strong style={{ color: NAVY }}>{lesson.package.tariff_at_time / 100} {lesson.package.currency}</strong></span>
-                  <span style={{ color: MUTED }}>Hours: <strong style={{ color: NAVY }}>{lesson.package.package_hours}h</strong></span>
+                  <span style={{ color: MUTED }}>{t('lessons.detail.tariff')}: <strong style={{ color: NAVY }}>{lesson.package.tariff_at_time / 100} {lesson.package.currency}</strong></span>
+                  <span style={{ color: MUTED }}>{t('lessons.detail.hours')}: <strong style={{ color: NAVY }}>{lesson.package.package_hours}h</strong></span>
                 </div>
               </div>
             </div>
@@ -202,7 +217,7 @@ export function LessonDetailDrawer({ lesson, open, onClose, onUpdate }: Props) {
             {/* Subject */}
             {lesson.subject && (
               <>
-                <SectionTitle>Subject</SectionTitle>
+                <SectionTitle>{t('lessons.form.fieldSubject')}</SectionTitle>
                 <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm" style={{ background: '#F0FDF4', color: '#15803D' }}>
                   <BookOpen size={13} />
                   {lesson.subject.name}
@@ -213,7 +228,7 @@ export function LessonDetailDrawer({ lesson, open, onClose, onUpdate }: Props) {
             {/* Subject details */}
             {lesson.subject?.fields && lesson.subject_details && Object.keys(lesson.subject_details).length > 0 && (
               <>
-                <SectionTitle>{lesson.subject.name} Details</SectionTitle>
+                <SectionTitle>{t('lessons.form.subjectDetailsTitle', { subject: lesson.subject.name })}</SectionTitle>
                 <div className="rounded-xl border overflow-hidden" style={{ borderColor: BORDER }}>
                   {lesson.subject.fields.map(f => (
                     <div key={f.key} className="flex justify-between px-4 py-2.5 text-sm" style={{ borderBottom: `1px solid ${BORDER}` }}>
@@ -228,25 +243,25 @@ export function LessonDetailDrawer({ lesson, open, onClose, onUpdate }: Props) {
             {/* Lesson report */}
             {(lesson.content || lesson.notes || lesson.homework || lesson.souvenir_image) && (
               <>
-                <SectionTitle>Lesson Report</SectionTitle>
+                <SectionTitle>{t('lessons.form.sectionReport')}</SectionTitle>
                 {lesson.notes && (
                   <div className="mb-3">
-                    <p className="text-xs font-medium mb-1.5" style={{ color: MUTED }}>Notes</p>
+                    <p className="text-xs font-medium mb-1.5" style={{ color: MUTED }}>{t('common.notes')}</p>
                     <p className="text-sm p-3 rounded-xl" style={{ background: TEAL_50, color: NAVY, border: `1px solid ${TEAL_100}` }}>{lesson.notes}</p>
                   </div>
                 )}
                 {lesson.homework && (
                   <div className="mb-3">
-                    <p className="text-xs font-medium mb-1.5" style={{ color: MUTED }}>Homework</p>
+                    <p className="text-xs font-medium mb-1.5" style={{ color: MUTED }}>{t('lessons.form.fieldHomework')}</p>
                     <p className="text-sm p-3 rounded-xl" style={{ background: TEAL_50, color: NAVY, border: `1px solid ${TEAL_100}` }}>{lesson.homework}</p>
                   </div>
                 )}
                 {lesson.souvenir_image && (
                   <div className="mb-3">
-                    <p className="text-xs mb-1" style={{ color: MUTED }}>Souvenir Image</p>
+                    <p className="text-xs mb-1" style={{ color: MUTED }}>{t('lessons.form.souvenirImage')}</p>
                     <img
                       src={lesson.souvenir_image}
-                      alt="Souvenir"
+                      alt={t('lessons.form.souvenirImage')}
                       className="rounded-lg w-full object-cover max-h-48"
                     />
                   </div>
@@ -277,7 +292,7 @@ export function LessonDetailDrawer({ lesson, open, onClose, onUpdate }: Props) {
               style={{ color: '#DC2626', borderColor: '#FECACA' }}
             >
               <Trash2 size={14} />
-              Delete
+              {t('common.delete')}
             </button>
             <button
               onClick={() => setEditing(true)}
@@ -285,7 +300,7 @@ export function LessonDetailDrawer({ lesson, open, onClose, onUpdate }: Props) {
               style={{ background: '#0d9488' }}
             >
               <Pencil size={14} />
-              Edit Lesson
+              {t('lessons.detail.editLesson')}
             </button>
           </div>
         )}

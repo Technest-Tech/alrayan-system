@@ -18,6 +18,7 @@ import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import { useSubmitReview } from '@/hooks/system/useQualityTeacher'
+import { useI18n } from '@/lib/system/i18n'
 
 interface ManualReviewSheetProps {
   teacherId: number | string
@@ -34,18 +35,18 @@ function getYearOptions(): number[] {
 }
 
 const MONTH_OPTIONS = [
-  { value: 1, label: 'January' },
-  { value: 2, label: 'February' },
-  { value: 3, label: 'March' },
-  { value: 4, label: 'April' },
-  { value: 5, label: 'May' },
-  { value: 6, label: 'June' },
-  { value: 7, label: 'July' },
-  { value: 8, label: 'August' },
-  { value: 9, label: 'September' },
-  { value: 10, label: 'October' },
-  { value: 11, label: 'November' },
-  { value: 12, label: 'December' },
+  { value: 1, key: 'schedule.months.january' },
+  { value: 2, key: 'schedule.months.february' },
+  { value: 3, key: 'schedule.months.march' },
+  { value: 4, key: 'schedule.months.april' },
+  { value: 5, key: 'schedule.months.may' },
+  { value: 6, key: 'schedule.months.june' },
+  { value: 7, key: 'schedule.months.july' },
+  { value: 8, key: 'schedule.months.august' },
+  { value: 9, key: 'schedule.months.september' },
+  { value: 10, key: 'schedule.months.october' },
+  { value: 11, key: 'schedule.months.november' },
+  { value: 12, key: 'schedule.months.december' },
 ]
 
 function ScoreSlider({
@@ -86,6 +87,7 @@ export function ManualReviewSheet({
   onClose,
   onSuccess,
 }: ManualReviewSheetProps) {
+  const { t } = useI18n()
   const now = new Date()
   const [year, setYear] = useState(now.getFullYear())
   const [month, setMonth] = useState(now.getMonth() + 1)
@@ -118,14 +120,14 @@ export function ManualReviewSheet({
     <Sheet open={open} onOpenChange={v => !v && onClose()}>
       <SheetContent side="right" className="w-full sm:max-w-md overflow-y-auto">
         <SheetHeader>
-          <SheetTitle>Submit Manual Review</SheetTitle>
+          <SheetTitle>{t('quality.review.title')}</SheetTitle>
         </SheetHeader>
 
         <div className="flex flex-col gap-4 px-4 py-2">
           {/* Period */}
           <div className="flex gap-3">
             <div className="flex-1">
-              <Label className="mb-1.5 block text-sm font-medium">Year</Label>
+              <Label className="mb-1.5 block text-sm font-medium">{t('quality.review.year')}</Label>
               <Select
                 value={String(year)}
                 onValueChange={v => setYear(Number(v))}
@@ -141,7 +143,7 @@ export function ManualReviewSheet({
               </Select>
             </div>
             <div className="flex-1">
-              <Label className="mb-1.5 block text-sm font-medium">Month</Label>
+              <Label className="mb-1.5 block text-sm font-medium">{t('quality.review.month')}</Label>
               <Select
                 value={String(month)}
                 onValueChange={v => setMonth(Number(v))}
@@ -151,7 +153,7 @@ export function ManualReviewSheet({
                 </SelectTrigger>
                 <SelectContent>
                   {MONTH_OPTIONS.map(m => (
-                    <SelectItem key={m.value} value={String(m.value)}>{m.label}</SelectItem>
+                    <SelectItem key={m.value} value={String(m.value)}>{t(m.key)}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -159,14 +161,14 @@ export function ManualReviewSheet({
           </div>
 
           {/* Sliders */}
-          <ScoreSlider label="Attendance" value={attendance} onChange={setAttendance} />
-          <ScoreSlider label="Reports" value={reports} onChange={setReports} />
-          <ScoreSlider label="Retention" value={retention} onChange={setRetention} />
-          <ScoreSlider label="Punctuality" value={punctuality} onChange={setPunctuality} />
+          <ScoreSlider label={t('quality.metrics.attendance')} value={attendance} onChange={setAttendance} />
+          <ScoreSlider label={t('quality.metrics.reports')} value={reports} onChange={setReports} />
+          <ScoreSlider label={t('quality.metrics.retention')} value={retention} onChange={setRetention} />
+          <ScoreSlider label={t('quality.metrics.punctuality')} value={punctuality} onChange={setPunctuality} />
 
           {/* Overall preview */}
           <div className="flex items-center justify-between rounded-lg bg-gray-50 px-4 py-3">
-            <span className="text-sm font-medium text-gray-600">Overall score (preview)</span>
+            <span className="text-sm font-medium text-gray-600">{t('quality.review.overallPreview')}</span>
             <span
               className={`text-xl font-bold tabular-nums ${
                 overall >= 90 ? 'text-green-600' : overall >= 70 ? 'text-yellow-600' : 'text-red-600'
@@ -178,9 +180,9 @@ export function ManualReviewSheet({
 
           {/* Notes */}
           <div>
-            <Label className="mb-1.5 block text-sm font-medium">Notes (optional)</Label>
+            <Label className="mb-1.5 block text-sm font-medium">{t('quality.review.notesOptional')}</Label>
             <Textarea
-              placeholder="Additional observations..."
+              placeholder={t('quality.review.notesPlaceholder')}
               value={notes}
               onChange={e => setNotes(e.target.value)}
               rows={3}
@@ -190,13 +192,13 @@ export function ManualReviewSheet({
 
         <SheetFooter>
           <Button variant="outline" onClick={onClose}>
-            Cancel
+            {t('common.cancel')}
           </Button>
           <Button
             onClick={handleSubmit}
             disabled={submitReview.isPending}
           >
-            {submitReview.isPending ? 'Submitting...' : 'Submit Review'}
+            {submitReview.isPending ? t('common.submitting') : t('quality.review.submit')}
           </Button>
         </SheetFooter>
       </SheetContent>

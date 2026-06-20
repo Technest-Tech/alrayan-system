@@ -225,6 +225,7 @@ function SendModal({
   onSuccess: () => void
   onClose: () => void
 }) {
+  const { t } = useI18n()
   const { mutateAsync, isPending, error } = useSendInvoice(invoiceId)
 
   const submit = async () => {
@@ -237,7 +238,7 @@ function SendModal({
   }
 
   return (
-    <BlurModal title="Send Invoice" subtitle={`Send to ${studentName}`} onClose={onClose}>
+    <BlurModal title={t('billing.invoices.sendTitle')} subtitle={t('billing.invoices.sendTo', { name: studentName })} onClose={onClose}>
       <div className="px-6 py-5 space-y-4">
         {error && (
           <div className="rounded-xl bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
@@ -245,12 +246,12 @@ function SendModal({
           </div>
         )}
         <p className="text-sm text-gray-600">
-          This will send the invoice by email to <span className="font-medium text-gray-800">{studentName}</span> and mark it as <span className="font-medium">Sent</span>.
+          {t('billing.invoices.sendEmailPrefix')} <span className="font-medium text-gray-800">{studentName}</span> {t('billing.invoices.sendEmailMiddle')} <span className="font-medium">{t('billing.status.sent')}</span>.
         </p>
       </div>
       <div className="flex justify-end gap-3 px-6 py-4 border-t border-gray-100">
         <button onClick={onClose} className="px-4 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-100 rounded-xl transition-colors">
-          Cancel
+          {t('common.cancel')}
         </button>
         <button
           onClick={submit}
@@ -258,7 +259,7 @@ function SendModal({
           className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-white text-sm font-semibold disabled:opacity-50 hover:opacity-90 transition-opacity"
           style={{ background: 'rgb(14 124 90)' }}
         >
-          {isPending ? <><Loader2 size={14} className="animate-spin" /> Sending…</> : <><Send size={14} /> Send invoice</>}
+          {isPending ? <><Loader2 size={14} className="animate-spin" /> {t('billing.invoices.sending')}</> : <><Send size={14} /> {t('billing.invoices.sendInvoice')}</>}
         </button>
       </div>
     </BlurModal>
@@ -266,6 +267,7 @@ function SendModal({
 }
 
 function CopyButton({ text }: { text: string }) {
+  const { t } = useI18n()
   const [copied, setCopied] = useState(false)
   const copy = () => {
     navigator.clipboard.writeText(text)
@@ -275,12 +277,13 @@ function CopyButton({ text }: { text: string }) {
   return (
     <button onClick={copy} className="inline-flex items-center gap-1.5 text-xs font-medium text-emerald-600 hover:text-emerald-800 transition-colors shrink-0">
       {copied ? <Check size={12} /> : <Copy size={12} />}
-      {copied ? 'Copied' : 'Copy'}
+      {copied ? t('billing.invoices.copied') : t('billing.invoices.copy')}
     </button>
   )
 }
 
 export default function InvoiceDetailPage() {
+  const { t } = useI18n()
   const { id } = useParams<{ id: string }>()
   const { data: invoice, isLoading, error, refetch } = useInvoice(id)
   const [modal, setModal] = useState<'payment' | 'void' | 'send' | null>(null)
@@ -289,7 +292,7 @@ export default function InvoiceDetailPage() {
     return (
       <div className="py-24 flex flex-col items-center gap-3 text-gray-400">
         <Loader2 size={24} className="animate-spin" />
-        <p className="text-sm">Loading invoice…</p>
+        <p className="text-sm">{t('billing.invoices.loadingInvoice')}</p>
       </div>
     )
   }
@@ -297,9 +300,9 @@ export default function InvoiceDetailPage() {
   if (error || !invoice) {
     return (
       <div className="py-12 text-center">
-        <p className="text-sm text-red-500">{(error as Error)?.message ?? 'Invoice not found'}</p>
+        <p className="text-sm text-red-500">{(error as Error)?.message ?? t('billing.invoices.notFound')}</p>
         <Link href="/billing/invoices" className="mt-3 inline-block text-sm text-gray-500 hover:underline">
-          ← Back to invoices
+          {t('billing.invoices.backArrow')}
         </Link>
       </div>
     )
@@ -326,7 +329,7 @@ export default function InvoiceDetailPage() {
           <div className="flex items-center gap-2">
             <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold ${cfg.classes}`}>
               <span className={`w-1.5 h-1.5 rounded-full ${cfg.dot}`} />
-              {cfg.label}
+              {t(cfg.key)}
             </span>
             {canSend && (
               <button
@@ -334,7 +337,7 @@ export default function InvoiceDetailPage() {
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-xl border border-gray-200 text-gray-700 hover:bg-gray-50 transition-colors"
               >
                 <Send size={13} />
-                Send
+                {t('billing.invoices.send')}
               </button>
             )}
             {canRecordPayment && (
@@ -344,7 +347,7 @@ export default function InvoiceDetailPage() {
                 style={{ background: 'rgb(14 124 90)' }}
               >
                 <CreditCard size={13} />
-                Record payment
+                {t('billing.invoices.recordPayment')}
               </button>
             )}
             {canVoid && (
@@ -353,7 +356,7 @@ export default function InvoiceDetailPage() {
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-xl border border-red-200 text-red-600 hover:bg-red-50 transition-colors"
               >
                 <Ban size={13} />
-                Void
+                {t('billing.invoices.void')}
               </button>
             )}
           </div>
@@ -363,10 +366,10 @@ export default function InvoiceDetailPage() {
       {/* Meta strip */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
         {[
-          { label: 'Issued', value: invoice.issued_at ? new Date(invoice.issued_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—' },
-          { label: 'Due date', value: new Date(invoice.due_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) },
-          { label: 'Period', value: invoice.period_year && invoice.period_month ? new Date(invoice.period_year, invoice.period_month - 1).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) : '—' },
-          { label: 'Currency', value: invoice.currency.toUpperCase() },
+          { label: t('billing.invoices.issued'), value: invoice.issued_at ? new Date(invoice.issued_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—' },
+          { label: t('billing.invoices.dueDate'), value: new Date(invoice.due_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) },
+          { label: t('billing.invoices.period'), value: invoice.period_year && invoice.period_month ? new Date(invoice.period_year, invoice.period_month - 1).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) : '—' },
+          { label: t('common.currency'), value: invoice.currency.toUpperCase() },
         ].map(item => (
           <div key={item.label} className="rounded-xl border border-gray-200 bg-white px-4 py-3">
             <p className="text-xs text-gray-400 font-medium">{item.label}</p>
@@ -378,15 +381,15 @@ export default function InvoiceDetailPage() {
       {/* Line items */}
       <div className="rounded-xl border border-gray-200 overflow-hidden shadow-sm mb-5">
         <div className="px-4 py-3 bg-gray-50/80 border-b border-gray-100">
-          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Line Items</p>
+          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">{t('billing.invoices.lineItems')}</p>
         </div>
         <table className="min-w-full divide-y divide-gray-50">
           <thead>
             <tr className="bg-white">
-              <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-400">Description</th>
-              <th className="px-4 py-2.5 text-center text-xs font-medium text-gray-400">Qty</th>
-              <th className="px-4 py-2.5 text-right text-xs font-medium text-gray-400">Unit price</th>
-              <th className="px-4 py-2.5 text-right text-xs font-medium text-gray-400">Total</th>
+              <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-400">{t('billing.invoices.colDescription')}</th>
+              <th className="px-4 py-2.5 text-center text-xs font-medium text-gray-400">{t('billing.invoices.colQty')}</th>
+              <th className="px-4 py-2.5 text-right text-xs font-medium text-gray-400">{t('billing.invoices.colUnitPrice')}</th>
+              <th className="px-4 py-2.5 text-right text-xs font-medium text-gray-400">{t('common.total')}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-50 bg-white">
@@ -406,7 +409,7 @@ export default function InvoiceDetailPage() {
           <tfoot className="bg-gray-50/60 divide-y divide-gray-100">
             {invoice.discount_minor > 0 && (
               <tr>
-                <td colSpan={3} className="px-4 py-2.5 text-sm text-right text-gray-500">Discount</td>
+                <td colSpan={3} className="px-4 py-2.5 text-sm text-right text-gray-500">{t('billing.invoices.discount')}</td>
                 <td className="px-4 py-2.5 text-sm text-right font-medium text-red-600">
                   −{formatMinor(invoice.discount_minor, invoice.currency)}
                 </td>
@@ -414,14 +417,14 @@ export default function InvoiceDetailPage() {
             )}
             {invoice.wallet_credit_minor > 0 && (
               <tr>
-                <td colSpan={3} className="px-4 py-2.5 text-sm text-right text-gray-500">Wallet credit</td>
+                <td colSpan={3} className="px-4 py-2.5 text-sm text-right text-gray-500">{t('billing.invoices.walletCredit')}</td>
                 <td className="px-4 py-2.5 text-sm text-right font-medium text-emerald-600">
                   −{formatMinor(invoice.wallet_credit_minor, invoice.currency)}
                 </td>
               </tr>
             )}
             <tr>
-              <td colSpan={3} className="px-4 py-3.5 text-sm font-bold text-right text-gray-700">Total due</td>
+              <td colSpan={3} className="px-4 py-3.5 text-sm font-bold text-right text-gray-700">{t('billing.invoices.totalDue')}</td>
               <td className="px-4 py-3.5 text-base font-bold text-right text-gray-900">
                 {formatMinor(invoice.total_minor, invoice.currency)}
               </td>
@@ -434,9 +437,9 @@ export default function InvoiceDetailPage() {
       {invoice.paymob_link && (
         <div className="rounded-xl border border-gray-200 bg-white p-4 mb-5">
           <div className="flex items-center justify-between mb-2">
-            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Payment Link (Paymob)</p>
+            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">{t('billing.invoices.paymentLinkPaymob')}</p>
             {invoice.paymob_link.is_active && (
-              <span className="text-[10px] font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">Active</span>
+              <span className="text-[10px] font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">{t('status.active')}</span>
             )}
           </div>
           <div className="flex items-center gap-2">
@@ -455,7 +458,7 @@ export default function InvoiceDetailPage() {
           </div>
           {invoice.paymob_link.expires_at && (
             <p className="text-xs text-gray-400 mt-1.5">
-              Expires {new Date(invoice.paymob_link.expires_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+              {t('billing.invoices.expires', { date: new Date(invoice.paymob_link.expires_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) })}
             </p>
           )}
         </div>
@@ -465,14 +468,14 @@ export default function InvoiceDetailPage() {
       <div className="rounded-xl border border-gray-200 bg-white p-4 mb-6">
         <div className="flex items-center justify-between mb-3">
           <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
-            Payments ({(invoice.payments ?? []).length})
+            {t('billing.invoices.paymentsCount', { count: String((invoice.payments ?? []).length) })}
           </p>
           {canRecordPayment && (
             <button
               onClick={() => setModal('payment')}
               className="text-xs font-medium text-emerald-600 hover:text-emerald-700 hover:underline"
             >
-              + Record payment
+              {t('billing.invoices.addRecordPayment')}
             </button>
           )}
         </div>
@@ -480,7 +483,7 @@ export default function InvoiceDetailPage() {
         {(invoice.payments ?? []).length === 0 ? (
           <div className="py-6 text-center">
             <CreditCard size={20} className="mx-auto mb-2 text-gray-200" />
-            <p className="text-xs text-gray-400">No payments recorded yet</p>
+            <p className="text-xs text-gray-400">{t('billing.invoices.noPaymentsYet')}</p>
           </div>
         ) : (
           <div className="divide-y divide-gray-50">
@@ -488,12 +491,12 @@ export default function InvoiceDetailPage() {
               <div key={p.id} className="py-3 flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-gray-800 capitalize">
-                    {p.method.replace(/_/g, ' ')}
+                    {t(`billing.method.${({ bank_transfer: 'bankTransfer', vodafone_cash: 'vodafoneCash' } as Record<string, string>)[p.method] ?? p.method}`)}
                   </p>
                   <p className="text-xs text-gray-400 mt-0.5">
                     {new Date(p.paid_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                     {p.reference ? ` · ${p.reference}` : ''}
-                    {p.recorded_by ? ` · by ${p.recorded_by}` : ''}
+                    {p.recorded_by ? ` · ${t('billing.invoices.byUser', { user: p.recorded_by })}` : ''}
                   </p>
                 </div>
                 <span className="text-sm font-bold text-emerald-700">
@@ -508,7 +511,7 @@ export default function InvoiceDetailPage() {
       {/* Void reason */}
       {invoice.voided_reason && (
         <div className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 mb-6">
-          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">Void reason</p>
+          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">{t('billing.invoices.voidReason')}</p>
           <p className="text-sm text-gray-600">{invoice.voided_reason}</p>
         </div>
       )}
@@ -518,7 +521,7 @@ export default function InvoiceDetailPage() {
         className="inline-flex items-center gap-1.5 text-sm text-gray-400 hover:text-gray-600 transition-colors"
       >
         <ArrowLeft size={14} />
-        Back to invoices
+        {t('billing.invoices.backToInvoices')}
       </Link>
 
       {modal === 'payment' && (
@@ -530,7 +533,7 @@ export default function InvoiceDetailPage() {
       {modal === 'send' && (
         <SendModal
           invoiceId={invoice.id}
-          studentName={invoice.student?.name ?? 'student'}
+          studentName={invoice.student?.name ?? t('billing.invoices.studentFallback')}
           onSuccess={closeModal}
           onClose={() => setModal(null)}
         />

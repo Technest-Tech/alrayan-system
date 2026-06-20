@@ -5,8 +5,10 @@ import { SessionDrawer } from '@/components/system/schedule/SessionDrawer'
 import { useSessions } from '@/hooks/system/useSessions'
 import { useState } from 'react'
 import type { Session } from '@/types/system/session'
+import { useI18n } from '@/lib/system/i18n'
 
 export default function TeacherUpcomingPage() {
+  const { t } = useI18n()
   const [selectedSession, setSelectedSession] = useState<Session | null>(null)
 
   const from = new Date().toISOString()
@@ -17,7 +19,7 @@ export default function TeacherUpcomingPage() {
 
   return (
     <>
-      <PageHeader title="Upcoming" description="Your sessions for the next 7 days." />
+      <PageHeader title={t('teacher.upcoming.title')} description={t('teacher.upcoming.description')} />
 
       <CalendarView
         sessions={sessions}

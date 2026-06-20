@@ -11,6 +11,12 @@
     --border-default:  229 233 240;
     --border-strong:   203 211 222;
 
+    /* Gold accent — primary action buttons. Defined as an RGB triplet so
+       `rgb(var(--accent))` resolves correctly (the marketing :root --accent is
+       a hex and would produce invalid `rgb(#C9A24B)` → invisible buttons). */
+    --accent:            201 162 75;
+    --accent-foreground: 11 31 58;
+
     --status-success:  14 124 90;
     --status-warning:  154 113 23;
     --status-danger:   166 39 30;

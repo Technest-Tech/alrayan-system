@@ -1,6 +1,7 @@
 'use client'
 import { useState } from 'react'
 import { ChevronDown } from 'lucide-react'
+import { useI18n } from '@/lib/system/i18n'
 
 const TIMEZONES = [
   'Africa/Cairo',
@@ -30,6 +31,7 @@ interface TimezoneSelectProps {
 }
 
 export function TimezoneSelect({ value, onChange, disabled }: TimezoneSelectProps) {
+  const { t } = useI18n()
   const [q, setQ] = useState('')
   const [open, setOpen] = useState(false)
   const filtered = TIMEZONES.filter(tz => tz.toLowerCase().includes(q.toLowerCase()))
@@ -43,7 +45,7 @@ export function TimezoneSelect({ value, onChange, disabled }: TimezoneSelectProp
         className="w-full flex items-center justify-between px-3 py-2 rounded-lg border text-sm outline-none disabled:opacity-50"
         style={{ borderColor: 'rgb(var(--border-default, 229 233 240))', background: 'rgb(var(--surface-card, 255 255 255))' }}
       >
-        <span>{value || 'Select timezone'}</span>
+        <span>{value || t('pickers.selectTimezone')}</span>
         <ChevronDown size={14} className="opacity-50" />
       </button>
 
@@ -58,7 +60,7 @@ export function TimezoneSelect({ value, onChange, disabled }: TimezoneSelectProp
               <input
                 autoFocus
                 type="text"
-                placeholder="Search…"
+                placeholder={t('pickers.searchPlaceholder')}
                 value={q}
                 onChange={e => setQ(e.target.value)}
                 className="w-full px-2 py-1 text-sm bg-transparent outline-none"

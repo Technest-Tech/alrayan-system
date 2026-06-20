@@ -9,19 +9,23 @@ import { useInviteUser } from '@/hooks/system/useUsers'
 import { PermissionMatrix } from './PermissionMatrix'
 import { SUPERVISOR_DEFAULTS } from '@/lib/system/permissions'
 import { ApiError } from '@/lib/system/api'
+import { useI18n } from '@/lib/system/i18n'
 
 const schema = z.object({
-  name:  z.string().min(1, 'Name is required'),
-  email: z.string().email('Enter a valid email'),
+  name:  z.string().min(1, 'name-required'),
+  email: z.string().email('email-invalid'),
   role:  z.enum(['admin', 'supervisor', 'teacher']),
 })
 type FormValues = z.infer<typeof schema>
+
+const ROLES = ['admin', 'supervisor', 'teacher'] as const
 
 interface Props {
   onClose: () => void
 }
 
 export function InviteUserSheet({ onClose }: Props) {
+  const { t } = useI18n()
   const [permissions, setPermissions] = useState<string[]>([...SUPERVISOR_DEFAULTS])
   const invite = useInviteUser()
 
@@ -38,7 +42,7 @@ export function InviteUserSheet({ onClose }: Props) {
         ...values,
         permissions: role === 'supervisor' ? permissions : [],
       })
-      toast.success(`Invite sent to ${values.email}`)
+      toast.success(t('users.toastInviteSent', { email: values.email }))
       onClose()
     } catch (e) {
       if (e instanceof ApiError) {
@@ -48,10 +52,13 @@ export function InviteUserSheet({ onClose }: Props) {
           toast.error(e.message)
         }
       } else {
-        toast.error('Something went wrong.')
+        toast.error(t('users.toastError'))
       }
     }
   }
+
+  const errName  = errors.name  ? t('users.errorNameRequired')  : undefined
+  const errEmail = errors.email ? t('users.errorEmailInvalid') : undefined
 
   const inputCls   = 'w-full px-3 py-2 rounded-xl border text-sm outline-none focus:ring-2 focus:ring-[rgb(14,124,90)]'
   const inputStyle = { borderColor: 'rgb(var(--border-default, 229 233 240))', background: 'rgb(var(--surface-card, 255 255 255))' }
@@ -67,7 +74,7 @@ export function InviteUserSheet({ onClose }: Props) {
           className="flex items-center justify-between px-6 py-4 border-b shrink-0"
           style={{ background: 'rgb(var(--surface-card, 255 255 255))', borderColor: 'rgb(var(--border-default, 229 233 240))' }}
         >
-          <h2 className="font-semibold">Invite user</h2>
+          <h2 className="font-semibold">{t('users.inviteUserTitle')}</h2>
           <button onClick={onClose} className="p-1 rounded-lg hover:bg-black/5 transition-colors">
             <X size={18} />
           </button>
@@ -76,22 +83,22 @@ export function InviteUserSheet({ onClose }: Props) {
         <form onSubmit={handleSubmit(onSubmit)} className="flex-1 flex flex-col gap-6 p-6">
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium mb-1.5">Name</label>
+              <label className="block text-sm font-medium mb-1.5">{t('common.name')}</label>
               <input className={inputCls} style={inputStyle} {...register('name')} />
-              {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name.message}</p>}
+              {errName && <p className="text-red-500 text-xs mt-1">{errName}</p>}
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1.5">Email</label>
+              <label className="block text-sm font-medium mb-1.5">{t('common.email')}</label>
               <input type="email" className={inputCls} style={inputStyle} {...register('email')} />
-              {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email.message}</p>}
+              {errEmail && <p className="text-red-500 text-xs mt-1">{errEmail}</p>}
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1.5">Role</label>
+              <label className="block text-sm font-medium mb-1.5">{t('common.role')}</label>
               <div className="flex gap-3">
-                {(['admin', 'supervisor', 'teacher'] as const).map((r) => (
-                  <label key={r} className="flex items-center gap-2 text-sm cursor-pointer capitalize">
+                {ROLES.map((r) => (
+                  <label key={r} className="flex items-center gap-2 text-sm cursor-pointer">
                     <input type="radio" value={r} {...register('role')} />
-                    {r}
+                    {t(`users.role.${r}`)}
                   </label>
                 ))}
               </div>
@@ -100,20 +107,20 @@ export function InviteUserSheet({ onClose }: Props) {
 
           {role === 'supervisor' && (
             <div>
-              <p className="text-sm font-semibold mb-3">Permissions</p>
+              <p className="text-sm font-semibold mb-3">{t('users.columnPermissions')}</p>
               <PermissionMatrix selected={permissions} onChange={setPermissions} />
             </div>
           )}
 
           {role === 'admin' && (
             <div className="rounded-xl p-4 bg-blue-50 text-sm text-blue-700">
-              Admins automatically have every permission.
+              {t('users.adminPermissionsNote')}
             </div>
           )}
 
           {role === 'teacher' && (
             <div className="rounded-xl p-4 bg-amber-50 text-sm text-amber-700">
-              Teacher access is scoped automatically. A detailed teacher profile is set up after the invite.
+              {t('users.teacherInviteNote')}
             </div>
           )}
 
@@ -124,7 +131,7 @@ export function InviteUserSheet({ onClose }: Props) {
               className="px-4 py-2 rounded-xl text-sm font-medium border hover:bg-black/5 transition-colors"
               style={{ borderColor: 'rgb(var(--border-default, 229 233 240))' }}
             >
-              Cancel
+              {t('common.cancel')}
             </button>
             <button
               type="submit"
@@ -132,7 +139,7 @@ export function InviteUserSheet({ onClose }: Props) {
               className="px-4 py-2 rounded-xl text-sm font-semibold text-white transition-opacity disabled:opacity-60"
               style={{ background: 'rgb(14 124 90)' }}
             >
-              {isSubmitting ? 'Sending invite…' : 'Send invite'}
+              {isSubmitting ? t('users.sendingInvite') : t('users.sendInvite')}
             </button>
           </div>
         </form>

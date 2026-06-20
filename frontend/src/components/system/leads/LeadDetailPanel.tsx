@@ -413,22 +413,22 @@ export function LeadDetailPanel({ leadId, onClose }: Props) {
               </SectionCard>
 
               {/* Package Info */}
-              {(lead.package_type || lead.subscription_price) && (
+              {(lead.package_hours || lead.subscription_price) && (
                 <SectionCard title={t('leads.sectionPackageBilling')}>
-                  {lead.subscription_price && (
-                    <DetailRow
-                      icon={Package}
-                      label={t('leads.fieldSubscriptionPrice')}
-                      value={`${lead.subscription_price} ${lead.currency ?? 'EUR'}`}
-                      accent="rgb(14 124 90)"
-                    />
-                  )}
                   {lead.package_hours && (
                     <DetailRow
                       icon={Clock}
                       label={t('leads.fieldPackageHours')}
                       value={t('leads.hoursValue', { hours: String(lead.package_hours) })}
                       accent="rgb(30 90 171)"
+                    />
+                  )}
+                  {lead.subscription_price && (
+                    <DetailRow
+                      icon={Package}
+                      label={t('leads.fieldPackagePrice')}
+                      value={`${lead.subscription_price} ${lead.currency ?? 'EUR'}`}
+                      accent="rgb(14 124 90)"
                     />
                   )}
                   {lead.payment_method && lead.payment_method !== 'none' && (

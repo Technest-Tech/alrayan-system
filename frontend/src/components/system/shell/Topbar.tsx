@@ -5,12 +5,14 @@ import { Breadcrumbs } from './Breadcrumbs'
 import { NotificationBell } from './NotificationBell'
 import { UserMenu } from './UserMenu'
 import { CommandPalette } from './CommandPalette'
+import { useI18n } from '@/lib/system/i18n'
 
 interface TopbarProps {
   onToggleSidebar: () => void
 }
 
 export function Topbar({ onToggleSidebar }: TopbarProps) {
+  const { t } = useI18n()
   const [cmdOpen, setCmdOpen] = useState(false)
   const closePalette = useCallback(() => setCmdOpen(false), [])
 
@@ -51,7 +53,7 @@ export function Topbar({ onToggleSidebar }: TopbarProps) {
           style={{ borderColor: 'rgb(var(--border-default, 229 233 240))' }}
         >
           <Search size={14} />
-          <span>Search</span>
+          <span>{t('common.search')}</span>
           <kbd
             className="ml-2 text-xs px-1.5 py-0.5 rounded border"
             style={{ borderColor: 'rgb(var(--border-default, 229 233 240))' }}

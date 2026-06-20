@@ -1,6 +1,8 @@
+'use client'
 import Link from 'next/link'
 import { TrendingUp, TrendingDown, Minus } from 'lucide-react'
 import { QualityScoreBadge } from './QualityScoreBadge'
+import { useI18n } from '@/lib/system/i18n'
 import type { QualityLeaderboardEntry } from '@/types/system/quality'
 
 interface QualityLeaderboardProps {
@@ -17,8 +19,10 @@ function TrendIcon({ trend }: { trend: number[] }) {
 }
 
 export function QualityLeaderboard({ entries }: QualityLeaderboardProps) {
+  const { t } = useI18n()
+
   if (entries.length === 0) {
-    return <p className="py-10 text-center text-sm opacity-40">No quality data yet.</p>
+    return <p className="py-10 text-center text-sm opacity-40">{t('quality.leaderboard.empty')}</p>
   }
 
   return (
@@ -27,13 +31,13 @@ export function QualityLeaderboard({ entries }: QualityLeaderboardProps) {
         <thead className="bg-gray-50">
           <tr>
             <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">#</th>
-            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Teacher</th>
-            <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wide">Attendance</th>
-            <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wide">Reports</th>
-            <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wide">Retention</th>
-            <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wide">Punctuality</th>
-            <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wide">Overall</th>
-            <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wide">Trend</th>
+            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">{t('common.teacher')}</th>
+            <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wide">{t('quality.metrics.attendance')}</th>
+            <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wide">{t('quality.metrics.reports')}</th>
+            <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wide">{t('quality.metrics.retention')}</th>
+            <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wide">{t('quality.metrics.punctuality')}</th>
+            <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wide">{t('quality.metrics.overall')}</th>
+            <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wide">{t('quality.leaderboard.trend')}</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-gray-100 bg-white">
@@ -47,7 +51,7 @@ export function QualityLeaderboard({ entries }: QualityLeaderboardProps) {
                     href={`/quality/${entry.id}`}
                     className="text-blue-600 hover:underline"
                   >
-                    {entry.user.name ?? entry.name ?? `Teacher #${entry.id}`}
+                    {entry.user.name ?? entry.name ?? t('quality.teacherFallback', { id: String(entry.id) })}
                   </Link>
                 </td>
                 <td className="px-4 py-3 text-center">

@@ -2,43 +2,43 @@
 import { useState, useRef, useEffect } from 'react'
 import { Dialog as DialogPrimitive } from '@base-ui/react/dialog'
 import { toast } from 'sonner'
-import { X, Plus, Star, Search, ChevronDown, Check, Users, AlertTriangle, GraduationCap } from 'lucide-react'
+import { X, Plus, Star, Search, ChevronDown, Check, Users, AlertTriangle, GraduationCap, UserPlus } from 'lucide-react'
 import { useCreateLead, useUpdateLead, useConvertLead } from '@/hooks/system/useLeads'
 import { useCourses } from '@/hooks/system/useCourses'
 import { useTeachers } from '@/hooks/system/useTeachers'
+import { useSections } from '@/hooks/system/useSections'
 import { ApiError } from '@/lib/system/api'
 import { useI18n } from '@/lib/system/i18n'
 import type { Lead, LeadStatus, LeadPriority, LeadPlatform, LeadSource } from '@/types/system/lead'
 
-/* ── Islamic star path ─────────────────────────── */
-const STAR = 'M50,5 L57.65,31.52 L81.82,18.18 L68.48,42.35 L95,50 L68.48,57.65 L81.82,81.82 L57.65,68.48 L50,95 L42.35,68.48 L18.18,81.82 L31.52,57.65 L5,50 L31.52,42.35 L18.18,18.18 L42.35,31.52 Z'
+/* ── Design tokens (create-lesson form style) ───── */
+const BORDER   = 'rgb(var(--border-default,229 233 240))'
+const NAVY     = 'rgb(11 31 58)'
+const MUTED    = 'rgb(90 100 112)'
+const TEAL_50  = '#F0FDFA'
+const TEAL_100 = '#CCFBF1'
+const TEAL_400 = '#2DD4BF'
+const TEAL_600 = '#0d9488'
 
-/* ── Ornamental section divider ─────────────────── */
-function SectionDivider({ title }: { title: string }) {
-  const diamonds = [2, 10, 18, 26, 34, 42, 50, 58]
+/* ── Decorative section card ────────────────────── */
+function SectionCard({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="flex items-center gap-2 my-5">
-      <svg width="70" height="14" viewBox="0 0 70 14" aria-hidden className="shrink-0">
-        <line x1="0" y1="7" x2="66" y2="7" stroke="#C9A24B" strokeWidth="0.6" opacity="0.4" />
-        {diamonds.map(x => (
-          <polygon key={x} points={`${x},3 ${x+3},7 ${x},11 ${x-3},7`} fill="#C9A24B" opacity="0.3" />
-        ))}
-      </svg>
-      <svg width="11" height="11" viewBox="0 0 100 100" className="shrink-0" aria-hidden>
-        <path d={STAR} fill="#C9A24B" opacity="0.65" />
-      </svg>
-      <span className="whitespace-nowrap text-[10px] font-semibold tracking-[0.13em] uppercase" style={{ color: 'rgb(90 100 112)' }}>
-        {title}
-      </span>
-      <svg width="11" height="11" viewBox="0 0 100 100" className="shrink-0" aria-hidden>
-        <path d={STAR} fill="#C9A24B" opacity="0.65" />
-      </svg>
-      <svg width="70" height="14" viewBox="0 0 70 14" style={{ transform: 'scaleX(-1)' }} aria-hidden className="shrink-0">
-        <line x1="0" y1="7" x2="66" y2="7" stroke="#C9A24B" strokeWidth="0.6" opacity="0.4" />
-        {diamonds.map(x => (
-          <polygon key={x} points={`${x},3 ${x+3},7 ${x},11 ${x-3},7`} fill="#C9A24B" opacity="0.3" />
-        ))}
-      </svg>
+    <div className="relative rounded-2xl p-5" style={{ background: TEAL_50, border: `1px solid ${TEAL_100}` }}>
+      {/* Corner diamonds */}
+      {(['top-2.5 left-3', 'top-2.5 right-3', 'bottom-2.5 left-3', 'bottom-2.5 right-3'] as const).map(pos => (
+        <span key={pos} className={`absolute ${pos} select-none pointer-events-none leading-none`} style={{ color: TEAL_400, fontSize: 13 }}>◇</span>
+      ))}
+      {/* Decorated title */}
+      <div className="flex items-center gap-2 mb-5">
+        <div className="flex-1 h-px" style={{ background: `linear-gradient(to right, transparent, ${TEAL_100})` }} />
+        <div className="flex items-center gap-2 shrink-0">
+          <span style={{ color: TEAL_400, fontSize: 11, lineHeight: 1 }}>✦</span>
+          <span className="text-sm font-semibold tracking-wide" style={{ color: NAVY }}>{title}</span>
+          <span style={{ color: TEAL_400, fontSize: 11, lineHeight: 1 }}>✦</span>
+        </div>
+        <div className="flex-1 h-px" style={{ background: `linear-gradient(to left, transparent, ${TEAL_100})` }} />
+      </div>
+      {children}
     </div>
   )
 }
@@ -49,12 +49,12 @@ function EnrollmentBanner() {
   return (
     <div
       className="flex items-start gap-3 rounded-xl p-3 mb-1"
-      style={{ background: 'rgba(14,124,90,0.08)', border: '1px solid rgba(14,124,90,0.2)' }}
+      style={{ background: 'rgba(13,148,136,0.08)', border: `1px solid ${TEAL_100}` }}
     >
-      <GraduationCap size={16} className="shrink-0 mt-0.5" style={{ color: 'rgb(14 124 90)' }} />
+      <GraduationCap size={16} className="shrink-0 mt-0.5" style={{ color: TEAL_600 }} />
       <div>
-        <p className="text-xs font-semibold" style={{ color: 'rgb(14 124 90)' }}>{t('leads.convertingToStudent')}</p>
-        <p className="text-xs mt-0.5" style={{ color: 'rgb(90 100 112)' }}>
+        <p className="text-xs font-semibold" style={{ color: TEAL_600 }}>{t('leads.convertingToStudent')}</p>
+        <p className="text-xs mt-0.5" style={{ color: MUTED }}>
           {t('leads.enrollmentBannerHint')}
         </p>
       </div>
@@ -184,14 +184,14 @@ function flag(code: string) {
 }
 
 /* ── Shared input styles ────────────────────────── */
-const inp = 'w-full px-3 py-2 rounded-lg border text-sm outline-none transition-all focus:ring-2 focus:ring-[#C9A24B33] focus:border-[#C9A24B66]'
-const inpStyle = { borderColor: 'rgb(229 233 240)', background: '#fff' }
+const inp = 'w-full px-3 py-2.5 rounded-xl border text-sm outline-none focus:ring-2 focus:ring-[#0d9488] transition-shadow bg-white'
+const inpStyle = { borderColor: BORDER }
 
 /* ── Field wrapper ──────────────────────────────── */
 function Field({ label, required, children }: { label: string; required?: boolean; children: React.ReactNode }) {
   return (
     <div>
-      <label className="block text-xs font-medium mb-1.5" style={{ color: 'rgb(90 100 112)' }}>
+      <label className="block text-xs font-medium mb-1.5" style={{ color: MUTED }}>
         {label}{required && <span className="text-red-500 ml-0.5">*</span>}
       </label>
       {children}
@@ -241,7 +241,7 @@ function SearchSelect({
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="w-full flex items-center gap-2 px-3 py-2 rounded-lg border text-sm text-left focus:outline-none focus:ring-2 focus:ring-[#C9A24B33] focus:border-[#C9A24B66] transition-all"
+        className="w-full flex items-center gap-2 px-3 py-2.5 rounded-xl border text-sm text-left bg-white focus:outline-none focus:ring-2 focus:ring-[#0d9488] transition-shadow"
         style={inpStyle}
       >
         <span className={`flex-1 truncate ${!selected ? 'opacity-40' : ''}`}>
@@ -255,10 +255,10 @@ function SearchSelect({
   return (
     <div
       ref={containerRef}
-      className="rounded-lg border overflow-hidden"
-      style={{ borderColor: '#C9A24B66', boxShadow: '0 0 0 2px rgba(201,162,75,0.1)', background: '#fff' }}
+      className="rounded-xl border overflow-hidden"
+      style={{ borderColor: TEAL_600, boxShadow: '0 0 0 2px rgba(13,148,136,0.12)', background: '#fff' }}
     >
-      <div className="flex items-center gap-2 px-3 py-2 border-b" style={{ borderColor: 'rgb(229 233 240)' }}>
+      <div className="flex items-center gap-2 px-3 py-2 border-b" style={{ borderColor: BORDER }}>
         <Search size={12} className="opacity-40 shrink-0" />
         <input
           ref={inputRef}
@@ -277,7 +277,7 @@ function SearchSelect({
       </div>
       <div className="max-h-44 overflow-y-auto">
         {clearable && value && (
-          <button type="button" className="w-full flex items-center gap-2 px-3 py-1.5 text-xs border-b text-left hover:bg-red-50 transition-colors" style={{ borderColor: 'rgb(229 233 240)', color: 'rgb(90 100 112)' }}
+          <button type="button" className="w-full flex items-center gap-2 px-3 py-1.5 text-xs border-b text-left hover:bg-red-50 transition-colors" style={{ borderColor: BORDER, color: MUTED }}
             onClick={() => { onChange(''); setOpen(false) }}>
             <X size={10} /> {t('leads.clearSelection')}
           </button>
@@ -285,14 +285,100 @@ function SearchSelect({
         {filtered.map(opt => (
           <button key={opt.value} type="button"
             className="w-full flex items-center gap-2 px-3 py-2 text-sm text-left hover:bg-black/5 transition-colors"
-            style={opt.value === value ? { background: 'rgba(201,162,75,0.07)' } : {}}
+            style={opt.value === value ? { background: 'rgba(13,148,136,0.07)' } : {}}
             onClick={() => { onChange(opt.value); setOpen(false); setSearch('') }}>
             <span className="flex-1">{opt.label}</span>
-            {opt.value === value && <Check size={12} style={{ color: '#C9A24B' }} />}
+            {opt.value === value && <Check size={12} style={{ color: TEAL_600 }} />}
           </button>
         ))}
         {filtered.length === 0 && (
-          <p className="px-3 py-2.5 text-xs" style={{ color: 'rgb(90 100 112)' }}>{t('leads.noResultsFor', { query: search })}</p>
+          <p className="px-3 py-2.5 text-xs" style={{ color: MUTED }}>{t('leads.noResultsFor', { query: search })}</p>
+        )}
+      </div>
+    </div>
+  )
+}
+
+/* ── Multi-select (chips + searchable dropdown) ──── */
+function MultiSelect({
+  value, onChange, options, placeholder,
+}: {
+  value: string[]
+  onChange: (v: string[]) => void
+  options: SelectOption[]
+  placeholder?: string
+}) {
+  const { t } = useI18n()
+  placeholder = placeholder ?? t('leads.selectPlaceholder')
+  const [open, setOpen]     = useState(false)
+  const [search, setSearch] = useState('')
+  const containerRef        = useRef<HTMLDivElement>(null)
+  const inputRef            = useRef<HTMLInputElement>(null)
+
+  const filtered = search
+    ? options.filter(o => o.label.toLowerCase().includes(search.toLowerCase()))
+    : options
+
+  useEffect(() => {
+    if (!open) return
+    function onDown(e: MouseEvent) {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) { setOpen(false); setSearch('') }
+    }
+    document.addEventListener('mousedown', onDown)
+    return () => document.removeEventListener('mousedown', onDown)
+  }, [open])
+
+  useEffect(() => { if (open) inputRef.current?.focus() }, [open])
+
+  const toggle = (v: string) => onChange(value.includes(v) ? value.filter(x => x !== v) : [...value, v])
+  const labelFor = (v: string) => options.find(o => o.value === v)?.label ?? v
+
+  if (!open) {
+    return (
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className="w-full flex items-center gap-2 px-3 py-2 rounded-xl border text-sm text-left bg-white focus:outline-none focus:ring-2 focus:ring-[#0d9488] transition-shadow min-h-[42px]"
+        style={inpStyle}
+      >
+        <span className="flex-1 flex flex-wrap gap-1">
+          {value.length === 0
+            ? <span className="opacity-40">{placeholder}</span>
+            : value.map(v => (
+                <span key={v} className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-md" style={{ background: TEAL_100, color: TEAL_600 }}>
+                  {labelFor(v)}
+                  <span role="button" tabIndex={0} className="hover:opacity-70" onClick={e => { e.stopPropagation(); toggle(v) }}><X size={9} /></span>
+                </span>
+              ))}
+        </span>
+        <ChevronDown size={13} className="opacity-40 shrink-0" />
+      </button>
+    )
+  }
+
+  return (
+    <div ref={containerRef} className="rounded-xl border overflow-hidden" style={{ borderColor: TEAL_600, boxShadow: '0 0 0 2px rgba(13,148,136,0.12)', background: '#fff' }}>
+      <div className="flex items-center gap-2 px-3 py-2 border-b" style={{ borderColor: BORDER }}>
+        <Search size={12} className="opacity-40 shrink-0" />
+        <input ref={inputRef} placeholder={t('leads.searchEllipsis')} className="flex-1 text-sm outline-none bg-transparent" value={search} onChange={e => setSearch(e.target.value)}
+          onKeyDown={e => { if (e.key === 'Escape') { setOpen(false); setSearch('') } }} />
+        <button type="button" className="opacity-40 hover:opacity-100 transition-opacity" onClick={() => { setOpen(false); setSearch('') }}><X size={13} /></button>
+      </div>
+      <div className="max-h-44 overflow-y-auto">
+        {filtered.map(opt => {
+          const checked = value.includes(opt.value)
+          return (
+            <button key={opt.value} type="button"
+              className="w-full flex items-center gap-2 px-3 py-2 text-sm text-left hover:bg-black/5 transition-colors"
+              style={checked ? { background: 'rgba(13,148,136,0.07)' } : {}}
+              onClick={() => toggle(opt.value)}>
+              <span className="flex-1">{opt.label}</span>
+              {checked && <Check size={12} style={{ color: TEAL_600 }} />}
+            </button>
+          )
+        })}
+        {filtered.length === 0 && (
+          <p className="px-3 py-2.5 text-xs" style={{ color: MUTED }}>{t('leads.noResultsFor', { query: search })}</p>
         )}
       </div>
     </div>
@@ -322,29 +408,29 @@ function CountryPicker({ value, onChange }: { value: string; onChange: (code: st
   }, [open])
 
   if (!open) return (
-    <button type="button" className="w-full flex items-center gap-2 px-3 py-2 rounded-lg border text-sm text-left focus:outline-none focus:ring-2 focus:ring-[#C9A24B33] focus:border-[#C9A24B66] transition-all" style={inpStyle} onClick={() => setOpen(true)}>
+    <button type="button" className="w-full flex items-center gap-2 px-3 py-2.5 rounded-xl border text-sm text-left bg-white focus:outline-none focus:ring-2 focus:ring-[#0d9488] transition-shadow" style={inpStyle} onClick={() => setOpen(true)}>
       {selected ? <><span>{flag(selected.code)}</span><span className="flex-1 truncate">{selected.name}</span></> : <span className="flex-1 opacity-40">{t('leads.countryPlaceholder')}</span>}
       <ChevronDown size={13} className="opacity-40 shrink-0" />
     </button>
   )
 
   return (
-    <div ref={containerRef} className="rounded-lg border overflow-hidden" style={{ borderColor: '#C9A24B66', boxShadow: '0 0 0 2px rgba(201,162,75,0.1)', background: '#fff' }}>
-      <div className="flex items-center gap-2 px-3 py-2 border-b" style={{ borderColor: 'rgb(229 233 240)' }}>
+    <div ref={containerRef} className="rounded-xl border overflow-hidden" style={{ borderColor: TEAL_600, boxShadow: '0 0 0 2px rgba(13,148,136,0.12)', background: '#fff' }}>
+      <div className="flex items-center gap-2 px-3 py-2 border-b" style={{ borderColor: BORDER }}>
         <Search size={12} className="opacity-40 shrink-0" />
         <input ref={inputRef} placeholder={t('leads.searchCountry')} className="flex-1 text-sm outline-none bg-transparent" value={search} onChange={e => setSearch(e.target.value)}
           onKeyDown={e => { if (e.key === 'Escape') { setOpen(false); setSearch('') } }} />
         <button type="button" className="opacity-40 hover:opacity-100" onClick={() => { setOpen(false); setSearch('') }}><X size={13} /></button>
       </div>
       <div className="max-h-44 overflow-y-auto">
-        {value && <button type="button" className="w-full flex items-center gap-2 px-3 py-1.5 text-xs border-b text-left hover:bg-red-50 transition-colors" style={{ borderColor: 'rgb(229 233 240)', color: 'rgb(90 100 112)' }} onClick={() => { onChange(''); setOpen(false) }}><X size={10} />{t('leads.clear')}</button>}
+        {value && <button type="button" className="w-full flex items-center gap-2 px-3 py-1.5 text-xs border-b text-left hover:bg-red-50 transition-colors" style={{ borderColor: BORDER, color: MUTED }} onClick={() => { onChange(''); setOpen(false) }}><X size={10} />{t('leads.clear')}</button>}
         {filtered.map(c => (
-          <button key={c.code} type="button" className="w-full flex items-center gap-2 px-3 py-2 text-sm text-left hover:bg-black/5 transition-colors" style={c.code === value ? { background: 'rgba(201,162,75,0.07)' } : {}} onClick={() => { onChange(c.code); setOpen(false); setSearch('') }}>
+          <button key={c.code} type="button" className="w-full flex items-center gap-2 px-3 py-2 text-sm text-left hover:bg-black/5 transition-colors" style={c.code === value ? { background: 'rgba(13,148,136,0.07)' } : {}} onClick={() => { onChange(c.code); setOpen(false); setSearch('') }}>
             <span>{flag(c.code)}</span><span className="flex-1">{c.name}</span>
-            {c.code === value && <Check size={12} style={{ color: '#C9A24B' }} />}
+            {c.code === value && <Check size={12} style={{ color: TEAL_600 }} />}
           </button>
         ))}
-        {filtered.length === 0 && <p className="px-3 py-2.5 text-xs" style={{ color: 'rgb(90 100 112)' }}>{t('common.noResults')}</p>}
+        {filtered.length === 0 && <p className="px-3 py-2.5 text-xs" style={{ color: MUTED }}>{t('common.noResults')}</p>}
       </div>
     </div>
   )
@@ -369,13 +455,13 @@ function MultiContactField({ label, entries, onChange, placeholder }: {
   return (
     <div>
       <div className="flex items-center justify-between mb-1.5">
-        <label className="text-xs font-medium" style={{ color: 'rgb(90 100 112)' }}>{label}</label>
-        <button type="button" onClick={addEntry} className="inline-flex items-center gap-0.5 text-[11px] font-semibold hover:opacity-70 transition-opacity" style={{ color: 'rgb(14 124 90)' }}>
+        <label className="text-xs font-medium" style={{ color: MUTED }}>{label}</label>
+        <button type="button" onClick={addEntry} className="inline-flex items-center gap-0.5 text-[11px] font-semibold hover:opacity-70 transition-opacity" style={{ color: TEAL_600 }}>
           <Plus size={11} />{t('common.add')}
         </button>
       </div>
       {entries.length === 0 ? (
-        <button type="button" onClick={addEntry} className="w-full flex items-center gap-2 px-3 py-2 rounded-lg border border-dashed text-sm text-left hover:bg-black/5 transition-colors" style={{ borderColor: 'rgb(229 233 240)', color: 'rgb(90 100 112)' }}>
+        <button type="button" onClick={addEntry} className="w-full flex items-center gap-2 px-3 py-2.5 rounded-xl border border-dashed text-sm text-left bg-white hover:bg-black/5 transition-colors" style={{ borderColor: BORDER, color: MUTED }}>
           <Plus size={12} className="opacity-40" /><span className="opacity-40 text-xs">{placeholder}</span>
         </button>
       ) : (
@@ -384,7 +470,7 @@ function MultiContactField({ label, entries, onChange, placeholder }: {
             <div key={i} className="flex items-center gap-1.5">
               <input className={`${inp} flex-1`} style={inpStyle} value={entry.value} onChange={e => updateVal(i, e.target.value)} placeholder={placeholder} />
               <button type="button" onClick={() => setPrimary(i)} className="p-1.5 rounded-lg transition-colors shrink-0" title={t('leads.setAsPrimary')}
-                style={{ background: entry.primary ? 'rgba(201,162,75,0.15)' : 'transparent', color: entry.primary ? '#C9A24B' : 'rgb(203 211 222)' }}>
+                style={{ background: entry.primary ? 'rgba(13,148,136,0.15)' : 'transparent', color: entry.primary ? TEAL_600 : 'rgb(203 211 222)' }}>
                 <Star size={12} fill={entry.primary ? 'currentColor' : 'none'} />
               </button>
               <button type="button" onClick={() => removeEntry(i)} className="p-1.5 rounded-lg hover:bg-red-50 transition-colors shrink-0" style={{ color: 'rgb(203 211 222)' }}>
@@ -398,24 +484,6 @@ function MultiContactField({ label, entries, onChange, placeholder }: {
   )
 }
 
-/* ── Tag input ──────────────────────────────────── */
-function TagInput({ value, onChange, placeholder }: { value: string[]; onChange: (v: string[]) => void; placeholder: string }) {
-  const [input, setInput] = useState('')
-  const add    = () => { const t = input.trim(); if (t && !value.includes(t)) onChange([...value, t]); setInput('') }
-  const remove = (tag: string) => onChange(value.filter(v => v !== tag))
-  return (
-    <div className="rounded-lg border px-2 py-1.5 flex flex-wrap gap-1 min-h-[38px] focus-within:ring-2 focus-within:ring-[#C9A24B33] focus-within:border-[#C9A24B66] transition-all" style={inpStyle}>
-      {value.map(tag => (
-        <span key={tag} className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-md" style={{ background: 'rgba(14,124,90,0.1)', color: 'rgb(14 124 90)' }}>
-          {tag}<button type="button" onClick={() => remove(tag)} className="hover:opacity-70"><X size={9} /></button>
-        </span>
-      ))}
-      <input className="flex-1 min-w-16 text-sm outline-none bg-transparent" value={input} onChange={e => setInput(e.target.value)} placeholder={value.length === 0 ? placeholder : ''}
-        onKeyDown={e => { if (e.key === 'Enter' || e.key === ',') { e.preventDefault(); add() }; if (e.key === 'Backspace' && !input && value.length) remove(value[value.length - 1]) }} onBlur={add} />
-    </div>
-  )
-}
-
 /* ── Form state ─────────────────────────────────── */
 interface FormState {
   status: LeadStatus; name: string; gender: string; age: string
@@ -423,7 +491,7 @@ interface FormState {
   sections: string[]; assigned_teacher_id: string
   platform: string; platform_url: string; source: string
   parent_mode: 'adult' | 'new_family' | 'existing'
-  package_type: string; package_hours: string; subscription_price: string
+  package_hours: string; subscription_price: string
   currency: string; payment_method: string
   next_followup: string; priority: LeadPriority; assigned_to: string
   notes: string; rejection_reason: string; is_family_lead: boolean
@@ -433,7 +501,7 @@ const EMPTY: FormState = {
   status: 'new_lead', name: '', gender: '', age: '', country: '', city: '',
   course_interest_id: '', sections: [], assigned_teacher_id: '',
   platform: '', platform_url: '', source: '', parent_mode: 'adult',
-  package_type: '', package_hours: '', subscription_price: '',
+  package_hours: '', subscription_price: '',
   currency: 'EUR', payment_method: 'none',
   next_followup: '', priority: 'medium', assigned_to: '',
   notes: '', rejection_reason: '', is_family_lead: false,
@@ -442,15 +510,15 @@ const EMPTY: FormState = {
 /* ── Enrollment state (used when closing a lead) ── */
 interface EnrollmentState {
   course_id: string; assigned_teacher_id: string; timezone: string
-  student_type: 'adult' | 'child'; sessions_per_month: string
-  session_duration_min: string; monthly_price: string; currency: string
+  student_type: 'adult' | 'child'; package_hours: string
+  session_duration_min: string; package_price: string; currency: string
   guardian_name: string; guardian_whatsapp: string
 }
 
 const EMPTY_ENROLLMENT: EnrollmentState = {
   course_id: '', assigned_teacher_id: '', timezone: 'Africa/Cairo',
-  student_type: 'adult', sessions_per_month: '4', session_duration_min: '60',
-  monthly_price: '', currency: 'EUR', guardian_name: '', guardian_whatsapp: '',
+  student_type: 'adult', package_hours: '8', session_duration_min: '60',
+  package_price: '', currency: 'EUR', guardian_name: '', guardian_whatsapp: '',
 }
 
 /* ── Dialog ─────────────────────────────────────── */
@@ -471,8 +539,10 @@ export function AddLeadDialog({ open, onOpenChange, lead }: AddLeadDialogProps) 
 
   const { data: coursesData } = useCourses()
   const { data: teachersData } = useTeachers({ per_page: 200 } as Parameters<typeof useTeachers>[0])
+  const { data: sectionsData } = useSections()
   const courses  = coursesData ?? []
   const teachers = teachersData?.data ?? []
+  const sectionOptions: SelectOption[] = (sectionsData ?? []).map(s => ({ value: s.id, label: s.name }))
 
   const [form,       setForm]       = useState<FormState>(EMPTY)
   const [emails,     setEmails]     = useState<ContactEntry[]>([])
@@ -504,7 +574,6 @@ export function AddLeadDialog({ open, onOpenChange, lead }: AddLeadDialogProps) 
       platform_url:       lead.platform_url ?? '',
       source:             lead.source ?? '',
       parent_mode:        (payload?.parent_mode as 'adult' | 'new_family' | 'existing' | undefined) ?? 'adult',
-      package_type:       lead.package_type ? String(lead.package_type) : '',
       package_hours:      lead.package_hours ? String(lead.package_hours) : '',
       subscription_price: lead.subscription_price ? String(lead.subscription_price) : '',
       currency:           lead.currency ?? 'EUR',
@@ -530,7 +599,8 @@ export function AddLeadDialog({ open, onOpenChange, lead }: AddLeadDialogProps) 
       ...EMPTY_ENROLLMENT,
       course_id:          lead.course_interest?.id ? String(lead.course_interest.id) : '',
       currency:           lead.currency ?? 'EUR',
-      monthly_price:      lead.subscription_price ? String(lead.subscription_price) : '',
+      package_hours:      lead.package_hours ? String(lead.package_hours) : '8',
+      package_price:      lead.subscription_price ? String(lead.subscription_price) : '',
     })
   }, [lead, open])
 
@@ -566,7 +636,6 @@ export function AddLeadDialog({ open, onOpenChange, lead }: AddLeadDialogProps) 
       platform: (form.platform as LeadPlatform) || undefined,
       platform_url: form.platform_url || undefined,
       source: (form.source as LeadSource) || undefined,
-      package_type: form.package_type ? Number(form.package_type) : undefined,
       package_hours: form.package_hours ? Number(form.package_hours) : undefined,
       subscription_price: form.subscription_price ? Number(form.subscription_price) : undefined,
       currency: form.currency || undefined, payment_method: form.payment_method || undefined,
@@ -574,6 +643,9 @@ export function AddLeadDialog({ open, onOpenChange, lead }: AddLeadDialogProps) 
       notes: form.notes || undefined, rejection_reason: form.rejection_reason || undefined,
       is_family_lead: form.is_family_lead,
       assigned_supervisor_id: form.assigned_to ? Number(form.assigned_to) : undefined,
+      // Assigning a teacher flows onto the provisioned student so the calendar's
+      // create-lesson form can filter students by teacher.
+      assigned_teacher_id: form.assigned_teacher_id ? Number(form.assigned_teacher_id) : undefined,
       payload: {
         emails: emails.filter(e => e.value),
         phones: phones.filter(p => p.value),
@@ -596,9 +668,9 @@ export function AddLeadDialog({ open, onOpenChange, lead }: AddLeadDialogProps) 
             assigned_teacher_id:  Number(enrollment.assigned_teacher_id),
             timezone:             enrollment.timezone,
             student_type:         enrollment.student_type,
-            sessions_per_month:   Number(enrollment.sessions_per_month),
             session_duration_min: Number(enrollment.session_duration_min),
-            monthly_price_minor:  Math.round(parseFloat(enrollment.monthly_price || '0') * 100),
+            package_hours:        Number(enrollment.package_hours),
+            package_price_minor:  Math.round(parseFloat(enrollment.package_price || '0') * 100),
             currency:             enrollment.currency,
             guardian_name:        enrollment.guardian_name || undefined,
             guardian_whatsapp:    enrollment.guardian_whatsapp || undefined,
@@ -625,201 +697,186 @@ export function AddLeadDialog({ open, onOpenChange, lead }: AddLeadDialogProps) 
   return (
     <DialogPrimitive.Root open={open} onOpenChange={v => { if (!v) reset(); onOpenChange(v) }}>
       <DialogPrimitive.Portal>
-        <DialogPrimitive.Backdrop className="fixed inset-0 z-50 bg-[#0B1F3A]/50 backdrop-blur-sm data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0 duration-200" />
+        <DialogPrimitive.Backdrop className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0 duration-200" />
         <DialogPrimitive.Popup className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none" style={{ outline: 'none' }}>
           <div
-            className="relative pointer-events-auto w-full max-w-2xl max-h-[94vh] flex flex-col rounded-2xl shadow-2xl overflow-hidden"
+            className="relative pointer-events-auto w-full max-w-2xl max-h-[94vh] flex flex-col rounded-2xl overflow-hidden"
             onClick={e => e.stopPropagation()}
-            style={{ background: 'rgb(244 246 250)' }}
+            style={{ background: '#fff', boxShadow: '0 20px 60px rgb(0 0 0 / 0.18)' }}
           >
             {/* ── Header ── */}
-            <div
-              className="shrink-0 overflow-hidden"
-              style={{ background: 'linear-gradient(135deg, #0d2548 0%, #0B1F3A 65%, #071528 100%)' }}
-            >
-              <div style={{ height: 2, background: 'linear-gradient(90deg, transparent, #C9A24B, transparent)' }} />
-              <svg className="absolute right-0 top-0 pointer-events-none" width="200" height="80" aria-hidden>
-                <g transform="translate(150, -15) scale(1.6)" opacity="0.05"><path d={STAR} fill="#C9A24B" /></g>
-                <g transform="translate(80, 30) scale(0.9)" opacity="0.03"><path d={STAR} fill="#C9A24B" /></g>
-              </svg>
-              <svg className="absolute inset-0 w-full pointer-events-none" style={{ height: 72 }} aria-hidden>
-                <pattern id="add-lead-dots" x="0" y="0" width="24" height="24" patternUnits="userSpaceOnUse">
-                  <circle cx="1" cy="1" r="0.7" fill="#C9A24B" opacity="0.07" />
-                </pattern>
-                <rect width="100%" height="100%" fill="url(#add-lead-dots)" />
-              </svg>
-              <div className="relative flex items-center gap-3 px-6 py-4">
-                <div className="shrink-0 w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: 'rgba(201,162,75,0.15)', border: '1px solid rgba(201,162,75,0.25)' }}>
-                  <svg width="20" height="20" viewBox="0 0 100 100" aria-hidden><path d={STAR} fill="#C9A24B" /></svg>
+            <div className="shrink-0 flex items-center justify-between px-6 py-4 border-b bg-white" style={{ borderColor: BORDER }}>
+              <div className="flex items-center gap-2.5">
+                <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0" style={{ background: TEAL_50 }}>
+                  <UserPlus size={14} style={{ color: TEAL_600 }} />
                 </div>
-                <div className="flex-1 min-w-0">
-                  <DialogPrimitive.Title className="font-bold text-white leading-none" style={{ fontFamily: "'Cormorant Garamond', Georgia, serif", fontSize: '1.15rem' }}>
+                <div className="min-w-0">
+                  <DialogPrimitive.Title className="text-base font-semibold leading-tight" style={{ color: NAVY }}>
                     {isEditMode ? t('leads.editLeadTitle') : t('leads.addLead')}
                   </DialogPrimitive.Title>
-                  <DialogPrimitive.Description className="text-xs mt-0.5" style={{ color: 'rgba(201,162,75,0.7)' }}>
+                  <DialogPrimitive.Description className="text-xs mt-0.5 truncate" style={{ color: MUTED }}>
                     {isEditMode ? t('leads.editingName', { name: lead?.name ?? '' }) : t('leads.addLeadSubtitle')}
                   </DialogPrimitive.Description>
                 </div>
-                <DialogPrimitive.Close className="p-1.5 rounded-lg hover:bg-white/10 transition-colors text-white/50 hover:text-white shrink-0">
-                  <X size={16} />
-                </DialogPrimitive.Close>
               </div>
-              <div style={{ height: 1.5, background: 'linear-gradient(90deg, transparent, #C9A24B66, transparent)' }} />
+              <DialogPrimitive.Close className="p-1.5 rounded-lg hover:bg-black/5 transition-colors shrink-0" aria-label={t('common.dismiss')}>
+                <X size={18} />
+              </DialogPrimitive.Close>
             </div>
 
             {/* ── Body ── */}
-            <form id="lead-form" onSubmit={handleSubmit} className="flex-1 overflow-y-auto px-6 py-2" style={{ scrollbarWidth: 'thin' }}>
+            <form id="lead-form" onSubmit={handleSubmit} className="flex-1 overflow-y-auto px-6 py-5 space-y-4" style={{ scrollbarWidth: 'thin' }}>
 
               {/* Family Lead toggle */}
-              <label className="flex items-center gap-2.5 mt-3 mb-1 cursor-pointer py-1">
-                <input type="checkbox" checked={form.is_family_lead} onChange={e => set('is_family_lead', e.target.checked)} className="w-4 h-4 rounded accent-[rgb(14,124,90)]" />
-                <div className="flex items-center gap-1.5">
-                  <Users size={13} style={{ color: 'rgb(90 100 112)' }} />
-                  <span className="text-sm" style={{ color: '#0B1F3A' }}>{t('leads.familyLeadToggle')}</span>
-                </div>
+              <label className="flex items-center gap-2.5 cursor-pointer">
+                <input type="checkbox" checked={form.is_family_lead} onChange={e => set('is_family_lead', e.target.checked)} className="w-4 h-4 rounded accent-[#0d9488]" />
+                <Users size={14} style={{ color: MUTED }} />
+                <span className="text-sm" style={{ color: NAVY }}>{t('leads.familyLeadToggle')}</span>
               </label>
 
               {/* ─── 1: Status & Personal Info ─── */}
-              <SectionDivider title={t('leads.sectionStatusPersonal')} />
-              <div className="space-y-3">
-                <div className="grid grid-cols-2 gap-3">
-                  <Field label={t('common.status')}>
-                    {isAlreadyClosed ? (
-                      <div className="flex items-center gap-2 px-3 py-2 rounded-lg border text-sm" style={{ ...inpStyle, background: 'rgba(14,124,90,0.07)', borderColor: 'rgba(14,124,90,0.3)' }}>
-                        <span className="w-2 h-2 rounded-full shrink-0" style={{ background: 'rgb(14 124 90)' }} />
-                        <span style={{ color: 'rgb(14 124 90)', fontWeight: 600 }}>{t('leads.statusClosed')}</span>
-                        <span className="ml-auto text-[10px]" style={{ color: 'rgb(90 100 112)' }}>{t('leads.convertedToStudent')}</span>
-                      </div>
-                    ) : (
-                      <SearchSelect value={form.status} onChange={v => set('status', v as LeadStatus)} options={statusOptions} placeholder={t('leads.selectStatus')} clearable={false} />
-                    )}
+              <SectionCard title={t('leads.sectionStatusPersonal')}>
+                <div className="space-y-3">
+                  <div className="grid grid-cols-2 gap-3">
+                    <Field label={t('common.status')}>
+                      {isAlreadyClosed ? (
+                        <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl border text-sm bg-white" style={{ borderColor: TEAL_100, background: TEAL_50 }}>
+                          <span className="w-2 h-2 rounded-full shrink-0" style={{ background: TEAL_600 }} />
+                          <span style={{ color: TEAL_600, fontWeight: 600 }}>{t('leads.statusClosed')}</span>
+                          <span className="ml-auto text-[10px]" style={{ color: MUTED }}>{t('leads.convertedToStudent')}</span>
+                        </div>
+                      ) : (
+                        <SearchSelect value={form.status} onChange={v => set('status', v as LeadStatus)} options={statusOptions} placeholder={t('leads.selectStatus')} clearable={false} />
+                      )}
+                    </Field>
+                    <Field label={t('leads.fieldPriority')}>
+                      <SearchSelect value={form.priority} onChange={v => set('priority', v as LeadPriority)} options={priorityOptions} placeholder={t('leads.selectPriority')} clearable={false} />
+                    </Field>
+                  </div>
+                  <Field label={t('leads.fieldFullName')} required>
+                    <input required className={inp} style={inpStyle} placeholder={t('leads.fullNamePlaceholder')} value={form.name} onChange={e => set('name', e.target.value)} />
                   </Field>
-                  <Field label={t('leads.fieldPriority')}>
-                    <SearchSelect value={form.priority} onChange={v => set('priority', v as LeadPriority)} options={priorityOptions} placeholder={t('leads.selectPriority')} clearable={false} />
-                  </Field>
+                  <div className="grid grid-cols-2 gap-3">
+                    <MultiContactField label={t('leads.fieldEmailAddresses')} entries={emails} onChange={setEmails} placeholder="contact@example.com" />
+                    <MultiContactField label={t('leads.fieldPhoneNumbers')}   entries={phones}  onChange={setPhones}  placeholder="+1 234 567 890" />
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <Field label={t('leads.fieldAge')}>
+                      <input type="number" min={1} max={120} className={inp} style={inpStyle} placeholder={t('leads.agePlaceholder')} value={form.age} onChange={e => set('age', e.target.value)} />
+                    </Field>
+                    <Field label={t('leads.fieldGender')}>
+                      <SearchSelect value={form.gender} onChange={v => set('gender', v)} options={genderOptions} placeholder={t('leads.selectGender')} />
+                    </Field>
+                    <Field label={t('common.country')}>
+                      <CountryPicker value={form.country} onChange={v => set('country', v)} />
+                    </Field>
+                    <Field label={t('leads.fieldCity')}>
+                      <input className={inp} style={inpStyle} placeholder={t('leads.fieldCity')} value={form.city} onChange={e => set('city', e.target.value)} />
+                    </Field>
+                  </div>
                 </div>
-                <Field label={t('leads.fieldFullName')} required>
-                  <input required className={inp} style={inpStyle} placeholder={t('leads.fullNamePlaceholder')} value={form.name} onChange={e => set('name', e.target.value)} />
-                </Field>
-                <div className="grid grid-cols-2 gap-3">
-                  <MultiContactField label={t('leads.fieldEmailAddresses')} entries={emails} onChange={setEmails} placeholder="contact@example.com" />
-                  <MultiContactField label={t('leads.fieldPhoneNumbers')}   entries={phones}  onChange={setPhones}  placeholder="+1 234 567 890" />
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <Field label={t('leads.fieldAge')}>
-                    <input type="number" min={1} max={120} className={inp} style={inpStyle} placeholder={t('leads.agePlaceholder')} value={form.age} onChange={e => set('age', e.target.value)} />
-                  </Field>
-                  <Field label={t('leads.fieldGender')}>
-                    <SearchSelect value={form.gender} onChange={v => set('gender', v)} options={genderOptions} placeholder={t('leads.selectGender')} />
-                  </Field>
-                  <Field label={t('common.country')}>
-                    <CountryPicker value={form.country} onChange={v => set('country', v)} />
-                  </Field>
-                  <Field label={t('leads.fieldCity')}>
-                    <input className={inp} style={inpStyle} placeholder={t('leads.fieldCity')} value={form.city} onChange={e => set('city', e.target.value)} />
-                  </Field>
-                </div>
-              </div>
+              </SectionCard>
 
               {/* ─── 2: Subjects ─── */}
-              <SectionDivider title={t('leads.sectionSubjects')} />
-              <div className="space-y-3">
-                <div className="grid grid-cols-2 gap-3">
-                  <Field label={t('leads.fieldCourseInterest')}>
-                    <SearchSelect value={form.course_interest_id} onChange={v => set('course_interest_id', v)} options={courseOptions} placeholder={t('leads.selectCourse')} />
-                  </Field>
-                  <Field label={t('leads.fieldAssignedTeacher')}>
-                    <SearchSelect value={form.assigned_teacher_id} onChange={v => set('assigned_teacher_id', v)} options={teacherOptions} placeholder={t('leads.selectTeacher')} />
+              <SectionCard title={t('leads.sectionSubjects')}>
+                <div className="space-y-3">
+                  <div className="grid grid-cols-2 gap-3">
+                    <Field label={t('leads.fieldCourseInterest')}>
+                      <SearchSelect value={form.course_interest_id} onChange={v => set('course_interest_id', v)} options={courseOptions} placeholder={t('leads.selectCourse')} />
+                    </Field>
+                    <Field label={t('leads.fieldAssignedTeacher')}>
+                      <SearchSelect value={form.assigned_teacher_id} onChange={v => set('assigned_teacher_id', v)} options={teacherOptions} placeholder={t('leads.selectTeacher')} />
+                    </Field>
+                  </div>
+                  <Field label={t('leads.fieldSections')}>
+                    <MultiSelect value={form.sections} onChange={v => set('sections', v)} options={sectionOptions} placeholder={t('leads.sectionsPlaceholder')} />
                   </Field>
                 </div>
-                <Field label={t('leads.fieldSections')}>
-                  <TagInput value={form.sections} onChange={v => set('sections', v)} placeholder={t('leads.sectionsPlaceholder')} />
-                </Field>
-              </div>
+              </SectionCard>
 
               {/* ─── 3: Platform & Source ─── */}
-              <SectionDivider title={t('leads.sectionPlatformSource')} />
-              <div className="space-y-3">
-                <div className="grid grid-cols-2 gap-3">
-                  <Field label={t('leads.fieldPlatform')}>
-                    <SearchSelect value={form.platform} onChange={v => set('platform', v)} options={platformOptions} placeholder={t('leads.platformPlaceholder')} />
+              <SectionCard title={t('leads.sectionPlatformSource')}>
+                <div className="space-y-3">
+                  <div className="grid grid-cols-2 gap-3">
+                    <Field label={t('leads.fieldPlatform')}>
+                      <SearchSelect value={form.platform} onChange={v => set('platform', v)} options={platformOptions} placeholder={t('leads.platformPlaceholder')} />
+                    </Field>
+                    <Field label={t('leads.fieldSource')}>
+                      <SearchSelect value={form.source} onChange={v => set('source', v)} options={sourceOptions} placeholder={t('leads.sourcePlaceholder')} />
+                    </Field>
+                  </div>
+                  <Field label={t('leads.fieldPlatformUrl')}>
+                    <input className={inp} style={inpStyle} placeholder="https://…" value={form.platform_url} onChange={e => set('platform_url', e.target.value)} />
                   </Field>
-                  <Field label={t('leads.fieldSource')}>
-                    <SearchSelect value={form.source} onChange={v => set('source', v)} options={sourceOptions} placeholder={t('leads.sourcePlaceholder')} />
+                  <Field label={t('leads.fieldParentFamily')}>
+                    <div className="flex items-center gap-6 mt-0.5">
+                      {([
+                        { value: 'adult',      key: 'leads.parentModeAdult' },
+                        { value: 'new_family', key: 'leads.parentModeNewFamily' },
+                        { value: 'existing',   key: 'leads.parentModeExisting' },
+                      ] as const).map(opt => (
+                        <label key={opt.value} className="flex items-center gap-2 cursor-pointer">
+                          <input type="radio" name="parent_mode" value={opt.value} checked={form.parent_mode === opt.value} onChange={() => set('parent_mode', opt.value)} className="accent-[#0d9488]" />
+                          <span className="text-sm" style={{ color: NAVY }}>{t(opt.key)}</span>
+                        </label>
+                      ))}
+                    </div>
                   </Field>
                 </div>
-                <Field label={t('leads.fieldPlatformUrl')}>
-                  <input className={inp} style={inpStyle} placeholder="https://…" value={form.platform_url} onChange={e => set('platform_url', e.target.value)} />
-                </Field>
-                <Field label={t('leads.fieldParentFamily')}>
-                  <div className="flex items-center gap-6 mt-0.5">
-                    {([
-                      { value: 'adult',      key: 'leads.parentModeAdult' },
-                      { value: 'new_family', key: 'leads.parentModeNewFamily' },
-                      { value: 'existing',   key: 'leads.parentModeExisting' },
-                    ] as const).map(opt => (
-                      <label key={opt.value} className="flex items-center gap-2 cursor-pointer">
-                        <input type="radio" name="parent_mode" value={opt.value} checked={form.parent_mode === opt.value} onChange={() => set('parent_mode', opt.value)} className="accent-[rgb(14,124,90)]" />
-                        <span className="text-sm" style={{ color: '#0B1F3A' }}>{t(opt.key)}</span>
-                      </label>
-                    ))}
-                  </div>
-                </Field>
-              </div>
+              </SectionCard>
 
               {/* ─── 4: Package & Price ─── */}
-              <SectionDivider title={t('leads.sectionPackagePrice')} />
-              <div className="space-y-3">
-                <div className="grid grid-cols-4 gap-3">
-                  <Field label={t('leads.fieldPackageSessions')}>
-                    <input type="number" min={1} className={inp} style={inpStyle} placeholder="8" value={form.package_type} onChange={e => set('package_type', e.target.value)} />
-                  </Field>
-                  <Field label={t('leads.fieldHours')}>
-                    <input type="number" min={1} className={inp} style={inpStyle} placeholder="4" value={form.package_hours} onChange={e => set('package_hours', e.target.value)} />
-                  </Field>
-                  <Field label={t('leads.fieldPrice')}>
-                    <input type="number" min={0} step="0.01" className={inp} style={inpStyle} placeholder="120" value={form.subscription_price} onChange={e => set('subscription_price', e.target.value)} />
-                  </Field>
-                  <Field label={t('common.currency')}>
-                    <SearchSelect value={form.currency} onChange={v => set('currency', v)} options={CURRENCY_OPTIONS} placeholder="EUR" clearable={false} />
-                  </Field>
+              <SectionCard title={t('leads.sectionPackagePrice')}>
+                <div className="space-y-3">
+                  <div className="grid grid-cols-3 gap-3">
+                    <Field label={t('leads.fieldPackageHours')}>
+                      <input type="number" min={1} className={inp} style={inpStyle} placeholder="8" value={form.package_hours} onChange={e => set('package_hours', e.target.value)} />
+                    </Field>
+                    <Field label={t('leads.fieldPackagePrice')}>
+                      <input type="number" min={0} step="0.01" className={inp} style={inpStyle} placeholder="120" value={form.subscription_price} onChange={e => set('subscription_price', e.target.value)} />
+                    </Field>
+                    <Field label={t('common.currency')}>
+                      <SearchSelect value={form.currency} onChange={v => set('currency', v)} options={CURRENCY_OPTIONS} placeholder="EUR" clearable={false} />
+                    </Field>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <Field label={t('leads.fieldPaymentMethod')}>
+                      <SearchSelect value={form.payment_method} onChange={v => set('payment_method', v)} options={paymentOptions} placeholder={t('leads.selectMethod')} clearable={false} />
+                    </Field>
+                  </div>
                 </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <Field label={t('leads.fieldPaymentMethod')}>
-                    <SearchSelect value={form.payment_method} onChange={v => set('payment_method', v)} options={paymentOptions} placeholder={t('leads.selectMethod')} clearable={false} />
-                  </Field>
-                </div>
-              </div>
+              </SectionCard>
 
               {/* ─── 5: Follow Up ─── */}
-              <SectionDivider title={t('leads.sectionFollowUp')} />
-              <div className="grid grid-cols-2 gap-3">
-                <Field label={t('leads.fieldNextFollowUp')}>
-                  <input type="datetime-local" className={inp} style={inpStyle} value={form.next_followup} onChange={e => set('next_followup', e.target.value)} />
-                </Field>
-                <Field label={t('leads.fieldAssignedTo')}>
-                  <SearchSelect value={form.assigned_to} onChange={v => set('assigned_to', v)} options={teacherOptions} placeholder={t('status.unassigned')} />
-                </Field>
-              </div>
-
-              {/* ─── 6: Notes & Rejection ─── */}
-              <SectionDivider title={t('leads.sectionNotesRejection')} />
-              <div className="space-y-3">
-                <Field label={t('common.notes')}>
-                  <textarea rows={3} className={inp} style={inpStyle} placeholder={t('leads.notesPlaceholder')} value={form.notes} onChange={e => set('notes', e.target.value)} />
-                </Field>
+              <SectionCard title={t('leads.sectionFollowUp')}>
                 <div className="grid grid-cols-2 gap-3">
-                  <Field label={t('leads.fieldRejectionReason')}>
-                    <SearchSelect value={form.rejection_reason} onChange={v => set('rejection_reason', v)} options={rejectionOptions} placeholder={t('leads.ifApplicable')} />
+                  <Field label={t('leads.fieldNextFollowUp')}>
+                    <input type="datetime-local" className={inp} style={inpStyle} value={form.next_followup} onChange={e => set('next_followup', e.target.value)} />
+                  </Field>
+                  <Field label={t('leads.fieldAssignedTo')}>
+                    <SearchSelect value={form.assigned_to} onChange={v => set('assigned_to', v)} options={teacherOptions} placeholder={t('status.unassigned')} />
                   </Field>
                 </div>
-              </div>
+              </SectionCard>
+
+              {/* ─── 6: Notes & Rejection ─── */}
+              <SectionCard title={t('leads.sectionNotesRejection')}>
+                <div className="space-y-3">
+                  <Field label={t('common.notes')}>
+                    <textarea rows={3} className={inp} style={inpStyle} placeholder={t('leads.notesPlaceholder')} value={form.notes} onChange={e => set('notes', e.target.value)} />
+                  </Field>
+                  <div className="grid grid-cols-2 gap-3">
+                    <Field label={t('leads.fieldRejectionReason')}>
+                      <SearchSelect value={form.rejection_reason} onChange={v => set('rejection_reason', v)} options={rejectionOptions} placeholder={t('leads.ifApplicable')} />
+                    </Field>
+                  </div>
+                </div>
+              </SectionCard>
 
               {/* ─── 7: Student Enrollment (only when closing a non-closed lead) ─── */}
               {isClosing && (
-                <>
-                  <SectionDivider title={t('leads.sectionEnrollmentDetails')} />
-                  <div className="space-y-3 pb-3">
+                <SectionCard title={t('leads.sectionEnrollmentDetails')}>
+                  <div className="space-y-3">
                     <EnrollmentBanner />
 
                     <div className="grid grid-cols-2 gap-3">
@@ -839,8 +896,8 @@ export function AddLeadDialog({ open, onOpenChange, lead }: AddLeadDialogProps) 
                         <div className="flex items-center gap-6 px-1 py-2">
                           {(['adult', 'child'] as const).map(st => (
                             <label key={st} className="flex items-center gap-2 cursor-pointer">
-                              <input type="radio" name="student_type" value={st} checked={enrollment.student_type === st} onChange={() => setEnr('student_type', st)} className="accent-[rgb(14,124,90)]" />
-                              <span className="text-sm" style={{ color: '#0B1F3A' }}>{st === 'adult' ? t('leads.studentTypeAdult') : t('leads.studentTypeChild')}</span>
+                              <input type="radio" name="student_type" value={st} checked={enrollment.student_type === st} onChange={() => setEnr('student_type', st)} className="accent-[#0d9488]" />
+                              <span className="text-sm" style={{ color: NAVY }}>{st === 'adult' ? t('leads.studentTypeAdult') : t('leads.studentTypeChild')}</span>
                             </label>
                           ))}
                         </div>
@@ -848,14 +905,14 @@ export function AddLeadDialog({ open, onOpenChange, lead }: AddLeadDialogProps) 
                     </div>
 
                     <div className="grid grid-cols-4 gap-3">
-                      <Field label={t('leads.fieldSessionsPerMonth')} required>
-                        <input type="number" min={1} max={30} required={isClosing} className={inp} style={inpStyle} placeholder="4" value={enrollment.sessions_per_month} onChange={e => setEnr('sessions_per_month', e.target.value)} />
+                      <Field label={t('leads.fieldPackageHours')} required>
+                        <input type="number" min={1} required={isClosing} className={inp} style={inpStyle} placeholder="8" value={enrollment.package_hours} onChange={e => setEnr('package_hours', e.target.value)} />
                       </Field>
                       <Field label={t('common.duration')} required>
                         <SearchSelect value={enrollment.session_duration_min} onChange={v => setEnr('session_duration_min', v)} options={durationOptions} clearable={false} />
                       </Field>
-                      <Field label={t('leads.fieldMonthlyPrice')} required>
-                        <input type="number" min={0} step="0.01" required={isClosing} className={inp} style={inpStyle} placeholder="120" value={enrollment.monthly_price} onChange={e => setEnr('monthly_price', e.target.value)} />
+                      <Field label={t('leads.fieldPackagePrice')} required>
+                        <input type="number" min={0} step="0.01" required={isClosing} className={inp} style={inpStyle} placeholder="120" value={enrollment.package_price} onChange={e => setEnr('package_price', e.target.value)} />
                       </Field>
                       <Field label={t('common.currency')} required>
                         <SearchSelect value={enrollment.currency} onChange={v => setEnr('currency', v)} options={CURRENCY_OPTIONS} clearable={false} />
@@ -873,24 +930,20 @@ export function AddLeadDialog({ open, onOpenChange, lead }: AddLeadDialogProps) 
                       </div>
                     )}
                   </div>
-                </>
+                </SectionCard>
               )}
 
               {/* Already-closed info */}
               {isAlreadyClosed && (
-                <div className="mb-4 flex items-center gap-2 text-xs px-3 py-2.5 rounded-lg" style={{ background: 'rgba(14,124,90,0.07)', color: 'rgb(14 124 90)', border: '1px solid rgba(14,124,90,0.2)' }}>
+                <div className="flex items-center gap-2 text-xs px-3 py-2.5 rounded-xl" style={{ background: TEAL_50, color: TEAL_600, border: `1px solid ${TEAL_100}` }}>
                   <GraduationCap size={13} className="shrink-0" />
                   {t('leads.alreadyConvertedNote')}
                 </div>
               )}
-
-              <div className="pb-2" />
             </form>
 
             {/* ── Footer ── */}
-            <div className="relative shrink-0 flex items-center justify-between gap-3 px-6 py-4 border-t" style={{ background: '#fff', borderColor: 'rgb(229 233 240)' }}>
-              <div className="absolute left-0 right-0 top-0" style={{ height: 1, background: 'linear-gradient(90deg, transparent, #C9A24B33, transparent)' }} />
-
+            <div className="shrink-0 flex items-center justify-between gap-3 px-6 py-4 border-t bg-white" style={{ borderColor: BORDER }}>
               {/* Warning about closing */}
               {isClosing && (
                 <div className="flex items-center gap-1.5 text-xs" style={{ color: 'rgb(154 113 23)' }}>
@@ -900,13 +953,13 @@ export function AddLeadDialog({ open, onOpenChange, lead }: AddLeadDialogProps) 
               )}
 
               <div className="flex items-center gap-3 ml-auto">
-                <DialogPrimitive.Close className="px-4 py-2 rounded-lg text-sm font-medium border hover:bg-black/5 transition-colors" style={{ borderColor: 'rgb(229 233 240)' }}>
+                <DialogPrimitive.Close className="px-5 py-2.5 rounded-xl text-sm font-medium border hover:bg-black/5 transition-colors" style={{ borderColor: BORDER, color: NAVY }}>
                   {t('common.cancel')}
                 </DialogPrimitive.Close>
                 <button
                   type="submit" form="lead-form" disabled={isPending}
-                  className="inline-flex items-center gap-2 px-6 py-2 rounded-lg text-sm font-semibold text-white disabled:opacity-60 hover:opacity-90 transition-opacity"
-                  style={{ background: isClosing ? 'linear-gradient(135deg, #0d9488, rgb(14 124 90))' : 'linear-gradient(135deg, #0d9488, rgb(14 124 90))' }}
+                  className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-semibold text-white disabled:opacity-50 hover:opacity-90 transition-opacity"
+                  style={{ background: TEAL_600 }}
                 >
                   {isPending ? (isClosing ? t('leads.converting') : isEditMode ? t('common.saving') : t('common.creating')) : (isClosing ? t('leads.convertToStudent') : isEditMode ? t('common.save') : t('leads.createLeadButton'))}
                 </button>

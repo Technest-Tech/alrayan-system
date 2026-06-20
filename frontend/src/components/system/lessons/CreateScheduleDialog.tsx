@@ -7,6 +7,7 @@ import { useTeachers } from '@/hooks/system/useTeachers'
 import { useStudents } from '@/hooks/system/useStudents'
 import type { LessonSchedule, ScheduleSlot } from '@/types/system/lesson'
 import { SearchableSelect } from './SearchableSelect'
+import { useI18n } from '@/lib/system/i18n'
 
 /* ── Design tokens ────────────────────────────────────────── */
 const BORDER   = 'rgb(var(--border-default,229 233 240))'
@@ -53,7 +54,7 @@ function Field({ label, required, children }: { label: string; required?: boolea
 }
 
 /* ── Constants ───────────────────────────────────────────── */
-const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+const DAY_KEYS = ['days.sun', 'days.mon', 'days.tue', 'days.wed', 'days.thu', 'days.fri', 'days.sat']
 
 const TIME_OPTIONS = Array.from({ length: 48 }, (_, i) => {
   const h = String(Math.floor(i / 2)).padStart(2, '0')
@@ -63,12 +64,12 @@ const TIME_OPTIONS = Array.from({ length: 48 }, (_, i) => {
 
 const DURATION_OPTIONS = [30, 45, 60, 75, 90, 120]
 
-const RECURRENCE_OPTIONS: { value: LessonSchedule['recurrence']; label: string }[] = [
-  { value: 'none',          label: 'Does not repeat'  },
-  { value: 'weekly',        label: 'Every week'        },
-  { value: 'biweekly',      label: 'Every 2 weeks'     },
-  { value: 'every_4_weeks', label: 'Every 4 weeks'     },
-  { value: 'custom',        label: 'Custom'            },
+const RECURRENCE_OPTIONS: { value: LessonSchedule['recurrence']; key: string }[] = [
+  { value: 'none',          key: 'lessons.schedule.recurrenceNone'        },
+  { value: 'weekly',        key: 'lessons.schedule.recurrenceWeekly'      },
+  { value: 'biweekly',      key: 'lessons.schedule.recurrenceBiweekly'    },
+  { value: 'every_4_weeks', key: 'lessons.schedule.recurrenceEvery4Weeks' },
+  { value: 'custom',        key: 'lessons.schedule.recurrenceCustom'      },
 ]
 
 interface SchedulePrefill {
@@ -92,6 +93,7 @@ function newSlot(): Omit<ScheduleSlot, 'id'> {
 }
 
 export function CreateScheduleDialog({ open, onOpenChange, onSuccess, schedule, prefill }: Props) {
+  const { t } = useI18n()
   const { data: subjects = [] } = useLessonSubjects()
   const { data: teachersData }  = useTeachers()
   const { data: studentsData }  = useStudents({ per_page: 500 })
@@ -131,7 +133,7 @@ export function CreateScheduleDialog({ open, onOpenChange, onSuccess, schedule, 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!teacherId || !studentId || !startDate || !slots.length) {
-      toast.error('Please fill in all required fields.')
+      toast.error(t('lessons.schedule.toastRequiredFields'))
       return
     }
     const payload = {
@@ -145,15 +147,15 @@ export function CreateScheduleDialog({ open, onOpenChange, onSuccess, schedule, 
     try {
       if (isEdit && schedule) {
         await updateSchedule.mutateAsync({ id: schedule.id, ...payload })
-        toast.success('Schedule updated.')
+        toast.success(t('lessons.schedule.toastUpdated'))
       } else {
         await createSchedule.mutateAsync(payload)
-        toast.success('Schedule created.')
+        toast.success(t('lessons.schedule.toastCreated'))
       }
       onSuccess?.()
       onOpenChange(false)
     } catch {
-      toast.error('Something went wrong. Please try again.')
+      toast.error(t('lessons.schedule.toastError'))
     }
   }
 
@@ -180,9 +182,9 @@ export function CreateScheduleDialog({ open, onOpenChange, onSuccess, schedule, 
               <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: TEAL_50 }}>
                 <RotateCw size={14} style={{ color: TEAL_600 }} />
               </div>
-              <h2 className="text-base font-semibold" style={{ color: NAVY }}>{isEdit ? 'Edit Schedule' : 'Create Schedule'}</h2>
+              <h2 className="text-base font-semibold" style={{ color: NAVY }}>{isEdit ? t('lessons.schedule.editTitle') : t('lessons.schedule.createTitle')}</h2>
             </div>
-            <button onClick={() => onOpenChange(false)} className="p-1.5 rounded-lg hover:bg-black/5 transition-colors" aria-label="Close">
+            <button onClick={() => onOpenChange(false)} className="p-1.5 rounded-lg hover:bg-black/5 transition-colors" aria-label={t('lessons.close')}>
               <X size={18} />
             </button>
           </div>
@@ -191,30 +193,30 @@ export function CreateScheduleDialog({ open, onOpenChange, onSuccess, schedule, 
           <form onSubmit={handleSubmit} className="px-6 py-5 space-y-4">
 
             {/* ── Participants ─────────────────────────────── */}
-            <SectionCard title="Participants">
+            <SectionCard title={t('lessons.form.sectionParticipants')}>
               <div className="grid grid-cols-3 gap-3">
-                <Field label="Teacher" required>
+                <Field label={t('common.teacher')} required>
                   <SearchableSelect
-                    options={teachers.map(t => ({ value: String(t.id), label: t.name ?? `Teacher #${t.id}` }))}
+                    options={teachers.map(tc => ({ value: String(tc.id), label: tc.name ?? t('lessons.teacherFallback', { id: String(tc.id) }) }))}
                     value={teacherId}
                     onChange={setTeacherId}
-                    placeholder="Select…"
+                    placeholder={t('lessons.selectPlaceholder')}
                   />
                 </Field>
-                <Field label="Student" required>
+                <Field label={t('lessons.form.fieldStudent')} required>
                   <SearchableSelect
                     options={students.map(s => ({ value: String(s.id), label: s.name }))}
                     value={studentId}
                     onChange={setStudentId}
-                    placeholder="Select…"
+                    placeholder={t('lessons.selectPlaceholder')}
                   />
                 </Field>
-                <Field label="Subject">
+                <Field label={t('lessons.form.fieldSubject')}>
                   <SearchableSelect
                     options={subjects.map(s => ({ value: String(s.id), label: s.name }))}
                     value={subjectId}
                     onChange={setSubjectId}
-                    placeholder="Subject"
+                    placeholder={t('lessons.form.fieldSubject')}
                     clearable
                   />
                 </Field>
@@ -222,7 +224,7 @@ export function CreateScheduleDialog({ open, onOpenChange, onSuccess, schedule, 
             </SectionCard>
 
             {/* ── Schedule (time slots) ────────────────────── */}
-            <SectionCard title="Schedule">
+            <SectionCard title={t('lessons.form.sectionSchedule')}>
               <div className="space-y-2.5">
                 {slots.map((slot, i) => (
                   <div
@@ -232,21 +234,21 @@ export function CreateScheduleDialog({ open, onOpenChange, onSuccess, schedule, 
                   >
                     {/* Row labels */}
                     <div className="grid grid-cols-[1fr_1fr_1fr_auto] gap-2 mb-1.5">
-                      <p className="text-xs font-medium" style={{ color: MUTED }}>Day of Week</p>
-                      <p className="text-xs font-medium" style={{ color: MUTED }}>Start Time</p>
-                      <p className="text-xs font-medium" style={{ color: MUTED }}>Duration</p>
+                      <p className="text-xs font-medium" style={{ color: MUTED }}>{t('lessons.schedule.dayOfWeek')}</p>
+                      <p className="text-xs font-medium" style={{ color: MUTED }}>{t('lessons.schedule.startTime')}</p>
+                      <p className="text-xs font-medium" style={{ color: MUTED }}>{t('common.duration')}</p>
                       <div />
                     </div>
                     {/* Row inputs */}
                     <div className="grid grid-cols-[1fr_1fr_1fr_auto] gap-2 items-center">
                       <SearchableSelect
-                        options={DAY_NAMES.map((d, idx) => ({ value: String(idx), label: d }))}
+                        options={DAY_KEYS.map((dayKey, idx) => ({ value: String(idx), label: t(dayKey) }))}
                         value={String(slot.day_of_week)}
                         onChange={v => updateSlot(i, 'day_of_week', v)}
                       />
 
                       <SearchableSelect
-                        options={TIME_OPTIONS.map(t => ({ value: t, label: t }))}
+                        options={TIME_OPTIONS.map(opt => ({ value: opt, label: opt }))}
                         value={slot.start_time}
                         onChange={v => updateSlot(i, 'start_time', v)}
                       />
@@ -257,7 +259,7 @@ export function CreateScheduleDialog({ open, onOpenChange, onSuccess, schedule, 
                         value={slot.duration_minutes}
                         onChange={e => updateSlot(i, 'duration_minutes', e.target.value)}
                       >
-                        {DURATION_OPTIONS.map(d => <option key={d} value={d}>{d}min</option>)}
+                        {DURATION_OPTIONS.map(d => <option key={d} value={d}>{t('lessons.form.minutesShort', { n: String(d) })}</option>)}
                       </select>
 
                       {slots.length > 1 ? (
@@ -265,7 +267,7 @@ export function CreateScheduleDialog({ open, onOpenChange, onSuccess, schedule, 
                           type="button"
                           onClick={() => removeSlot(i)}
                           className="p-1.5 rounded-lg hover:bg-red-50 text-red-400 transition-colors"
-                          aria-label="Remove slot"
+                          aria-label={t('lessons.schedule.removeSlot')}
                         >
                           <Trash2 size={14} />
                         </button>
@@ -284,14 +286,14 @@ export function CreateScheduleDialog({ open, onOpenChange, onSuccess, schedule, 
                 style={{ color: TEAL_600 }}
               >
                 <Plus size={14} />
-                Add another time slot
+                {t('lessons.schedule.addSlot')}
               </button>
             </SectionCard>
 
             {/* ── Recurrence ───────────────────────────────── */}
-            <SectionCard title="Recurrence">
+            <SectionCard title={t('lessons.schedule.sectionRecurrence')}>
               <div className="grid grid-cols-2 gap-3 mb-4">
-                <Field label="Start Date" required>
+                <Field label={t('lessons.schedule.startDate')} required>
                   <input
                     type="date"
                     className={inp}
@@ -300,14 +302,14 @@ export function CreateScheduleDialog({ open, onOpenChange, onSuccess, schedule, 
                     onChange={e => setStartDate(e.target.value)}
                   />
                 </Field>
-                <Field label="Recurring">
+                <Field label={t('lessons.schedule.recurring')}>
                   <select
                     className={inp}
                     style={inpStyle}
                     value={recurrence}
                     onChange={e => setRecurrence(e.target.value as LessonSchedule['recurrence'])}
                   >
-                    {RECURRENCE_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                    {RECURRENCE_OPTIONS.map(o => <option key={o.value} value={o.value}>{t(o.key)}</option>)}
                   </select>
                 </Field>
               </div>
@@ -320,14 +322,14 @@ export function CreateScheduleDialog({ open, onOpenChange, onSuccess, schedule, 
                 <RotateCw size={14} style={{ color: TEAL_400, flexShrink: 0 }} />
                 <p className="text-xs" style={{ color: MUTED }}>
                   {recurrence === 'none'
-                    ? 'Lessons will be created only for the first occurrence of each time slot.'
+                    ? t('lessons.schedule.hintNone')
                     : recurrence === 'weekly'
-                    ? 'A lesson will be generated every week for each time slot, 90 days ahead.'
+                    ? t('lessons.schedule.hintWeekly')
                     : recurrence === 'biweekly'
-                    ? 'A lesson will be generated every 2 weeks for each time slot, 90 days ahead.'
+                    ? t('lessons.schedule.hintBiweekly')
                     : recurrence === 'every_4_weeks'
-                    ? 'A lesson will be generated every 4 weeks for each time slot, 90 days ahead.'
-                    : 'Custom recurrence — define the pattern after creating.'}
+                    ? t('lessons.schedule.hintEvery4Weeks')
+                    : t('lessons.schedule.hintCustom')}
                 </p>
               </div>
             </SectionCard>
@@ -340,7 +342,7 @@ export function CreateScheduleDialog({ open, onOpenChange, onSuccess, schedule, 
                 className="px-5 py-2.5 rounded-xl text-sm font-medium border hover:bg-black/5 transition-colors"
                 style={{ borderColor: BORDER, color: NAVY }}
               >
-                Cancel
+                {t('common.cancel')}
               </button>
               <button
                 type="submit"
@@ -348,7 +350,7 @@ export function CreateScheduleDialog({ open, onOpenChange, onSuccess, schedule, 
                 className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50"
                 style={{ background: TEAL_600 }}
               >
-                {(createSchedule.isPending || updateSchedule.isPending) ? 'Saving…' : isEdit ? 'Update Schedule' : 'Create Schedule'}
+                {(createSchedule.isPending || updateSchedule.isPending) ? t('common.saving') : isEdit ? t('lessons.schedule.updateSchedule') : t('lessons.schedule.createSchedule')}
               </button>
             </div>
           </form>

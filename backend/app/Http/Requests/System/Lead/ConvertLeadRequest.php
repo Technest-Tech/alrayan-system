@@ -13,9 +13,10 @@ class ConvertLeadRequest extends FormRequest
             'assigned_teacher_id'   => 'required|exists:sys_teachers,id',
             'timezone'              => 'required|string|max:60',
             'student_type'          => 'required|in:child,adult',
-            'sessions_per_month'    => 'required|integer|min:1|max:30',
             'session_duration_min'  => 'required|integer|in:30,45,60',
-            'monthly_price_minor'   => 'required|integer|min:0',
+            // Package-based enrollment: a starting package of N hours at a fixed tariff (price).
+            'package_hours'         => 'required|integer|min:1',
+            'package_price_minor'   => 'required|integer|min:0',
             'currency'              => 'required|string|size:3',
             // Child: link existing guardian or create a new one
             'guardian_id'           => 'nullable|integer|exists:sys_guardians,id',

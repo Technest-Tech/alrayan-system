@@ -2,8 +2,10 @@
 import { PageHeader } from '@/components/system/primitives/PageHeader'
 import { MoneyDisplay } from '@/components/system/primitives/MoneyDisplay'
 import { useMonthlyReports, useRegenerateMonthlyReport } from '@/hooks/system/useMonthlyReports'
+import { useI18n } from '@/lib/system/i18n'
 
 export default function MonthlyReportPage() {
+  const { t } = useI18n()
   const { data, isLoading } = useMonthlyReports()
   const { mutate: regenerate, isPending } = useRegenerateMonthlyReport()
 
@@ -11,16 +13,16 @@ export default function MonthlyReportPage() {
 
   return (
     <>
-      <PageHeader title="Monthly Reports" description="Auto-generated on the 1st of each month." />
+      <PageHeader title={t('accounting.monthlyReport.title')} description={t('accounting.monthlyReport.subtitle')} />
 
       <div className="mt-6 rounded-2xl overflow-hidden" style={{ border: '1px solid rgb(var(--border-default))' }}>
         <table className="w-full text-sm">
           <thead style={{ background: 'rgb(var(--surface-card-2))' }}>
             <tr>
-              <th className="px-4 py-3 text-left font-medium">Period</th>
-              <th className="px-4 py-3 text-left font-medium">Generated</th>
-              <th className="px-4 py-3 text-right font-medium">Net profit</th>
-              <th className="px-4 py-3 text-right font-medium">Actions</th>
+              <th className="px-4 py-3 text-left font-medium">{t('accounting.monthlyReport.period')}</th>
+              <th className="px-4 py-3 text-left font-medium">{t('accounting.monthlyReport.generated')}</th>
+              <th className="px-4 py-3 text-right font-medium">{t('accounting.monthlyReport.netProfit')}</th>
+              <th className="px-4 py-3 text-right font-medium">{t('common.actions')}</th>
             </tr>
           </thead>
           <tbody>
@@ -56,7 +58,7 @@ export default function MonthlyReportPage() {
                     disabled={isPending}
                     className="px-3 py-1 text-xs rounded-lg border opacity-60 hover:opacity-100 transition-opacity"
                     style={{ borderColor: 'rgb(var(--border-default))' }}>
-                    Regenerate
+                    {t('accounting.monthlyReport.regenerate')}
                   </button>
                 </td>
               </tr>

@@ -1,6 +1,7 @@
 'use client'
 import { useState } from 'react'
 import { ChevronDown } from 'lucide-react'
+import { useI18n } from '@/lib/system/i18n'
 
 // Common countries — extend as needed
 const COUNTRIES = [
@@ -27,6 +28,7 @@ interface CountrySelectProps {
 }
 
 export function CountrySelect({ value, onChange, disabled }: CountrySelectProps) {
+  const { t } = useI18n()
   const [q, setQ] = useState('')
   const [open, setOpen] = useState(false)
   const selected = COUNTRIES.find(c => c.code === value)
@@ -41,7 +43,7 @@ export function CountrySelect({ value, onChange, disabled }: CountrySelectProps)
         className="w-full flex items-center justify-between px-3 py-2 rounded-lg border text-sm outline-none disabled:opacity-50"
         style={{ borderColor: 'rgb(var(--border-default, 229 233 240))', background: 'rgb(var(--surface-card, 255 255 255))' }}
       >
-        <span>{selected?.label ?? 'Select country'}</span>
+        <span>{selected?.label ?? t('pickers.selectCountry')}</span>
         <ChevronDown size={14} className="opacity-50" />
       </button>
 
@@ -56,7 +58,7 @@ export function CountrySelect({ value, onChange, disabled }: CountrySelectProps)
               <input
                 autoFocus
                 type="text"
-                placeholder="Search…"
+                placeholder={t('pickers.searchPlaceholder')}
                 value={q}
                 onChange={e => setQ(e.target.value)}
                 className="w-full px-2 py-1 text-sm bg-transparent outline-none"

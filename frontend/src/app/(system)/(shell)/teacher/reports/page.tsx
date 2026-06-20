@@ -1,26 +1,28 @@
 'use client'
 import { PageHeader } from '@/components/system/primitives/PageHeader'
 import { useSessionReports } from '@/hooks/system/useSessionReports'
+import { useI18n } from '@/lib/system/i18n'
 
-const PERF_LABELS: Record<string, string> = {
-  excellent:        '🌟 Excellent',
-  good:             '👍 Good',
-  needs_improvement:'📈 Needs improvement',
+const PERF_KEYS: Record<string, string> = {
+  excellent:        'teacher.reports.perfExcellent',
+  good:             'teacher.reports.perfGood',
+  needs_improvement:'teacher.reports.perfNeedsImprovement',
 }
 
 export default function TeacherReportsPage() {
+  const { t } = useI18n()
   const { data: result, isLoading } = useSessionReports({})
   const reports = (result as any)?.data ?? []
 
   return (
     <>
-      <PageHeader title="My reports" description="Session reports you've submitted." />
+      <PageHeader title={t('teacher.reports.title')} description={t('teacher.reports.description')} />
 
       {isLoading ? (
-        <div className="text-sm text-muted-foreground">Loading…</div>
+        <div className="text-sm text-muted-foreground">{t('common.loading')}</div>
       ) : reports.length === 0 ? (
         <div className="rounded-lg border p-8 text-center text-sm text-muted-foreground">
-          No reports submitted yet.
+          {t('teacher.reports.empty')}
         </div>
       ) : (
         <div className="space-y-2">
@@ -33,7 +35,7 @@ export default function TeacherReportsPage() {
                     {r.session ? new Date(r.session.scheduled_start).toLocaleString() : new Date(r.submitted_at).toLocaleString()}
                   </div>
                 </div>
-                <span className="text-sm">{PERF_LABELS[r.performance] ?? r.performance}</span>
+                <span className="text-sm">{PERF_KEYS[r.performance] ? t(PERF_KEYS[r.performance]) : r.performance}</span>
               </div>
               <p className="mt-2 text-sm text-muted-foreground line-clamp-2">{r.covered_text}</p>
             </div>

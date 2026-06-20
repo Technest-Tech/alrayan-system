@@ -6,6 +6,7 @@ import { SalaryStatement } from '@/components/system/teacher/SalaryStatement'
 import { SalaryHistoryTable } from '@/components/system/teacher/SalaryHistoryTable'
 import { useQuery } from '@tanstack/react-query'
 import { api } from '@/lib/system/api'
+import { useI18n } from '@/lib/system/i18n'
 import type { SalaryStatement as SalaryStatementType } from '@/types/system/payroll'
 import type { Payroll } from '@/types/system/payroll'
 
@@ -23,6 +24,7 @@ function useMySalaryStatement(year?: number, month?: number) {
 }
 
 export default function TeacherSalaryPage() {
+  const { t } = useI18n()
   const { data, isLoading, error } = useMySalaryStatement()
   const [selectedPayroll, setSelectedPayroll] = useState<Payroll | null>(null)
 
@@ -34,8 +36,8 @@ export default function TeacherSalaryPage() {
   return (
     <>
       <PageHeader
-        title="Salary"
-        description="Monthly salary statements."
+        title={t('teacher.salary.title')}
+        description={t('teacher.salary.description')}
         actions={
           displayPayroll && (
             <a
@@ -45,19 +47,19 @@ export default function TeacherSalaryPage() {
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium border border-gray-200 hover:bg-gray-50 transition-colors"
             >
               <Download size={14} />
-              Download PDF
+              {t('teacher.salary.downloadPdf')}
             </a>
           )
         }
       />
 
       {isLoading ? (
-        <div className="py-20 text-center text-sm opacity-40">Loading...</div>
+        <div className="py-20 text-center text-sm opacity-40">{t('common.loading')}</div>
       ) : error ? (
         <div className="py-10 text-center text-sm text-red-500">{(error as Error).message}</div>
       ) : !current && history.length === 0 ? (
         <div className="py-20 text-center text-sm opacity-40">
-          No salary data available yet. Your first statement will appear once payroll is configured.
+          {t('teacher.salary.noData')}
         </div>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -67,14 +69,14 @@ export default function TeacherSalaryPage() {
               <SalaryStatement payroll={displayPayroll} />
             ) : (
               <p className="text-sm opacity-40 py-10 text-center">
-                No payroll processed for the current period yet.
+                {t('teacher.salary.noCurrentPayroll')}
               </p>
             )}
           </div>
 
           {/* History */}
           <div>
-            <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-3">History</p>
+            <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-3">{t('teacher.salary.history')}</p>
             <SalaryHistoryTable
               history={history}
               selectedId={displayPayroll?.id}

@@ -4,10 +4,12 @@ import { PageHeader } from '@/components/system/primitives/PageHeader'
 import { WhatsAppGroupTable } from '@/components/system/whatsapp/WhatsAppGroupTable'
 import { RegisterGroupSheet } from '@/components/system/whatsapp/RegisterGroupSheet'
 import { useWhatsAppGroups } from '@/hooks/system/useWhatsAppGroups'
+import { useI18n } from '@/lib/system/i18n'
 import { Button } from '@/components/ui/button'
 import { Plus } from 'lucide-react'
 
 export default function WhatsAppGroupsPage() {
+  const { t } = useI18n()
   const [open, setOpen] = useState(false)
   const [filters, setFilters] = useState<{ type?: string; status?: string }>({})
   const { data, isLoading } = useWhatsAppGroups(filters)
@@ -15,9 +17,9 @@ export default function WhatsAppGroupsPage() {
 
   return (
     <>
-      <PageHeader title="WhatsApp groups" description="Manage student and teacher WhatsApp groups.">
+      <PageHeader title={t('whatsappGroups.title')} description={t('whatsappGroups.subtitle')}>
         <Button size="sm" onClick={() => setOpen(true)}>
-          <Plus className="h-4 w-4 mr-1" /> Register group
+          <Plus className="h-4 w-4 mr-1" /> {t('whatsappGroups.registerGroup')}
         </Button>
       </PageHeader>
 

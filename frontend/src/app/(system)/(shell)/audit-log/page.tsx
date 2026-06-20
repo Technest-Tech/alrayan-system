@@ -2,17 +2,23 @@
 import { useState } from 'react'
 import { PageHeader } from '@/components/system/primitives/PageHeader'
 import { useAuditLog, useExportAuditLog } from '@/hooks/system/useAuditLog'
+import { useI18n } from '@/lib/system/i18n'
 import type { AuditLogEntry } from '@/types/system/auditLog'
 
-function formatRelative(iso: string) {
-  const diff = Date.now() - new Date(iso).getTime()
-  if (diff < 60_000) return 'just now'
-  if (diff < 3_600_000) return `${Math.round(diff / 60_000)}m ago`
-  if (diff < 86_400_000) return `${Math.round(diff / 3_600_000)}h ago`
-  return new Date(iso).toLocaleDateString()
+function useFormatRelative() {
+  const { t } = useI18n()
+  return (iso: string) => {
+    const diff = Date.now() - new Date(iso).getTime()
+    if (diff < 60_000) return t('auditLog.justNow')
+    if (diff < 3_600_000) return t('auditLog.minutesAgo', { n: String(Math.round(diff / 60_000)) })
+    if (diff < 86_400_000) return t('auditLog.hoursAgo', { n: String(Math.round(diff / 3_600_000)) })
+    return new Date(iso).toLocaleDateString()
+  }
 }
 
 export default function AuditLogPage() {
+  const { t } = useI18n()
+  const formatRelative = useFormatRelative()
   const [filters, setFilters] = useState({ actor: '', action: '', from: '', to: '', page: 1 })
   const [selected, setSelected] = useState<AuditLogEntry | null>(null)
   const { data, isLoading } = useAuditLog(filters)
@@ -20,22 +26,24 @@ export default function AuditLogPage() {
 
   const entries = data?.data ?? []
 
+  const filterFields = [
+    { key: 'actor',  placeholder: t('auditLog.filterActor') },
+    { key: 'action', placeholder: t('auditLog.filterAction') },
+    { key: 'from',   placeholder: t('auditLog.filterFromDate'), type: 'date' },
+    { key: 'to',     placeholder: t('auditLog.filterToDate'),   type: 'date' },
+  ]
+
   return (
     <>
-      <PageHeader title="Audit Log" description="Every action recorded.">
+      <PageHeader title={t('auditLog.title')} description={t('auditLog.subtitle')}>
         <button onClick={() => exportLog(filters)}
           className="px-4 py-2 rounded-xl text-sm border" style={{ borderColor: 'rgb(var(--border-default))' }}>
-          Export
+          {t('auditLog.export')}
         </button>
       </PageHeader>
 
       <div className="flex flex-wrap gap-3 mt-6">
-        {[
-          { key: 'actor',  placeholder: 'Actor…' },
-          { key: 'action', placeholder: 'Action…' },
-          { key: 'from',   placeholder: 'From date', type: 'date' },
-          { key: 'to',     placeholder: 'To date',   type: 'date' },
-        ].map(f => (
+        {filterFields.map(f => (
           <input key={f.key} type={f.type ?? 'text'}
             placeholder={f.placeholder}
             value={(filters as Record<string, string | number>)[f.key] as string}
@@ -49,11 +57,11 @@ export default function AuditLogPage() {
         <table className="w-full text-sm">
           <thead style={{ background: 'rgb(var(--surface-card-2))' }}>
             <tr>
-              <th className="px-4 py-3 text-left font-medium">When</th>
-              <th className="px-4 py-3 text-left font-medium">Actor</th>
-              <th className="px-4 py-3 text-left font-medium">Action</th>
-              <th className="px-4 py-3 text-left font-medium">Target</th>
-              <th className="px-4 py-3 text-left font-medium">Source</th>
+              <th className="px-4 py-3 text-left font-medium">{t('auditLog.columnWhen')}</th>
+              <th className="px-4 py-3 text-left font-medium">{t('auditLog.columnActor')}</th>
+              <th className="px-4 py-3 text-left font-medium">{t('auditLog.columnAction')}</th>
+              <th className="px-4 py-3 text-left font-medium">{t('auditLog.columnTarget')}</th>
+              <th className="px-4 py-3 text-left font-medium">{t('auditLog.columnSource')}</th>
             </tr>
           </thead>
           <tbody>
@@ -88,12 +96,12 @@ export default function AuditLogPage() {
         <div className="flex gap-2 mt-4">
           <button disabled={filters.page <= 1} onClick={() => setFilters(f => ({ ...f, page: f.page - 1 }))}
             className="px-3 py-1.5 rounded-lg text-sm border disabled:opacity-40" style={{ borderColor: 'rgb(var(--border-default))' }}>
-            ← Prev
+            ← {t('common.prev')}
           </button>
           <span className="px-3 py-1.5 text-sm opacity-60">{filters.page} / {data.meta.last_page}</span>
           <button disabled={filters.page >= data.meta.last_page} onClick={() => setFilters(f => ({ ...f, page: f.page + 1 }))}
             className="px-3 py-1.5 rounded-lg text-sm border disabled:opacity-40" style={{ borderColor: 'rgb(var(--border-default))' }}>
-            Next →
+            {t('common.next')} →
           </button>
         </div>
       )}
@@ -109,7 +117,7 @@ export default function AuditLogPage() {
                 <div className="font-mono text-sm">{selected.action}</div>
                 <div className="text-xs opacity-50 mt-0.5">{selected.actor} · {selected.at}</div>
               </div>
-              <button onClick={() => setSelected(null)} className="text-2xl opacity-40 hover:opacity-70">&times;</button>
+              <button onClick={() => setSelected(null)} className="text-2xl opacity-40 hover:opacity-70" aria-label={t('common.dismiss')}>&times;</button>
             </div>
             <pre className="text-xs rounded-xl p-4 overflow-auto" style={{ background: 'rgb(var(--surface-card-2))' }}>
               {JSON.stringify(selected.diff, null, 2)}

@@ -135,7 +135,7 @@ class PackageConsumptionEngineTest extends SystemTestCase
     public function test_only_consuming_statuses_fill_the_package(): void
     {
         $s = $this->student(100); // one big package
-        $statuses = ['attended', 'paid_absence', 'cancelled_by_student', 'scheduled', 'absent', 'cancelled_by_teacher', 'trial_free'];
+        $statuses = ['attended', 'paid_absence', 'cancelled_by_student', 'scheduled', 'absent', 'cancelled_by_teacher', 'trial', 'free'];
         $i = 0;
         foreach ($statuses as $st) {
             $this->lesson($s, $st, 60, now()->setTime(9, 0)->addDays($i++));
@@ -143,12 +143,15 @@ class PackageConsumptionEngineTest extends SystemTestCase
         $this->rebuild($s);
 
         // attended + paid_absence + cancelled_by_student = 3 consuming hours.
+        // trial and free are both non-consuming (free is free for the student).
         $pkg = $this->packages($s)->first();
         $this->assertEqualsWithDelta(3.0, $pkg->consumed_hours, 0.001);
 
-        $trial = Lesson::where('student_id', $s->id)->where('status', 'trial_free')->first();
-        $this->assertEquals(0.0, $trial->fresh()->session_number_hours);
-        $this->assertSame(0, LessonPackageAllocation::where('lesson_id', $trial->id)->count());
+        foreach (['trial', 'free'] as $nonConsuming) {
+            $lesson = Lesson::where('student_id', $s->id)->where('status', $nonConsuming)->first();
+            $this->assertEquals(0.0, $lesson->fresh()->session_number_hours);
+            $this->assertSame(0, LessonPackageAllocation::where('lesson_id', $lesson->id)->count());
+        }
 
         $attended = Lesson::where('student_id', $s->id)->where('status', 'attended')->first();
         $this->assertSame(1, LessonPackageAllocation::where('lesson_id', $attended->id)->count());

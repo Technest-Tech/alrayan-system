@@ -7,13 +7,15 @@ import { Label } from '@/components/ui/label'
 import { VariableChip } from './VariableChip'
 import { toast } from 'sonner'
 import { Badge } from '@/components/ui/badge'
+import { useI18n } from '@/lib/system/i18n'
 
 interface Props {
   template: MessageTemplate
-  onSaved: (t: MessageTemplate) => void
+  onSaved: (tpl: MessageTemplate) => void
 }
 
 export function TemplateEditor({ template, onSaved }: Props) {
+  const { t } = useI18n()
   const [body, setBody] = useState(template.body)
   const [label, setLabel] = useState(template.label)
   const [isActive, setIsActive] = useState(template.is_active)
@@ -40,7 +42,7 @@ export function TemplateEditor({ template, onSaved }: Props) {
 
   const handleSave = async () => {
     const saved = await update.mutateAsync({ body, label, is_active: isActive })
-    toast.success('Template saved.')
+    toast.success(t('notifications.templates.saved'))
     onSaved(saved)
   }
 
@@ -55,7 +57,7 @@ export function TemplateEditor({ template, onSaved }: Props) {
       <div className="flex items-center gap-3">
         <span className="font-mono text-sm text-muted-foreground">{template.key}</span>
         <Badge variant="outline">{template.channel}</Badge>
-        {!isActive && <Badge variant="outline" className="text-yellow-600">Inactive</Badge>}
+        {!isActive && <Badge variant="outline" className="text-yellow-600">{t('status.inactive')}</Badge>}
         <label className="ml-auto flex items-center gap-2 text-sm cursor-pointer">
           <input
             type="checkbox"
@@ -63,12 +65,12 @@ export function TemplateEditor({ template, onSaved }: Props) {
             onChange={e => setIsActive(e.target.checked)}
             className="h-4 w-4"
           />
-          Active
+          {t('status.active')}
         </label>
       </div>
 
       <div className="space-y-1">
-        <Label>Label</Label>
+        <Label>{t('notifications.templates.label')}</Label>
         <input
           type="text"
           value={label}
@@ -78,7 +80,7 @@ export function TemplateEditor({ template, onSaved }: Props) {
       </div>
 
       <div className="space-y-2">
-        <Label>Body</Label>
+        <Label>{t('notifications.templates.body')}</Label>
         {template.available_variables.length > 0 && (
           <div className="flex flex-wrap gap-1.5">
             {template.available_variables.map(v => (
@@ -97,21 +99,21 @@ export function TemplateEditor({ template, onSaved }: Props) {
 
       <div className="flex items-center gap-2">
         <Button onClick={handleSave} disabled={update.isPending}>
-          {update.isPending ? 'Saving…' : 'Save'}
+          {update.isPending ? t('common.saving') : t('notifications.templates.save')}
         </Button>
         <Button variant="outline" onClick={handlePreview} disabled={previewMutation.isPending}>
-          Preview
+          {t('notifications.templates.preview')}
         </Button>
       </div>
 
       {preview !== null && (
         <div className="space-y-1">
-          <Label>Preview</Label>
+          <Label>{t('notifications.templates.preview')}</Label>
           <div className="bg-muted rounded p-4 text-sm whitespace-pre-wrap font-mono border">
             {preview}
           </div>
           <button onClick={() => setPreview(null)} className="text-xs text-muted-foreground hover:underline">
-            Clear
+            {t('notifications.templates.clear')}
           </button>
         </div>
       )}

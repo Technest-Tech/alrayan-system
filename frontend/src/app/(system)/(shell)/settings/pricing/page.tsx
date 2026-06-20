@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react'
 import { PageHeader } from '@/components/system/primitives/PageHeader'
 import { usePricingSettings, useUpdatePricingSettings } from '@/hooks/system/usePricingSettings'
+import { useI18n } from '@/lib/system/i18n'
 
 const ALL_CURRENCIES = ['USD', 'EUR', 'CAD', 'GBP', 'EGP', 'AED', 'KWD', 'BHD', 'SAR']
 
@@ -16,6 +17,7 @@ interface FormState {
 }
 
 export default function PricingSettingsPage() {
+  const { t } = useI18n()
   const { data: settings, isLoading } = usePricingSettings()
   const { mutateAsync, isPending } = useUpdatePricingSettings()
 
@@ -65,21 +67,21 @@ export default function PricingSettingsPage() {
         public_site_currency: form.public_site_currency,
         public_site_visible: form.public_site_visible,
       })
-      setMessage({ type: 'success', text: 'Pricing settings saved.' })
+      setMessage({ type: 'success', text: t('settings.pricing.saved') })
     } catch (e: unknown) {
-      setMessage({ type: 'error', text: e instanceof Error ? e.message : 'Failed to save.' })
+      setMessage({ type: 'error', text: e instanceof Error ? e.message : t('settings.pricing.saveFailed') })
     }
   }
 
   if (isLoading) {
-    return <div className="py-20 text-center text-sm opacity-40">Loading…</div>
+    return <div className="py-20 text-center text-sm opacity-40">{t('common.loading')}</div>
   }
 
   return (
     <>
       <PageHeader
-        title="Pricing"
-        description="Base prices, discounts, and public website currency settings."
+        title={t('settings.pricing.title')}
+        description={t('settings.pricing.subtitle')}
       />
       <div className="max-w-2xl space-y-8">
         {message && (
@@ -90,14 +92,14 @@ export default function PricingSettingsPage() {
 
         {/* Base prices */}
         <section>
-          <h3 className="text-sm font-semibold text-gray-700 mb-1">Base prices (EGP per month, 8 sessions)</h3>
+          <h3 className="text-sm font-semibold text-gray-700 mb-1">{t('settings.pricing.basePrices')}</h3>
           <p className="text-xs text-gray-400 mb-4">
-            Stored as minor units internally. Enter the human-readable price (e.g. 25 = EGP 25.00).
+            {t('settings.pricing.basePricesHint')}
           </p>
           <div className="space-y-3">
             {([30, 45, 60] as const).map(dur => (
               <div key={dur} className="flex items-center gap-3">
-                <label className="w-32 text-sm text-gray-600">{dur}-min sessions</label>
+                <label className="w-32 text-sm text-gray-600">{t('settings.pricing.minSessions', { n: String(dur) })}</label>
                 <div className="flex items-center gap-2">
                   <input
                     type="number"
@@ -109,7 +111,7 @@ export default function PricingSettingsPage() {
                     }
                     className="w-28 rounded-xl border border-gray-300 px-3 py-2 text-sm"
                   />
-                  <span className="text-sm text-gray-400">EGP / mo</span>
+                  <span className="text-sm text-gray-400">{t('settings.pricing.egpPerMonth')}</span>
                 </div>
               </div>
             ))}
@@ -118,7 +120,7 @@ export default function PricingSettingsPage() {
 
         {/* Sibling discount */}
         <section>
-          <h3 className="text-sm font-semibold text-gray-700 mb-3">Default sibling discount</h3>
+          <h3 className="text-sm font-semibold text-gray-700 mb-3">{t('settings.pricing.siblingDiscount')}</h3>
           <div className="flex items-center gap-2">
             <input
               type="number"
@@ -136,9 +138,9 @@ export default function PricingSettingsPage() {
 
         {/* Supported currencies */}
         <section>
-          <h3 className="text-sm font-semibold text-gray-700 mb-1">Supported currencies</h3>
+          <h3 className="text-sm font-semibold text-gray-700 mb-1">{t('settings.pricing.supportedCurrencies')}</h3>
           <p className="text-xs text-gray-400 mb-3">
-            Currencies available when billing individual students.
+            {t('settings.pricing.supportedCurrenciesHint')}
           </p>
           <div className="flex flex-wrap gap-2">
             {ALL_CURRENCIES.map(cur => (
@@ -165,7 +167,7 @@ export default function PricingSettingsPage() {
 
         {/* Public website */}
         <section>
-          <h3 className="text-sm font-semibold text-gray-700 mb-3">Public website</h3>
+          <h3 className="text-sm font-semibold text-gray-700 mb-3">{t('settings.pricing.publicWebsite')}</h3>
           <label className="flex items-center gap-2 mb-3 cursor-pointer">
             <input
               type="checkbox"
@@ -173,10 +175,10 @@ export default function PricingSettingsPage() {
               onChange={e => setForm(f => ({ ...f, public_site_visible: e.target.checked }))}
               className="rounded"
             />
-            <span className="text-sm text-gray-600">Show pricing on public website</span>
+            <span className="text-sm text-gray-600">{t('settings.pricing.showOnPublic')}</span>
           </label>
           <div className="flex items-center gap-3">
-            <label className="text-sm text-gray-600">Display currency</label>
+            <label className="text-sm text-gray-600">{t('settings.pricing.displayCurrency')}</label>
             <select
               value={form.public_site_currency}
               onChange={e => setForm(f => ({ ...f, public_site_currency: e.target.value }))}
@@ -197,7 +199,7 @@ export default function PricingSettingsPage() {
             className="px-4 py-2 rounded-xl text-white text-sm font-semibold disabled:opacity-50"
             style={{ background: 'rgb(14 124 90)' }}
           >
-            {isPending ? 'Saving…' : 'Save changes'}
+            {isPending ? t('common.saving') : t('common.save')}
           </button>
         </div>
       </div>

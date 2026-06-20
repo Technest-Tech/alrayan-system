@@ -1,21 +1,25 @@
 'use client'
 import { useState } from 'react'
-import { SlidersHorizontal, BookOpen, Building2 } from 'lucide-react'
+import { SlidersHorizontal, BookOpen, Building2, Layers } from 'lucide-react'
 import { SubjectsSection } from '@/components/system/settings/SubjectsSection'
+import { SectionsSection } from '@/components/system/settings/SectionsSection'
 import { GeneralSettingsSection } from '@/components/system/settings/GeneralSettingsSection'
+import { useI18n } from '@/lib/system/i18n'
 
 const ACCENT = 'rgb(var(--accent))'
 const BORDER = 'rgb(var(--border-default, 229 233 240))'
 const CARD = 'rgb(var(--surface-card, 255 255 255))'
 
 const TABS = [
-  { id: 'subjects', label: 'Subjects', hint: 'Subjects offered by the academy', icon: BookOpen },
-  { id: 'general', label: 'General', hint: 'Identity, contact & localization', icon: Building2 },
+  { id: 'subjects', labelKey: 'settings.tabs.subjects', hintKey: 'settings.tabs.subjectsHint', icon: BookOpen },
+  { id: 'sections', labelKey: 'settings.tabs.sections', hintKey: 'settings.tabs.sectionsHint', icon: Layers },
+  { id: 'general', labelKey: 'settings.tabs.general', hintKey: 'settings.tabs.generalHint', icon: Building2 },
 ] as const
 
 type TabId = (typeof TABS)[number]['id']
 
 export default function SettingsPage() {
+  const { t } = useI18n()
   const [tab, setTab] = useState<TabId>('subjects')
 
   return (
@@ -34,8 +38,8 @@ export default function SettingsPage() {
             <SlidersHorizontal size={26} className="text-white" />
           </div>
           <div>
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-white leading-tight tracking-tight">Settings</h1>
-            <p className="mt-1 text-sm text-white/60">Manage your academy configuration in one place.</p>
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-white leading-tight tracking-tight">{t('settings.title')}</h1>
+            <p className="mt-1 text-sm text-white/60">{t('settings.subtitle')}</p>
           </div>
         </div>
       </div>
@@ -46,13 +50,13 @@ export default function SettingsPage() {
         <nav
           className="flex lg:flex-col gap-1.5 overflow-x-auto lg:overflow-visible lg:sticky lg:top-6 lg:self-start"
         >
-          {TABS.map(t => {
-            const active = tab === t.id
-            const Icon = t.icon
+          {TABS.map(item => {
+            const active = tab === item.id
+            const Icon = item.icon
             return (
               <button
-                key={t.id}
-                onClick={() => setTab(t.id)}
+                key={item.id}
+                onClick={() => setTab(item.id)}
                 className={`group flex items-center gap-3 whitespace-nowrap lg:whitespace-normal rounded-xl px-3.5 py-3 text-left transition-all duration-200 ${active ? '' : 'hover:bg-black/[0.04]'}`}
                 style={
                   active
@@ -75,9 +79,9 @@ export default function SettingsPage() {
                     className="block text-sm font-semibold leading-tight"
                     style={{ color: active ? 'rgb(15 23 42)' : 'rgb(51 65 85)' }}
                   >
-                    {t.label}
+                    {t(item.labelKey)}
                   </span>
-                  <span className="hidden lg:block text-xs mt-0.5 opacity-50 leading-snug">{t.hint}</span>
+                  <span className="hidden lg:block text-xs mt-0.5 opacity-50 leading-snug">{t(item.hintKey)}</span>
                 </span>
               </button>
             )
@@ -85,7 +89,9 @@ export default function SettingsPage() {
         </nav>
 
         {/* Active section */}
-        <div className="min-w-0">{tab === 'subjects' ? <SubjectsSection /> : <GeneralSettingsSection />}</div>
+        <div className="min-w-0">
+          {tab === 'subjects' ? <SubjectsSection /> : tab === 'sections' ? <SectionsSection /> : <GeneralSettingsSection />}
+        </div>
       </div>
     </div>
   )

@@ -8,13 +8,16 @@ import { X } from 'lucide-react'
 import { useUpdateUser } from '@/hooks/system/useUsers'
 import { PermissionMatrix } from './PermissionMatrix'
 import { ApiError } from '@/lib/system/api'
+import { useI18n } from '@/lib/system/i18n'
 import type { SystemUserRecord } from '@/hooks/system/useUsers'
 
 const schema = z.object({
-  name: z.string().min(1, 'Name is required'),
+  name: z.string().min(1, 'name-required'),
   role: z.enum(['admin', 'supervisor', 'teacher']),
 })
 type FormValues = z.infer<typeof schema>
+
+const ROLES = ['admin', 'supervisor', 'teacher'] as const
 
 interface Props {
   user:    SystemUserRecord
@@ -22,6 +25,7 @@ interface Props {
 }
 
 export function EditUserSheet({ user, onClose }: Props) {
+  const { t } = useI18n()
   const [permissions, setPermissions] = useState<string[]>(user.permissions ?? [])
   const update = useUpdateUser()
 
@@ -38,7 +42,7 @@ export function EditUserSheet({ user, onClose }: Props) {
         id:   user.id,
         data: { ...values, permissions: role === 'supervisor' ? permissions : [] },
       })
-      toast.success('User updated.')
+      toast.success(t('users.toastUpdated'))
       onClose()
     } catch (e) {
       if (e instanceof ApiError) {
@@ -48,10 +52,12 @@ export function EditUserSheet({ user, onClose }: Props) {
           toast.error(e.message)
         }
       } else {
-        toast.error('Something went wrong.')
+        toast.error(t('users.toastError'))
       }
     }
   }
+
+  const errName = errors.name ? t('users.errorNameRequired') : undefined
 
   const inputCls   = 'w-full px-3 py-2 rounded-xl border text-sm outline-none focus:ring-2 focus:ring-[rgb(14,124,90)]'
   const inputStyle = { borderColor: 'rgb(var(--border-default, 229 233 240))', background: 'rgb(var(--surface-card, 255 255 255))' }
@@ -67,7 +73,7 @@ export function EditUserSheet({ user, onClose }: Props) {
           className="flex items-center justify-between px-6 py-4 border-b shrink-0"
           style={{ background: 'rgb(var(--surface-card, 255 255 255))', borderColor: 'rgb(var(--border-default, 229 233 240))' }}
         >
-          <h2 className="font-semibold">Edit user</h2>
+          <h2 className="font-semibold">{t('users.editUserTitle')}</h2>
           <button onClick={onClose} className="p-1 rounded-lg hover:bg-black/5 transition-colors">
             <X size={18} />
           </button>
@@ -76,21 +82,21 @@ export function EditUserSheet({ user, onClose }: Props) {
         <form onSubmit={handleSubmit(onSubmit)} className="flex-1 flex flex-col gap-6 p-6">
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium mb-1.5">Name</label>
+              <label className="block text-sm font-medium mb-1.5">{t('common.name')}</label>
               <input className={inputCls} style={inputStyle} {...register('name')} />
-              {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name.message}</p>}
+              {errName && <p className="text-red-500 text-xs mt-1">{errName}</p>}
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1.5">Email</label>
+              <label className="block text-sm font-medium mb-1.5">{t('common.email')}</label>
               <input value={user.email} disabled className={inputCls + ' opacity-50'} style={inputStyle} readOnly />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1.5">Role</label>
+              <label className="block text-sm font-medium mb-1.5">{t('common.role')}</label>
               <div className="flex gap-3">
-                {(['admin', 'supervisor', 'teacher'] as const).map((r) => (
-                  <label key={r} className="flex items-center gap-2 text-sm cursor-pointer capitalize">
+                {ROLES.map((r) => (
+                  <label key={r} className="flex items-center gap-2 text-sm cursor-pointer">
                     <input type="radio" value={r} {...register('role')} />
-                    {r}
+                    {t(`users.role.${r}`)}
                   </label>
                 ))}
               </div>
@@ -99,15 +105,15 @@ export function EditUserSheet({ user, onClose }: Props) {
 
           {role === 'supervisor' && (
             <div>
-              <p className="text-sm font-semibold mb-3">Permissions</p>
-              <p className="text-xs opacity-50 mb-3">Changes apply on the user&apos;s next page load.</p>
+              <p className="text-sm font-semibold mb-3">{t('users.columnPermissions')}</p>
+              <p className="text-xs opacity-50 mb-3">{t('users.permissionsNote')}</p>
               <PermissionMatrix selected={permissions} onChange={setPermissions} />
             </div>
           )}
 
           {role === 'admin' && (
             <div className="rounded-xl p-4 bg-blue-50 text-sm text-blue-700">
-              Admins automatically have every permission.
+              {t('users.adminPermissionsNote')}
             </div>
           )}
 
@@ -118,7 +124,7 @@ export function EditUserSheet({ user, onClose }: Props) {
               className="px-4 py-2 rounded-xl text-sm font-medium border hover:bg-black/5 transition-colors"
               style={{ borderColor: 'rgb(var(--border-default, 229 233 240))' }}
             >
-              Cancel
+              {t('common.cancel')}
             </button>
             <button
               type="submit"
@@ -126,7 +132,7 @@ export function EditUserSheet({ user, onClose }: Props) {
               className="px-4 py-2 rounded-xl text-sm font-semibold text-white transition-opacity disabled:opacity-60"
               style={{ background: 'rgb(14 124 90)' }}
             >
-              {isSubmitting ? 'Saving…' : 'Save changes'}
+              {isSubmitting ? t('common.saving') : t('common.save')}
             </button>
           </div>
         </form>
