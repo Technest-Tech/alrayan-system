@@ -49,7 +49,7 @@ class LeadController extends Controller
             ])
             ->allowedSorts(['created_at', 'updated_at', 'name'])
             ->defaultSort('-created_at')
-            ->with(['courseInterest', 'supervisor'])
+            ->with(['courseInterest', 'supervisor', 'student'])
             ->withCount(['followUps', 'followUps as pending_follow_ups_count' => fn($q) => $q->whereNull('completed_at')])
             ->paginate($request->integer('per_page', 50));
 
@@ -59,7 +59,7 @@ class LeadController extends Controller
     public function show(Lead $lead): LeadDetailResource
     {
         $this->authorize('view', $lead);
-        $lead->load(['supervisor', 'courseInterest', 'followUps.actor', 'trialBooking', 'convertedToStudent', 'activities.causer']);
+        $lead->load(['supervisor', 'courseInterest', 'followUps.actor', 'trialBooking', 'convertedToStudent', 'student', 'activities.causer']);
         return new LeadDetailResource($lead);
     }
 
@@ -85,12 +85,18 @@ class LeadController extends Controller
                 'country'             => $lead->country,
                 'timezone'            => Setting::get('academy.default_timezone', 'UTC'),
                 'student_type'        => 'adult',
-                'status'              => 'trial',
                 'source'              => 'lead',
                 'assigned_teacher_id' => $teacherId,
             ], $request->user()?->id);
 
-            $lead->update(['student_id' => $student->id]);
+            $leadUpdates = ['student_id' => $student->id];
+            // Assigning a teacher up front means the lead is ready for its trial lesson.
+            // (status is null in-memory right after create when not supplied → defaults to new_lead.)
+            $currentStatus = $lead->status ?? 'new_lead';
+            if ($teacherId && in_array($currentStatus, ['new_lead', 'interested'], true)) {
+                $leadUpdates['status'] = 'waiting_for_trial';
+            }
+            $lead->update($leadUpdates);
 
             return $lead->refresh();
         });
@@ -119,10 +125,14 @@ class LeadController extends Controller
             if ($teacherId && $lead->student) {
                 $lead->student->update(['assigned_teacher_id' => $teacherId]);
             }
+            // Assigning a teacher advances an early-stage lead to "waiting for trial".
+            if ($teacherId && in_array($lead->status, ['new_lead', 'interested'], true)) {
+                $lead->update(['status' => 'waiting_for_trial']);
+            }
         }
 
         $lead->update($data);
-        return new LeadDetailResource($lead->fresh(['supervisor', 'courseInterest', 'followUps']));
+        return new LeadDetailResource($lead->fresh(['supervisor', 'courseInterest', 'followUps', 'student']));
     }
 
     public function assign(AssignLeadRequest $request, Lead $lead): LeadDetailResource

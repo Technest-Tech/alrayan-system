@@ -35,6 +35,7 @@ class LeadResource extends JsonResource
             'payment_method'          => $this->payment_method,
             'is_family_lead'          => (bool) $this->is_family_lead,
             'assigned_supervisor_id'  => $this->assigned_supervisor_id,
+            'assigned_teacher_id'     => $this->whenLoaded('student', fn() => $this->student?->assigned_teacher_id),
             'supervisor_name'         => $this->supervisor?->name,
             'trial_booking_id'        => $this->trial_booking_id,
             'converted_to_student_id' => $this->converted_to_student_id,

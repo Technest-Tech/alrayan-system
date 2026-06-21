@@ -36,6 +36,7 @@ class LeadDetailResource extends JsonResource
             'is_family_lead'          => (bool) $this->is_family_lead,
             'payload'                 => $this->payload,
             'assigned_supervisor_id'  => $this->assigned_supervisor_id,
+            'assigned_teacher_id'     => $this->whenLoaded('student', fn() => $this->student?->assigned_teacher_id),
             'supervisor'              => $this->whenLoaded('supervisor', fn() => [
                 'id'   => $this->supervisor->id,
                 'name' => $this->supervisor->name,

@@ -7,6 +7,7 @@ import { useCreateLead, useUpdateLead, useConvertLead } from '@/hooks/system/use
 import { useCourses } from '@/hooks/system/useCourses'
 import { useTeachers } from '@/hooks/system/useTeachers'
 import { useSections } from '@/hooks/system/useSections'
+import { useUsers } from '@/hooks/system/useUsers'
 import { ApiError } from '@/lib/system/api'
 import { useI18n } from '@/lib/system/i18n'
 import type { Lead, LeadStatus, LeadPriority, LeadPlatform, LeadSource } from '@/types/system/lead'
@@ -526,9 +527,11 @@ interface AddLeadDialogProps {
   open: boolean
   onOpenChange: (v: boolean) => void
   lead?: Lead
+  /** When opening in edit mode, override the initial status (e.g. 'closed' to start the close/convert flow). */
+  initialStatus?: LeadStatus
 }
 
-export function AddLeadDialog({ open, onOpenChange, lead }: AddLeadDialogProps) {
+export function AddLeadDialog({ open, onOpenChange, lead, initialStatus }: AddLeadDialogProps) {
   const { t } = useI18n()
   const isEditMode = !!lead
   const isAlreadyClosed = lead?.status === 'closed'
@@ -540,8 +543,11 @@ export function AddLeadDialog({ open, onOpenChange, lead }: AddLeadDialogProps) 
   const { data: coursesData } = useCourses()
   const { data: teachersData } = useTeachers({ per_page: 200 } as Parameters<typeof useTeachers>[0])
   const { data: sectionsData } = useSections()
+  const { data: usersData } = useUsers()
   const courses  = coursesData ?? []
   const teachers = teachersData?.data ?? []
+  // Follow-up owners are supervisors/admins (assigned_supervisor_id), not teachers.
+  const supervisors = (usersData?.data ?? []).filter(u => u.role === 'admin' || u.role === 'supervisor')
   const sectionOptions: SelectOption[] = (sectionsData ?? []).map(s => ({ value: s.id, label: s.name }))
 
   const [form,       setForm]       = useState<FormState>(EMPTY)
@@ -561,7 +567,7 @@ export function AddLeadDialog({ open, onOpenChange, lead }: AddLeadDialogProps) 
     const payloadPhones = (payload?.phones as ContactEntry[] | undefined) ?? []
 
     setForm({
-      status:             lead.status,
+      status:             initialStatus && lead.status !== 'closed' ? initialStatus : lead.status,
       name:               lead.name,
       gender:             lead.gender ?? '',
       age:                lead.age ? String(lead.age) : '',
@@ -569,7 +575,7 @@ export function AddLeadDialog({ open, onOpenChange, lead }: AddLeadDialogProps) 
       city:               lead.city ?? '',
       course_interest_id: lead.course_interest?.id ? String(lead.course_interest.id) : '',
       sections:           (payload?.sections as string[] | undefined) ?? [],
-      assigned_teacher_id: '',
+      assigned_teacher_id: lead.assigned_teacher_id ? String(lead.assigned_teacher_id) : '',
       platform:           lead.platform ?? '',
       platform_url:       lead.platform_url ?? '',
       source:             lead.source ?? '',
@@ -598,11 +604,12 @@ export function AddLeadDialog({ open, onOpenChange, lead }: AddLeadDialogProps) 
     setEnrollment({
       ...EMPTY_ENROLLMENT,
       course_id:          lead.course_interest?.id ? String(lead.course_interest.id) : '',
+      assigned_teacher_id: lead.assigned_teacher_id ? String(lead.assigned_teacher_id) : '',
       currency:           lead.currency ?? 'EUR',
       package_hours:      lead.package_hours ? String(lead.package_hours) : '8',
       package_price:      lead.subscription_price ? String(lead.subscription_price) : '',
     })
-  }, [lead, open])
+  }, [lead, open, initialStatus])
 
   function set<K extends keyof FormState>(k: K, v: FormState[K]) { setForm(p => ({ ...p, [k]: v })) }
   function setEnr<K extends keyof EnrollmentState>(k: K, v: EnrollmentState[K]) { setEnrollment(p => ({ ...p, [k]: v })) }
@@ -610,6 +617,7 @@ export function AddLeadDialog({ open, onOpenChange, lead }: AddLeadDialogProps) 
 
   const courseOptions: SelectOption[] = courses.map((c: { id: number; name: string }) => ({ value: String(c.id), label: c.name }))
   const teacherOptions: SelectOption[] = teachers.map((tc: { id: number; name: string | null }) => ({ value: String(tc.id), label: tc.name ?? t('leads.teacherFallback', { id: String(tc.id) }) }))
+  const supervisorOptions: SelectOption[] = supervisors.map(u => ({ value: String(u.id), label: u.name }))
 
   const loc = (opts: { value: string; key: string }[]): SelectOption[] => opts.map(o => ({ value: o.value, label: t(o.key) }))
   const statusOptionsAdd  = loc(STATUS_OPTIONS_ADD)
@@ -854,7 +862,7 @@ export function AddLeadDialog({ open, onOpenChange, lead }: AddLeadDialogProps) 
                     <input type="datetime-local" className={inp} style={inpStyle} value={form.next_followup} onChange={e => set('next_followup', e.target.value)} />
                   </Field>
                   <Field label={t('leads.fieldAssignedTo')}>
-                    <SearchSelect value={form.assigned_to} onChange={v => set('assigned_to', v)} options={teacherOptions} placeholder={t('status.unassigned')} />
+                    <SearchSelect value={form.assigned_to} onChange={v => set('assigned_to', v)} options={supervisorOptions} placeholder={t('status.unassigned')} />
                   </Field>
                 </div>
               </SectionCard>

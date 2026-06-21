@@ -131,6 +131,7 @@ export function LeadKanban({ leads, isLoading, filters, onFiltersChange }: Props
   const [dragOverCol,    setDragOverCol]     = useState<LeadStatus | null>(null)
   const [selectedLeadId, setSelectedLeadId] = useState<number | null>(null)
   const [editLead,       setEditLead]        = useState<Lead | null>(null)
+  const [closeIntent,    setCloseIntent]     = useState(false)
   const fromStatusRef = useRef<LeadStatus | null>(null)
 
   const deleteLead = useDeleteLead()
@@ -142,8 +143,9 @@ export function LeadKanban({ leads, isLoading, filters, onFiltersChange }: Props
     onError:   () => toast.error(t('leads.toastMoveFailed')),
   })
 
-  function handleEditLead(lead: Lead) {
+  function handleEditLead(lead: Lead, closing = false) {
     setSelectedLeadId(null)
+    setCloseIntent(closing)
     setEditLead(lead)
   }
 
@@ -177,7 +179,17 @@ export function LeadKanban({ leads, isLoading, filters, onFiltersChange }: Props
     e.preventDefault()
     const id = dragLeadId
     setDragLeadId(null); setDragOverCol(null)
-    if (id !== null && fromStatusRef.current !== status) moveLead.mutate({ id, status })
+    if (id === null || fromStatusRef.current === status) return
+
+    // Closing requires package/payment details — open the dialog to collect them and
+    // convert (which fills the student's full data) rather than a bare status PATCH.
+    if (status === 'closed') {
+      const lead = leads.find(l => l.id === id)
+      if (lead) handleEditLead(lead, true)
+      return
+    }
+
+    moveLead.mutate({ id, status })
   }
 
   const grouped: Record<string, Lead[]> = Object.fromEntries(COLUMNS.map(c => [c.key, []]))
@@ -387,8 +399,9 @@ export function LeadKanban({ leads, isLoading, filters, onFiltersChange }: Props
 
       <AddLeadDialog
         open={!!editLead}
-        onOpenChange={v => { if (!v) setEditLead(null) }}
+        onOpenChange={v => { if (!v) { setEditLead(null); setCloseIntent(false) } }}
         lead={editLead ?? undefined}
+        initialStatus={closeIntent ? 'closed' : undefined}
       />
     </div>
   )

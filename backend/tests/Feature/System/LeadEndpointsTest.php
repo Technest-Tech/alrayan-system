@@ -150,7 +150,7 @@ class LeadEndpointsTest extends SystemTestCase
             ])
             ->assertCreated();
 
-        $lead = \App\Models\System\Lead::where('name', 'Yousef Ali')->firstOrFail();
+        $lead = Lead::where('name', 'Yousef Ali')->firstOrFail();
 
         // The teacher is set on the student (not the lead) so it's filterable in the calendar.
         $this->assertDatabaseHas('sys_students', [
@@ -158,11 +158,66 @@ class LeadEndpointsTest extends SystemTestCase
             'assigned_teacher_id' => $teacher->id,
         ]);
 
+        // Assigning a teacher up front advances the lead to "waiting for trial".
+        $this->assertSame('waiting_for_trial', $lead->status);
+
         // The student list endpoint filters by that teacher.
         $this->actingAs($this->adminUser(), 'sanctum')
             ->getJson("/api/system/students?filter[assigned_teacher_id]={$teacher->id}")
             ->assertOk()
             ->assertJsonPath('data.0.id', $lead->student_id);
+
+        // The lead resource surfaces the assigned teacher (so the dialog can prefill it on close).
+        $this->actingAs($this->adminUser(), 'sanctum')
+            ->getJson("/api/system/leads/{$lead->id}")
+            ->assertOk()
+            ->assertJsonPath('data.assigned_teacher_id', $teacher->id);
+    }
+
+    public function test_assigning_teacher_on_update_advances_lead_to_waiting_for_trial(): void
+    {
+        // Lead created without a teacher → stays new_lead.
+        $this->actingAs($this->adminUser(), 'sanctum')
+            ->postJson('/api/system/leads', ['name' => 'Late Assign', 'source' => 'manual_entry'])
+            ->assertCreated();
+
+        $lead    = Lead::where('name', 'Late Assign')->firstOrFail();
+        $teacher = Teacher::factory()->create();
+        $this->assertSame('new_lead', $lead->status);
+
+        $this->actingAs($this->adminUser(), 'sanctum')
+            ->patchJson("/api/system/leads/{$lead->id}", ['assigned_teacher_id' => $teacher->id])
+            ->assertOk();
+
+        $this->assertSame('waiting_for_trial', $lead->fresh()->status);
+        $this->assertDatabaseHas('sys_students', ['id' => $lead->student_id, 'assigned_teacher_id' => $teacher->id]);
+    }
+
+    public function test_creating_a_trial_lesson_advances_lead_to_waiting_for_payment(): void
+    {
+        $teacher = Teacher::factory()->create();
+
+        $this->actingAs($this->adminUser(), 'sanctum')
+            ->postJson('/api/system/leads', [
+                'name' => 'Trial Kid', 'source' => 'manual_entry', 'assigned_teacher_id' => $teacher->id,
+            ])
+            ->assertCreated();
+
+        $lead = Lead::where('name', 'Trial Kid')->firstOrFail();
+        $this->assertSame('waiting_for_trial', $lead->status);
+
+        // The teacher logs a trial lesson + report for the student.
+        $this->actingAs($this->adminUser(), 'sanctum')
+            ->postJson('/api/system/lessons', [
+                'teacher_id'       => $teacher->id,
+                'student_id'       => $lead->student_id,
+                'scheduled_at'     => now()->toISOString(),
+                'duration_minutes' => 60,
+                'status'           => 'trial',
+            ])
+            ->assertCreated();
+
+        $this->assertSame('waiting_for_payment', $lead->fresh()->status);
     }
 
     public function test_create_lead_persists_extended_fields(): void

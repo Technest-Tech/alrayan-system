@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\System\Lesson\StoreLessonRequest;
 use App\Http\Requests\System\Lesson\UpdateLessonRequest;
 use App\Http\Resources\System\LessonResource;
+use App\Models\System\Lead;
 use App\Models\System\Lesson;
 use App\Models\System\Student;
 use App\Services\System\PackageService;
@@ -92,9 +93,29 @@ class LessonController extends Controller
         // Re-distribute the whole student chronologically (splits, session numbers, completion).
         $this->packageService->rebuild($student);
 
+        // A trial lesson + its report means the lead is ready for payment.
+        if ($lesson->status === 'trial') {
+            $this->advanceLeadAfterTrial($student->id);
+        }
+
         $lesson->refresh()->load(['package', 'teacher.user', 'student', 'subject', 'evaluation', 'addedBy', 'allocations.package']);
 
         return new LessonResource($lesson);
+    }
+
+    /**
+     * Once a trial lesson is logged for a lead-sourced student, advance that lead to
+     * "waiting for payment" (only from earlier open stages — never reopen a closed/lost lead).
+     */
+    private function advanceLeadAfterTrial(int $studentId): void
+    {
+        $lead = Lead::where('student_id', $studentId)
+            ->whereIn('status', ['new_lead', 'interested', 'waiting_for_trial'])
+            ->first();
+
+        if ($lead) {
+            $lead->update(['status' => 'waiting_for_payment']);
+        }
     }
 
     public function update(UpdateLessonRequest $request, Lesson $lesson): LessonResource
@@ -120,6 +141,11 @@ class LessonController extends Controller
         // A date / duration / status change can shift every package — re-distribute.
         if ($student = $lesson->student) {
             $this->packageService->rebuild($student);
+
+            // Marking a lesson as a trial advances the lead to "waiting for payment".
+            if ($lesson->status === 'trial') {
+                $this->advanceLeadAfterTrial($student->id);
+            }
         }
 
         $lesson->refresh()->load(['package', 'teacher.user', 'student', 'subject', 'evaluation', 'addedBy', 'allocations.package']);

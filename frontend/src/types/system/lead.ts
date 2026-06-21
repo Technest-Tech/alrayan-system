@@ -61,6 +61,7 @@ export interface Lead {
   payment_method: string | null
   is_family_lead: boolean
   assigned_supervisor_id: number | null
+  assigned_teacher_id: number | null
   supervisor_name: string | null
   trial_booking_id: number | null
   converted_to_student_id: number | null
