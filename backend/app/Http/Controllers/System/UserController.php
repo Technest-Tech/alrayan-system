@@ -38,13 +38,16 @@ class UserController extends Controller
 
     public function invite(InviteUserRequest $request): JsonResponse
     {
-        $perms = $request->validated('permissions', []);
-        $role  = $request->validated('role');
+        $perms    = $request->validated('permissions', []);
+        $role     = $request->validated('role');
+        $password = $request->validated('password');
 
         $user = User::create([
             'name'      => $request->validated('name'),
             'email'     => $request->validated('email'),
-            'password'  => Hash::make(Str::random(40)),
+            // When an admin sets a password directly the cast hashes it once;
+            // otherwise store a random secret and rely on the invite link.
+            'password'  => $password ?: Hash::make(Str::random(40)),
             'role'      => $role,
             'is_active' => true,
         ]);
@@ -58,9 +61,12 @@ class UserController extends Controller
             SysTeacher::create(['user_id' => $user->id, 'is_active' => true]);
         }
 
-        $token = Password::createToken($user);
-        $url   = config('system.frontend_url') . '/reset-password/' . $token . '?email=' . urlencode($user->email);
-        $user->notify(new SystemUserInvitedNotification($url, auth()->user()));
+        // No admin-set password → email an invite so the user sets their own.
+        if (!$password) {
+            $token = Password::createToken($user);
+            $url   = config('system.frontend_url') . '/reset-password/' . $token . '?email=' . urlencode($user->email);
+            $user->notify(new SystemUserInvitedNotification($url, auth()->user()));
+        }
 
         AuditLog::record('users.invited', $user, ['role' => $role, 'permissions' => $perms]);
 
@@ -88,6 +94,12 @@ class UserController extends Controller
             $newPerms = $request->validated('permissions');
             $user->syncPermissions($newPerms);
             AuditLog::record('users.permissions_changed', $user, ['old' => $oldPerms, 'new' => $newPerms]);
+        }
+
+        if ($request->filled('password')) {
+            // The `password` cast hashes the plain value once on save.
+            $user->password = $request->validated('password');
+            AuditLog::record('users.password_set', $user);
         }
 
         $user->save();

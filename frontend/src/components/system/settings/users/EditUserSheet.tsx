@@ -14,6 +14,7 @@ import type { SystemUserRecord } from '@/hooks/system/useUsers'
 const schema = z.object({
   name: z.string().min(1, 'name-required'),
   role: z.enum(['admin', 'supervisor', 'teacher']),
+  password: z.string().min(8, 'password-min').or(z.literal('')).optional(),
 })
 type FormValues = z.infer<typeof schema>
 
@@ -38,9 +39,14 @@ export function EditUserSheet({ user, onClose }: Props) {
 
   async function onSubmit(values: FormValues) {
     try {
+      const { password, ...rest } = values
       await update.mutateAsync({
         id:   user.id,
-        data: { ...values, permissions: role === 'supervisor' ? permissions : [] },
+        data: {
+          ...rest,
+          permissions: role === 'supervisor' ? permissions : [],
+          ...(password ? { password } : {}),
+        },
       })
       toast.success(t('users.toastUpdated'))
       onClose()
@@ -58,6 +64,7 @@ export function EditUserSheet({ user, onClose }: Props) {
   }
 
   const errName = errors.name ? t('users.errorNameRequired') : undefined
+  const errPassword = errors.password ? t('users.errorPasswordMin') : undefined
 
   const inputCls   = 'w-full px-3 py-2 rounded-xl border text-sm outline-none focus:ring-2 focus:ring-[rgb(14,124,90)]'
   const inputStyle = { borderColor: 'rgb(var(--border-default, 229 233 240))', background: 'rgb(var(--surface-card, 255 255 255))' }
@@ -100,6 +107,13 @@ export function EditUserSheet({ user, onClose }: Props) {
                   </label>
                 ))}
               </div>
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1.5">{t('users.setPasswordLabel')}</label>
+              <input type="password" autoComplete="new-password" className={inputCls} style={inputStyle} {...register('password')} />
+              {errPassword
+                ? <p className="text-red-500 text-xs mt-1">{errPassword}</p>
+                : <p className="text-xs opacity-50 mt-1">{t('users.setPasswordHint')}</p>}
             </div>
           </div>
 

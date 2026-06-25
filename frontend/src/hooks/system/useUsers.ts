@@ -17,12 +17,14 @@ export interface InvitePayload {
   name:        string
   email:       string
   role:        'admin' | 'supervisor' | 'teacher'
+  password?:   string
   permissions?: string[]
 }
 
 export interface UpdatePayload {
   name?:        string
   role?:        'admin' | 'supervisor' | 'teacher'
+  password?:    string
   permissions?: string[]
 }
 

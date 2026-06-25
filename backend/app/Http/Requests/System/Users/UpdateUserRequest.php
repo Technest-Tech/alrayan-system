@@ -18,6 +18,7 @@ class UpdateUserRequest extends FormRequest
         return [
             'name'          => ['sometimes', 'string', 'max:100'],
             'role'          => ['sometimes', Rule::in(['admin', 'supervisor', 'teacher'])],
+            'password'      => ['sometimes', 'nullable', 'string', 'min:8'],
             'permissions'   => ['sometimes', 'array'],
             'permissions.*' => ['string', Rule::in(PermissionRegistry::all())],
         ];

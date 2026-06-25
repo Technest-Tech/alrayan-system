@@ -19,6 +19,7 @@ class InviteUserRequest extends FormRequest
             'name'          => ['required', 'string', 'max:100'],
             'email'         => ['required', 'email', 'unique:users,email'],
             'role'          => ['required', Rule::in(['admin', 'supervisor', 'teacher'])],
+            'password'      => ['nullable', 'string', 'min:8'],
             'permissions'   => ['sometimes', 'array'],
             'permissions.*' => ['string', Rule::in(PermissionRegistry::all())],
         ];
