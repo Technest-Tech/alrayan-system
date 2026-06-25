@@ -141,11 +141,12 @@ class DashboardService
 
     private function buildRecentActivity(): array
     {
-        return AuditLogModel::orderByDesc('created_at')
+        return AuditLogModel::with('actor:id,name')
+            ->orderByDesc('created_at')
             ->limit(10)
-            ->get(['action', 'actor_name', 'created_at'])
+            ->get(['id', 'actor_user_id', 'action', 'created_at'])
             ->map(fn($log) => [
-                'text' => trim(($log->actor_name ?? 'System') . ' ' . str_replace('_', ' ', $log->action)),
+                'text' => trim(($log->actor->name ?? 'System') . ' ' . str_replace('_', ' ', $log->action)),
                 'at'   => $log->created_at->toISOString(),
             ])
             ->toArray();
