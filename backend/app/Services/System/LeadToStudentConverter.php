@@ -5,11 +5,15 @@ namespace App\Services\System;
 use App\Models\System\Guardian;
 use App\Models\System\Lead;
 use App\Models\System\Student;
+use App\Support\System\IdentityEmail;
 use Illuminate\Support\Facades\DB;
 
 class LeadToStudentConverter
 {
-    public function __construct(private PackageService $packages) {}
+    public function __construct(
+        private PackageService $packages,
+        private UserProvisioner $provisioner,
+    ) {}
 
     public function convert(Lead $lead, array $studentData): Student
     {
@@ -51,9 +55,20 @@ class LeadToStudentConverter
             if ($student) {
                 $student->update($studentData);
             } else {
-                $student = Student::create(array_merge([
+                // No provisioned student → also mint the unified `users` identity row,
+                // otherwise the converted student is invisible in the user directory.
+                $email = $lead->email ?: IdentityEmail::forStudent($lead->name);
+                $user  = $this->provisioner->create([
                     'name'     => $lead->name,
-                    'email'    => $lead->email,
+                    'email'    => $email,
+                    'whatsapp' => $lead->whatsapp,
+                    'status'   => $studentData['status'] ?? 'active',
+                ], 'student');
+
+                $student = Student::create(array_merge([
+                    'user_id'  => $user->id,
+                    'name'     => $lead->name,
+                    'email'    => $email,
                     'whatsapp' => $lead->whatsapp,
                     'country'  => $lead->country,
                     'lead_id'  => $lead->id,
