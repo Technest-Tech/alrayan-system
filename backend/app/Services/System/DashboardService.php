@@ -54,7 +54,7 @@ class DashboardService
                     'trial_students'        => Student::where('status', 'trial')->count(),
                     'paused_students'       => Student::where('status', 'paused')->count(),
                     'suspended_students'    => Student::where('status', 'suspended')->count(),
-                    'today_sessions'        => Session::whereDate('starts_at', $now->toDateString())->count(),
+                    'today_sessions'        => Session::whereDate('scheduled_start', $now->toDateString())->count(),
                     'month_revenue'         => $monthRevenue->pluck('total_minor', 'currency'),
                     'month_net_profit_base' => $monthPnl->netProfit,
                     'outstanding'           => $collection30->outstandingMinorByCurrency,
@@ -122,7 +122,7 @@ class DashboardService
             $alerts[] = ['kind' => 'invoice.overdue', 'count' => $overdueCount, 'href' => '/billing/overdue'];
         }
 
-        $missingReports = Session::whereDate('starts_at', '<', now())
+        $missingReports = Session::whereDate('scheduled_start', '<', now())
             ->whereDoesntHave('report')
             ->count();
         if ($missingReports > 0) {
