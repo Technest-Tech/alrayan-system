@@ -18,6 +18,7 @@ const schema = z.object({
   payment_method:          z.enum(['vodafone_cash', 'instapay', 'wallet_other']),
   payment_account_details: z.string().optional(),
   hourly_rate:             z.coerce.number().min(0, 'Rate must be 0 or more'),
+  password:                z.string().min(8, 'password-min').or(z.literal('')).optional(),
 })
 
 export type TeacherFormValues = z.infer<typeof schema>
@@ -70,6 +71,7 @@ export function TeacherForm({ defaultValues, onSubmit, isLoading, isEdit }: Teac
       payment_method:          defaultValues?.payment_method ?? 'vodafone_cash',
       payment_account_details: defaultValues?.payment_account_details ?? '',
       hourly_rate:             defaultValues?.hourly_rate ?? 0,
+      password:                '',
     },
   })
   const { register, handleSubmit, control, formState: { errors } } = form
@@ -95,6 +97,14 @@ export function TeacherForm({ defaultValues, onSubmit, isLoading, isEdit }: Teac
               <FieldError message={errors.email?.message} />
             </div>
           )}
+
+          <div>
+            <label className="block text-xs font-medium mb-1.5 opacity-60 uppercase tracking-wide">{t('users.setPasswordLabel')}</label>
+            <input type="password" autoComplete="new-password" className={inputCls} style={inputStyle} placeholder="••••••••" {...register('password')} />
+            {errors.password?.message
+              ? <FieldError message={t('users.errorPasswordMin')} />
+              : <p className="text-[11px] opacity-50 mt-1">{isEdit ? t('users.setPasswordHint') : t('users.setPasswordHintInvite')}</p>}
+          </div>
 
           <div>
             <label className="block text-xs font-medium mb-1.5 opacity-60 uppercase tracking-wide">{t('common.whatsapp')}</label>

@@ -57,6 +57,13 @@ class TeacherController extends Controller
 
         $data = $request->validated();
 
+        // Password lives on the linked user, not the teacher profile.
+        if (! empty($data['password'])) {
+            $teacher->user->password = $data['password']; // cast hashes once
+            $teacher->user->save();
+        }
+        unset($data['password']);
+
         if (isset($data['hourly_rate'])) {
             $perMinute = (int) round($data['hourly_rate'] / 60);
             $data['per_minute_rate_30'] = $perMinute;

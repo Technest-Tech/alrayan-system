@@ -26,9 +26,12 @@ class TeacherCreator
         return DB::transaction(function () use ($data) {
             $token = Str::random(60);
 
+            $password = $data['password'] ?? null;
+
             $user = $this->provisioner->create([
                 'name'      => $data['name'],
                 'email'     => $data['email'],
+                'password'  => $password,
                 'phone'     => $data['phone'] ?? null,
                 'whatsapp'  => $data['whatsapp'] ?? null,
                 'status'    => $data['status'] ?? 'active',
@@ -42,12 +45,15 @@ class TeacherCreator
                 'phones'    => $data['phones'] ?? [],
             ], 'teacher');
 
-            DB::table('password_reset_tokens')->updateOrInsert(
-                ['email' => $user->email],
-                ['token' => Hash::make($token), 'created_at' => now()],
-            );
+            // No admin-set password → issue an invite link so the teacher sets their own.
+            if (! $password) {
+                DB::table('password_reset_tokens')->updateOrInsert(
+                    ['email' => $user->email],
+                    ['token' => Hash::make($token), 'created_at' => now()],
+                );
 
-            $user->notify(new SystemUserInvitedNotification($token));
+                $user->notify(new SystemUserInvitedNotification($token));
+            }
 
             $perMinute = (int) round(($data['hourly_rate'] ?? 0) / 60);
 

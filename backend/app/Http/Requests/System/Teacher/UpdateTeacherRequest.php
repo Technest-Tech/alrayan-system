@@ -11,6 +11,7 @@ class UpdateTeacherRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'password'                => ['sometimes', 'nullable', 'string', 'min:8'],
             'qualifications'          => ['nullable', 'string'],
             'cv_url'                  => ['nullable', 'url', 'max:2048'],
             'teachable_course_ids'    => ['nullable', 'array'],
