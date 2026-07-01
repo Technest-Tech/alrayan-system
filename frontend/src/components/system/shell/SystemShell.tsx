@@ -6,7 +6,7 @@ import { Topbar } from './Topbar'
 import { useUser } from '@/lib/system/auth'
 import { ApiError, clearToken } from '@/lib/system/api'
 import { can } from '@/lib/system/permissions'
-import { SYSTEM_NAV } from '@/lib/system/nav'
+import { SYSTEM_NAV, TEACHER_NAV } from '@/lib/system/nav'
 import { useI18n } from '@/lib/system/i18n'
 import type { AuthUser } from '@/types/system/auth'
 import type { NavSection } from '@/lib/system/nav'
@@ -42,6 +42,9 @@ function FullPageError({ error }: { error: unknown }) {
 }
 
 function navForUser(user: AuthUser): NavSection[] {
+  // Teachers get a fixed, role-based menu (their permission set can't drive it).
+  if (user.role === 'teacher') return TEACHER_NAV as unknown as NavSection[]
+
   return SYSTEM_NAV.map((section) => ({
     ...section,
     items: section.items.filter((item) => {

@@ -14,7 +14,7 @@ use Illuminate\Support\Str;
  */
 class UserProvisioner
 {
-    private const SHARED_FIELDS = ['name', 'phone', 'whatsapp', 'status', 'language', 'birthday', 'gender', 'photo_url', 'notes', 'documents'];
+    private const SHARED_FIELDS = ['name', 'phone', 'whatsapp', 'status', 'language', 'birthday', 'gender', 'photo_url', 'notes', 'documents', 'relatives'];
 
     /**
      * Provision a brand-new user with a role, primary contacts and permissions.

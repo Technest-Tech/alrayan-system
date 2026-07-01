@@ -14,7 +14,7 @@ interface StudentFilters {
   per_page?: number
 }
 
-export function useStudents(filters: StudentFilters = {}) {
+export function useStudents(filters: StudentFilters = {}, options: { enabled?: boolean } = {}) {
   const params = new URLSearchParams()
   if (filters.status) params.set('filter[status]', filters.status)
   if (filters.course_id) params.set('filter[course_id]', filters.course_id)
@@ -29,6 +29,7 @@ export function useStudents(filters: StudentFilters = {}) {
   return useQuery({
     queryKey: ['system', 'students', filters],
     queryFn: () => api<Paginated<Student>>(`/students${qs ? '?' + qs : ''}`),
+    enabled: options.enabled ?? true,
   })
 }
 

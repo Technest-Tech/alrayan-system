@@ -6,6 +6,8 @@ import { toast } from 'sonner'
 import { useLessonSubjects, useLessonEvaluations, useCreateLesson, useUpdateLesson } from '@/hooks/system/useLessons'
 import { useTeachers } from '@/hooks/system/useTeachers'
 import { useStudents } from '@/hooks/system/useStudents'
+import { useMyStudents } from '@/hooks/system/useMyStudents'
+import { useSystemUser } from '@/components/system/shell/SystemShell'
 import type { Lesson, LessonStatus, StoreLessonPayload, TrialEvaluation } from '@/types/system/lesson'
 import { LESSON_STATUSES } from '@/lib/system/lessonStatus'
 import { useI18n } from '@/lib/system/i18n'
@@ -141,17 +143,28 @@ export function LessonForm({ initialValues, prefill, onSuccess, onCancel }: Prop
   const { t } = useI18n()
   const isEdit = !!initialValues
 
+  // A logged-in teacher can only create lessons for themselves + their own students.
+  const user = useSystemUser()
+  const isTeacher = user?.role === 'teacher'
+  const myTeacherId = user?.teacher_id ?? null
+
   /* Teacher / student selection — declared early so the student list can filter by teacher. */
-  const [teacherId, setTeacherId] = useState(initialValues ? String(initialValues.teacher_id) : prefill?.teacherId ? String(prefill.teacherId) : '')
+  const [teacherId, setTeacherId] = useState(
+    initialValues ? String(initialValues.teacher_id)
+    : prefill?.teacherId ? String(prefill.teacherId)
+    : isTeacher && myTeacherId ? String(myTeacherId)
+    : '',
+  )
   const [studentId, setStudentId] = useState(initialValues ? String(initialValues.student_id) : prefill?.studentId ? String(prefill.studentId) : '')
 
   const { data: subjects    = [] } = useLessonSubjects()
   const { data: evaluations = [] } = useLessonEvaluations()
-  const { data: teachersData }     = useTeachers()
-  // When a teacher is selected, only load students assigned to that teacher.
-  const { data: studentsData }     = useStudents({ per_page: 500, assigned_teacher_id: teacherId || undefined })
+  const { data: teachersData }     = useTeachers({}, { enabled: !isTeacher })
+  // Admins load students for the selected teacher; a teacher loads their own students.
+  const { data: adminStudentsData } = useStudents({ per_page: 500, assigned_teacher_id: teacherId || undefined }, { enabled: !isTeacher })
+  const { data: myStudents }        = useMyStudents({ enabled: isTeacher })
   const teachers = teachersData?.data ?? []
-  const students = studentsData?.data ?? []
+  const students = isTeacher ? (myStudents ?? []) : (adminStudentsData?.data ?? [])
 
   const createLesson = useCreateLesson()
   const updateLesson = useUpdateLesson()
@@ -255,12 +268,16 @@ export function LessonForm({ initialValues, prefill, onSuccess, onCancel }: Prop
         </div>
         <div className="grid grid-cols-2 gap-3">
           <Field label={t('common.teacher')} required>
-            <SearchableSelect
-              options={teachers.map(tc => ({ value: String(tc.id), label: tc.name ?? t('lessons.teacherFallback', { id: String(tc.id) }) }))}
-              value={teacherId}
-              onChange={v => { if (v !== teacherId) setStudentId(''); setTeacherId(v) }}
-              placeholder={t('lessons.form.selectTeacher')}
-            />
+            {isTeacher ? (
+              <div className={inp} style={{ ...inpStyle, background: '#f8fafc', color: NAVY }}>{user?.name}</div>
+            ) : (
+              <SearchableSelect
+                options={teachers.map(tc => ({ value: String(tc.id), label: tc.name ?? t('lessons.teacherFallback', { id: String(tc.id) }) }))}
+                value={teacherId}
+                onChange={v => { if (v !== teacherId) setStudentId(''); setTeacherId(v) }}
+                placeholder={t('lessons.form.selectTeacher')}
+              />
+            )}
           </Field>
           <Field label={t('lessons.form.fieldStudent')} required>
             <SearchableSelect

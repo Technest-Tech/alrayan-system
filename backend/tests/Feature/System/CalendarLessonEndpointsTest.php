@@ -297,6 +297,80 @@ class CalendarLessonEndpointsTest extends SystemTestCase
         $this->assertEquals(2.5, $second->json('data.session_number_hours'));
     }
 
+    /* ────────────────────────  TEACHER SELF-SCOPING  ─────────────────── */
+
+    public function test_teacher_can_create_lesson_for_own_student(): void
+    {
+        ['user' => $user, 'teacher' => $teacher] = $this->teacherUser();
+        $student = $this->lessonStudent(['assigned_teacher_id' => $teacher->id]);
+
+        $this->actingAs($user, 'sanctum')
+            ->postJson('/api/system/lessons', [
+                'teacher_id'       => $teacher->id,
+                'student_id'       => $student->id,
+                'scheduled_at'     => now()->setTime(10, 0)->toDateTimeString(),
+                'duration_minutes' => 60,
+                'status'           => 'scheduled',
+            ])
+            ->assertCreated();
+
+        $this->assertDatabaseHas('sys_lessons', [
+            'student_id' => $student->id,
+            'teacher_id' => $teacher->id,
+        ]);
+    }
+
+    public function test_teacher_lesson_is_forced_to_own_teacher_id(): void
+    {
+        ['user' => $user, 'teacher' => $teacher] = $this->teacherUser();
+        $other   = Teacher::factory()->create();
+        $student = $this->lessonStudent(['assigned_teacher_id' => $teacher->id]);
+
+        // Even if a teacher spoofs another teacher_id, it's overridden with their own.
+        $this->actingAs($user, 'sanctum')
+            ->postJson('/api/system/lessons', [
+                'teacher_id'       => $other->id,
+                'student_id'       => $student->id,
+                'scheduled_at'     => now()->setTime(12, 0)->toDateTimeString(),
+                'duration_minutes' => 60,
+                'status'           => 'scheduled',
+            ])
+            ->assertCreated();
+
+        $this->assertDatabaseHas('sys_lessons', ['student_id' => $student->id, 'teacher_id' => $teacher->id]);
+        $this->assertDatabaseMissing('sys_lessons', ['student_id' => $student->id, 'teacher_id' => $other->id]);
+    }
+
+    public function test_teacher_cannot_create_lesson_for_another_teachers_student(): void
+    {
+        ['user' => $user, 'teacher' => $teacher] = $this->teacherUser();
+        $other   = Teacher::factory()->create();
+        $student = $this->lessonStudent(['assigned_teacher_id' => $other->id]);
+
+        $this->actingAs($user, 'sanctum')
+            ->postJson('/api/system/lessons', [
+                'teacher_id'       => $teacher->id,
+                'student_id'       => $student->id,
+                'scheduled_at'     => now()->setTime(10, 0)->toDateTimeString(),
+                'duration_minutes' => 60,
+                'status'           => 'scheduled',
+            ])
+            ->assertStatus(403);
+    }
+
+    public function test_teacher_cannot_edit_another_teachers_lesson(): void
+    {
+        ['user' => $user] = $this->teacherUser();
+        $other   = Teacher::factory()->create();
+        $student = $this->lessonStudent(['assigned_teacher_id' => $other->id]);
+        $package = $this->makePackage($student);
+        $lesson  = $this->makeLesson($student, $other, $package);
+
+        $this->actingAs($user, 'sanctum')
+            ->putJson("/api/system/lessons/{$lesson->id}", ['status' => 'attended'])
+            ->assertStatus(403);
+    }
+
     /* ─────────────────────────────  UPDATE  ─────────────────────────── */
 
     public function test_admin_can_update_lesson(): void

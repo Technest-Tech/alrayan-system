@@ -8,6 +8,8 @@ import { useDashboard } from '@/hooks/system/useDashboard'
 import { useSystemUser } from '@/components/system/shell/SystemShell'
 import { useI18n } from '@/lib/system/i18n'
 import TeacherRace from '@/components/system/users/TeacherRace'
+import TeacherProfileDashboard from '@/components/system/users/TeacherProfileDashboard'
+import type { DirectoryUser, TeacherProfile } from '@/types/system/user-directory'
 
 function BarChart({ items, valueKey, labelKey, formatValue }: {
   items: Record<string, number | string>[]
@@ -180,6 +182,43 @@ function AdminDashboard() {
   )
 }
 
+/** Adapt the authenticated teacher (AuthUser) into the DirectoryUser shape the
+ *  reusable TeacherProfileDashboard expects. Only role + profile.id are load-bearing;
+ *  the rest feed the header card. */
+function teacherAsDirectoryUser(user: NonNullable<ReturnType<typeof useSystemUser>>): DirectoryUser {
+  const profile: TeacherProfile = {
+    id: user.teacher_id!,
+    qualifications: null,
+    payment_method: null,
+    hourly_rate: null,
+    currency: null,
+    accepts_new_students: null,
+    teachable_course_ids: null,
+    is_active: user.is_active,
+    students_count: null,
+  }
+  return {
+    id: user.id,
+    name: user.name,
+    email: user.email,
+    phone: user.phone ?? null,
+    whatsapp: user.whatsapp ?? null,
+    role: 'teacher',
+    status: 'active',
+    is_active: user.is_active,
+    language: user.language ?? null,
+    birthday: user.birthday ?? null,
+    gender: user.gender ?? null,
+    photo_url: user.photo_url ?? null,
+    notes: null,
+    documents: null,
+    last_login_at: null,
+    invite_pending: false,
+    profile,
+    created_at: null,
+  }
+}
+
 function TeacherDashboard() {
   const user = useSystemUser()
   const { locale, t } = useI18n()
@@ -188,47 +227,24 @@ function TeacherDashboard() {
     { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' },
   )
 
+  // No linked teacher profile → we can't load teacher stats.
+  if (!user?.teacher_id) {
+    return (
+      <div>
+        <h1 className="text-2xl font-bold">{t('dashboard.welcome', { name: user?.name ?? '' })}</h1>
+        <p className="opacity-50 mt-1 text-sm">{today}</p>
+        <p className="mt-8 text-sm opacity-60">{t('teacher.dashboard.noProfile')}</p>
+      </div>
+    )
+  }
+
   return (
-    <div>
-      <h1 className="text-2xl font-bold">{t('dashboard.welcome', { name: user?.name ?? '' })}</h1>
-      <p className="opacity-50 mt-1 text-sm">{today}</p>
-
-      <div className="mt-8 space-y-4 max-w-2xl">
-        <div
-          className="rounded-2xl p-6"
-          style={{ background: 'rgb(var(--surface-card, 255 255 255))', border: '1px solid rgb(var(--border-default, 229 233 240))' }}
-        >
-          <p className="font-semibold">{t('dashboard.todaySessionsCard', { count: '0' })}</p>
-          <p className="text-sm opacity-40 mt-3">{t('dashboard.noSessionsToday')}</p>
-        </div>
-        <div
-          className="rounded-2xl p-6"
-          style={{ background: 'rgb(var(--surface-card, 255 255 255))', border: '1px solid rgb(var(--border-default, 229 233 240))' }}
-        >
-          <p className="font-semibold">{t('dashboard.pendingReports', { count: '0' })}</p>
-          <p className="text-sm opacity-40 mt-3">{t('dashboard.allCaughtUp')}</p>
-        </div>
-        <div
-          className="rounded-2xl p-6 flex items-center justify-between"
-          style={{ background: 'rgb(var(--surface-card, 255 255 255))', border: '1px solid rgb(var(--border-default, 229 233 240))' }}
-        >
-          <div>
-            <p className="font-semibold">{t('dashboard.salaryStatement')}</p>
-            <p className="text-sm opacity-40 mt-1">{t('dashboard.salaryNotCalc')}</p>
-          </div>
-          <button
-            className="px-4 py-2 rounded-xl text-sm font-medium border hover:bg-black/5 transition-colors"
-            style={{ borderColor: 'rgb(var(--border-default, 229 233 240))' }}
-          >
-            {t('dashboard.view')}
-          </button>
-        </div>
+    <div className="space-y-5">
+      <div>
+        <h1 className="text-2xl font-bold">{t('dashboard.welcome', { name: user.name })}</h1>
+        <p className="opacity-50 mt-1 text-sm">{today}</p>
       </div>
-
-      {/* Teacher Race */}
-      <div className="mt-4">
-        <TeacherRace currentTeacherId={user?.teacher_id ?? null} />
-      </div>
+      <TeacherProfileDashboard user={teacherAsDirectoryUser(user)} selfView />
     </div>
   )
 }

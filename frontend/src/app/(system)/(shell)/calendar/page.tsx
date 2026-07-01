@@ -8,6 +8,8 @@ import {
 import { useCalendarFeed, useLessons, useLessonSchedules } from '@/hooks/system/useLessons'
 import { useTeachers }                 from '@/hooks/system/useTeachers'
 import { useStudents }                 from '@/hooks/system/useStudents'
+import { useMyStudents }               from '@/hooks/system/useMyStudents'
+import { useSystemUser }               from '@/components/system/shell/SystemShell'
 import { CreateLessonDialog }          from '@/components/system/lessons/CreateLessonDialog'
 import { CreateScheduleDialog }        from '@/components/system/lessons/CreateScheduleDialog'
 import { LessonDetailDrawer }          from '@/components/system/lessons/LessonDetailDrawer'
@@ -519,11 +521,17 @@ export default function CalendarPage() {
   const [chooserSel,         setChooserSel]         = useState<ChooserSelection | null>(null)
   const [settingsOpen,       setSettingsOpen]       = useState(false)
 
-  const { data: teachersData } = useTeachers()
-  const { data: studentsData } = useStudents({ per_page: 500 })
+  // Teachers get a self-scoped calendar: they can create/manage their own
+  // lessons & schedules, but not the admin-only filters/settings.
+  const user = useSystemUser()
+  const isTeacher = user?.role === 'teacher'
+
+  const { data: teachersData } = useTeachers({}, { enabled: !isTeacher })
+  const { data: studentsData } = useStudents({ per_page: 500 }, { enabled: !isTeacher })
+  const { data: myStudents } = useMyStudents({ enabled: isTeacher })
   const { data: schedulesData } = useLessonSchedules({ teacherId: teacherFilter ? Number(teacherFilter) : undefined })
   const teachers  = teachersData?.data ?? []
-  const students  = studentsData?.data ?? []
+  const students  = isTeacher ? (myStudents ?? []) : (studentsData?.data ?? [])
   const schedules = schedulesData ?? []
 
   const [calStart, calEnd] = useMemo(() => {
@@ -688,15 +696,18 @@ export default function CalendarPage() {
           </div>
 
           <div className="flex items-center gap-2">
-            <button
-              onClick={() => setSettingsOpen(true)}
-              className="inline-flex items-center justify-center w-10 h-10 rounded-xl border transition-colors hover:bg-black/[0.02]"
-              style={{ borderColor: BORDER, color: MUTED, background: '#fff' }}
-              aria-label={t('schedule.page.calendarSettings')}
-              title={t('schedule.page.calendarSettings')}
-            >
-              <Settings size={16} />
-            </button>
+            {/* Calendar settings is an admin-only configuration surface. */}
+            {!isTeacher && (
+              <button
+                onClick={() => setSettingsOpen(true)}
+                className="inline-flex items-center justify-center w-10 h-10 rounded-xl border transition-colors hover:bg-black/[0.02]"
+                style={{ borderColor: BORDER, color: MUTED, background: '#fff' }}
+                aria-label={t('schedule.page.calendarSettings')}
+                title={t('schedule.page.calendarSettings')}
+              >
+                <Settings size={16} />
+              </button>
+            )}
             <button
               onClick={() => { setEditSchedule(undefined); setSchedulePrefill(undefined); setCreateScheduleOpen(true) }}
               className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium border transition-colors hover:bg-black/[0.02]"
@@ -726,21 +737,23 @@ export default function CalendarPage() {
           {/* Row 1: Filter controls */}
           <div className="flex flex-wrap items-end gap-4">
 
-            {/* Teacher filter */}
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-medium flex items-center gap-1.5" style={{ color: MUTED }}>
-                <GraduationCap size={12} />
-                {t('common.teacher')}
-              </label>
-              <SearchableSelect
-                options={teachers.map(tch => ({ value: String(tch.id), label: tch.name ?? t('schedule.filter.teacherNumber', { id: String(tch.id) }) }))}
-                value={teacherFilter}
-                onChange={setTeacherFilter}
-                placeholder={t('schedule.filter.allTeachers')}
-                clearable
-                className="w-48"
-              />
-            </div>
+            {/* Teacher filter — admins/supervisors only (teachers only see their own) */}
+            {!isTeacher && (
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-medium flex items-center gap-1.5" style={{ color: MUTED }}>
+                  <GraduationCap size={12} />
+                  {t('common.teacher')}
+                </label>
+                <SearchableSelect
+                  options={teachers.map(tch => ({ value: String(tch.id), label: tch.name ?? t('schedule.filter.teacherNumber', { id: String(tch.id) }) }))}
+                  value={teacherFilter}
+                  onChange={setTeacherFilter}
+                  placeholder={t('schedule.filter.allTeachers')}
+                  clearable
+                  className="w-48"
+                />
+              </div>
+            )}
 
             {/* Student filter */}
             <div className="flex flex-col gap-1.5">

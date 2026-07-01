@@ -2,6 +2,7 @@ import {
   LayoutDashboard, UsersRound, CalendarDays,
   Award, DollarSign, Wallet, BarChart3,
   Bell, Settings, ScrollText, UserCheck, CreditCard, ListChecks,
+  GraduationCap,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 
@@ -49,6 +50,30 @@ export const SYSTEM_NAV: readonly NavSection[] = [
     items: [
       { label: 'nav.settings', href: '/settings',          icon: Settings,   perm: 'settings.view' },
       { label: 'nav.auditLog', href: '/audit-log',         icon: ScrollText, perm: 'audit.view' },
+    ],
+  },
+] as const
+
+/**
+ * Teachers are subjects, not operators: they have (almost) no permissions, so
+ * the permission-filtered SYSTEM_NAV would leave them with an empty menu. They
+ * get their own fixed, role-based menu instead (see navForUser in SystemShell).
+ * All items are perm:null — visibility is by role, and every backing endpoint is
+ * scoped to the authenticated teacher server-side.
+ */
+export const TEACHER_NAV: readonly NavSection[] = [
+  {
+    label: 'nav.sections.main',
+    items: [
+      { label: 'nav.dashboard',  href: '/dashboard',        icon: LayoutDashboard, perm: null },
+      { label: 'nav.myStudents', href: '/teacher/students', icon: GraduationCap,   perm: null },
+      { label: 'nav.calendar',   href: '/calendar',         icon: CalendarDays,    perm: null },
+    ],
+  },
+  {
+    label: 'nav.sections.admin',
+    items: [
+      { label: 'nav.settings', href: '/settings', icon: Settings, perm: null },
     ],
   },
 ] as const

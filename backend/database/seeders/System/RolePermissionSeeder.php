@@ -22,6 +22,7 @@ class RolePermissionSeeder extends Seeder
         Role::firstOrCreate(['name' => 'supervisor', 'guard_name' => 'web'])
             ->syncPermissions(DefaultRoles::SUPERVISOR_DEFAULTS);
 
-        Role::firstOrCreate(['name' => 'teacher', 'guard_name' => 'web']);
+        Role::firstOrCreate(['name' => 'teacher', 'guard_name' => 'web'])
+            ->syncPermissions(DefaultRoles::TEACHER_DEFAULTS);
     }
 }

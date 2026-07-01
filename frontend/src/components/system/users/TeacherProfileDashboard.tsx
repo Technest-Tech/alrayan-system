@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation'
 import {
   Mail, Phone, Users, GraduationCap, Clock, DollarSign, Award, CalendarDays,
   CalendarCheck, ChevronLeft, ChevronRight, TrendingUp, TrendingDown, MessageSquare, Mail as MailIcon,
+  Wallet, FileWarning,
 } from 'lucide-react'
 import { useTeacherProfileStats } from '@/hooks/system/useTeacherReports'
 import TeacherRace from '@/components/system/users/TeacherRace'
@@ -38,7 +39,7 @@ function delta(cur: number, prev: number): number | null {
   return Math.round(((cur - prev) / prev) * 100)
 }
 
-export default function TeacherProfileDashboard({ user }: { user: DirectoryUser }) {
+export default function TeacherProfileDashboard({ user, selfView = false }: { user: DirectoryUser; selfView?: boolean }) {
   const { t } = useI18n()
   const router = useRouter()
   const profile = user.role === 'teacher' ? (user.profile as TeacherProfile | null) : null
@@ -116,7 +117,7 @@ export default function TeacherProfileDashboard({ user }: { user: DirectoryUser 
             <div className="md:col-span-7 grid grid-cols-1 sm:grid-cols-3 gap-3">
               <StatCard icon={<Users size={16} />} accent={TEAL} label={t('users.profileTotalStudents')}
                 value={String(stats?.total_students ?? '—')}
-                note={stats ? `${stats.total_students} Active · 0 Non-Active` : undefined} />
+                note={stats ? `${stats.active_students} ${t('users.profileActive')} · ${stats.non_active_students} ${t('users.profileNonActive')}` : undefined} />
               <StatCard icon={<Clock size={16} />} accent={BLUE} label={t('users.profileHoursThisMonth')}
                 value={stats ? `${stats.hours_this_month.toFixed(1)}h` : '—'}
                 deltaPct={stats ? delta(stats.hours_this_month, stats.hours_last_month) : null}
@@ -197,19 +198,42 @@ export default function TeacherProfileDashboard({ user }: { user: DirectoryUser 
             </button>
           </div>
 
-          {/* Messages */}
-          <div className="rounded-2xl border p-5 bg-white" style={{ borderColor: 'rgb(var(--border-default,229 233 240))' }}>
-            <h3 className="text-sm font-bold inline-flex items-center gap-2" style={{ color: NAVY }}>
-              <MessageSquare size={15} style={{ color: MUTED }} /> {t('users.profileMessages')}
-            </h3>
-            <div className="py-8 flex flex-col items-center gap-2 text-xs" style={{ color: MUTED }}>
-              <MailIcon size={24} className="opacity-30" />
-              {t('common.comingSoon')}
+          {selfView ? (
+            /* Salary + pending reports (teacher's own view) */
+            <div className="rounded-2xl border p-5 bg-white space-y-4" style={{ borderColor: 'rgb(var(--border-default,229 233 240))' }}>
+              <div className="flex items-center justify-between">
+                <span className="inline-flex items-center gap-2 text-xs" style={{ color: MUTED }}>
+                  <FileWarning size={15} style={{ color: (stats?.pending_reports ?? 0) > 0 ? RED : GREEN }} />
+                  {t('teacher.dashboard.pendingReports')}
+                </span>
+                <span className="text-sm font-bold" style={{ color: (stats?.pending_reports ?? 0) > 0 ? RED : NAVY }}>
+                  {stats?.pending_reports ?? 0}
+                </span>
+              </div>
+              <button
+                onClick={() => router.push('/teacher/salary')}
+                className="w-full pt-3 border-t text-sm font-semibold inline-flex items-center justify-between"
+                style={{ color: NAVY, borderColor: 'rgb(var(--border-default,229 233 240))' }}
+              >
+                <span className="inline-flex items-center gap-1.5"><Wallet size={14} /> {t('teacher.dashboard.salaryStatement')}</span>
+                <ChevronRight size={14} />
+              </button>
             </div>
-            <button onClick={() => router.push('/users')} className="w-full pt-3 border-t text-sm font-semibold inline-flex items-center justify-between" style={{ color: NAVY, borderColor: 'rgb(var(--border-default,229 233 240))' }}>
-              <span className="inline-flex items-center gap-1.5"><Users size={14} /> {t('users.profileViewContacts')}</span> <ChevronRight size={14} />
-            </button>
-          </div>
+          ) : (
+            /* Messages (admin view) */
+            <div className="rounded-2xl border p-5 bg-white" style={{ borderColor: 'rgb(var(--border-default,229 233 240))' }}>
+              <h3 className="text-sm font-bold inline-flex items-center gap-2" style={{ color: NAVY }}>
+                <MessageSquare size={15} style={{ color: MUTED }} /> {t('users.profileMessages')}
+              </h3>
+              <div className="py-8 flex flex-col items-center gap-2 text-xs" style={{ color: MUTED }}>
+                <MailIcon size={24} className="opacity-30" />
+                {t('common.comingSoon')}
+              </div>
+              <button onClick={() => router.push('/users')} className="w-full pt-3 border-t text-sm font-semibold inline-flex items-center justify-between" style={{ color: NAVY, borderColor: 'rgb(var(--border-default,229 233 240))' }}>
+                <span className="inline-flex items-center gap-1.5"><Users size={14} /> {t('users.profileViewContacts')}</span> <ChevronRight size={14} />
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>

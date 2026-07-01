@@ -10,7 +10,7 @@ interface TeacherFilters {
   page?: number
 }
 
-export function useTeachers(filters: TeacherFilters = {}) {
+export function useTeachers(filters: TeacherFilters = {}, options: { enabled?: boolean } = {}) {
   const params = new URLSearchParams()
   if (filters.is_active) params.set('filter[is_active]', filters.is_active)
   if (filters.course) params.set('filter[course]', filters.course)
@@ -21,6 +21,7 @@ export function useTeachers(filters: TeacherFilters = {}) {
   return useQuery({
     queryKey: ['system', 'teachers', filters],
     queryFn: () => api<Paginated<Teacher>>(`/teachers${qs ? '?' + qs : ''}`),
+    enabled: options.enabled ?? true,
   })
 }
 

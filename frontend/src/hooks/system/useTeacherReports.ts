@@ -63,6 +63,9 @@ export interface TeacherProfileStats {
   month: string
   currency: string
   total_students: number
+  active_students: number
+  non_active_students: number
+  pending_reports: number
   hours_this_month: number
   hours_last_month: number
   revenue_minor: number

@@ -19,6 +19,23 @@ class LessonController extends Controller
 {
     public function __construct(private PackageService $packageService) {}
 
+    /**
+     * Resolve the teacher_id to persist on a write. A teacher is always forced
+     * to their own id and may only act on their own students; admins/supervisors
+     * keep whatever was requested.
+     */
+    private function resolveWriteTeacherId(int $requestedTeacherId, Student $student): int
+    {
+        if (auth()->user()->role !== 'teacher') {
+            return $requestedTeacherId;
+        }
+
+        $teacherId = (int) auth()->user()->teacher?->id;
+        abort_unless($student->assigned_teacher_id === $teacherId, 403, 'You can only create lessons for your own students.');
+
+        return $teacherId;
+    }
+
     public function index(Request $request): AnonymousResourceCollection
     {
         $this->authorize('viewAny', Lesson::class);
@@ -28,6 +45,10 @@ class LessonController extends Controller
 
         if ($request->filled('teacher_id')) {
             $query->where('teacher_id', $request->input('teacher_id'));
+        }
+        // A teacher only ever sees their own lessons, regardless of any filter.
+        if (auth()->user()->role === 'teacher') {
+            $query->where('teacher_id', auth()->user()->teacher?->id);
         }
         if ($request->filled('student_id')) {
             $query->where('student_id', $request->input('student_id'));
@@ -67,6 +88,7 @@ class LessonController extends Controller
         $this->authorize('create', Lesson::class);
 
         $student = Student::findOrFail($request->student_id);
+        $teacherId = $this->resolveWriteTeacherId((int) $request->teacher_id, $student);
         $scheduledAt = Carbon::parse($request->scheduled_at);
 
         $package = $this->packageService->resolvePackageForLesson($student, $scheduledAt);
@@ -74,7 +96,7 @@ class LessonController extends Controller
         $lesson = Lesson::create([
             'package_id'       => $package->id,
             'schedule_id'      => $request->input('schedule_id'),
-            'teacher_id'       => $request->teacher_id,
+            'teacher_id'       => $teacherId,
             'student_id'       => $request->student_id,
             'subject_id'       => $request->subject_id,
             'evaluation_id'    => $request->evaluation_id,
@@ -122,7 +144,7 @@ class LessonController extends Controller
     {
         $this->authorize('update', $lesson);
 
-        $lesson->update($request->only([
+        $data = $request->only([
             'teacher_id',
             'student_id',
             'subject_id',
@@ -136,7 +158,20 @@ class LessonController extends Controller
             'souvenir_image',
             'subject_details',
             'trial_evaluation',
-        ]));
+        ]);
+
+        // A teacher can never reassign a lesson to another teacher or a student
+        // that isn't theirs.
+        if (auth()->user()->role === 'teacher') {
+            $teacherId = (int) auth()->user()->teacher?->id;
+            $data['teacher_id'] = $teacherId;
+            if (! empty($data['student_id'])) {
+                $student = Student::find($data['student_id']);
+                abort_unless($student && $student->assigned_teacher_id === $teacherId, 403, 'You can only assign your own students.');
+            }
+        }
+
+        $lesson->update($data);
 
         // A date / duration / status change can shift every package — re-distribute.
         if ($student = $lesson->student) {

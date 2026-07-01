@@ -32,12 +32,12 @@ abstract class SystemTestCase extends TestCase
         $admin = Role::firstOrCreate(['name' => 'admin', 'guard_name' => 'web']);
         $admin->syncPermissions(PermissionRegistry::all());
 
-        foreach (['supervisor', 'quality', 'accountant'] as $role) {
+        foreach (['supervisor', 'quality', 'accountant', 'teacher'] as $role) {
             Role::firstOrCreate(['name' => $role, 'guard_name' => 'web'])
                 ->givePermissionTo(DefaultRoles::forRole($role));
         }
 
-        foreach (['teacher', 'parent', 'student'] as $role) {
+        foreach (['parent', 'student'] as $role) {
             Role::firstOrCreate(['name' => $role, 'guard_name' => 'web']);
         }
     }

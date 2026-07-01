@@ -215,9 +215,12 @@ function DetailRow({ icon, children }: { icon: React.ReactNode; children: React.
 interface Props {
   students: Student[]
   isLoading: boolean
+  /** Show the built-in Total/Active/… stats bar (default true). Turn off when the
+   *  parent renders its own interactive filter tabs. */
+  showStats?: boolean
 }
 
-export function TeacherStudentCards({ students, isLoading }: Props) {
+export function TeacherStudentCards({ students, isLoading, showStats = true }: Props) {
   const { t } = useI18n()
   const border = 'rgb(var(--border-default, 229 233 240))'
 
@@ -259,7 +262,7 @@ export function TeacherStudentCards({ students, isLoading }: Props) {
 
   return (
     <div>
-      <StatsBar students={students} />
+      {showStats && <StatsBar students={students} />}
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
         {students.map(s => <StudentCard key={s.id} student={s} />)}
       </div>

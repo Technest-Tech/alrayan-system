@@ -107,6 +107,13 @@ class AuthController extends Controller
             'permissions' => $user->getAllPermissions()->pluck('name'),
             'is_active'   => $user->is_active,
             'teacher_id'  => $user->teacher?->id,
+            // Profile fields — power the teacher dashboard header + settings prefill.
+            'phone'       => $user->phone,
+            'whatsapp'    => $user->whatsapp,
+            'photo_url'   => $user->photo_url,
+            'language'    => $user->language,
+            'birthday'    => optional($user->birthday)->toDateString(),
+            'gender'      => $user->gender,
         ];
     }
 }

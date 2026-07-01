@@ -7,6 +7,7 @@ use App\Http\Requests\System\Lesson\StoreLessonScheduleRequest;
 use App\Http\Resources\System\LessonScheduleResource;
 use App\Models\System\LessonSchedule;
 use App\Models\System\LessonScheduleSlot;
+use App\Models\System\Student;
 use App\Services\System\LessonScheduleService;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -25,6 +26,10 @@ class LessonScheduleController extends Controller
 
         if ($request->filled('teacher_id')) {
             $query->where('teacher_id', $request->input('teacher_id'));
+        }
+        // A teacher only ever sees their own schedules, regardless of any filter.
+        if (auth()->user()->role === 'teacher') {
+            $query->where('teacher_id', auth()->user()->teacher?->id);
         }
         if ($request->filled('student_id')) {
             $query->where('student_id', $request->input('student_id'));
@@ -50,8 +55,15 @@ class LessonScheduleController extends Controller
     {
         $this->authorize('create', LessonSchedule::class);
 
+        $teacherId = (int) $request->teacher_id;
+        if (auth()->user()->role === 'teacher') {
+            $teacherId = (int) auth()->user()->teacher?->id;
+            $student = Student::find($request->student_id);
+            abort_unless($student && $student->assigned_teacher_id === $teacherId, 403, 'You can only schedule your own students.');
+        }
+
         $schedule = LessonSchedule::create([
-            'teacher_id' => $request->teacher_id,
+            'teacher_id' => $teacherId,
             'student_id' => $request->student_id,
             'subject_id' => $request->subject_id,
             'recurrence' => $request->recurrence,
@@ -79,14 +91,25 @@ class LessonScheduleController extends Controller
     {
         $this->authorize('update', $lessonSchedule);
 
-        $lessonSchedule->update($request->only([
+        $data = $request->only([
             'teacher_id',
             'student_id',
             'subject_id',
             'recurrence',
             'start_date',
             'is_active',
-        ]));
+        ]);
+
+        if (auth()->user()->role === 'teacher') {
+            $teacherId = (int) auth()->user()->teacher?->id;
+            $data['teacher_id'] = $teacherId;
+            if (! empty($data['student_id'])) {
+                $student = Student::find($data['student_id']);
+                abort_unless($student && $student->assigned_teacher_id === $teacherId, 403, 'You can only assign your own students.');
+            }
+        }
+
+        $lessonSchedule->update($data);
 
         if ($request->has('slots')) {
             $lessonSchedule->slots()->delete();

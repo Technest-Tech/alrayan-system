@@ -36,6 +36,19 @@ class DefaultRoles
         'users.view', 'users.view_directory',
     ];
 
+    /**
+     * Teachers manage their own portal: dashboard, own students, own calendar
+     * (view + create/edit/delete their OWN lessons & schedules), own settings.
+     * The lessons.* grants unlock the shared calendar UI; every calendar/lesson
+     * read is scoped to the authenticated teacher server-side, and every write
+     * is forced to their own teacher_id + own students (controllers + policies),
+     * so a teacher can never touch another teacher's data. Everything else runs
+     * through unguarded self-service (`/teachers/me/*`, `/uploads`, `profile-stats`).
+     */
+    public const TEACHER_DEFAULTS = [
+        'lessons.view', 'lessons.create', 'lessons.edit', 'lessons.delete',
+    ];
+
     public const ACCOUNTANT_DEFAULTS = [
         'invoices.view', 'invoices.create', 'invoices.create_advance', 'invoices.edit',
         'invoices.void', 'invoices.record_payment', 'invoices.resend_link', 'invoices.download_pdf', 'invoices.export',
@@ -62,6 +75,7 @@ class DefaultRoles
             'supervisor' => self::SUPERVISOR_DEFAULTS,
             'quality'    => self::QUALITY_DEFAULTS,
             'accountant' => self::ACCOUNTANT_DEFAULTS,
+            'teacher'    => self::TEACHER_DEFAULTS,
             default      => [],
         };
     }

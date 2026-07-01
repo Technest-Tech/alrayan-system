@@ -4,6 +4,8 @@ import { SlidersHorizontal, BookOpen, Building2, Layers } from 'lucide-react'
 import { SubjectsSection } from '@/components/system/settings/SubjectsSection'
 import { SectionsSection } from '@/components/system/settings/SectionsSection'
 import { GeneralSettingsSection } from '@/components/system/settings/GeneralSettingsSection'
+import { TeacherSettings } from '@/components/system/teacher/TeacherSettings'
+import { useSystemUser } from '@/components/system/shell/SystemShell'
 import { useI18n } from '@/lib/system/i18n'
 
 const ACCENT = 'rgb(var(--accent))'
@@ -20,7 +22,11 @@ type TabId = (typeof TABS)[number]['id']
 
 export default function SettingsPage() {
   const { t } = useI18n()
+  const user = useSystemUser()
   const [tab, setTab] = useState<TabId>('subjects')
+
+  // Teachers get a personal-profile editor, not the admin configuration tabs.
+  if (user?.role === 'teacher') return <TeacherSettings />
 
   return (
     <div className="space-y-7">

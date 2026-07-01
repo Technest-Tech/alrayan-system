@@ -221,10 +221,23 @@ class TeacherReportController extends Controller
         $todayAttended  = $todayLessons->where('status', 'attended')->count();
         $todayScheduled = $todayLessons->where('status', 'scheduled')->count();
 
+        // ── Pending session reports (attended, overdue, no report submitted) ──
+        $pendingReports = Session::where('teacher_id', $teacher->id)
+            ->where('status', 'attended')
+            ->whereNotNull('report_overdue_at')
+            ->whereDoesntHave('report')
+            ->count();
+
+        $totalStudents  = $teacher->students()->count();
+        $activeStudents = $teacher->students()->where('status', 'active')->count();
+
         return response()->json([
             'month'              => $monthStart->format('Y-m'),
             'currency'           => Setting::get('reports.base_currency', config('system.default_base_currency', 'EGP')),
-            'total_students'     => $teacher->students()->where('status', 'active')->count(),
+            'total_students'     => $totalStudents,
+            'active_students'    => $activeStudents,
+            'non_active_students'=> max(0, $totalStudents - $activeStudents),
+            'pending_reports'    => $pendingReports,
             'hours_this_month'   => $hours($monthStart, $monthEndClamped),
             'hours_last_month'   => $hours($prevMonthStart, $prevMonthEnd),
             'revenue_minor'      => $revenue,

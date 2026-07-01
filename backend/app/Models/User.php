@@ -47,6 +47,7 @@ class User extends Authenticatable
         'photo_url',
         'notes',
         'documents',
+        'relatives',
         'last_login_at',
     ];
 
@@ -72,6 +73,7 @@ class User extends Authenticatable
             'last_login_at'     => 'datetime',
             'birthday'          => 'date',
             'documents'         => 'array',
+            'relatives'         => 'array',
             'is_active'         => 'boolean',
             'password'          => 'hashed',
         ];

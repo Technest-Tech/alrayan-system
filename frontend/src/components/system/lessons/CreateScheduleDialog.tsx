@@ -5,6 +5,8 @@ import { toast } from 'sonner'
 import { useCreateLessonSchedule, useUpdateLessonSchedule, useLessonSubjects } from '@/hooks/system/useLessons'
 import { useTeachers } from '@/hooks/system/useTeachers'
 import { useStudents } from '@/hooks/system/useStudents'
+import { useMyStudents } from '@/hooks/system/useMyStudents'
+import { useSystemUser } from '@/components/system/shell/SystemShell'
 import type { LessonSchedule, ScheduleSlot } from '@/types/system/lesson'
 import { SearchableSelect } from './SearchableSelect'
 import { useI18n } from '@/lib/system/i18n'
@@ -94,18 +96,24 @@ function newSlot(): Omit<ScheduleSlot, 'id'> {
 
 export function CreateScheduleDialog({ open, onOpenChange, onSuccess, schedule, prefill }: Props) {
   const { t } = useI18n()
+  // A logged-in teacher can only schedule for themselves + their own students.
+  const user = useSystemUser()
+  const isTeacher = user?.role === 'teacher'
+  const myTeacherId = user?.teacher_id ?? null
+
   const { data: subjects = [] } = useLessonSubjects()
-  const { data: teachersData }  = useTeachers()
-  const { data: studentsData }  = useStudents({ per_page: 500 })
+  const { data: teachersData }  = useTeachers({}, { enabled: !isTeacher })
+  const { data: adminStudentsData } = useStudents({ per_page: 500 }, { enabled: !isTeacher })
+  const { data: myStudents }        = useMyStudents({ enabled: isTeacher })
   const teachers = teachersData?.data ?? []
-  const students = studentsData?.data ?? []
+  const students = isTeacher ? (myStudents ?? []) : (adminStudentsData?.data ?? [])
 
   const createSchedule = useCreateLessonSchedule()
   const updateSchedule = useUpdateLessonSchedule()
   const isEdit = !!schedule
 
   // Seeded once from props — the parent mounts this dialog fresh each time it opens.
-  const [teacherId,  setTeacherId]  = useState(() => schedule ? String(schedule.teacher_id) : prefill?.teacherId ? String(prefill.teacherId) : '')
+  const [teacherId,  setTeacherId]  = useState(() => schedule ? String(schedule.teacher_id) : prefill?.teacherId ? String(prefill.teacherId) : isTeacher && myTeacherId ? String(myTeacherId) : '')
   const [studentId,  setStudentId]  = useState(() => schedule ? String(schedule.student_id) : prefill?.studentId ? String(prefill.studentId) : '')
   const [subjectId,  setSubjectId]  = useState(() => schedule?.subject_id ? String(schedule.subject_id) : '')
   const [recurrence, setRecurrence] = useState<LessonSchedule['recurrence']>(() => schedule?.recurrence ?? 'weekly')
@@ -196,12 +204,16 @@ export function CreateScheduleDialog({ open, onOpenChange, onSuccess, schedule, 
             <SectionCard title={t('lessons.form.sectionParticipants')}>
               <div className="grid grid-cols-3 gap-3">
                 <Field label={t('common.teacher')} required>
-                  <SearchableSelect
-                    options={teachers.map(tc => ({ value: String(tc.id), label: tc.name ?? t('lessons.teacherFallback', { id: String(tc.id) }) }))}
-                    value={teacherId}
-                    onChange={setTeacherId}
-                    placeholder={t('lessons.selectPlaceholder')}
-                  />
+                  {isTeacher ? (
+                    <div className={inp} style={{ ...inpStyle, background: '#f8fafc', color: NAVY }}>{user?.name}</div>
+                  ) : (
+                    <SearchableSelect
+                      options={teachers.map(tc => ({ value: String(tc.id), label: tc.name ?? t('lessons.teacherFallback', { id: String(tc.id) }) }))}
+                      value={teacherId}
+                      onChange={setTeacherId}
+                      placeholder={t('lessons.selectPlaceholder')}
+                    />
+                  )}
                 </Field>
                 <Field label={t('lessons.form.fieldStudent')} required>
                   <SearchableSelect

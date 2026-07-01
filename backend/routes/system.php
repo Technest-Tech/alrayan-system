@@ -44,6 +44,7 @@ use App\Http\Controllers\System\TeacherController;
 use App\Http\Controllers\System\TeacherLeaveController;
 use App\Http\Controllers\System\TeacherNoteController;
 use App\Http\Controllers\System\TeacherReportController;
+use App\Http\Controllers\System\TeacherSelfController;
 use App\Http\Controllers\System\UserController;
 use App\Http\Controllers\System\UserDirectoryController;
 use App\Http\Controllers\System\RoleController;
@@ -129,10 +130,19 @@ Route::prefix('system')->name('system.')->group(function () {
         Route::middleware('system.can:courses.edit')->delete('/courses/{course}', [CourseController::class, 'destroy'])->name('courses.destroy');
 
         // Teachers
+        // Teacher Race leaderboard is available to any authenticated user (it only
+        // exposes name/photo/hours) so a teacher can see it on their own dashboard.
+        // Literal route must precede /teachers/{teacher} so "race"/"me" aren't treated as ids.
+        Route::get('/teachers/race', [TeacherReportController::class, 'race'])->name('teachers.race');
+
+        // Teacher self-service ("me") — authorized via auth()->user()->teacher, no perm gate.
+        Route::get('/teachers/me/students',         [TeacherSelfController::class, 'students'])->name('teachers.me.students');
+        Route::get('/teachers/me/profile',          [TeacherSelfController::class, 'profile'])->name('teachers.me.profile');
+        Route::patch('/teachers/me/profile',        [TeacherSelfController::class, 'updateProfile'])->name('teachers.me.profile.update');
+        Route::get('/teachers/me/salary-statement', [TeacherSelfController::class, 'salaryStatement'])->name('teachers.me.salary-statement');
+
         Route::middleware('system.can:teachers.view')->group(function () {
             Route::get('/teachers',      [TeacherController::class, 'index'])->name('teachers.index');
-            // Literal route must precede /teachers/{teacher} so "race" isn't treated as a model id.
-            Route::get('/teachers/race', [TeacherReportController::class, 'race'])->name('teachers.race');
             Route::get('/teachers/{teacher}/notes', [TeacherNoteController::class, 'index'])->name('teachers.notes.index');
         });
         Route::get('/teachers/{teacher}', [TeacherController::class, 'show'])->name('teachers.show');

@@ -32,6 +32,11 @@ class CalendarController extends Controller
             $query->where('teacher_id', $request->input('teacher_id'));
         }
 
+        // A teacher only ever sees their own lessons, regardless of any filter.
+        if (auth()->user()->role === 'teacher') {
+            $query->where('teacher_id', auth()->user()->teacher?->id);
+        }
+
         if ($request->filled('student_id')) {
             $studentIds = (array) $request->input('student_id');
             $query->whereIn('student_id', $studentIds);
