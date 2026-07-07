@@ -12,8 +12,12 @@ use Illuminate\Support\Facades\DB;
 
 class PackageService
 {
-    /** Package statuses that are immutable once reached (frozen — never re-shifted). */
-    private const FROZEN_STATUSES = ['paid', 'suspended'];
+    /**
+     * Package statuses that are protected from auto-deletion: a rebuild never removes
+     * their row even if they end up with no lessons. They still fully re-shift/re-count
+     * like any other package — protection is only about keeping the record, not freezing it.
+     */
+    private const PROTECTED_STATUSES = ['paid', 'suspended'];
 
     /**
      * Return a live package to satisfy the lesson FK at creation time.
@@ -67,8 +71,9 @@ class PackageService
      *  - Only CONSUMING statuses (attended / paid_absence / cancelled_by_student) fill hours.
      *  - A lesson that crosses a package limit is split: it fills the current package exactly
      *    to its limit and the overflow flows into the next package (created if needed).
-     *  - Paid/suspended packages are FROZEN — their allocations & hours never change; the active
-     *    re-shift only flows through pending packages (and new ones).
+     *  - EVERY package re-shifts — paid/suspended packages re-count exactly like pending ones,
+     *    so an edit cascades through all of them (each keeps its own package_hours limit). Paid/
+     *    suspended packages are only PROTECTED from auto-deletion, never frozen against re-shift.
      *  - session_number_hours = cumulative consuming-hours within the lesson's (first) package.
      *    Non-consuming lessons keep a package pointer with 0 hours and no allocation.
      */
@@ -87,28 +92,14 @@ class PackageService
                 ->orderBy('package_number')
                 ->get();
 
-            $isFrozen = fn (StudentPackage $p) =>
-                in_array($p->status, self::FROZEN_STATUSES, true) && is_null($p->deleted_at);
-
-            $frozenPackageIds = $packages->filter($isFrozen)->pluck('id')->all();
-
-            // Drop every non-frozen allocation; frozen ones are preserved.
-            $deletablePackageIds = $packages->reject($isFrozen)->pluck('id')->all();
-            if ($deletablePackageIds) {
-                LessonPackageAllocation::whereIn('package_id', $deletablePackageIds)->delete();
+            // Every package is re-shiftable: drop all allocations and rebuild from scratch.
+            $allPackageIds = $packages->pluck('id')->all();
+            if ($allPackageIds) {
+                LessonPackageAllocation::whereIn('package_id', $allPackageIds)->delete();
             }
 
-            // Minutes of each lesson already locked into frozen packages (usually 0).
-            $frozenMinutesByLesson = [];
-            if ($frozenPackageIds) {
-                foreach (LessonPackageAllocation::whereIn('package_id', $frozenPackageIds)->get() as $a) {
-                    $frozenMinutesByLesson[$a->lesson_id] =
-                        ($frozenMinutesByLesson[$a->lesson_id] ?? 0) + (int) round($a->hours * 60);
-                }
-            }
-
-            // Non-frozen packages, in number order, are the slots we refill first.
-            $slots      = $packages->reject($isFrozen)->sortBy('package_number')->values();
+            // All packages, in number order, are the slots we refill first (new ones appended).
+            $slots      = $packages->sortBy('package_number')->values();
             $slotIndex  = 0;
             $maxNumber  = (int) ($packages->max('package_number') ?? 0);
 
@@ -137,8 +128,7 @@ class PackageService
             $now            = now()->toDateTimeString();
 
             foreach ($lessons as $lesson) {
-                $duration   = (int) $lesson->duration_minutes;
-                $frozenMin  = $frozenMinutesByLesson[$lesson->id] ?? 0;
+                $duration = (int) $lesson->duration_minutes;
 
                 if (!$lesson->isConsuming()) {
                     if ($current === null) { $current = $nextPackage(); $currentMin = 0; }
@@ -147,10 +137,8 @@ class PackageService
                     continue;
                 }
 
-                $remaining = $duration - $frozenMin;
+                $remaining = $duration;
                 if ($remaining <= 0) {
-                    // Fully locked into a frozen package — leave the lesson untouched.
-                    if ($lesson->package_id) { $usedPackageIds[$lesson->package_id] = true; }
                     continue;
                 }
 
@@ -190,12 +178,7 @@ class PackageService
                     }
                 }
 
-                if ($frozenMin > 0) {
-                    // Straddles a freeze boundary: its primary (frozen) package_id/session stay.
-                    if ($lesson->package_id) { $usedPackageIds[$lesson->package_id] = true; }
-                } else {
-                    $lessonUpdates[$lesson->id] = ['package_id' => $firstPkgId, 'session_number_hours' => $firstCum];
-                }
+                $lessonUpdates[$lesson->id] = ['package_id' => $firstPkgId, 'session_number_hours' => $firstCum];
             }
 
             // A package that ended exactly full is complete.
@@ -210,12 +193,10 @@ class PackageService
                 LessonPackageAllocation::insert($allocRows);
             }
 
-            // Soft-delete unused non-frozen packages; keep used ones live.
+            // Keep used packages live and paid/suspended ones protected; soft-delete the rest.
             foreach (StudentPackage::withTrashed()->where('student_id', $student->id)->get() as $p) {
-                if (in_array($p->status, self::FROZEN_STATUSES, true) && is_null($p->deleted_at)) {
-                    continue;
-                }
-                if (isset($usedPackageIds[$p->id])) {
+                $isProtected = in_array($p->status, self::PROTECTED_STATUSES, true) && is_null($p->deleted_at);
+                if (isset($usedPackageIds[$p->id]) || $isProtected) {
                     if ($p->trashed()) { $p->restore(); }
                 } elseif (!$p->trashed()) {
                     $p->delete();

@@ -102,9 +102,9 @@ class PackageConsumptionEngineTest extends SystemTestCase
         $this->assertEqualsWithDelta(1.0, $l2->fresh()->session_number_hours, 0.001);
     }
 
-    /* ── Freeze paid packages ── */
+    /* ── Paid/suspended packages re-shift (but are never auto-deleted) ── */
 
-    public function test_paid_package_is_frozen_against_later_edits(): void
+    public function test_paid_package_reshifts_on_later_edits(): void
     {
         $s  = $this->student(2);
         $l1 = $this->lesson($s, 'attended', 60, now()->setTime(9, 0)->addDays(10));
@@ -118,16 +118,35 @@ class PackageConsumptionEngineTest extends SystemTestCase
         $l0 = $this->lesson($s, 'attended', 60, now()->setTime(9, 0)->addDays(1));
         $this->rebuild($s);
 
+        // The shift now flows THROUGH the paid package: l0 takes the front slot, l1 fills it to
+        // its 2h limit, and l2 overflows into a new package — while the status stays 'paid'.
         $pkg1->refresh();
-        $this->assertSame('paid', $pkg1->status);
-        $this->assertEqualsWithDelta(2.0, $pkg1->consumed_hours, 0.001, 'frozen package is untouched');
+        $this->assertSame('paid', $pkg1->status, 'status is preserved');
+        $this->assertEqualsWithDelta(2.0, $pkg1->consumed_hours, 0.001, 'paid package refills to its limit');
+        $this->assertSame($pkg1->id, $l0->fresh()->package_id, 'l0 shifts into the paid package');
         $this->assertSame($pkg1->id, $l1->fresh()->package_id);
-        $this->assertSame($pkg1->id, $l2->fresh()->package_id);
 
-        // l0 cannot enter the frozen package — it lands in a new pending package.
         $pkg2 = StudentPackage::where('student_id', $s->id)->where('package_number', 2)->first();
         $this->assertNotNull($pkg2);
-        $this->assertSame($pkg2->id, $l0->fresh()->package_id);
+        $this->assertSame($pkg2->id, $l2->fresh()->package_id, 'overflow pushed into package #2');
+    }
+
+    public function test_paid_package_is_protected_from_auto_deletion_when_emptied(): void
+    {
+        $s  = $this->student(2);
+        $l1 = $this->lesson($s, 'attended', 60, now()->setTime(9, 0)->addDays(10));
+        $this->rebuild($s);
+
+        $pkg1 = $this->packages($s)->first();
+        $pkg1->update(['status' => 'paid', 'paid_at' => now()]);
+
+        // Remove the only lesson: the paid package is now empty but its record must survive.
+        $l1->delete();
+        $this->rebuild($s);
+
+        $pkg1->refresh();
+        $this->assertNull($pkg1->deleted_at, 'paid package is not auto-deleted');
+        $this->assertEqualsWithDelta(0.0, $pkg1->consumed_hours, 0.001, 'its allocations re-shifted away');
     }
 
     /* ── Status consumption rules ── */
