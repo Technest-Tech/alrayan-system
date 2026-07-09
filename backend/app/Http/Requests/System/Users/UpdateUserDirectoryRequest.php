@@ -23,6 +23,7 @@ class UpdateUserDirectoryRequest extends FormRequest
 
         return [
             'role'        => ['sometimes', Rule::in(StoreUserRequest::ROLES)],
+            'password'    => ['nullable', 'string', 'min:8'],
             'name'        => ['sometimes', 'string', 'max:255'],
             'email'       => ['sometimes', 'email', Rule::unique('users', 'email')->ignore($userId)],
             'emails'      => ['sometimes', 'array'],

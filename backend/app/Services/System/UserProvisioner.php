@@ -78,6 +78,11 @@ class UserProvisioner
             $this->syncPhones($user, $phones, $primaryPhone, replace: true);
         }
 
+        // The 'hashed' cast hashes this once — never pre-hash it here.
+        if (! empty($data['password'])) {
+            $user->password = $data['password'];
+        }
+
         $user->save();
 
         if (array_key_exists('permissions', $data)) {

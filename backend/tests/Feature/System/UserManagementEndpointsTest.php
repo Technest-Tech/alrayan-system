@@ -6,12 +6,21 @@ use App\Models\System\Student;
 use App\Models\System\Teacher;
 use App\Models\User;
 use App\Notifications\System\SystemUserInvitedNotification;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Notification;
 use Tests\SystemTestCase;
 
 class UserManagementEndpointsTest extends SystemTestCase
 {
     private const ENDPOINT = '/api/system/users/directory';
+
+    /** actingAs(..., 'sanctum') makes sanctum the default guard, which has no attempt(). */
+    private function assertCanLogIn(string $email, string $password): void
+    {
+        $this->app['auth']->shouldUse('web');
+
+        $this->postJson('/api/system/auth/login', compact('email', 'password'))->assertOk();
+    }
 
     public function test_admin_can_create_student_user_with_profile_and_contacts(): void
     {
@@ -57,7 +66,7 @@ class UserManagementEndpointsTest extends SystemTestCase
         $this->assertNotNull($student->guardian_id);
     }
 
-    public function test_admin_can_create_teacher_user_with_rates_and_invite(): void
+    public function test_teacher_created_by_admin_can_log_in_with_the_given_password(): void
     {
         Notification::fake();
 
@@ -66,6 +75,7 @@ class UserManagementEndpointsTest extends SystemTestCase
                 'role'           => 'teacher',
                 'name'           => 'Omar Teacher',
                 'email'          => 'omar.teacher@example.com',
+                'password'       => 'secret-pass-123',
                 'payment_method' => 'instapay',
                 'hourly_rate'    => 300,
             ])
@@ -74,7 +84,38 @@ class UserManagementEndpointsTest extends SystemTestCase
 
         $user = User::where('email', 'omar.teacher@example.com')->firstOrFail();
         $this->assertDatabaseHas('sys_teachers', ['user_id' => $user->id, 'per_minute_rate_30' => 5]);
-        Notification::assertSentTo($user, SystemUserInvitedNotification::class);
+
+        // No invite: the admin set the password, so the teacher signs in immediately.
+        Notification::assertNothingSent();
+        $this->assertDatabaseMissing('password_reset_tokens', ['email' => 'omar.teacher@example.com']);
+
+        $this->assertTrue(Hash::check('secret-pass-123', $user->password), 'stored password is the admin-set one');
+        $this->assertCanLogIn('omar.teacher@example.com', 'secret-pass-123');
+    }
+
+    public function test_creating_a_login_role_without_a_password_is_rejected(): void
+    {
+        $this->asAdmin()
+            ->postJson(self::ENDPOINT, [
+                'role'           => 'teacher',
+                'name'           => 'No Password',
+                'email'          => 'nopass@example.com',
+                'payment_method' => 'instapay',
+                'hourly_rate'    => 300,
+            ])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('password');
+    }
+
+    public function test_admin_can_reset_an_existing_users_password(): void
+    {
+        $teacher = Teacher::factory()->create();
+
+        $this->asAdmin()
+            ->patchJson(self::ENDPOINT . "/{$teacher->user_id}", ['password' => 'brand-new-pass'])
+            ->assertOk();
+
+        $this->assertCanLogIn($teacher->user->email, 'brand-new-pass');
     }
 
     public function test_admin_can_create_parent_user(): void
@@ -100,6 +141,7 @@ class UserManagementEndpointsTest extends SystemTestCase
                 'role'        => 'accountant',
                 'name'        => 'Finance Person',
                 'email'       => 'finance@example.com',
+                'password'    => 'accountant-pass-1',
                 'permissions' => ['invoices.view', 'payments.view'],
             ])
             ->assertCreated();

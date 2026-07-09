@@ -31,7 +31,11 @@ class StoreUserRequest extends FormRequest
             'whatsapp'    => ['nullable', 'string', 'max:64'],
             'phones'      => ['nullable', 'array'],
             'phones.*'    => ['string', 'max:32'],
-            'password'    => ['nullable', 'string', 'min:8'],
+            // Login roles get their password now: there is no working invite email.
+            'password'    => [
+                Rule::requiredIf(fn () => in_array($this->input('role'), self::LOGIN_ROLES, true)),
+                'nullable', 'string', 'min:8',
+            ],
             'status'      => ['nullable', Rule::in(['active', 'inactive', 'suspended', 'archived'])],
             'language'    => ['nullable', 'string', 'max:8'],
             'birthday'    => ['nullable', 'date'],

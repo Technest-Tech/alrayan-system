@@ -197,6 +197,10 @@ export function UserFormDialog({ open, onOpenChange, user }: Props) {
     if (!form.name.trim()) e.name = 'Name is required'
     const emails = form.emails.map((x) => x.trim()).filter(Boolean)
     if (role && LOGIN_ROLES.includes(role) && emails.length === 0) e.email = 'At least one email is required'
+    // Roles that sign in must be given a password now — there is no invite email.
+    if (!isEdit && role && LOGIN_ROLES.includes(role) && form.password.trim().length < 8) {
+      e.password = 'Password is required (min 8 characters)'
+    }
     if (isStudent) {
       if (!form.country.trim()) e.country = 'Country is required'
       if (!form.timezone.trim()) e.timezone = 'Timezone is required'
@@ -234,7 +238,7 @@ export function UserFormDialog({ open, onOpenChange, user }: Props) {
       photo_url: form.photo_url || null,
       documents: Object.keys(documents).length ? documents : null,
     }
-    if (!isEdit && form.password) payload.password = form.password
+    if (form.password) payload.password = form.password
 
     if (isStudent) {
       Object.assign(payload, {
@@ -351,7 +355,7 @@ export function UserFormDialog({ open, onOpenChange, user }: Props) {
                     onPrimary={(i) => set('primaryPhone', i)} />
                 </div>
 
-                <Field label={isEdit ? t('users.passwordNote') : t('common.password')} required={!isEdit}>
+                <Field label={isEdit ? t('users.passwordNote') : t('common.password')} required={!isEdit && !!role && LOGIN_ROLES.includes(role)} error={errors.password}>
                   <input type="password" autoComplete="new-password" data-1p-ignore data-lpignore="true" className={inp} style={inpStyle} placeholder="••••••••" value={form.password} onChange={(e) => set('password', e.target.value)} />
                 </Field>
 

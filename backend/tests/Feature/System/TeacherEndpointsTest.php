@@ -39,6 +39,7 @@ class TeacherEndpointsTest extends SystemTestCase
         $payload = [
             'name'                => 'Nour Hassan',
             'email'               => 'nour.hassan@example.com',
+            'password'            => 'teacher-pass-123',
             'payment_method'      => 'instapay',
             'hourly_rate'         => 300,
         ];

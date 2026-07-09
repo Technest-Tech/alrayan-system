@@ -321,10 +321,13 @@ class UserDirectoryController extends Controller
     {
         $user = $provisioner->create($data, $role);
 
-        // Invite flow: send a password-set link.
-        $token = Password::createToken($user);
-        $url   = config('system.frontend_url') . '/reset-password/' . $token . '?email=' . urlencode($user->email);
-        $user->notify(new SystemUserInvitedNotification($url, auth()->user()));
+        // Staff normally get their password at creation. Only fall back to an invite link
+        // when none was supplied — mail is disabled here, so that link goes nowhere.
+        if (empty($data['password'])) {
+            $token = Password::createToken($user);
+            $url   = config('system.frontend_url') . '/reset-password/' . $token . '?email=' . urlencode($user->email);
+            $user->notify(new SystemUserInvitedNotification($url, auth()->user()));
+        }
 
         return $user;
     }

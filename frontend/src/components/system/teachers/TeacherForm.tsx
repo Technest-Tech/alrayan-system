@@ -23,6 +23,13 @@ const schema = z.object({
 
 export type TeacherFormValues = z.infer<typeof schema>
 
+/** On create the password is mandatory: a new teacher signs in with it, there is no invite email. */
+const createSchema = schema.superRefine((values, ctx) => {
+  if (!values.password || values.password.length < 8) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['password'], message: 'password-min' })
+  }
+})
+
 interface TeacherFormProps {
   defaultValues?: Partial<Teacher>
   onSubmit: (data: TeacherFormValues) => void
@@ -61,7 +68,7 @@ export function TeacherForm({ defaultValues, onSubmit, isLoading, isEdit }: Teac
 
   const form = useForm({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    resolver: zodResolver(schema) as any,
+    resolver: zodResolver(isEdit ? schema : createSchema) as any,
     defaultValues: {
       name:                    defaultValues?.name ?? '',
       email:                   defaultValues?.email ?? '',

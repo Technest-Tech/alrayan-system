@@ -4,14 +4,11 @@ namespace App\Services\System;
 
 use App\Models\System\Teacher;
 use App\Models\User;
-use App\Notifications\System\SystemUserInvitedNotification;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Str;
 
 /**
  * Creates a teacher together with its unified `users` identity row (role=teacher),
- * the teacher profile (rates/payment), and the invite email. Shared by the legacy
+ * and the teacher profile (rates/payment). Shared by the legacy
  * TeacherController and the unified user-directory endpoint.
  */
 class TeacherCreator
@@ -24,8 +21,8 @@ class TeacherCreator
     public function create(array $data, ?int $actorId = null): Teacher
     {
         return DB::transaction(function () use ($data) {
-            $token = Str::random(60);
-
+            // A teacher always signs in, so the admin sets the password at creation.
+            // There is no invite email: mail delivery is disabled in this deployment.
             $password = $data['password'] ?? null;
 
             $user = $this->provisioner->create([
@@ -44,16 +41,6 @@ class TeacherCreator
                 'emails'    => $data['emails'] ?? [],
                 'phones'    => $data['phones'] ?? [],
             ], 'teacher');
-
-            // No admin-set password → issue an invite link so the teacher sets their own.
-            if (! $password) {
-                DB::table('password_reset_tokens')->updateOrInsert(
-                    ['email' => $user->email],
-                    ['token' => Hash::make($token), 'created_at' => now()],
-                );
-
-                $user->notify(new SystemUserInvitedNotification($token));
-            }
 
             $perMinute = (int) round(($data['hourly_rate'] ?? 0) / 60);
 
