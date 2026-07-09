@@ -19,7 +19,7 @@ const SYSTEM_PATHS = [
   '/dashboard', '/students', '/teachers', '/leads',
   '/calendar', '/payments', '/quality',
   '/billing', '/payroll', '/accounting', '/certificates',
-  '/notifications', '/whatsapp-groups', '/settings', '/audit-log',
+  '/notifications', '/whatsapp-groups', '/whatsapp', '/settings', '/audit-log',
   '/users', '/teacher',
 ]
 

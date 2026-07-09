@@ -76,6 +76,8 @@ use App\Policies\System\TeacherNotePolicy;
 use App\Policies\System\TeacherPolicy;
 use App\Policies\System\WhatsAppGroupPolicy;
 use App\Services\BookingReferenceGenerator;
+use App\Services\Integrations\Acadmyq\AcadmyqClient;
+use App\Services\Integrations\Acadmyq\FakeAcadmyqClient;
 use App\Services\Integrations\Paymob\FakePaymobClient;
 use App\Services\Integrations\Paymob\PaymobClient;
 use App\Services\Integrations\Wassender\FakeWassenderClient;
@@ -128,6 +130,20 @@ class AppServiceProvider extends ServiceProvider
                 return new WassenderClient($apiKey, $instanceId, $app->make(HttpClient::class));
             }
             return new FakeWassenderClient();
+        });
+
+        // Acadmyq WhatsApp: real client when configured, fake otherwise
+        $this->app->bind(AcadmyqClient::class, function ($app) {
+            $apiKey = config('whatsapp.api_key', '');
+            if ($apiKey && config('whatsapp.enabled', false)) {
+                return new AcadmyqClient(
+                    baseUrl: config('whatsapp.base_url'),
+                    apiKey:  $apiKey,
+                    http:    $app->make(HttpClient::class),
+                    timeout: config('whatsapp.timeout'),
+                );
+            }
+            return new FakeAcadmyqClient();
         });
     }
 

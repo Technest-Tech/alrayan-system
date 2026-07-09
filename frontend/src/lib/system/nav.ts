@@ -2,7 +2,7 @@ import {
   LayoutDashboard, UsersRound, CalendarDays,
   Award, DollarSign, Wallet, BarChart3,
   Bell, Settings, ScrollText, UserCheck, CreditCard, ListChecks,
-  GraduationCap,
+  GraduationCap, MessageSquare,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 
@@ -43,6 +43,7 @@ export const SYSTEM_NAV: readonly NavSection[] = [
     label: 'nav.sections.communications',
     items: [
       { label: 'nav.notifications', href: '/notifications', icon: Bell, perm: 'notifications.view' },
+      { label: 'nav.whatsappLogs', href: '/whatsapp/logs', icon: MessageSquare, perm: 'notifications.view_delivery_log' },
     ],
   },
   {

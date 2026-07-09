@@ -30,6 +30,8 @@ const PATH_KEYS: Record<string, string> = {
   'delivery-log':      'breadcrumbs.deliveryLog',
   templates:           'breadcrumbs.templates',
   'whatsapp-groups':   'breadcrumbs.whatsappGroups',
+  whatsapp:            'breadcrumbs.whatsapp',
+  logs:                'breadcrumbs.whatsappLogs',
   certificates:        'breadcrumbs.certificates',
   teacher:             'breadcrumbs.teacherPortal',
   settings:            'breadcrumbs.settings',

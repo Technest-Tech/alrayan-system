@@ -51,6 +51,7 @@ use App\Http\Controllers\System\RoleController;
 use App\Http\Controllers\System\WalletController;
 use App\Http\Controllers\System\WassenderIntegrationController;
 use App\Http\Controllers\System\WassenderLogController;
+use App\Http\Controllers\System\WhatsAppSendLogController;
 use App\Http\Controllers\System\WhatsAppGroupController;
 use App\Http\Controllers\System\CalendarController;
 use App\Http\Controllers\System\LessonController;
@@ -425,6 +426,14 @@ Route::prefix('system')->name('system.')->group(function () {
             Route::get('/wassender-logs',                            [WassenderLogController::class, 'index'])->name('wassender-logs.index');
             Route::get('/wassender-logs/{wassenderLog}',             [WassenderLogController::class, 'show'])->name('wassender-logs.show');
             Route::post('/wassender-logs/{wassenderLog}/retry',      [WassenderLogController::class, 'retry'])->name('wassender-logs.retry');
+        });
+
+        // Acadmyq WhatsApp send logs
+        Route::middleware('system.can:notifications.view_delivery_log')->group(function () {
+            Route::get('/whatsapp/status',                           [WhatsAppSendLogController::class, 'status'])->name('whatsapp.status');
+            Route::get('/whatsapp/logs',                             [WhatsAppSendLogController::class, 'index'])->name('whatsapp.logs.index');
+            Route::get('/whatsapp/logs/{whatsappSendLog}',           [WhatsAppSendLogController::class, 'show'])->name('whatsapp.logs.show');
+            Route::post('/whatsapp/logs/{whatsappSendLog}/resend',   [WhatsAppSendLogController::class, 'resend'])->name('whatsapp.logs.resend');
         });
 
         // Notification preferences
