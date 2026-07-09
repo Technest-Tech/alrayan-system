@@ -71,11 +71,18 @@ export function useConfirmPackage() {
   })
 }
 
+/** A package that still holds lessons is rebuilt by the engine rather than deleted. */
+export interface DeletePackageResult {
+  deleted: boolean
+  restored: boolean
+  message: string
+}
+
 export function useDeletePackage() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: (id: number) =>
-      api(`/student-packages/${id}`, { method: 'DELETE' }),
+      api<DeletePackageResult>(`/student-packages/${id}`, { method: 'DELETE' }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['student-packages'] })
       qc.invalidateQueries({ queryKey: ['payments'] })

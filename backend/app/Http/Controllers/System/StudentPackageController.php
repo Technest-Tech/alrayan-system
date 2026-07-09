@@ -70,17 +70,35 @@ class StudentPackageController extends Controller
         return new StudentPackageResource($studentPackage);
     }
 
+    /**
+     * Delete a bill (package) — paid ones included.
+     *
+     * Packages are derived from lesson consumption, so one that still has to hold lessons is
+     * re-created by the engine. Re-run rebuild immediately and report whether the row survived,
+     * rather than letting a "deleted" package silently reappear on the next lesson edit.
+     */
     public function destroy(StudentPackage $studentPackage): \Illuminate\Http\JsonResponse
     {
         $this->authorize('delete', $studentPackage);
 
-        if ($studentPackage->status === 'paid') {
-            return response()->json(['message' => 'Cannot delete a paid package.'], 422);
-        }
+        $student = $studentPackage->student;
 
         $studentPackage->delete();
 
-        return response()->json(['message' => 'Package deleted.']);
+        if ($student) {
+            $this->packageService->rebuild($student);
+        }
+
+        // The SoftDeletes scope hides trashed rows, so if it is visible again rebuild restored it.
+        $restored = StudentPackage::whereKey($studentPackage->id)->exists();
+
+        return response()->json([
+            'deleted'  => ! $restored,
+            'restored' => $restored,
+            'message'  => $restored
+                ? 'This package still holds lessons, so the engine rebuilt it. Move or delete its lessons first.'
+                : 'Package deleted.',
+        ]);
     }
 
     public function confirm(StudentPackage $studentPackage): StudentPackageResource

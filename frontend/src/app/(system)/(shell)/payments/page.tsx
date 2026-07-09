@@ -2,12 +2,14 @@
 import { useState, useMemo } from 'react'
 import {
   Search, CreditCard, Users, Layers, Clock, TrendingUp,
-  ChevronLeft, ChevronRight, GraduationCap,
+  ChevronLeft, ChevronRight, GraduationCap, Trash2,
 } from 'lucide-react'
-import { usePayments, usePaymentStats } from '@/hooks/system/usePayments'
+import { toast }                        from 'sonner'
+import { usePayments, usePaymentStats, useDeletePackage } from '@/hooks/system/usePayments'
 import { useTeachers }                  from '@/hooks/system/useTeachers'
 import { ManagePackagesModal }          from '@/components/system/payments/ManagePackagesModal'
 import { SearchableSelect }             from '@/components/system/lessons/SearchableSelect'
+import { ApiError }                     from '@/lib/system/api'
 import { useI18n }                      from '@/lib/system/i18n'
 import type { PaymentRow, PackageStatus } from '@/types/system/payment'
 
@@ -109,6 +111,24 @@ export default function PaymentsPage() {
   const rows     = data?.data ?? []
   const total    = data?.meta?.total ?? 0
   const lastPage = data?.meta?.last_page ?? 1
+
+  const deleteBill = useDeletePackage()
+  const [deletingId, setDeletingId] = useState<number | null>(null)
+
+  async function onDeleteBill(row: PaymentRow) {
+    if (!window.confirm(t('payments.confirmDelete', { number: String(row.package_number) }))) return
+    setDeletingId(row.package_id)
+    try {
+      const result = await deleteBill.mutateAsync(row.package_id)
+      // Still holds lessons → the engine rebuilt it; don't claim it was deleted.
+      if (result.restored) toast.error(result.message)
+      else toast.success(t('payments.toastDeleted'))
+    } catch (e) {
+      toast.error(e instanceof ApiError ? e.message : t('payments.errDeleteFailed'))
+    } finally {
+      setDeletingId(null)
+    }
+  }
 
   function resetPage() { setPage(1) }
 
@@ -328,13 +348,24 @@ export default function PaymentsPage() {
 
                   {/* Actions */}
                   <td className="px-4 py-3">
-                    <button
-                      onClick={() => setModalStudent({ id: row.student_id, name: row.student_name })}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold text-white transition-opacity hover:opacity-85"
-                      style={{ background: TEAL_600 }}
-                    >
-                      {t('payments.managePackages')}
-                    </button>
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        onClick={() => setModalStudent({ id: row.student_id, name: row.student_name })}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold text-white transition-opacity hover:opacity-85"
+                        style={{ background: TEAL_600 }}
+                      >
+                        {t('payments.managePackages')}
+                      </button>
+                      <button
+                        onClick={() => onDeleteBill(row)}
+                        disabled={deletingId === row.package_id}
+                        className="p-1.5 rounded-lg transition-colors hover:bg-red-50 disabled:opacity-40"
+                        aria-label={t('payments.deletePackage')}
+                        title={t('payments.deletePackage')}
+                      >
+                        <Trash2 size={15} style={{ color: '#DC2626' }} />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}

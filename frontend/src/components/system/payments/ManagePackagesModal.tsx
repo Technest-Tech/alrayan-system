@@ -6,6 +6,7 @@ import {
   useStudentPackagesList, useUpdatePackage, useConfirmPackage, useDeletePackage,
 } from '@/hooks/system/usePayments'
 import { SearchableSelect } from '@/components/system/lessons/SearchableSelect'
+import { ApiError } from '@/lib/system/api'
 import { useI18n } from '@/lib/system/i18n'
 import type { PackageRow, PackageStatus } from '@/types/system/payment'
 
@@ -113,11 +114,13 @@ function PackageRow({ pkg, onSaved }: { pkg: PackageRow; onSaved: () => void }) 
   async function handleDelete() {
     if (!window.confirm(t('payments.confirmDelete', { number: String(pkg.package_number) }))) return
     try {
-      await del.mutateAsync(pkg.id)
-      toast.success(t('payments.toastDeleted'))
+      const result = await del.mutateAsync(pkg.id)
+      // Still holds lessons → the engine rebuilt it; say so instead of claiming success.
+      if (result.restored) toast.error(result.message)
+      else toast.success(t('payments.toastDeleted'))
       onSaved()
-    } catch (e: any) {
-      toast.error(e?.response?.data?.message ?? t('payments.errDeleteFailed'))
+    } catch (e) {
+      toast.error(e instanceof ApiError ? e.message : t('payments.errDeleteFailed'))
     }
   }
 
@@ -228,25 +231,15 @@ function PackageRow({ pkg, onSaved }: { pkg: PackageRow; onSaved: () => void }) 
       <td className="px-3 py-3">
         <div className="flex items-center gap-1.5">
           {pkg.status === 'pending' && (
-            <>
-              <button
-                onClick={handleConfirm}
-                disabled={isLoading}
-                className="p-1.5 rounded-lg transition-colors hover:bg-teal-50 group"
-                aria-label={t('payments.markAsPaid')}
-                title={t('payments.markAsPaid')}
-              >
-                <CheckCircle2 size={15} style={{ color: TEAL_600 }} />
-              </button>
-              <button
-                onClick={handleDelete}
-                disabled={isLoading}
-                className="p-1.5 rounded-lg transition-colors hover:bg-red-50"
-                aria-label={t('payments.deletePackage')}
-              >
-                <Trash2 size={15} style={{ color: '#DC2626' }} />
-              </button>
-            </>
+            <button
+              onClick={handleConfirm}
+              disabled={isLoading}
+              className="p-1.5 rounded-lg transition-colors hover:bg-teal-50 group"
+              aria-label={t('payments.markAsPaid')}
+              title={t('payments.markAsPaid')}
+            >
+              <CheckCircle2 size={15} style={{ color: TEAL_600 }} />
+            </button>
           )}
           {pkg.status === 'paid' && (
             <button
@@ -265,6 +258,16 @@ function PackageRow({ pkg, onSaved }: { pkg: PackageRow; onSaved: () => void }) 
             aria-label={t('payments.editPackage')}
           >
             <Pencil size={14} style={{ color: MUTED }} />
+          </button>
+          {/* Any bill can be deleted now, paid included. */}
+          <button
+            onClick={handleDelete}
+            disabled={isLoading}
+            className="p-1.5 rounded-lg transition-colors hover:bg-red-50"
+            aria-label={t('payments.deletePackage')}
+            title={t('payments.deletePackage')}
+          >
+            <Trash2 size={15} style={{ color: '#DC2626' }} />
           </button>
         </div>
       </td>

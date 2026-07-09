@@ -149,6 +149,39 @@ class PackageConsumptionEngineTest extends SystemTestCase
         $this->assertEqualsWithDelta(0.0, $pkg1->consumed_hours, 0.001, 'its allocations re-shifted away');
     }
 
+    /* ── Deleting a bill (package) ── */
+
+    public function test_a_paid_bill_holding_no_lessons_can_be_deleted(): void
+    {
+        $s   = $this->student(2);
+        $pkg = app(PackageService::class)->resolvePackageForLesson($s);
+        $pkg->update(['status' => 'paid', 'paid_at' => now()]);
+
+        $this->asAdmin()
+            ->deleteJson("/api/system/student-packages/{$pkg->id}")
+            ->assertOk()
+            ->assertJson(['deleted' => true, 'restored' => false]);
+
+        $this->assertSoftDeleted('sys_student_packages', ['id' => $pkg->id]);
+    }
+
+    public function test_deleting_a_bill_that_still_holds_lessons_rebuilds_it(): void
+    {
+        $s = $this->student(2);
+        $this->lesson($s, 'attended', 60, now()->setTime(9, 0));
+        $this->rebuild($s);
+
+        $pkg = $this->packages($s)->first();
+
+        // The engine derives packages from consumption, so this one has to come back.
+        $this->asAdmin()
+            ->deleteJson("/api/system/student-packages/{$pkg->id}")
+            ->assertOk()
+            ->assertJson(['deleted' => false, 'restored' => true]);
+
+        $this->assertNotNull(StudentPackage::find($pkg->id), 'rebuild restored the package');
+    }
+
     /* ── Status consumption rules ── */
 
     public function test_only_consuming_statuses_fill_the_package(): void
