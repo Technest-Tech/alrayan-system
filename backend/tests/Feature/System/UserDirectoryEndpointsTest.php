@@ -212,6 +212,37 @@ class UserDirectoryEndpointsTest extends SystemTestCase
         $this->assertDatabaseHas('sys_lessons', ['id' => $lesson->id, 'teacher_id' => $teacher->id]);
     }
 
+    public function test_a_soft_deleted_lesson_still_counts_as_teaching_history(): void
+    {
+        $teacher = Teacher::factory()->create();
+        $student = Student::factory()->withUser()->create([
+            'assigned_teacher_id'   => $teacher->id,
+            'package_hours_default' => 2,
+            'hourly_rate_minor'     => 5000,
+            'currency'              => 'USD',
+        ]);
+
+        $package = app(PackageService::class)->resolvePackageForLesson($student);
+        $lesson  = Lesson::create([
+            'package_id'       => $package->id,
+            'teacher_id'       => $teacher->id,
+            'student_id'       => $student->id,
+            'scheduled_at'     => now(),
+            'duration_minutes' => 60,
+            'status'           => 'attended',
+        ]);
+        // Soft-deleted, but the physical row remains — it still trips sys_lessons' restrictOnDelete FK.
+        $lesson->delete();
+
+        $this->asAdmin()
+            ->deleteJson("/api/system/users/directory/{$teacher->user_id}")
+            ->assertOk()
+            ->assertJson(['deleted' => false, 'archived' => true]);
+
+        $this->assertSoftDeleted('sys_teachers', ['id' => $teacher->id]);
+        $this->assertNotNull(User::find($teacher->user_id), 'user row kept so the cascade never fires');
+    }
+
     private function makeCourse(): Course
     {
         return Course::create([
