@@ -34,10 +34,14 @@ class DispatchSessionReminders extends Command
         foreach ($sessions as $s) {
             if (!in_array($s->student->status, ['active', 'trial'], true)) continue;
 
+            // teacher_id is nullOnDelete: a session can outlive its teacher.
+            $teacher     = $s->teacher;
+            $teacherName = $teacher?->user?->name ?? '—';
+
             if ($s->student->whatsapp_group_id && $s->student->whatsappGroup) {
                 $log = $wa->sendTemplate('session_reminder_student', $s->student->whatsappGroup, [
                     'student_name'       => $s->student->name,
-                    'teacher_name'       => $s->teacher->user->name,
+                    'teacher_name'       => $teacherName,
                     'session_time_local' => $s->scheduled_start->setTimezone($s->student->timezone ?? 'UTC')->format('H:i T'),
                     'course_name'        => $s->student->course->name ?? '',
                     'zoom_join_url'      => $s->zoom_join_url ?? '',
@@ -45,11 +49,11 @@ class DispatchSessionReminders extends Command
                 $log->update(['payload' => array_merge($log->payload ?? [], ['session_id' => $s->id])]);
             }
 
-            if ($s->teacher->whatsapp_group_id && $s->teacher->whatsappGroup) {
-                $log = $wa->sendTemplate('session_reminder_teacher', $s->teacher->whatsappGroup, [
-                    'teacher_name'       => $s->teacher->user->name,
+            if ($teacher?->whatsapp_group_id && $teacher->whatsappGroup) {
+                $log = $wa->sendTemplate('session_reminder_teacher', $teacher->whatsappGroup, [
+                    'teacher_name'       => $teacherName,
                     'student_name'       => $s->student->name,
-                    'session_time_local' => $s->scheduled_start->setTimezone($s->teacher->user->timezone ?? 'Africa/Cairo')->format('H:i T'),
+                    'session_time_local' => $s->scheduled_start->setTimezone($teacher->user?->timezone ?? 'Africa/Cairo')->format('H:i T'),
                     'course_name'        => $s->student->course->name ?? '',
                     'zoom_start_url'     => $s->zoom_start_url ?? '',
                     'duration_min'       => (string) $s->duration_min,

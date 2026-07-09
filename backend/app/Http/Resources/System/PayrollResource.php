@@ -10,10 +10,11 @@ class PayrollResource extends JsonResource
     {
         return [
             'id'                    => $this->id,
-            'teacher'               => $this->whenLoaded('teacher', fn() => [
+            // teacher_id is nullOnDelete: a deleted teacher leaves the record with no teacher.
+            'teacher'               => $this->whenLoaded('teacher', fn() => $this->teacher ? [
                 'id'   => $this->teacher->id,
                 'name' => $this->teacher->user?->name,
-            ]),
+            ] : null),
             'period_year'           => $this->period_year,
             'period_month'          => $this->period_month,
             'total_sessions'        => $this->total_sessions,

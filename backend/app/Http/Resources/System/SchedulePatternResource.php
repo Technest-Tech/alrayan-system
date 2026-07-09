@@ -19,10 +19,11 @@ class SchedulePatternResource extends JsonResource
             'timezone'     => $this->timezone,
             'valid_from'   => $this->valid_from?->toDateString(),
             'valid_to'     => $this->valid_to?->toDateString(),
-            'teacher'      => $this->whenLoaded('teacher', fn () => [
+            // teacher_id is nullOnDelete: a deleted teacher leaves the record with no teacher.
+            'teacher'      => $this->whenLoaded('teacher', fn () => $this->teacher ? [
                 'id'   => $this->teacher->id,
                 'name' => $this->teacher->user?->name,
-            ]),
+            ] : null),
         ];
     }
 }

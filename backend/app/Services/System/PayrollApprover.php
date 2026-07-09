@@ -19,13 +19,16 @@ class PayrollApprover
             'approved_at'         => now(),
             'approved_by_user_id' => $by->id,
         ]);
-        NotificationService::push(
-            $p->teacher->user,
-            'payroll.approved',
-            'Payroll approved: ' . Carbon::create($p->period_year, $p->period_month, 1)->format('F Y'),
-            'EGP ' . number_format($p->net_salary_minor / 100, 2),
-            '/teacher/salary'
-        );
+        // teacher_id is nullOnDelete — a deleted teacher has nobody left to notify.
+        if ($p->teacher?->user) {
+            NotificationService::push(
+                $p->teacher->user,
+                'payroll.approved',
+                'Payroll approved: ' . Carbon::create($p->period_year, $p->period_month, 1)->format('F Y'),
+                'EGP ' . number_format($p->net_salary_minor / 100, 2),
+                '/teacher/salary'
+            );
+        }
         event(new PayrollApproved($p));
         return $p;
     }
@@ -46,13 +49,15 @@ class PayrollApprover
             'transferred_by_user_id' => $by->id,
             'transfer_reference'     => $reference,
         ]);
-        NotificationService::push(
-            $p->teacher->user,
-            'payroll.transferred',
-            'Your salary has been transferred.',
-            'Reference: ' . $reference,
-            '/teacher/salary'
-        );
+        if ($p->teacher?->user) {
+            NotificationService::push(
+                $p->teacher->user,
+                'payroll.transferred',
+                'Your salary has been transferred.',
+                'Reference: ' . $reference,
+                '/teacher/salary'
+            );
+        }
         event(new PayrollTransferred($p));
         return $p;
     }

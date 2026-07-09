@@ -10,6 +10,7 @@ use App\Models\System\UserEmail;
 use App\Models\System\UserPhone;
 use App\Models\User;
 use App\Services\System\PackageService;
+use Illuminate\Support\Facades\DB;
 use Tests\SystemTestCase;
 
 class UserDirectoryEndpointsTest extends SystemTestCase
@@ -175,7 +176,7 @@ class UserDirectoryEndpointsTest extends SystemTestCase
         $this->assertDatabaseMissing('sys_teachers', ['id' => $teacher->id]);
     }
 
-    public function test_deleting_a_teacher_with_lessons_purges_them_and_rebuilds_the_student(): void
+    public function test_deleting_a_teacher_keeps_lessons_and_packages_and_only_unlinks_them(): void
     {
         $teacher = Teacher::factory()->create();
         $student = Student::factory()->withUser()->create([
@@ -200,16 +201,17 @@ class UserDirectoryEndpointsTest extends SystemTestCase
         $this->asAdmin()
             ->deleteJson("/api/system/users/directory/{$teacher->user_id}")
             ->assertOk()
-            ->assertJson(['deleted' => true, 'students_unassigned' => 1, 'lessons_deleted' => 1]);
+            ->assertJson(['deleted' => true, 'students_unassigned' => 1]);
 
-        // Teacher, user and lesson are gone for good; the student survives, unassigned.
+        // The teacher is gone for good.
         $this->assertDatabaseMissing('users', ['id' => $teacher->user_id]);
         $this->assertDatabaseMissing('sys_teachers', ['id' => $teacher->id]);
-        $this->assertDatabaseMissing('sys_lessons', ['id' => $lesson->id]);
-        $this->assertNull($student->fresh()->assigned_teacher_id);
 
-        // The purged lesson no longer consumes package hours.
-        $this->assertEqualsWithDelta(0.0, $package->fresh()->consumed_hours, 0.001, 'consumption re-derived');
+        // Everything else survives; the lesson merely loses its teacher.
+        $this->assertDatabaseHas('sys_lessons', ['id' => $lesson->id, 'teacher_id' => null]);
+        $this->assertNotNull($student->fresh(), 'student is kept');
+        $this->assertNull($student->fresh()->assigned_teacher_id, 'student is unassigned');
+        $this->assertEqualsWithDelta(1.0, $package->fresh()->consumed_hours, 0.001, 'consumption untouched');
     }
 
     public function test_a_soft_deleted_lesson_does_not_block_deleting_the_teacher(): void
@@ -231,18 +233,58 @@ class UserDirectoryEndpointsTest extends SystemTestCase
             'duration_minutes' => 60,
             'status'           => 'attended',
         ]);
-        // A soft-deleted lesson is still a physical row: it trips sys_lessons' restrictOnDelete FK
-        // unless it is force-deleted. This is what used to make the endpoint 500.
+        // A soft-deleted lesson is still a physical row — it used to hold the restrictOnDelete FK.
         $lesson->delete();
 
         $this->asAdmin()
             ->deleteJson("/api/system/users/directory/{$teacher->user_id}")
             ->assertOk()
-            ->assertJson(['deleted' => true, 'lessons_deleted' => 1]);
+            ->assertJson(['deleted' => true]);
 
-        $this->assertDatabaseMissing('users', ['id' => $teacher->user_id]);
         $this->assertDatabaseMissing('sys_teachers', ['id' => $teacher->id]);
-        $this->assertDatabaseMissing('sys_lessons', ['id' => $lesson->id]);
+        $this->assertDatabaseHas('sys_lessons', ['id' => $lesson->id, 'teacher_id' => null]);
+    }
+
+    public function test_deleting_a_teacher_keeps_payroll_but_drops_their_own_records(): void
+    {
+        $teacher = Teacher::factory()->create();
+
+        $payrollId = DB::table('sys_payrolls')->insertGetId([
+            'teacher_id'            => $teacher->id,
+            'period_year'           => 2026,
+            'period_month'          => 7,
+            'total_sessions'        => 4,
+            'total_minutes'         => 240,
+            'breakdown_by_duration' => json_encode([]),
+            'base_salary_minor'     => 100000,
+            'net_salary_minor'      => 100000,
+            'status'                => 'pending',
+            'created_at'            => now(),
+            'updated_at'            => now(),
+        ]);
+
+        $reviewId = DB::table('sys_quality_reviews')->insertGetId([
+            'teacher_id'        => $teacher->id,
+            'period_year'       => 2026,
+            'period_month'      => 7,
+            'source'            => 'manual',
+            'attendance_score'  => 8,
+            'reports_score'     => 8,
+            'retention_score'   => 8,
+            'punctuality_score' => 8,
+            'overall_score'     => 8,
+            'created_at'        => now(),
+            'updated_at'        => now(),
+        ]);
+
+        $this->asAdmin()
+            ->deleteJson("/api/system/users/directory/{$teacher->user_id}")
+            ->assertOk()
+            ->assertJson(['deleted' => true]);
+
+        // Payroll is money — kept, just unlinked. Quality review belongs to the teacher — removed.
+        $this->assertDatabaseHas('sys_payrolls', ['id' => $payrollId, 'teacher_id' => null]);
+        $this->assertDatabaseMissing('sys_quality_reviews', ['id' => $reviewId]);
     }
 
     private function makeCourse(): Course

@@ -7,14 +7,11 @@ use App\Http\Requests\System\Users\StoreUserRequest;
 use App\Http\Requests\System\Users\UpdateUserDirectoryRequest;
 use App\Http\Resources\System\UserDirectoryResource;
 use App\Models\System\Guardian;
-use App\Models\System\Lesson;
-use App\Models\System\Payroll;
 use App\Models\System\Student;
 use App\Models\System\Teacher;
 use App\Models\User;
 use App\Notifications\System\SystemUserInvitedNotification;
 use App\Services\System\AuditLog;
-use App\Services\System\PackageService;
 use App\Services\System\StudentCreator;
 use App\Services\System\TeacherCreator;
 use App\Services\System\UserProvisioner;
@@ -232,7 +229,7 @@ class UserDirectoryController extends Controller
         return new UserDirectoryResource($this->loadDirectory($user));
     }
 
-    public function destroy(Request $request, int $id, PackageService $packages): JsonResponse
+    public function destroy(Request $request, int $id): JsonResponse
     {
         if ($request->user()->id === $id) {
             return response()->json(['message' => 'You cannot delete your own account.'], 422);
@@ -245,7 +242,7 @@ class UserDirectoryController extends Controller
         // sessions/reports/reviews/schedules) with it.
         $teacher = Teacher::withTrashed()->where('user_id', $user->id)->first();
         if ($teacher) {
-            return $this->destroyTeacher($user, $teacher, $packages);
+            return $this->destroyTeacher($user, $teacher);
         }
 
         DB::transaction(function () use ($user) {
@@ -262,47 +259,32 @@ class UserDirectoryController extends Controller
     }
 
     /**
-     * Permanently remove a teacher and everything that hangs off them.
+     * Permanently remove a teacher — and only the teacher.
      *
-     * sys_lessons and sys_payrolls are restrictOnDelete, so they must be cleared first — and with
-     * forceDelete(), because both soft-delete and a soft-deleted row is still a physical row the FK
-     * refuses to let go. Removing the user then cascades away the teacher row itself along with its
-     * sessions, session reports, quality reviews, lesson schedules, availability, notes and leaves;
-     * certificates, tasks, schedule patterns and WhatsApp groups are nulled.
-     *
-     * Deleting the lessons changes what their students consumed, so every affected student's
-     * packages are rebuilt afterwards (outside the tx — rebuild opens its own and fires events).
+     * sys_lessons, sys_sessions, sys_session_reports, sys_lesson_schedules and sys_payrolls all
+     * hold teacher_id nullOnDelete, so those records survive and simply lose their link. The
+     * cascade takes only what belongs to the teacher: their quality reviews, availability, notes
+     * and leaves. Students are unassigned, never deleted, and their packages are untouched —
+     * consumption is derived from lessons, and the lessons stay.
      */
-    private function destroyTeacher(User $user, Teacher $teacher, PackageService $packages): JsonResponse
+    private function destroyTeacher(User $user, Teacher $teacher): JsonResponse
     {
-        // Capture before the rows are gone.
-        $affectedStudentIds = DB::table('sys_lessons')
-            ->where('teacher_id', $teacher->id)
-            ->distinct()
-            ->pluck('student_id');
-
         try {
-            $purged = DB::transaction(function () use ($user, $teacher) {
+            $unassigned = DB::transaction(function () use ($user, $teacher) {
                 $unassigned = $this->unassignStudents($teacher);
-
-                // withTrashed + forceDelete: the restrictOnDelete FKs count soft-deleted rows too.
-                // Dropping a lesson cascades its sys_lesson_package_allocations rows.
-                $lessons  = Lesson::withTrashed()->where('teacher_id', $teacher->id)->forceDelete();
-                $payrolls = Payroll::withTrashed()->where('teacher_id', $teacher->id)->forceDelete();
 
                 AuditLog::record('users.deleted', $user, [
                     'role'                => $user->role,
                     'students_unassigned' => $unassigned,
-                    'lessons_deleted'     => $lessons,
-                    'payrolls_deleted'    => $payrolls,
                 ]);
 
+                // Cascades sys_teachers off users.id; every other FK nulls out.
                 $user->delete();
 
-                return compact('unassigned', 'lessons', 'payrolls');
+                return $unassigned;
             });
         } catch (QueryException $e) {
-            // Something still references the teacher. Report it instead of a bare 500.
+            // Something still holds a hard reference. Say what, instead of a bare 500.
             return response()->json([
                 'deleted' => false,
                 'message' => 'Could not delete this teacher — another record still references them: '
@@ -310,19 +292,7 @@ class UserDirectoryController extends Controller
             ], 409);
         }
 
-        // Their lessons are gone, so the students' package consumption has to be re-derived.
-        foreach ($affectedStudentIds as $studentId) {
-            if ($student = Student::withTrashed()->find($studentId)) {
-                $packages->rebuild($student);
-            }
-        }
-
-        return response()->json([
-            'deleted'             => true,
-            'students_unassigned' => $purged['unassigned'],
-            'lessons_deleted'     => $purged['lessons'],
-            'payrolls_deleted'    => $purged['payrolls'],
-        ]);
+        return response()->json(['deleted' => true, 'students_unassigned' => $unassigned]);
     }
 
     private function unassignStudents(Teacher $teacher): int

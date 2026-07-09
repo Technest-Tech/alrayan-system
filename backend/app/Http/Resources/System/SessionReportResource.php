@@ -23,10 +23,11 @@ class SessionReportResource extends JsonResource
                 'id'   => $this->student->id,
                 'name' => $this->student->name,
             ]),
-            'teacher'            => $this->whenLoaded('teacher', fn () => [
+            // teacher_id is nullOnDelete: a deleted teacher leaves the record with no teacher.
+            'teacher'            => $this->whenLoaded('teacher', fn () => $this->teacher ? [
                 'id'   => $this->teacher->id,
                 'name' => $this->teacher->user?->name,
-            ]),
+            ] : null),
             'session'            => $this->whenLoaded('session', fn () =>
                 $this->session ? new SessionResource($this->session) : null
             ),

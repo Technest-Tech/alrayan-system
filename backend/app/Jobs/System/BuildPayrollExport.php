@@ -35,7 +35,7 @@ class BuildPayrollExport implements ShouldQueue
         $rows = [['Teacher', 'Sessions', 'Minutes', 'Base (minor)', 'Bonuses (minor)', 'Deductions (minor)', 'Net (minor)', 'Status']];
         foreach ($payrolls as $p) {
             $rows[] = [
-                $p->teacher->user->name,
+                $p->teacher?->user?->name ?? '—',
                 $p->total_sessions,
                 $p->total_minutes,
                 $p->base_salary_minor,

@@ -31,10 +31,11 @@ class SessionResource extends JsonResource
                 'name'    => $this->student->name,
                 'timezone'=> $this->student->timezone,
             ]),
-            'teacher'                  => $this->whenLoaded('teacher', fn () => [
+            // teacher_id is nullOnDelete: a deleted teacher leaves the record with no teacher.
+            'teacher'                  => $this->whenLoaded('teacher', fn () => $this->teacher ? [
                 'id'   => $this->teacher->id,
                 'name' => $this->teacher->user?->name,
-            ]),
+            ] : null),
             'report'                   => $this->whenLoaded('report', fn () =>
                 $this->report ? new SessionReportResource($this->report) : null
             ),

@@ -15,7 +15,7 @@ class PayrollPolicy
     public function view(User $u, Payroll $p): bool
     {
         if ($u->hasRole('admin')) return true;
-        if ($u->hasRole('teacher')) return $p->teacher->user_id === $u->id;
+        if ($u->hasRole('teacher')) return $p->teacher?->user_id === $u->id;
         return $u->can('payroll.view_any');
     }
 

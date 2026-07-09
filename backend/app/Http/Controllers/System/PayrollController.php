@@ -141,9 +141,9 @@ class PayrollController extends Controller
         $stmt = $builder->forTeacher($teacher, $request->integer('year') ?: null, $request->integer('month') ?: null);
         return response()->json([
             'teacher' => [
-                'id'             => $stmt->teacher->id,
-                'name'           => $stmt->teacher->user->name,
-                'payment_method' => $stmt->teacher->payment_method,
+                'id'             => $stmt->teacher?->id,
+                'name'           => $stmt->teacher?->user?->name,
+                'payment_method' => $stmt->teacher?->payment_method,
             ],
             'current' => $stmt->current ? new PayrollDetailResource($stmt->current) : null,
             'history' => PayrollResource::collection($stmt->history),
