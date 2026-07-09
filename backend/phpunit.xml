@@ -27,7 +27,11 @@
         <env name="MAIL_MAILER" value="array"/>
         <env name="PULSE_ENABLED" value="false"/>
         <env name="QUEUE_CONNECTION" value="sync"/>
+        <env name="REPORTS_RENDERER" value="fake"/>
+        <env name="REPORTS_PUBLIC_BASE_URL" value="https://reports.test"/>
         <env name="SESSION_DRIVER" value="array"/>
         <env name="TELESCOPE_ENABLED" value="false"/>
+        <!-- Never let the suite reach the real Acadmyq gateway. -->
+        <env name="WHATSAPP_ENABLED" value="false"/>
     </php>
 </phpunit>

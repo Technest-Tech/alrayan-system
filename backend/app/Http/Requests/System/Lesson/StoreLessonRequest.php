@@ -27,6 +27,8 @@ class StoreLessonRequest extends FormRequest
             'souvenir_image'  => ['nullable', 'string', 'max:500'],
             'subject_details' => ['nullable', 'array'],
             'trial_evaluation'=> ['nullable', 'array'],
+            // Queue the rendered report image to the student's / guardian's WhatsApp.
+            'send_report'     => ['sometimes', 'boolean'],
         ];
     }
 }

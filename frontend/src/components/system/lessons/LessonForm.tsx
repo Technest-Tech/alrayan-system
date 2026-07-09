@@ -1,8 +1,9 @@
 'use client'
 import { useRef, useState } from 'react'
-import { Mic, Upload, GraduationCap, BookOpen, BookMarked, Smile, Gamepad2, Brain } from 'lucide-react'
+import { Mic, Upload, GraduationCap, BookOpen, BookMarked, Smile, Gamepad2, Brain, Send } from 'lucide-react'
 import { SearchableSelect } from './SearchableSelect'
 import { toast } from 'sonner'
+import { ApiError } from '@/lib/system/api'
 import { useLessonSubjects, useLessonEvaluations, useCreateLesson, useUpdateLesson } from '@/hooks/system/useLessons'
 import { useTeachers } from '@/hooks/system/useTeachers'
 import { useStudents } from '@/hooks/system/useStudents'
@@ -198,9 +199,11 @@ export function LessonForm({ initialValues, prefill, onSuccess, onCancel }: Prop
   const setTrialField = <K extends keyof TrialEvaluation>(k: K, v: TrialEvaluation[K]) =>
     setTrial(p => ({ ...p, [k]: v }))
 
+  /* Which button is mid-flight — drives the two buttons' labels and disabled state. */
+  const [pending, setPending] = useState<'save' | 'send' | null>(null)
+
   /* ── Submit ─────────────────────────────────────────────── */
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault()
+  async function save(sendReport: boolean) {
     if (!teacherId || !studentId || !scheduledAt) {
       toast.error(t('lessons.form.toastRequiredFields'))
       return
@@ -221,26 +224,38 @@ export function LessonForm({ initialValues, prefill, onSuccess, onCancel }: Prop
       homework:        homework       || undefined,
       subject_details: Object.keys(subjectDetails).length ? subjectDetails : undefined,
       trial_evaluation: status === 'trial' && Object.keys(trial).length ? trial : undefined,
+      send_report:     sendReport,
     }
 
+    setPending(sendReport ? 'send' : 'save')
     try {
       if (isEdit) {
         await updateLesson.mutateAsync({ id: initialValues.id, ...payload })
-        toast.success(t('lessons.form.toastUpdated'))
       } else {
         await createLesson.mutateAsync(payload)
-        toast.success(t('lessons.form.toastCreated'))
       }
-      // Trial lessons send an evaluation report to the student's WhatsApp + email.
-      // TODO: wire to the messaging integration; stubbed for now.
-      if (status === 'trial') toast.info(t('lessons.form.trial.reportQueued'))
+      toast.success(
+        sendReport ? t('lessons.form.toastReportQueued')
+        : isEdit   ? t('lessons.form.toastUpdated')
+        :            t('lessons.form.toastCreated'),
+      )
       onSuccess?.()
-    } catch {
-      toast.error(t('lessons.form.toastError'))
+    } catch (err) {
+      // The lesson is left untouched when the report has nowhere to go, and the
+      // backend says exactly why — surface that instead of a generic failure.
+      const unreachable = err instanceof ApiError && err.status === 422
+      toast.error(unreachable ? err.message : t('lessons.form.toastError'))
+    } finally {
+      setPending(null)
     }
   }
 
-  const isPending = createLesson.isPending || updateLesson.isPending
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    await save(false)
+  }
+
+  const isPending = pending !== null
 
   /* ── Render ─────────────────────────────────────────────── */
   return (
@@ -603,10 +618,22 @@ export function LessonForm({ initialValues, prefill, onSuccess, onCancel }: Prop
         <button
           type="submit"
           disabled={isPending}
-          className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50"
+          className="flex-1 py-2.5 rounded-xl text-sm font-semibold border bg-white transition-colors hover:bg-black/5 disabled:opacity-50"
+          style={{ borderColor: TEAL_600, color: TEAL_600 }}
+        >
+          {pending === 'save' ? t('common.saving') : isEdit ? t('lessons.form.updateLesson') : t('lessons.form.createLesson')}
+        </button>
+        <button
+          type="button"
+          onClick={() => save(true)}
+          disabled={isPending}
+          className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-white flex items-center justify-center gap-2 transition-opacity hover:opacity-90 disabled:opacity-50"
           style={{ background: TEAL_600 }}
         >
-          {isPending ? t('common.saving') : isEdit ? t('lessons.form.updateLesson') : t('lessons.form.createLesson')}
+          <Send size={15} />
+          {pending === 'send' ? t('lessons.form.sendingReport')
+            : isEdit ? t('lessons.form.updateAndSend')
+            : t('lessons.form.createAndSend')}
         </button>
       </div>
     </form>

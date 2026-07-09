@@ -124,6 +124,8 @@ export interface StoreLessonPayload {
   homework?: string
   subject_details?: Record<string, string>
   trial_evaluation?: TrialEvaluation
+  /** Queues the rendered report image to the student's (or their guardian's) WhatsApp. */
+  send_report?: boolean
 }
 
 /** Trial-lesson assessment captured when a lesson's status is `trial`. */

@@ -55,6 +55,7 @@ use App\Http\Controllers\System\WhatsAppSendLogController;
 use App\Http\Controllers\System\WhatsAppGroupController;
 use App\Http\Controllers\System\CalendarController;
 use App\Http\Controllers\System\LessonController;
+use App\Http\Controllers\System\LessonReportController;
 use App\Http\Controllers\System\LessonScheduleController;
 use App\Http\Controllers\System\StudentPackageController;
 use App\Http\Controllers\System\LessonSubjectController;
@@ -561,6 +562,7 @@ Route::prefix('system')->name('system.')->group(function () {
         Route::middleware('system.can:lessons.edit')->group(function () {
             Route::put('/lessons/{lesson}',                              [LessonController::class,         'update'])->name('lessons.update');
             Route::patch('/lessons/{lesson}',                            [LessonController::class,         'update']);
+            Route::post('/lessons/{lesson}/report',                      [LessonReportController::class,   'store'])->name('lessons.report.store');
             Route::put('/lesson-schedules/{lessonSchedule}',             [LessonScheduleController::class, 'update'])->name('lesson-schedules.update');
             Route::patch('/student-packages/{studentPackage}',           [StudentPackageController::class, 'update'])->name('student-packages.update');
             Route::post('/student-packages/{studentPackage}/confirm',    [StudentPackageController::class, 'confirm'])->name('student-packages.confirm');

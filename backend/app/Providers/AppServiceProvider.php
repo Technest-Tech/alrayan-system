@@ -84,6 +84,9 @@ use App\Services\Integrations\Wassender\FakeWassenderClient;
 use App\Services\Integrations\Wassender\WassenderClient;
 use App\Services\Integrations\Zoom\FakeZoomClient;
 use App\Services\Integrations\Zoom\ZoomClient;
+use App\Services\System\Reports\FakeLessonReportRenderer;
+use App\Services\System\Reports\LessonReportData;
+use App\Services\System\Reports\LessonReportRenderer;
 use App\Support\System\Setting;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Contracts\Cache\Repository as CacheRepository;
@@ -145,6 +148,11 @@ class AppServiceProvider extends ServiceProvider
             }
             return new FakeAcadmyqClient();
         });
+
+        // Lesson report images: Chromium when available, fake otherwise
+        $this->app->bind(LessonReportRenderer::class, fn ($app) => config('reports.renderer') === 'browsershot'
+            ? new LessonReportRenderer($app->make(LessonReportData::class))
+            : new FakeLessonReportRenderer($app->make(LessonReportData::class)));
     }
 
     public function boot(): void

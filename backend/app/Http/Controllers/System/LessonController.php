@@ -2,22 +2,43 @@
 
 namespace App\Http\Controllers\System;
 
+use App\Exceptions\System\UnreachableRecipientException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\System\Lesson\StoreLessonRequest;
 use App\Http\Requests\System\Lesson\UpdateLessonRequest;
 use App\Http\Resources\System\LessonResource;
+use App\Jobs\System\SendLessonReport;
 use App\Models\System\Lead;
 use App\Models\System\Lesson;
 use App\Models\System\Student;
 use App\Services\System\PackageService;
+use App\Services\System\Reports\LessonReportService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Http\Response;
+use Illuminate\Validation\ValidationException;
 
 class LessonController extends Controller
 {
-    public function __construct(private PackageService $packageService) {}
+    public function __construct(
+        private PackageService $packageService,
+        private LessonReportService $reports,
+    ) {}
+
+    /**
+     * Rendering + sending happens on the queue, so an unreachable student would
+     * otherwise surface as a silent no-op long after the admin closed the form.
+     * Checking up front lets the request fail loudly instead.
+     */
+    private function assertReportDeliverable(Student $student): void
+    {
+        try {
+            $this->reports->assertReachable($student);
+        } catch (UnreachableRecipientException $e) {
+            throw ValidationException::withMessages(['send_report' => $e->getMessage()]);
+        }
+    }
 
     /**
      * Resolve the teacher_id to persist on a write. A teacher is always forced
@@ -91,6 +112,12 @@ class LessonController extends Controller
         $teacherId = $this->resolveWriteTeacherId((int) $request->teacher_id, $student);
         $scheduledAt = Carbon::parse($request->scheduled_at);
 
+        $sendReport = $request->boolean('send_report');
+
+        if ($sendReport) {
+            $this->assertReportDeliverable($student);
+        }
+
         $package = $this->packageService->resolvePackageForLesson($student, $scheduledAt);
 
         $lesson = Lesson::create([
@@ -121,6 +148,11 @@ class LessonController extends Controller
         }
 
         $lesson->refresh()->load(['package', 'teacher.user', 'student', 'subject', 'evaluation', 'addedBy', 'allocations.package']);
+
+        // Dispatched after the rebuild so the report shows settled package progress.
+        if ($sendReport) {
+            SendLessonReport::dispatch($lesson->id)->onQueue('notifications');
+        }
 
         return new LessonResource($lesson);
     }
@@ -160,6 +192,12 @@ class LessonController extends Controller
             'trial_evaluation',
         ]);
 
+        $sendReport = $request->boolean('send_report');
+
+        if ($sendReport && ($target = Student::find($data['student_id'] ?? $lesson->student_id))) {
+            $this->assertReportDeliverable($target);
+        }
+
         // A teacher can never reassign a lesson to another teacher or a student
         // that isn't theirs.
         if (auth()->user()->role === 'teacher') {
@@ -184,6 +222,10 @@ class LessonController extends Controller
         }
 
         $lesson->refresh()->load(['package', 'teacher.user', 'student', 'subject', 'evaluation', 'addedBy', 'allocations.package']);
+
+        if ($sendReport) {
+            SendLessonReport::dispatch($lesson->id)->onQueue('notifications');
+        }
 
         return new LessonResource($lesson);
     }
