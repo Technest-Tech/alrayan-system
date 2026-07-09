@@ -3,11 +3,13 @@
 namespace Tests\Feature\System;
 
 use App\Models\Course;
+use App\Models\System\Lesson;
 use App\Models\System\Student;
 use App\Models\System\Teacher;
 use App\Models\System\UserEmail;
 use App\Models\System\UserPhone;
 use App\Models\User;
+use App\Services\System\PackageService;
 use Tests\SystemTestCase;
 
 class UserDirectoryEndpointsTest extends SystemTestCase
@@ -154,6 +156,60 @@ class UserDirectoryEndpointsTest extends SystemTestCase
     public function test_guest_cannot_access_directory(): void
     {
         $this->getJson('/api/system/users/directory')->assertUnauthorized();
+    }
+
+    /* ── Deleting a teacher ── */
+
+    public function test_deleting_a_teacher_without_history_unassigns_students_and_removes_them(): void
+    {
+        $teacher = Teacher::factory()->create();
+        $student = Student::factory()->withUser()->create(['assigned_teacher_id' => $teacher->id]);
+
+        $this->asAdmin()
+            ->deleteJson("/api/system/users/directory/{$teacher->user_id}")
+            ->assertOk()
+            ->assertJson(['deleted' => true, 'students_unassigned' => 1]);
+
+        $this->assertNull($student->fresh()->assigned_teacher_id, 'student is unassigned, not deleted');
+        $this->assertDatabaseMissing('users', ['id' => $teacher->user_id]);
+        $this->assertDatabaseMissing('sys_teachers', ['id' => $teacher->id]);
+    }
+
+    public function test_deleting_a_teacher_with_teaching_history_archives_and_preserves_it(): void
+    {
+        $teacher = Teacher::factory()->create();
+        $student = Student::factory()->withUser()->create([
+            'assigned_teacher_id'   => $teacher->id,
+            'package_hours_default' => 2,
+            'hourly_rate_minor'     => 5000,
+            'currency'              => 'USD',
+        ]);
+
+        $package = app(PackageService::class)->resolvePackageForLesson($student);
+        $lesson  = Lesson::create([
+            'package_id'       => $package->id,
+            'teacher_id'       => $teacher->id,
+            'student_id'       => $student->id,
+            'scheduled_at'     => now(),
+            'duration_minutes' => 60,
+            'status'           => 'attended',
+        ]);
+
+        $this->asAdmin()
+            ->deleteJson("/api/system/users/directory/{$teacher->user_id}")
+            ->assertOk()
+            ->assertJson(['deleted' => false, 'archived' => true, 'students_unassigned' => 1]);
+
+        $this->assertNull($student->fresh()->assigned_teacher_id);
+
+        // The user row must survive — deleting it would cascade the teacher (and its history) away.
+        $user = User::find($teacher->user_id);
+        $this->assertNotNull($user, 'user row is kept so the FK cascade never fires');
+        $this->assertSame('archived', $user->status);
+        $this->assertFalse((bool) $user->is_active, 'archived teacher cannot sign in');
+
+        $this->assertSoftDeleted('sys_teachers', ['id' => $teacher->id]);
+        $this->assertDatabaseHas('sys_lessons', ['id' => $lesson->id, 'teacher_id' => $teacher->id]);
     }
 
     private function makeCourse(): Course

@@ -9,6 +9,7 @@ import { UsersDirectoryTable } from '@/components/system/users/UsersDirectoryTab
 import { UserFormDialog } from '@/components/system/users/UserFormDialog'
 import { UserRolesTab } from '@/components/system/users/UserRolesTab'
 import { useUserDirectory, useUserStats, useUserStatusTransition, useDeleteUser } from '@/hooks/system/useUserDirectory'
+import { ApiError } from '@/lib/system/api'
 import { useUrlFilters } from '@/lib/system/filters'
 import { useConfirm } from '@/components/system/primitives/ConfirmDialog'
 import { useI18n } from '@/lib/system/i18n'
@@ -66,10 +67,12 @@ export default function UsersPage() {
     })
     if (!ok) return
     try {
-      await remove.mutateAsync(user.id)
-      toast.success('User deleted')
-    } catch {
-      toast.error('Could not delete user')
+      const result = await remove.mutateAsync(user.id)
+      // A teacher who has taught is archived instead, to preserve lessons/sessions/payroll.
+      if (result?.archived) toast.success(result.message ?? 'Teacher archived')
+      else toast.success('User deleted')
+    } catch (error) {
+      toast.error(error instanceof ApiError ? error.message : 'Could not delete user')
     }
   }
 

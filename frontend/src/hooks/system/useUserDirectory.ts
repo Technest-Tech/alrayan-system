@@ -63,11 +63,19 @@ export function useUpdateUser() {
   })
 }
 
+/** A teacher with teaching history is archived rather than deleted, so the history survives. */
+export interface DeleteUserResult {
+  deleted: boolean
+  archived?: boolean
+  students_unassigned?: number
+  message?: string
+}
+
 export function useDeleteUser() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: (id: number) =>
-      api(`/users/directory/${id}`, { method: 'DELETE' }),
+      api<DeleteUserResult>(`/users/directory/${id}`, { method: 'DELETE' }),
     onSuccess: () => qc.invalidateQueries({ queryKey: KEY }),
   })
 }

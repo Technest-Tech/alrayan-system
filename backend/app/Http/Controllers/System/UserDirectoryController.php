@@ -7,6 +7,14 @@ use App\Http\Requests\System\Users\StoreUserRequest;
 use App\Http\Requests\System\Users\UpdateUserDirectoryRequest;
 use App\Http\Resources\System\UserDirectoryResource;
 use App\Models\System\Guardian;
+use App\Models\System\Lesson;
+use App\Models\System\LessonSchedule;
+use App\Models\System\Payroll;
+use App\Models\System\QualityReview;
+use App\Models\System\Session;
+use App\Models\System\SessionReport;
+use App\Models\System\Student;
+use App\Models\System\Teacher;
 use App\Models\User;
 use App\Notifications\System\SystemUserInvitedNotification;
 use App\Services\System\AuditLog;
@@ -232,12 +240,14 @@ class UserDirectoryController extends Controller
             return response()->json(['message' => 'You cannot delete your own account.'], 422);
         }
 
-        $user = User::with(['teacherProfile', 'studentProfile', 'guardianProfile'])->findOrFail($id);
+        $user = User::with(['studentProfile', 'guardianProfile'])->findOrFail($id);
 
-        if ($user->teacherProfile && $user->teacherProfile->students()->exists()) {
-            return response()->json([
-                'message' => 'Cannot delete a teacher with assigned students. Reassign their students first.',
-            ], 422);
+        // withTrashed: a soft-deleted teacher row still exists, and sys_teachers.user_id
+        // cascades off users.id — deleting the user would silently take it (and its
+        // sessions/reports/reviews/schedules) with it.
+        $teacher = Teacher::withTrashed()->where('user_id', $user->id)->first();
+        if ($teacher) {
+            return $this->destroyTeacher($user, $teacher);
         }
 
         DB::transaction(function () use ($user) {
@@ -251,6 +261,59 @@ class UserDirectoryController extends Controller
         });
 
         return response()->json(['deleted' => true]);
+    }
+
+    /**
+     * Remove a teacher. Their students are always unassigned first.
+     *
+     * A teacher who ever taught cannot be erased: sys_lessons/sys_payrolls are restrictOnDelete
+     * (a hard delete throws), and the users.id cascade would wipe their sessions, reports,
+     * quality reviews and schedules. Such a teacher is archived instead — soft-deleted so they
+     * leave the Teachers list, with the user row kept so the cascade never fires. Only a teacher
+     * with no teaching history at all is genuinely deleted.
+     */
+    private function destroyTeacher(User $user, Teacher $teacher): JsonResponse
+    {
+        $hasHistory = Lesson::where('teacher_id', $teacher->id)->exists()
+            || Payroll::where('teacher_id', $teacher->id)->exists()
+            || Session::where('teacher_id', $teacher->id)->exists()
+            || SessionReport::where('teacher_id', $teacher->id)->exists()
+            || QualityReview::where('teacher_id', $teacher->id)->exists()
+            || LessonSchedule::where('teacher_id', $teacher->id)->exists();
+
+        return DB::transaction(function () use ($user, $teacher, $hasHistory) {
+            $unassigned = Student::where('assigned_teacher_id', $teacher->id)
+                ->update(['assigned_teacher_id' => null]);
+
+            if ($hasHistory) {
+                if (! $teacher->trashed()) {
+                    $teacher->delete();
+                }
+                $user->syncStatus('archived');
+                AuditLog::record('users.archived', $user, [
+                    'role'                => $user->role,
+                    'reason'              => 'teacher_has_teaching_history',
+                    'students_unassigned' => $unassigned,
+                ]);
+
+                return response()->json([
+                    'deleted'             => false,
+                    'archived'            => true,
+                    'students_unassigned' => $unassigned,
+                    'message'             => 'This teacher has lessons, sessions or payroll records, so they were archived instead of deleted — their history is preserved and they can no longer sign in. '
+                        . $unassigned . ' student(s) were unassigned.',
+                ]);
+            }
+
+            AuditLog::record('users.deleted', $user, [
+                'role'                => $user->role,
+                'students_unassigned' => $unassigned,
+            ]);
+            // No history: the cascade only takes the teacher row and its own availability/notes/leaves.
+            $user->delete();
+
+            return response()->json(['deleted' => true, 'students_unassigned' => $unassigned]);
+        });
     }
 
     private function createParent(array $data, UserProvisioner $provisioner): User

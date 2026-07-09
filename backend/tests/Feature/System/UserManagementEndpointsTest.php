@@ -323,14 +323,18 @@ class UserManagementEndpointsTest extends SystemTestCase
             ->assertUnprocessable();
     }
 
-    public function test_cannot_delete_teacher_with_assigned_students(): void
+    public function test_deleting_teacher_with_assigned_students_unassigns_them(): void
     {
         $teacher = Teacher::factory()->create();
-        Student::factory()->withUser()->create(['assigned_teacher_id' => $teacher->id]);
+        $student = Student::factory()->withUser()->create(['assigned_teacher_id' => $teacher->id]);
 
         $this->asAdmin()
             ->deleteJson(self::ENDPOINT . "/{$teacher->user_id}")
-            ->assertUnprocessable();
+            ->assertOk()
+            ->assertJson(['deleted' => true, 'students_unassigned' => 1]);
+
+        // The students outlive the teacher — unassigned, never cascaded away.
+        $this->assertNull($student->fresh()->assigned_teacher_id);
     }
 
     public function test_supervisor_without_create_permission_cannot_create_user(): void
