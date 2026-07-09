@@ -77,14 +77,16 @@ class Lesson extends Model
         return $this->belongsTo(LessonSchedule::class, 'schedule_id');
     }
 
+    // withTrashed: archiving a teacher/student soft-deletes the profile but keeps their lessons.
+    // Without this the relation resolves to null and the lesson loses the name it belongs to.
     public function teacher()
     {
-        return $this->belongsTo(Teacher::class, 'teacher_id');
+        return $this->belongsTo(Teacher::class, 'teacher_id')->withTrashed();
     }
 
     public function student()
     {
-        return $this->belongsTo(Student::class, 'student_id');
+        return $this->belongsTo(Student::class, 'student_id')->withTrashed();
     }
 
     public function subject()

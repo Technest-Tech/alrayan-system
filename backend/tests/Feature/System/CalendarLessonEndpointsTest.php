@@ -437,4 +437,27 @@ class CalendarLessonEndpointsTest extends SystemTestCase
         // l2 becomes the only lesson -> cumulative 1.0
         $this->assertEquals(1.0, $l2->fresh()->session_number_hours);
     }
+
+    /* ────────────────  Archived teacher / student still label lessons  ──────────────── */
+
+    public function test_lessons_index_still_names_an_archived_teacher_and_student(): void
+    {
+        $student = $this->lessonStudent();
+        $teacher = Teacher::factory()->create();
+        $this->makeLesson($student, $teacher, $this->makePackage($student));
+
+        // Archiving soft-deletes the profiles; the lesson must keep its labels.
+        $teacher->delete();
+        $student->delete();
+
+        $row = $this->actingAs($this->adminUser(), 'sanctum')
+            ->getJson('/api/system/lessons')
+            ->assertOk()
+            ->json('data.0');
+
+        $this->assertNotNull($row['teacher'], 'archived teacher still resolves');
+        $this->assertNotNull($row['student'], 'archived student still resolves');
+        $this->assertSame($teacher->user->name, $row['teacher']['name']);
+        $this->assertSame($student->name, $row['student']['name']);
+    }
 }

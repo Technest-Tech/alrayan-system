@@ -71,7 +71,7 @@ function LessonPill({ lesson, onClick, onDelete }: {
       onClick={onClick}
     >
       <span className="font-semibold shrink-0">{sessionNum}</span>
-      <span className="truncate min-w-0">{lesson.student.name.split(' ')[0]}</span>
+      <span className="truncate min-w-0">{lesson.student?.name.split(' ')[0] ?? '—'}</span>
       <button
         onClick={onDelete}
         className="ml-auto shrink-0 opacity-0 group-hover:opacity-100 transition-opacity hover:text-red-600"
@@ -276,7 +276,7 @@ function ListView({ lessons, onLessonClick }: { lessons: Lesson[]; onLessonClick
                         {displaySessionHours(l)}
                       </span>
                     </td>
-                    <td className="px-3 py-2.5 font-medium whitespace-nowrap" style={{ color: NAVY }}>{l.student.name}</td>
+                    <td className="px-3 py-2.5 font-medium whitespace-nowrap" style={{ color: NAVY }}>{l.student?.name ?? '—'}</td>
                     <td className="px-3 py-2.5" style={{ color: MUTED }}>{(l.duration_minutes / 60).toFixed(l.duration_minutes % 60 ? 1 : 0)}h</td>
                     <td className="px-3 py-2.5 whitespace-nowrap" style={{ color: MUTED }}>
                       {new Date(l.scheduled_at).toLocaleString('en-US', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false })}
@@ -663,7 +663,7 @@ export default function CalendarPage() {
   }
 
   async function handleLessonDelete(lesson: Lesson) {
-    if (!confirm(t('schedule.calendar.deleteConfirm', { name: lesson.student.name }))) return
+    if (!confirm(t('schedule.calendar.deleteConfirm', { name: lesson.student?.name ?? '—' }))) return
     setSelectedLesson(null)
     await refetch()
   }

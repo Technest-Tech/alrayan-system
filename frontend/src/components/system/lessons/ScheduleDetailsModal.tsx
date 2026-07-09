@@ -71,8 +71,8 @@ export function ScheduleDetailsModal({ lesson, open, onClose, onAddReport, onEdi
           </div>
 
           <div className="grid grid-cols-2 gap-3 mb-5">
-            <Info icon={<User size={13} />}          label={t('lessons.form.fieldStudent')} value={lesson.student.name} />
-            <Info icon={<GraduationCap size={13} />} label={t('common.teacher')}            value={lesson.teacher.name} />
+            <Info icon={<User size={13} />}          label={t('lessons.form.fieldStudent')} value={lesson.student?.name ?? '—'} />
+            <Info icon={<GraduationCap size={13} />} label={t('common.teacher')}            value={lesson.teacher?.name ?? '—'} />
             <Info icon={<CalendarDays size={13} />}  label={t('common.date')}               value={dateLabel} />
             <Info icon={<Clock size={13} />}         label={t('lessons.schedule.startTime')} value={timeLabel} />
             <Info icon={<Clock size={13} />}         label={t('common.duration')}           value={durLabel} />

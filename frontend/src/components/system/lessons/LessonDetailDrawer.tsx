@@ -123,7 +123,7 @@ export function LessonDetailDrawer({ lesson, open, onClose, onUpdate }: Props) {
               <h2 className="text-base font-semibold" style={{ color: NAVY }}>{t('lessons.detail.title')}</h2>
               {lesson && (
                 <p className="text-sm mt-0.5" style={{ color: MUTED }}>
-                  {lesson.student.name} — {lesson.teacher.name}
+                  {lesson.student?.name ?? '—'} — {lesson.teacher?.name ?? '—'}
                 </p>
               )}
             </div>
@@ -142,8 +142,8 @@ export function LessonDetailDrawer({ lesson, open, onClose, onUpdate }: Props) {
           <div className="flex-1 overflow-y-auto px-5 pb-6">
             {/* Participants */}
             <SectionTitle>{t('lessons.form.sectionParticipants')}</SectionTitle>
-            <InfoRow icon={<User size={14} />} label={t('lessons.form.fieldStudent')} value={lesson.student.name} />
-            <InfoRow icon={<GraduationCap size={14} />} label={t('common.teacher')} value={lesson.teacher.name} />
+            <InfoRow icon={<User size={14} />} label={t('lessons.form.fieldStudent')} value={lesson.student?.name ?? '—'} />
+            <InfoRow icon={<GraduationCap size={14} />} label={t('common.teacher')} value={lesson.teacher?.name ?? '—'} />
             <InfoRow icon={<CalendarDays size={14} />} label={t('common.date')} value={formatDate(lesson.scheduled_at)} />
             <InfoRow icon={<Clock size={14} />} label={t('common.duration')} value={formatMinutes(lesson.duration_minutes)} />
             {lesson.added_by_name && (

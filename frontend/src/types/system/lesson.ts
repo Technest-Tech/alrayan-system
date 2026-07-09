@@ -75,8 +75,9 @@ export interface Lesson {
   subject_details: Record<string, string> | null
   trial_evaluation: TrialEvaluation | null
   added_by_name: string | null
-  teacher: LessonTeacher
-  student: LessonStudent
+  // Null once the profile is hard-deleted — the API nulls these rather than omitting them.
+  teacher: LessonTeacher | null
+  student: LessonStudent | null
   subject: LessonSubject | null
   evaluation: LessonEvaluation | null
   package: StudentPackage
@@ -98,8 +99,9 @@ export interface LessonSchedule {
   recurrence: 'none' | 'weekly' | 'biweekly' | 'every_4_weeks' | 'custom'
   start_date: string
   is_active: boolean
-  teacher: LessonTeacher
-  student: LessonStudent
+  // Null once the profile is hard-deleted — the API nulls these rather than omitting them.
+  teacher: LessonTeacher | null
+  student: LessonStudent | null
   subject: LessonSubject | null
   slots: ScheduleSlot[]
 }

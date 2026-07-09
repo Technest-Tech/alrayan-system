@@ -260,7 +260,7 @@ export function WeekDayGrid({ days, lessons, showFullDay = false, onLessonClick,
                       }}
                     >
                       <div className="text-xs font-semibold truncate leading-tight">
-                        {num} · {lesson.student.name.split(' ')[0]}
+                        {num} · {lesson.student?.name.split(' ')[0] ?? '—'}
                       </div>
                       {pos.height >= SLOT_H * 1.5 && (
                         <div className="text-xs opacity-60 truncate leading-tight">
