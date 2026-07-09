@@ -17,6 +17,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Str;
+use Laravel\Sanctum\PersonalAccessToken;
 
 class AuthController extends Controller
 {
@@ -48,8 +49,9 @@ class AuthController extends Controller
         RateLimiter::clear($rateKey);
         $user->update(['last_login_at' => now()]);
 
-        // One active system session per user
-        $user->tokens()->where('name', 'system-session')->delete();
+        // Sessions are concurrent and never expire on their own: signing in on a
+        // second device must not sign you out of the first. Idle tokens are
+        // reaped by system:prune:idle-sessions; Logout revokes just its own.
         $token = $user->createToken('system-session')->plainTextToken;
 
         AuditLog::record('auth.login_success', $user);
@@ -59,7 +61,16 @@ class AuthController extends Controller
     public function logout(Request $request): JsonResponse
     {
         AuditLog::record('auth.logout', $request->user());
-        $request->user()->currentAccessToken()?->delete();
+
+        // Sanctum hands back a TransientToken (which has no delete()) when the
+        // caller authenticated through the session guard rather than a bearer
+        // token, so a bare ?->delete() fatals there.
+        $token = $request->user()->currentAccessToken();
+
+        if ($token instanceof PersonalAccessToken) {
+            $token->delete();
+        }
+
         return response()->json(['message' => 'Signed out']);
     }
 

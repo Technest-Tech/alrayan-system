@@ -12,6 +12,7 @@ use App\Console\Commands\System\GenerateMonthlyInvoices;
 use App\Console\Commands\System\MarkInvoicesOverdue;
 use App\Console\Commands\System\MaterializeUpcomingSessions;
 use App\Console\Commands\System\NotifyAdminsOnUpcomingPayroll;
+use App\Console\Commands\System\PruneIdleSessions;
 use App\Console\Commands\System\RecomputeQualityScores;
 use App\Console\Commands\System\SweepDueLeadFollowUps;
 use Illuminate\Foundation\Inspiring;
@@ -45,3 +46,6 @@ Schedule::command(NotifyAdminsOnUpcomingPayroll::class)->dailyAt('10:00');
 
 // SYS-08 scheduled commands
 Schedule::command(GenerateMonthlyReport::class)->cron('0 4 1 * *')->onOneServer();
+
+// Auth housekeeping — sessions never expire, so reap the abandoned ones.
+Schedule::command(PruneIdleSessions::class)->dailyAt('03:00')->onOneServer();
