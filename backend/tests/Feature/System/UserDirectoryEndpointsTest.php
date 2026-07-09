@@ -175,7 +175,7 @@ class UserDirectoryEndpointsTest extends SystemTestCase
         $this->assertDatabaseMissing('sys_teachers', ['id' => $teacher->id]);
     }
 
-    public function test_deleting_a_teacher_with_teaching_history_archives_and_preserves_it(): void
+    public function test_deleting_a_teacher_with_lessons_purges_them_and_rebuilds_the_student(): void
     {
         $teacher = Teacher::factory()->create();
         $student = Student::factory()->withUser()->create([
@@ -194,25 +194,25 @@ class UserDirectoryEndpointsTest extends SystemTestCase
             'duration_minutes' => 60,
             'status'           => 'attended',
         ]);
+        app(PackageService::class)->rebuild($student);
+        $this->assertEqualsWithDelta(1.0, $package->fresh()->consumed_hours, 0.001);
 
         $this->asAdmin()
             ->deleteJson("/api/system/users/directory/{$teacher->user_id}")
             ->assertOk()
-            ->assertJson(['deleted' => false, 'archived' => true, 'students_unassigned' => 1]);
+            ->assertJson(['deleted' => true, 'students_unassigned' => 1, 'lessons_deleted' => 1]);
 
+        // Teacher, user and lesson are gone for good; the student survives, unassigned.
+        $this->assertDatabaseMissing('users', ['id' => $teacher->user_id]);
+        $this->assertDatabaseMissing('sys_teachers', ['id' => $teacher->id]);
+        $this->assertDatabaseMissing('sys_lessons', ['id' => $lesson->id]);
         $this->assertNull($student->fresh()->assigned_teacher_id);
 
-        // The user row must survive — deleting it would cascade the teacher (and its history) away.
-        $user = User::find($teacher->user_id);
-        $this->assertNotNull($user, 'user row is kept so the FK cascade never fires');
-        $this->assertSame('archived', $user->status);
-        $this->assertFalse((bool) $user->is_active, 'archived teacher cannot sign in');
-
-        $this->assertSoftDeleted('sys_teachers', ['id' => $teacher->id]);
-        $this->assertDatabaseHas('sys_lessons', ['id' => $lesson->id, 'teacher_id' => $teacher->id]);
+        // The purged lesson no longer consumes package hours.
+        $this->assertEqualsWithDelta(0.0, $package->fresh()->consumed_hours, 0.001, 'consumption re-derived');
     }
 
-    public function test_a_soft_deleted_lesson_still_counts_as_teaching_history(): void
+    public function test_a_soft_deleted_lesson_does_not_block_deleting_the_teacher(): void
     {
         $teacher = Teacher::factory()->create();
         $student = Student::factory()->withUser()->create([
@@ -231,16 +231,18 @@ class UserDirectoryEndpointsTest extends SystemTestCase
             'duration_minutes' => 60,
             'status'           => 'attended',
         ]);
-        // Soft-deleted, but the physical row remains — it still trips sys_lessons' restrictOnDelete FK.
+        // A soft-deleted lesson is still a physical row: it trips sys_lessons' restrictOnDelete FK
+        // unless it is force-deleted. This is what used to make the endpoint 500.
         $lesson->delete();
 
         $this->asAdmin()
             ->deleteJson("/api/system/users/directory/{$teacher->user_id}")
             ->assertOk()
-            ->assertJson(['deleted' => false, 'archived' => true]);
+            ->assertJson(['deleted' => true, 'lessons_deleted' => 1]);
 
-        $this->assertSoftDeleted('sys_teachers', ['id' => $teacher->id]);
-        $this->assertNotNull(User::find($teacher->user_id), 'user row kept so the cascade never fires');
+        $this->assertDatabaseMissing('users', ['id' => $teacher->user_id]);
+        $this->assertDatabaseMissing('sys_teachers', ['id' => $teacher->id]);
+        $this->assertDatabaseMissing('sys_lessons', ['id' => $lesson->id]);
     }
 
     private function makeCourse(): Course
