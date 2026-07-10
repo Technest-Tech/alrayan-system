@@ -124,6 +124,8 @@ export interface StoreLessonPayload {
   homework?: string
   subject_details?: Record<string, string>
   trial_evaluation?: TrialEvaluation
+  /** Public URL of the uploaded souvenir image, as returned by the /uploads endpoint. */
+  souvenir_image?: string | null
   /** Queues the rendered report image to the student's (or their guardian's) WhatsApp. */
   send_report?: boolean
 }

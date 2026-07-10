@@ -4,6 +4,7 @@ import { Mic, Upload, GraduationCap, BookOpen, BookMarked, Smile, Gamepad2, Brai
 import { SearchableSelect } from './SearchableSelect'
 import { toast } from 'sonner'
 import { ApiError } from '@/lib/system/api'
+import { uploadFile } from '@/lib/system/upload'
 import { useLessonSubjects, useLessonEvaluations, useCreateLesson, useUpdateLesson } from '@/hooks/system/useLessons'
 import { useTeachers } from '@/hooks/system/useTeachers'
 import { useStudents } from '@/hooks/system/useStudents'
@@ -211,24 +212,33 @@ export function LessonForm({ initialValues, prefill, onSuccess, onCancel }: Prop
     const durationMinutes = durationH * 60 + durationM
     if (durationMinutes === 0) { toast.error(t('lessons.form.toastDurationPositive')); return }
 
-    const payload: StoreLessonPayload = {
-      teacher_id:      Number(teacherId),
-      student_id:      Number(studentId),
-      scheduled_at:    new Date(scheduledAt).toISOString(),
-      duration_minutes: durationMinutes,
-      status,
-      subject_id:      subjectId      ? Number(subjectId)      : null,
-      evaluation_id:   evaluationId   ? Number(evaluationId)   : null,
-      content:         content        || undefined,
-      notes:           notes          || undefined,
-      homework:        homework       || undefined,
-      subject_details: Object.keys(subjectDetails).length ? subjectDetails : undefined,
-      trial_evaluation: status === 'trial' && Object.keys(trial).length ? trial : undefined,
-      send_report:     sendReport,
-    }
-
     setPending(sendReport ? 'send' : 'save')
     try {
+      // A freshly picked file must be uploaded first — the lesson stores the
+      // resulting public URL, not the File itself. Leave the field out when no
+      // new image was chosen so an edit keeps whatever souvenir it already had.
+      let souvenirUrl: string | undefined
+      if (souvenirImage) {
+        souvenirUrl = await uploadFile(souvenirImage, 'photos')
+      }
+
+      const payload: StoreLessonPayload = {
+        teacher_id:      Number(teacherId),
+        student_id:      Number(studentId),
+        scheduled_at:    new Date(scheduledAt).toISOString(),
+        duration_minutes: durationMinutes,
+        status,
+        subject_id:      subjectId      ? Number(subjectId)      : null,
+        evaluation_id:   evaluationId   ? Number(evaluationId)   : null,
+        content:         content        || undefined,
+        notes:           notes          || undefined,
+        homework:        homework       || undefined,
+        subject_details: Object.keys(subjectDetails).length ? subjectDetails : undefined,
+        trial_evaluation: status === 'trial' && Object.keys(trial).length ? trial : undefined,
+        souvenir_image:  souvenirUrl,
+        send_report:     sendReport,
+      }
+
       if (isEdit) {
         await updateLesson.mutateAsync({ id: initialValues.id, ...payload })
       } else {
