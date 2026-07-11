@@ -119,11 +119,12 @@ export interface StoreLessonPayload {
   subject_id?: number | null
   evaluation_id?: number | null
   status?: LessonStatus
-  content?: string
-  notes?: string
-  homework?: string
-  subject_details?: Record<string, string>
-  trial_evaluation?: TrialEvaluation
+  /** Report fields are sent as null, not omitted, so clearing one on an edit erases it. */
+  content?: string | null
+  notes?: string | null
+  homework?: string | null
+  subject_details?: Record<string, string> | null
+  trial_evaluation?: TrialEvaluation | null
   /** Public URL of the uploaded souvenir image, as returned by the /uploads endpoint. */
   souvenir_image?: string | null
   /** Queues the rendered report image to the student's (or their guardian's) WhatsApp. */

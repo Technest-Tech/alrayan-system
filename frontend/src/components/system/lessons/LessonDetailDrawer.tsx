@@ -2,7 +2,7 @@
 import { useState } from 'react'
 import { X, Pencil, Trash2, User, GraduationCap, Clock, CalendarDays, BookOpen, ChevronRight } from 'lucide-react'
 import type { Lesson } from '@/types/system/lesson'
-import { useDeleteLesson } from '@/hooks/system/useLessons'
+import { useDeleteLesson, useLesson } from '@/hooks/system/useLessons'
 import { LessonForm } from './LessonForm'
 import { STATUS_PILL, STATUS_LABEL } from '@/lib/system/lessonStatus'
 import { useI18n } from '@/lib/system/i18n'
@@ -86,10 +86,16 @@ interface Props {
   onUpdate?: () => void
 }
 
-export function LessonDetailDrawer({ lesson, open, onClose, onUpdate }: Props) {
+export function LessonDetailDrawer({ lesson: selected, open, onClose, onUpdate }: Props) {
   const { t } = useI18n()
   const [editing, setEditing] = useState(false)
   const deleteLesson = useDeleteLesson()
+
+  // The prop is a snapshot taken when the row was clicked, so an edit saved from
+  // this drawer would leave it showing the pre-edit report. Re-read the lesson —
+  // saving invalidates this exact key, so the view lands on the new values.
+  const { data: fresh } = useLesson(open && selected ? selected.id : null)
+  const lesson = fresh ?? selected
 
   async function handleDelete() {
     if (!lesson) return
@@ -244,6 +250,12 @@ export function LessonDetailDrawer({ lesson, open, onClose, onUpdate }: Props) {
             {(lesson.content || lesson.notes || lesson.homework || lesson.souvenir_image) && (
               <>
                 <SectionTitle>{t('lessons.form.sectionReport')}</SectionTitle>
+                {lesson.content && (
+                  <div className="mb-3">
+                    <p className="text-xs font-medium mb-1.5" style={{ color: MUTED }}>{t('lessons.form.fieldContent')}</p>
+                    <p className="text-sm p-3 rounded-xl whitespace-pre-wrap" style={{ background: TEAL_50, color: NAVY, border: `1px solid ${TEAL_100}` }}>{lesson.content}</p>
+                  </div>
+                )}
                 {lesson.notes && (
                   <div className="mb-3">
                     <p className="text-xs font-medium mb-1.5" style={{ color: MUTED }}>{t('common.notes')}</p>

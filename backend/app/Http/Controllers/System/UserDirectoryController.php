@@ -153,7 +153,27 @@ class UserDirectoryController extends Controller
 
     /**
      * Persist role-specific profile changes (student / teacher) on edit.
+     *
+     * sys_students and sys_guardians keep their own copy of the person's name and
+     * contacts — the WhatsApp report and the billing exports read those, not the
+     * users row — so an identity edit has to be mirrored onto them as well.
+     *
+     * @return array<string,mixed>
      */
+    private function identityMirror(User $user, array $data, array $keys): array
+    {
+        $mirror = [
+            'name'     => $user->name,
+            'email'    => $user->email,
+            'whatsapp' => $user->whatsapp,
+        ];
+
+        // Only mirror what the request actually touched — `email` and `whatsapp`
+        // are absent on a partial patch, and copying a null over a good number
+        // would silently cut the student off from their reports.
+        return array_intersect_key($mirror, array_flip(array_intersect($keys, array_keys($data))));
+    }
+
     private function updateProfile(User $user, array $data): void
     {
         if ($user->role === 'student' && $user->studentProfile) {
@@ -162,8 +182,21 @@ class UserDirectoryController extends Controller
                 'sessions_per_month', 'session_duration_min', 'currency', 'monthly_price_minor',
                 'package_hours_default', 'hourly_rate_minor', 'source', 'guardian_id',
             ]));
+            $fields += $this->identityMirror($user, $data, ['name', 'email', 'whatsapp']);
             if ($fields) {
                 $user->studentProfile->update($fields);
+            }
+        }
+
+        if ($user->role === 'parent' && $user->guardianProfile) {
+            // sys_guardians holds no email, and its whatsapp is NOT NULL — mirror
+            // only the columns that exist, and never blank the number.
+            $fields = array_filter(
+                $this->identityMirror($user, $data, ['name', 'whatsapp']),
+                fn ($value) => $value !== null,
+            );
+            if ($fields) {
+                $user->guardianProfile->update($fields);
             }
         }
 

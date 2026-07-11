@@ -193,6 +193,8 @@ export function LessonForm({ initialValues, prefill, onSuccess, onCancel }: Prop
   const [notes,          setNotes]          = useState(initialValues?.notes    ?? '')
   const [homework,       setHomework]       = useState(initialValues?.homework ?? '')
   const [souvenirImage,  setSouvenirImage]  = useState<File | null>(null)
+  /** The souvenir already on the lesson. Kept as-is unless a new file replaces it or it is removed. */
+  const [souvenirUrl,    setSouvenirUrl]    = useState<string | null>(initialValues?.souvenir_image ?? null)
   const [subjectDetails, setSubjectDetails] = useState<Record<string, string>>(initialValues?.subject_details ?? {})
   const [trial,          setTrial]          = useState<TrialEvaluation>(initialValues?.trial_evaluation ?? {})
 
@@ -215,13 +217,13 @@ export function LessonForm({ initialValues, prefill, onSuccess, onCancel }: Prop
     setPending(sendReport ? 'send' : 'save')
     try {
       // A freshly picked file must be uploaded first — the lesson stores the
-      // resulting public URL, not the File itself. Leave the field out when no
-      // new image was chosen so an edit keeps whatever souvenir it already had.
-      let souvenirUrl: string | undefined
-      if (souvenirImage) {
-        souvenirUrl = await uploadFile(souvenirImage, 'photos')
-      }
+      // resulting public URL, not the File itself. With no new file we send back
+      // whatever souvenir the lesson already had, or null once it was removed.
+      const souvenir = souvenirImage ? await uploadFile(souvenirImage, 'photos') : souvenirUrl
 
+      // Every report field goes out as null rather than undefined when empty, so
+      // correcting a mistake by clearing the box actually erases it — an omitted
+      // key would leave the wrong text on the lesson.
       const payload: StoreLessonPayload = {
         teacher_id:      Number(teacherId),
         student_id:      Number(studentId),
@@ -230,12 +232,12 @@ export function LessonForm({ initialValues, prefill, onSuccess, onCancel }: Prop
         status,
         subject_id:      subjectId      ? Number(subjectId)      : null,
         evaluation_id:   evaluationId   ? Number(evaluationId)   : null,
-        content:         content        || undefined,
-        notes:           notes          || undefined,
-        homework:        homework       || undefined,
-        subject_details: Object.keys(subjectDetails).length ? subjectDetails : undefined,
-        trial_evaluation: status === 'trial' && Object.keys(trial).length ? trial : undefined,
-        souvenir_image:  souvenirUrl,
+        content:         content        || null,
+        notes:           notes          || null,
+        homework:        homework       || null,
+        subject_details: Object.keys(subjectDetails).length ? subjectDetails : null,
+        trial_evaluation: status === 'trial' && Object.keys(trial).length ? trial : null,
+        souvenir_image:  souvenir,
         send_report:     sendReport,
       }
 
@@ -563,7 +565,7 @@ export function LessonForm({ initialValues, prefill, onSuccess, onCancel }: Prop
           <div
             className="rounded-2xl border-2 border-dashed p-8 text-center cursor-pointer transition-colors hover:border-[#0d9488] group"
             style={{
-              borderColor:  souvenirImage ? TEAL_600 : TEAL_100,
+              borderColor:  souvenirImage || souvenirUrl ? TEAL_600 : TEAL_100,
               background:   'rgba(255,255,255,0.7)',
             }}
             onClick={() => fileInputRef.current?.click()}
@@ -585,6 +587,20 @@ export function LessonForm({ initialValues, prefill, onSuccess, onCancel }: Prop
                   className="text-xs underline"
                   style={{ color: MUTED }}
                   onClick={e => { e.stopPropagation(); setSouvenirImage(null) }}
+                >
+                  {t('lessons.form.remove')}
+                </button>
+              </div>
+            ) : souvenirUrl ? (
+              /* The souvenir already sent with this lesson — click to replace, or remove it. */
+              <div className="flex flex-col items-center gap-2">
+                <img src={souvenirUrl} alt={t('lessons.form.souvenirImage')} className="rounded-xl max-h-32 object-cover" />
+                <p className="text-xs" style={{ color: MUTED }}>{t('lessons.form.clickOrDrag')}</p>
+                <button
+                  type="button"
+                  className="text-xs underline"
+                  style={{ color: MUTED }}
+                  onClick={e => { e.stopPropagation(); setSouvenirUrl(null) }}
                 >
                   {t('lessons.form.remove')}
                 </button>

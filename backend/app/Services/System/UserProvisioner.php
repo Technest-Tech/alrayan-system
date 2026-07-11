@@ -62,20 +62,31 @@ class UserProvisioner
     {
         $user->fill($this->only($data, self::SHARED_FIELDS));
 
-        if (array_key_exists('emails', $data)) {
-            $emails       = $this->normalizeContacts($data['emails'], 'email');
-            $primaryEmail = $this->primaryValue($emails, 'email');
+        // The form posts the primary contact as `email` / `whatsapp` and only the
+        // *additional* ones in `emails` / `phones`. Read the primary the same way
+        // create() does — taking it from the arrays alone means a single-contact
+        // edit looks like "no primary": the users row keeps its old address and
+        // the replace below wipes every contact row.
+        if (array_key_exists('emails', $data) || array_key_exists('email', $data)) {
+            $emails       = $this->normalizeContacts($data['emails'] ?? [], 'email');
+            $primaryEmail = ($data['email'] ?? null) ?: $this->primaryValue($emails, 'email');
             if ($primaryEmail) {
                 $user->email = $primaryEmail;
             }
-            $this->syncEmails($user->fresh() ?? $user, $emails, $primaryEmail, replace: true);
+            $this->syncEmails($user, $emails, $primaryEmail, replace: true);
         }
 
-        if (array_key_exists('phones', $data)) {
-            $phones       = $this->normalizeContacts($data['phones'], 'phone');
-            $primaryPhone = $this->primaryValue($phones, 'phone');
+        if (array_key_exists('phones', $data) || array_key_exists('whatsapp', $data)) {
+            $phones         = $this->normalizeContacts($data['phones'] ?? [], 'phone');
+            $primaryPhone   = ($data['whatsapp'] ?? null) ?: $this->primaryValue($phones, 'phone');
             $user->whatsapp = $primaryPhone;
             $this->syncPhones($user, $phones, $primaryPhone, replace: true);
+        }
+
+        // EnsureSystemActive still gates on the legacy is_active mirror, so a
+        // status change from the edit form has to move both (cf. syncStatus()).
+        if (array_key_exists('status', $data)) {
+            $user->is_active = $data['status'] === 'active';
         }
 
         // The 'hashed' cast hashes this once — never pre-hash it here.

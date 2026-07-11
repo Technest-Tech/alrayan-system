@@ -3,6 +3,7 @@
 namespace Tests\Feature\System;
 
 use App\Models\Course;
+use App\Models\System\Guardian;
 use App\Models\System\Lesson;
 use App\Models\System\Student;
 use App\Models\System\Teacher;
@@ -145,6 +146,128 @@ class UserDirectoryEndpointsTest extends SystemTestCase
             ->assertJsonPath('students', 2)
             ->assertJsonPath('teachers', 1)
             ->assertJsonPath('parents', 1);
+    }
+
+    /* ── Editing a user ── */
+
+    /**
+     * The edit dialog posts the primary contact as `email`/`whatsapp` and only the
+     * *extra* ones in `emails`/`phones` — which for a single-contact user means both
+     * arrays are empty. That must still land.
+     */
+    public function test_editing_a_users_email_and_phone_persists(): void
+    {
+        $user = User::factory()->staff('supervisor')->create([
+            'name'     => 'Old Name',
+            'email'    => 'old@example.com',
+            'whatsapp' => '+201111111111',
+        ]);
+
+        $this->asAdmin()
+            ->patchJson("/api/system/users/directory/{$user->id}", [
+                'role'     => 'supervisor',
+                'name'     => 'New Name',
+                'email'    => 'new@example.com',
+                'emails'   => [],
+                'whatsapp' => '+202222222222',
+                'phones'   => [],
+                'status'   => 'active',
+            ])
+            ->assertOk()
+            ->assertJsonPath('data.email', 'new@example.com')
+            ->assertJsonPath('data.whatsapp', '+202222222222');
+
+        $user->refresh();
+        $this->assertSame('New Name', $user->name);
+        $this->assertSame('new@example.com', $user->email);
+        $this->assertSame('+202222222222', $user->whatsapp);
+
+        // The primary must survive as a contact row, not be wiped by the replace.
+        $this->assertSame(['new@example.com'], $user->emails()->pluck('email')->all());
+        $this->assertSame(['+202222222222'], $user->phones()->pluck('phone')->all());
+    }
+
+    public function test_editing_keeps_extra_contacts_as_secondary(): void
+    {
+        $user = User::factory()->staff('supervisor')->create(['email' => 'old@example.com']);
+
+        $this->asAdmin()
+            ->patchJson("/api/system/users/directory/{$user->id}", [
+                'email'    => 'primary@example.com',
+                'emails'   => ['second@example.com'],
+                'whatsapp' => '+201111111111',
+                'phones'   => ['+202222222222'],
+            ])
+            ->assertOk();
+
+        $user->refresh();
+        $this->assertSame('primary@example.com', $user->email);
+        $this->assertTrue($user->emails()->where('email', 'primary@example.com')->where('is_primary', true)->exists());
+        $this->assertTrue($user->emails()->where('email', 'second@example.com')->where('is_primary', false)->exists());
+        $this->assertTrue($user->phones()->where('phone', '+201111111111')->where('is_primary', true)->exists());
+        $this->assertTrue($user->phones()->where('phone', '+202222222222')->where('is_primary', false)->exists());
+    }
+
+    /** sys_students carries its own contact copy — the WhatsApp report reads that one. */
+    public function test_editing_a_student_mirrors_contacts_onto_the_student_profile(): void
+    {
+        $student = Student::factory()->withUser()->create([
+            'whatsapp' => '+201111111111',
+            'email'    => 'old@example.com',
+        ]);
+
+        $this->asAdmin()
+            ->patchJson("/api/system/users/directory/{$student->user_id}", [
+                'name'     => 'Renamed Student',
+                'email'    => 'new@example.com',
+                'emails'   => [],
+                'whatsapp' => '+209999999999',
+                'phones'   => [],
+            ])
+            ->assertOk();
+
+        $student->refresh();
+        $this->assertSame('Renamed Student', $student->name);
+        $this->assertSame('new@example.com', $student->email);
+        $this->assertSame('+209999999999', $student->whatsapp);
+    }
+
+    /** sys_guardians mirrors the name/number too — but has no email column to write to. */
+    public function test_editing_a_parent_mirrors_contacts_onto_the_guardian_profile(): void
+    {
+        $user     = User::factory()->parent()->create();
+        $guardian = Guardian::create([
+            'user_id'  => $user->id,
+            'name'     => 'Old Parent',
+            'whatsapp' => '+201111111111',
+        ]);
+
+        $this->asAdmin()
+            ->patchJson("/api/system/users/directory/{$user->id}", [
+                'name'     => 'New Parent',
+                'email'    => 'parent@example.com',
+                'emails'   => [],
+                'whatsapp' => '+209999999999',
+                'phones'   => [],
+            ])
+            ->assertOk();
+
+        $guardian->refresh();
+        $this->assertSame('New Parent', $guardian->name);
+        $this->assertSame('+209999999999', $guardian->whatsapp);
+    }
+
+    public function test_editing_the_status_keeps_the_is_active_mirror_in_sync(): void
+    {
+        $user = User::factory()->staff('supervisor')->create(['status' => 'active', 'is_active' => true]);
+
+        $this->asAdmin()
+            ->patchJson("/api/system/users/directory/{$user->id}", ['status' => 'suspended'])
+            ->assertOk();
+
+        $user->refresh();
+        $this->assertSame('suspended', $user->status);
+        $this->assertFalse($user->is_active);
     }
 
     public function test_teacher_cannot_access_directory(): void

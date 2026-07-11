@@ -63,7 +63,7 @@ export function useLessons(filters: LessonFilters = {}) {
 export function useLesson(id: number | null) {
   return useQuery({
     queryKey: ['system', 'lessons', id],
-    queryFn: () => api<Lesson>(`/lessons/${id}`),
+    queryFn: () => api<{ data: Lesson }>(`/lessons/${id}`).then(r => r.data),
     enabled: id !== null,
   })
 }
