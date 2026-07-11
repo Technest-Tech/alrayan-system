@@ -232,6 +232,38 @@ class UserDirectoryEndpointsTest extends SystemTestCase
         $this->assertSame('+209999999999', $student->whatsapp);
     }
 
+    /**
+     * The form posts an empty tariff / session box as null, but those columns are
+     * NOT NULL with a 0 default — this used to blow the whole save up with an
+     * integrity-constraint violation (seen in production).
+     */
+    public function test_editing_a_student_with_empty_tariff_fields_does_not_fail(): void
+    {
+        $student = Student::factory()->withUser()->create([
+            'monthly_price_minor' => 5000,
+            'sessions_per_month'  => 8,
+        ]);
+
+        $this->asAdmin()
+            ->patchJson("/api/system/users/directory/{$student->user_id}", [
+                'name'                  => 'Kept Student',
+                'email'                 => 'kept@example.com',
+                'emails'                => [],
+                'whatsapp'              => '+201111111111',
+                'phones'                => [],
+                'monthly_price_minor'   => null,
+                'hourly_rate_minor'     => null,
+                'sessions_per_month'    => null,
+                'package_hours_default' => null,
+            ])
+            ->assertOk();
+
+        $student->refresh();
+        $this->assertSame(0, $student->monthly_price_minor);
+        $this->assertSame(0, $student->sessions_per_month);
+        $this->assertSame('Kept Student', $student->name);
+    }
+
     /** sys_guardians mirrors the name/number too — but has no email column to write to. */
     public function test_editing_a_parent_mirrors_contacts_onto_the_guardian_profile(): void
     {

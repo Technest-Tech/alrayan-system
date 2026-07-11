@@ -183,6 +183,16 @@ class UserDirectoryController extends Controller
                 'package_hours_default', 'hourly_rate_minor', 'source', 'guardian_id',
             ]));
             $fields += $this->identityMirror($user, $data, ['name', 'email', 'whatsapp']);
+
+            // An empty tariff / session box posts null, but these columns are NOT NULL
+            // with a 0 default — without this the whole save dies on a constraint
+            // violation. Cleared means zero, which is what the default already says.
+            foreach (['sessions_per_month', 'monthly_price_minor', 'hourly_rate_minor', 'package_hours_default'] as $counter) {
+                if (array_key_exists($counter, $fields) && $fields[$counter] === null) {
+                    $fields[$counter] = 0;
+                }
+            }
+
             if ($fields) {
                 $user->studentProfile->update($fields);
             }
