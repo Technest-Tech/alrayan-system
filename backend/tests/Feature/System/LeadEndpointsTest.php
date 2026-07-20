@@ -470,15 +470,77 @@ class LeadEndpointsTest extends SystemTestCase
             'hourly_rate_minor'     => 120000,
         ]);
 
-        // A starting package is seeded from the entered hours/tariff (package-based, no monthly price).
+        // The first payment is a down payment (Package #0) priced at one package — its own charge,
+        // not tied to lessons. No lesson package (#1) is created until real lessons are scheduled,
+        // so a brand-new student is never "pending" for lessons they haven't taken.
         $student = \App\Models\System\Student::where('lead_id', $lead->id)->firstOrFail();
         $this->assertDatabaseHas('sys_student_packages', [
             'student_id'     => $student->id,
-            'package_number' => 1,
-            'package_hours'  => 8,
+            'package_number' => 0,
+            'package_hours'  => 0,
             'tariff_at_time' => 120000,
             'status'         => 'pending',
         ]);
+        $this->assertDatabaseMissing('sys_student_packages', [
+            'student_id'     => $student->id,
+            'package_number' => 1,
+        ]);
+    }
+
+    public function test_quick_close_converts_with_only_hours_and_price(): void
+    {
+        // A lead that was already provisioned a student (as the store endpoint does) with its own
+        // teacher/timezone/type. The quick "Closed" flow sends only package_hours + price.
+        $teacher = Teacher::factory()->create();
+        $lead    = Lead::factory()->waitingForPayment()->create();
+        $student = \App\Models\System\Student::factory()->create([
+            'timezone'            => 'Asia/Riyadh',
+            'student_type'        => 'adult',
+            'assigned_teacher_id' => $teacher->id,
+            'lead_id'             => $lead->id,
+            'status'              => 'trial',
+        ]);
+        $lead->update(['student_id' => $student->id]);
+
+        $this->actingAs($this->adminUser(), 'sanctum')
+            ->postJson("/api/system/leads/{$lead->id}/convert", [
+                'package_hours'       => 6,
+                'package_price_minor' => 90000,
+            ])
+            ->assertOk()
+            ->assertJsonPath('message', 'Lead converted to student.');
+
+        // Lead is closed; the provisioned student is now active and appears in /users.
+        $this->assertDatabaseHas('sys_leads', ['id' => $lead->id, 'status' => 'closed']);
+        $student->refresh();
+        $this->assertSame('active', $student->status);
+        // Enrollment details we did NOT send are kept from the provisioned student.
+        $this->assertSame('Asia/Riyadh', $student->timezone, 'provisioned timezone preserved');
+        $this->assertSame('adult', $student->student_type);
+        $this->assertSame($teacher->id, $student->assigned_teacher_id, 'assigned teacher preserved');
+        // The two values we DID send seed the package defaults + down payment.
+        $this->assertSame(6, (int) $student->package_hours_default);
+        $this->assertSame(90000, (int) $student->hourly_rate_minor);
+        $this->assertDatabaseHas('sys_student_packages', [
+            'student_id'     => $student->id,
+            'package_number' => 0,
+            'tariff_at_time' => 90000,
+            'status'         => 'pending',
+        ]);
+        $this->assertDatabaseMissing('sys_student_packages', [
+            'student_id'     => $student->id,
+            'package_number' => 1,
+        ]);
+    }
+
+    public function test_convert_requires_package_hours_and_price(): void
+    {
+        $lead = Lead::factory()->waitingForPayment()->create();
+
+        $this->actingAs($this->adminUser(), 'sanctum')
+            ->postJson("/api/system/leads/{$lead->id}/convert", [])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors(['package_hours', 'package_price_minor']);
     }
 
     public function test_cannot_convert_already_closed_lead(): void

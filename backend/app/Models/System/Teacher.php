@@ -22,6 +22,7 @@ class Teacher extends Model
         'payment_account_details' => 'encrypted',
         'is_active'               => 'boolean',
         'accepts_new_students'    => 'boolean',
+        'exclude_from_analytics'  => 'boolean',
     ];
 
     public function user()          { return $this->belongsTo(User::class); }

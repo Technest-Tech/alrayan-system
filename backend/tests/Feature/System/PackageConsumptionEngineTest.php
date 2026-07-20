@@ -222,4 +222,42 @@ class PackageConsumptionEngineTest extends SystemTestCase
         $this->assertEqualsWithDelta(2.0, $pkg1->consumed_hours, 0.001);
         $this->assertDatabaseHas('sys_tasks', ['type' => 'package_complete']);
     }
+
+    /* ── Down payment (Package #0) ── */
+
+    public function test_down_payment_is_never_fed_lessons_and_never_deleted(): void
+    {
+        $s  = $this->student(2);
+        $dp = app(PackageService::class)->createDownPayment($s);
+        $this->assertSame(0, $dp->package_number, 'the down payment is package #0');
+
+        // A rebuild with no lessons at all still keeps the down payment.
+        $this->rebuild($s);
+        $this->assertNull($dp->fresh()->deleted_at, 'down payment survives an empty rebuild');
+
+        // Consuming lessons flow into lesson package #1 — never into #0.
+        $this->lesson($s, 'attended', 60, now()->setTime(9, 0));
+        $this->rebuild($s);
+
+        $dp->refresh();
+        $this->assertNull($dp->deleted_at, 'down payment is never auto-deleted');
+        $this->assertSame(0, LessonPackageAllocation::where('package_id', $dp->id)->count(), 'no lessons allocate to #0');
+        $this->assertEqualsWithDelta(0.0, $dp->consumed_hours, 0.001);
+        $this->assertSame('pending', $dp->status);
+
+        // The first lesson package is #1 (not #0) and it holds the lesson.
+        $pkg1 = StudentPackage::where('student_id', $s->id)->where('package_number', 1)->first();
+        $this->assertNotNull($pkg1, 'the first lesson package is #1, not #0');
+        $this->assertEqualsWithDelta(1.0, $pkg1->consumed_hours, 0.001);
+    }
+
+    public function test_create_down_payment_is_idempotent(): void
+    {
+        $s = $this->student(2);
+        $a = app(PackageService::class)->createDownPayment($s);
+        $b = app(PackageService::class)->createDownPayment($s);
+
+        $this->assertSame($a->id, $b->id, 're-creating returns the existing down payment');
+        $this->assertSame(1, StudentPackage::where('student_id', $s->id)->where('package_number', 0)->count());
+    }
 }

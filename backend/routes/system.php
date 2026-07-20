@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\System\AccountingController;
 use App\Http\Controllers\System\AcademyInfoController;
+use App\Http\Controllers\System\AnalyticsController;
 use App\Http\Controllers\System\SectionsController;
 use App\Http\Controllers\System\AuditLogController;
 use App\Http\Controllers\System\AuthController;
@@ -28,6 +29,13 @@ use App\Http\Controllers\System\PaymentController;
 use App\Http\Controllers\System\PaymobIntegrationController;
 use App\Http\Controllers\System\PaymobWebhookController;
 use App\Http\Controllers\System\PricingSettingsController;
+use App\Http\Controllers\System\QcAssignmentController;
+use App\Http\Controllers\System\QcCategoryController;
+use App\Http\Controllers\System\QcCategoryItemController;
+use App\Http\Controllers\System\QcConfigController;
+use App\Http\Controllers\System\QcDashboardController;
+use App\Http\Controllers\System\QcEvaluationController;
+use App\Http\Controllers\System\QcSpecialRuleController;
 use App\Http\Controllers\System\SavedViewController;
 use App\Http\Controllers\System\SchedulePatternController;
 use App\Http\Controllers\System\SessionController;
@@ -79,6 +87,14 @@ Route::prefix('system')->name('system.')->group(function () {
 
         // Dashboard
         Route::get('/dashboard', [DashboardController::class, 'show'])->name('dashboard');
+
+        // Analytics — teacher hours / rates / earnings (payroll-sensitive).
+        Route::middleware('system.can:payroll.view_any')->group(function () {
+            Route::get('/analytics',                          [AnalyticsController::class, 'index'])->name('analytics.index');
+            Route::get('/analytics/teachers/{teacher}',       [AnalyticsController::class, 'teacher'])->name('analytics.teacher');
+        });
+        Route::middleware('system.can:teachers.edit')
+            ->patch('/analytics/teachers/{teacher}/exclusion', [AnalyticsController::class, 'setExclusion'])->name('analytics.teacher.exclusion');
 
         // Generic file upload (photos / documents) for forms.
         Route::post('/uploads', [\App\Http\Controllers\System\UploadController::class, 'store'])->name('uploads.store');
@@ -398,6 +414,44 @@ Route::prefix('system')->name('system.')->group(function () {
             ->post('/tasks/{task}/notes', [TaskController::class, 'notesStore'])->name('tasks.notes.store');
         Route::middleware('system.can:tasks.delete')
             ->delete('/tasks/{task}', [TaskController::class, 'destroy'])->name('tasks.destroy');
+
+        // ── QC: Quality Control (lesson evaluations) ─────────────────────────────
+        Route::prefix('quality-control')->name('qc.')->group(function () {
+            // Dashboard + checklist template + evaluations (read)
+            Route::middleware('system.can:qc.view')->group(function () {
+                Route::get('/dashboard',              [QcDashboardController::class, 'stats'])->name('dashboard');
+                Route::get('/config',                 [QcConfigController::class, 'show'])->name('config');
+                Route::get('/evaluations',            [QcEvaluationController::class, 'index'])->name('evaluations.index');
+                Route::get('/evaluations/{qcEvaluation}', [QcEvaluationController::class, 'show'])->name('evaluations.show');
+            });
+            Route::middleware('system.can:qc.create')
+                ->post('/evaluations',                [QcEvaluationController::class, 'store'])->name('evaluations.store');
+            Route::middleware('system.can:qc.edit')
+                ->patch('/evaluations/{qcEvaluation}', [QcEvaluationController::class, 'update'])->name('evaluations.update');
+            Route::middleware('system.can:qc.delete')
+                ->delete('/evaluations/{qcEvaluation}', [QcEvaluationController::class, 'destroy'])->name('evaluations.destroy');
+
+            // Settings — categories, sub-items, special rules, assignments
+            Route::middleware('system.can:qc.manage_settings')->group(function () {
+                Route::get('/categories',                             [QcCategoryController::class, 'index'])->name('categories.index');
+                Route::post('/categories',                            [QcCategoryController::class, 'store'])->name('categories.store');
+                Route::patch('/categories/{qcCategory}',              [QcCategoryController::class, 'update'])->name('categories.update');
+                Route::delete('/categories/{qcCategory}',             [QcCategoryController::class, 'destroy'])->name('categories.destroy');
+
+                Route::post('/categories/{qcCategory}/items',         [QcCategoryItemController::class, 'store'])->name('category-items.store');
+                Route::patch('/category-items/{qcCategoryItem}',      [QcCategoryItemController::class, 'update'])->name('category-items.update');
+                Route::delete('/category-items/{qcCategoryItem}',     [QcCategoryItemController::class, 'destroy'])->name('category-items.destroy');
+
+                Route::get('/special-rules',                          [QcSpecialRuleController::class, 'index'])->name('special-rules.index');
+                Route::post('/special-rules',                         [QcSpecialRuleController::class, 'store'])->name('special-rules.store');
+                Route::patch('/special-rules/{qcSpecialRule}',        [QcSpecialRuleController::class, 'update'])->name('special-rules.update');
+                Route::delete('/special-rules/{qcSpecialRule}',       [QcSpecialRuleController::class, 'destroy'])->name('special-rules.destroy');
+
+                Route::get('/assignments',                            [QcAssignmentController::class, 'index'])->name('assignments.index');
+                Route::post('/assignments',                           [QcAssignmentController::class, 'store'])->name('assignments.store');
+                Route::delete('/assignments/{qcAssignment}',          [QcAssignmentController::class, 'destroy'])->name('assignments.destroy');
+            });
+        });
 
         // WhatsApp groups
         Route::middleware('system.can:whatsapp.view')->group(function () {

@@ -322,11 +322,13 @@ export default function PaymentsPage() {
                   {/* Current package progress */}
                   <td className="px-4 py-3">
                     <span className="text-sm font-medium" style={{ color: NAVY }}>
-                      #{row.package_number}
+                      {row.package_number === 0 ? t('users.downPayment') : `#${row.package_number}`}
                     </span>
-                    <span className="text-xs ml-1.5" style={{ color: MUTED }}>
-                      {row.consumed_hours.toFixed(1)}/{row.package_hours}h
-                    </span>
+                    {row.package_number !== 0 && (
+                      <span className="text-xs ml-1.5" style={{ color: MUTED }}>
+                        {row.consumed_hours.toFixed(1)}/{row.package_hours}h
+                      </span>
+                    )}
                     {row.needs_reconfirmation && (
                       <span className="ml-1.5 px-1.5 py-0.5 rounded text-xs font-medium" style={{ background: '#FFF7ED', color: '#C2410C' }}>
                         ⚠ {t('payments.reconfirm')}

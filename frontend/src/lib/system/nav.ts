@@ -1,8 +1,8 @@
 import {
   LayoutDashboard, UsersRound, CalendarDays,
-  Award, DollarSign, Wallet, BarChart3,
+  Award, DollarSign, Wallet, BarChart3, TrendingUp,
   Bell, Settings, ScrollText, UserCheck, CreditCard, ListChecks,
-  GraduationCap, MessageSquare,
+  GraduationCap, MessageSquare, ClipboardCheck,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 
@@ -27,6 +27,7 @@ export const SYSTEM_NAV: readonly NavSection[] = [
       { label: 'nav.leads',        href: '/leads',              icon: UserCheck,       perm: 'leads.view' },
       { label: 'nav.tasks',        href: '/tasks',              icon: ListChecks,      perm: 'tasks.view' },
       { label: 'nav.calendar',     href: '/calendar',           icon: CalendarDays,    perm: 'lessons.view' },
+      { label: 'nav.quality',      href: '/quality',            icon: ClipboardCheck,  perm: 'qc.view' },
       { label: 'nav.certificates', href: '/certificates',       icon: Award,           perm: 'certificates.view' },
     ],
   },
@@ -37,6 +38,7 @@ export const SYSTEM_NAV: readonly NavSection[] = [
       { label: 'nav.billing',    href: '/billing/invoices',   icon: DollarSign, perm: 'invoices.view' },
       { label: 'nav.payroll',    href: '/payroll',            icon: Wallet,     perm: 'payroll.view' },
       { label: 'nav.accounting', href: '/accounting/revenue', icon: BarChart3,  perm: 'accounting.view' },
+      { label: 'nav.analytics',  href: '/analytics',          icon: TrendingUp, perm: 'payroll.view_any' },
     ],
   },
   {

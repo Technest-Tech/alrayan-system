@@ -47,7 +47,8 @@ export default function UserProfilePage({ params }: { params: Promise<{ id: stri
 
   const stats = useMemo(() => {
     const now = new Date()
-    const current = [...packages].sort((a, b) => b.package_number - a.package_number)[0]
+    // The down payment (#0) is not a lesson package, so it never counts as the "current" package.
+    const current = [...packages].filter((p) => p.package_number > 0).sort((a, b) => b.package_number - a.package_number)[0]
     const usedH = current?.consumed_hours ?? 0
     const totalH = current?.package_hours ?? 0
     const upcoming = lessons
@@ -232,10 +233,11 @@ export default function UserProfilePage({ params }: { params: Promise<{ id: stri
                 <ul className="space-y-2">
                   {[...packages].sort((a, b) => b.package_number - a.package_number).map((p) => {
                     const isCurrent = p.package_number === stats.current?.package_number
-                    const price = p.package_hours * (p.tariff_at_time ?? 0)
+                    // The down payment (#0) carries its whole amount in tariff_at_time (0 hours).
+                    const price = p.package_number === 0 ? (p.tariff_at_time ?? 0) : p.package_hours * (p.tariff_at_time ?? 0)
                     return (
                       <li key={p.id} className="flex items-center justify-between rounded-lg px-3 py-2 text-sm" style={isCurrent ? { background: 'rgb(254 243 199)', border: '1px solid rgb(234 179 8 / 0.4)' } : { background: '#fff' }}>
-                        <span className="font-medium" style={{ color: NAVY }}>{`${t('users.packageLabel')}${p.package_number}`}</span>
+                        <span className="font-medium" style={{ color: NAVY }}>{p.package_number === 0 ? t('users.downPayment') : `${t('users.packageLabel')}${p.package_number}`}</span>
                         <span className="font-bold tabular-nums" style={{ color: isCurrent ? 'rgb(161 98 7)' : TEAL }}>{money(price, p.currency ?? currency)}</span>
                       </li>
                     )

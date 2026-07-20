@@ -18,6 +18,7 @@ class DefaultRoles
         'lessons.view', 'lessons.create', 'lessons.edit', 'lessons.delete',
         'attendance.view', 'attendance.edit',
         'reports.view',
+        'qc.view', 'qc.create', 'qc.edit',
         'invoices.view', 'invoices.create', 'invoices.record_payment',
         'notifications.view',
         'whatsapp.view',
@@ -27,6 +28,7 @@ class DefaultRoles
 
     public const QUALITY_DEFAULTS = [
         'quality.view', 'quality.view_any', 'quality.review', 'quality.view_own',
+        'qc.view', 'qc.create', 'qc.edit', 'qc.delete', 'qc.manage_settings',
         'teachers.view',
         'reports.view', 'reports.view_any',
         'sessions.view',

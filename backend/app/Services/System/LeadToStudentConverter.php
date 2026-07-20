@@ -45,7 +45,18 @@ class LeadToStudentConverter
                 $studentData['package_price_minor'],
             );
 
-            $studentData['guardian_id'] = $guardianId;
+            // The quick "Closed" flow only sends package_hours + price. Any enrollment key that
+            // wasn't supplied (or came through null) must NOT overwrite the value the student was
+            // already provisioned with at lead-creation time — so drop those keys before updating.
+            foreach (['course_id', 'assigned_teacher_id', 'timezone', 'student_type', 'session_duration_min', 'currency'] as $optional) {
+                if (array_key_exists($optional, $studentData) && $studentData[$optional] === null) {
+                    unset($studentData[$optional]);
+                }
+            }
+            // Only (re)set guardianship when student_type was explicitly supplied (full form).
+            if (array_key_exists('student_type', $studentData)) {
+                $studentData['guardian_id'] = $guardianId;
+            }
             // Closing finalises payment → the student becomes active.
             $studentData['status'] = 'active';
 
@@ -65,29 +76,39 @@ class LeadToStudentConverter
                     'status'   => $studentData['status'] ?? 'active',
                 ], 'student');
 
+                // Defaults cover the quick-close path where enrollment fields weren't collected.
                 $student = Student::create(array_merge([
-                    'user_id'  => $user->id,
-                    'name'     => $lead->name,
-                    'email'    => $email,
-                    'whatsapp' => $lead->whatsapp,
-                    'country'  => $lead->country,
-                    'lead_id'  => $lead->id,
+                    'user_id'              => $user->id,
+                    'name'                 => $lead->name,
+                    'email'                => $email,
+                    'whatsapp'             => $lead->whatsapp,
+                    'country'              => $lead->country,
+                    'lead_id'              => $lead->id,
+                    'timezone'             => 'UTC',
+                    'student_type'         => 'adult',
+                    'session_duration_min' => 30,
                 ], $studentData));
             }
 
-            // Capture the entered hours/tariff on the student's first package. If a package was
-            // already created lazily (e.g. by a trial lesson), update it in place; otherwise seed it.
-            $firstPackage = $student->packages()->orderBy('package_number')->first();
-            if ($firstPackage) {
-                $firstPackage->update([
+            // The student's first payment is a down payment (Package #0) — its own charge priced at
+            // one package, NOT tied to any lessons. Lesson packages (#1+) are only created once real
+            // lessons are scheduled/consumed, so a brand-new student is never "pending" for lessons
+            // they haven't taken. If a lesson package already exists (e.g. a trial lesson created one
+            // lazily), capture the entered hours/tariff on it and re-shift; otherwise leave it.
+            $lessonPackage = $student->packages()
+                ->where('package_number', '>', PackageService::DOWN_PAYMENT_NUMBER)
+                ->orderBy('package_number')
+                ->first();
+            if ($lessonPackage) {
+                $lessonPackage->update([
                     'package_hours'  => $packageHours,
                     'tariff_at_time' => $student->hourly_rate_minor,
                     'currency'       => $student->currency,
                 ]);
                 $this->packages->rebuild($student);
-            } else {
-                $this->packages->createPackage($student, 1, $packageHours);
             }
+
+            $this->packages->createDownPayment($student);
 
             $lead->update([
                 'status'                  => 'closed',

@@ -9,6 +9,7 @@ export type Permission =
   | 'attendance.view' | 'attendance.edit'
   | 'reports.view' | 'reports.edit'
   | 'quality.view' | 'quality.review'
+  | 'qc.view' | 'qc.create' | 'qc.edit' | 'qc.delete' | 'qc.manage_settings'
   | 'invoices.view' | 'invoices.create' | 'invoices.edit' | 'invoices.void' | 'invoices.record_payment'
   | 'wallet.view' | 'wallet.adjust'
   | 'payroll.view' | 'payroll.approve' | 'payroll.mark_transferred'
@@ -30,6 +31,7 @@ export const PERMISSION_GROUPS: Record<string, string[]> = {
   attendance:    ['view', 'edit'],
   reports:       ['view', 'edit'],
   quality:       ['view', 'review'],
+  qc:            ['view', 'create', 'edit', 'delete', 'manage_settings'],
   invoices:      ['view', 'create', 'edit', 'void', 'record_payment'],
   wallet:        ['view', 'adjust'],
   payroll:       ['view', 'approve', 'mark_transferred'],

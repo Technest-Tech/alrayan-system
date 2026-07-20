@@ -92,17 +92,39 @@ export interface Racer {
   rank: number
 }
 
+export type RaceRange = 'month' | 'all' | 'custom'
+
+export interface RaceFilter {
+  range: RaceRange
+  month?: string   // YYYY-MM (range='month')
+  from?: string    // YYYY-MM-DD (range='custom')
+  to?: string      // YYYY-MM-DD (range='custom')
+}
+
 export interface TeacherRaceData {
-  month: string
+  range: RaceRange
+  month: string | null
+  from: string | null
+  to: string | null
   leader_hours: number
   racers: Racer[]
 }
 
-/** Teacher Race leaderboard (all active teachers by hours this month). */
-export function useTeacherRace(month?: string) {
+/** Teacher Race leaderboard — all active teachers ranked by hours in the selected window. */
+export function useTeacherRace(filter: RaceFilter) {
+  const qs = new URLSearchParams()
+  if (filter.range === 'all') qs.set('range', 'all')
+  else if (filter.range === 'custom' && filter.from && filter.to) {
+    qs.set('range', 'custom')
+    qs.set('from', filter.from)
+    qs.set('to', filter.to)
+  } else if (filter.month) qs.set('month', filter.month)
+  const q = qs.toString()
   return useQuery({
-    queryKey: ['system', 'teachers', 'race', month ?? 'current'],
-    queryFn: () => api<TeacherRaceData>(`/teachers/race${month ? `?month=${month}` : ''}`),
+    queryKey: ['system', 'teachers', 'race', filter.range, filter.month ?? '', filter.from ?? '', filter.to ?? ''],
+    queryFn: () => api<TeacherRaceData>(`/teachers/race${q ? `?${q}` : ''}`),
+    enabled: filter.range !== 'custom' || (!!filter.from && !!filter.to),
+    placeholderData: (previousData) => previousData,
   })
 }
 

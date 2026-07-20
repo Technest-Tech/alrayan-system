@@ -110,20 +110,47 @@ class TeacherReportController extends Controller
 
     /**
      * Teacher Race leaderboard — all active teachers ranked by hours taught in the selected
-     * month (?month=YYYY-MM, defaults to current). Drives the gamified race track on the profile.
+     * window. Drives the gamified race track on the dashboard/profile. Accepts:
+     *   ?range=all                        → every attended session, all-time
+     *   ?from=YYYY-MM-DD&to=YYYY-MM-DD    → custom date range (inclusive)
+     *   ?month=YYYY-MM (default)          → a single calendar month (current if omitted)
      */
     public function race(): \Illuminate\Http\JsonResponse
     {
-        $now = Carbon::now();
-        $month = request('month');
-        $monthStart = $month && preg_match('/^\d{4}-\d{2}$/', $month)
-            ? Carbon::createFromFormat('Y-m-d', $month . '-01')->startOfMonth()
-            : $now->copy()->startOfMonth();
-        $monthEnd = $monthStart->copy()->endOfMonth();
-        if ($monthEnd->greaterThan($now)) $monthEnd = $now->copy();
+        $data = request()->validate([
+            'range' => ['nullable', 'in:month,all,custom'],
+            'month' => ['nullable', 'date_format:Y-m'],
+            'from'  => ['nullable', 'required_if:range,custom', 'required_with:to', 'date_format:Y-m-d'],
+            'to'    => ['nullable', 'required_if:range,custom', 'required_with:from', 'date_format:Y-m-d', 'after_or_equal:from'],
+        ]);
+
+        $now   = Carbon::now();
+        $range = 'month';
+        [$windowStart, $windowEnd, $month] = [null, null, null];
+
+        $from = $data['from'] ?? null;
+        $to   = $data['to'] ?? null;
+
+        if (($data['range'] ?? null) === 'all') {
+            $range = 'all';                                   // no date bounds
+        } elseif (($data['range'] ?? null) === 'custom' || ($from && $to)) {
+            $range       = 'custom';
+            $windowStart = Carbon::createFromFormat('Y-m-d', $from)->startOfDay();
+            $windowEnd   = Carbon::createFromFormat('Y-m-d', $to)->endOfDay();
+        } else {
+            $m = $data['month'] ?? null;
+            $windowStart = $m
+                ? Carbon::createFromFormat('Y-m-d', $m . '-01')->startOfMonth()
+                : $now->copy()->startOfMonth();
+            $windowEnd = $windowStart->copy()->endOfMonth();
+            $month     = $windowStart->format('Y-m');
+            if ($windowEnd->greaterThan($now)) {
+                $windowEnd = $now->copy();
+            }
+        }
 
         $minsByTeacher = Session::where('status', 'attended')
-            ->whereBetween('scheduled_start', [$monthStart, $monthEnd])
+            ->when($windowStart && $windowEnd, fn($q) => $q->whereBetween('scheduled_start', [$windowStart, $windowEnd]))
             ->selectRaw('teacher_id, COALESCE(SUM(duration_min), 0) as mins')
             ->groupBy('teacher_id')
             ->pluck('mins', 'teacher_id');
@@ -137,12 +164,18 @@ class TeacherReportController extends Controller
                 'photo_url'  => optional($t->user)->photo_url,
                 'hours'      => round((int) ($minsByTeacher[$t->id] ?? 0) / 60, 1),
             ])
-            ->sortByDesc('hours')
+            ->sortBy([
+                ['hours', 'desc'],
+                ['name', 'asc'],
+            ])
             ->values()
             ->map(fn(array $r, int $i) => [...$r, 'rank' => $i + 1]);
 
         return response()->json([
-            'month'        => $monthStart->format('Y-m'),
+            'range'        => $range,
+            'month'        => $month,
+            'from'         => $windowStart?->format('Y-m-d'),
+            'to'           => $windowEnd?->format('Y-m-d'),
             'leader_hours' => (float) ($racers->max('hours') ?? 0),
             'racers'       => $racers->values(),
         ]);

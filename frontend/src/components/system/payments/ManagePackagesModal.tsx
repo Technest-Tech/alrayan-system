@@ -142,7 +142,7 @@ function PackageRow({ pkg, onSaved }: { pkg: PackageRow; onSaved: () => void }) 
       <tr style={{ background: TEAL_50 }}>
         {/* Package # */}
         <td className="px-3 py-2.5 text-sm font-semibold" style={{ color: NAVY }}>
-          #{pkg.package_number}
+          {pkg.package_number === 0 ? t('users.downPayment') : `#${pkg.package_number}`}
         </td>
         {/* Hours */}
         <td className="px-3 py-2.5">
@@ -220,7 +220,7 @@ function PackageRow({ pkg, onSaved }: { pkg: PackageRow; onSaved: () => void }) 
 
   return (
     <tr className="hover:bg-black/[0.015] transition-colors" style={{ borderTop: `1px solid ${BORDER}` }}>
-      <td className="px-3 py-3 text-sm font-semibold" style={{ color: NAVY }}>#{pkg.package_number}</td>
+      <td className="px-3 py-3 text-sm font-semibold" style={{ color: NAVY }}>{pkg.package_number === 0 ? t('users.downPayment') : `#${pkg.package_number}`}</td>
       <td className="px-3 py-3 text-sm" style={{ color: NAVY }}>{pkg.package_hours}h</td>
       <td className="px-3 py-3 text-sm" style={{ color: NAVY }}>{fmt(pkg.tariff_at_time, pkg.currency)}</td>
       <td className="px-3 py-3"><StatusPill status={pkg.status} /></td>

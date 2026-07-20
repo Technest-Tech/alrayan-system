@@ -19,6 +19,7 @@ class PermissionRegistry
         'reports'       => ['view', 'view_any', 'submit', 'edit_own', 'edit_any', 'delete_any'],
         'makeups'       => ['view', 'request', 'approve'],
         'quality'       => ['view', 'view_any', 'review', 'view_own'],
+        'qc'            => ['view', 'create', 'edit', 'delete', 'manage_settings'],
         'invoices'      => ['view', 'create', 'create_advance', 'edit', 'void', 'record_payment', 'resend_link', 'download_pdf', 'export'],
         'wallet'        => ['view', 'credit', 'debit', 'adjust'],
         'payments'      => ['view', 'refund'],

@@ -129,27 +129,6 @@ const REJECTION_OPTIONS: { value: string; key: string }[] = [
   { value: 'other',          key: 'leads.lostReasonOther' },
 ]
 
-const SESSION_DURATION_OPTIONS: { value: string; key: string }[] = [
-  { value: '30', key: 'leads.duration30' },
-  { value: '45', key: 'leads.duration45' },
-  { value: '60', key: 'leads.duration60' },
-]
-
-const TIMEZONE_OPTIONS: { value: string; label: string }[] = [
-  'Africa/Algiers', 'Africa/Cairo', 'Africa/Casablanca', 'Africa/Khartoum',
-  'Africa/Lagos', 'Africa/Nairobi', 'Africa/Tripoli', 'Africa/Tunis',
-  'America/Chicago', 'America/Denver', 'America/Los_Angeles', 'America/New_York',
-  'America/Sao_Paulo', 'America/Toronto', 'America/Vancouver',
-  'Asia/Amman', 'Asia/Baghdad', 'Asia/Bahrain', 'Asia/Beirut',
-  'Asia/Damascus', 'Asia/Dhaka', 'Asia/Dubai', 'Asia/Istanbul',
-  'Asia/Jakarta', 'Asia/Jerusalem', 'Asia/Karachi', 'Asia/Kolkata',
-  'Asia/Kuala_Lumpur', 'Asia/Kuwait', 'Asia/Muscat', 'Asia/Qatar',
-  'Asia/Riyadh', 'Asia/Singapore',
-  'Australia/Melbourne', 'Australia/Sydney',
-  'Europe/Amsterdam', 'Europe/Berlin', 'Europe/London',
-  'Europe/Madrid', 'Europe/Paris', 'Europe/Rome', 'Europe/Stockholm',
-].map(tz => ({ value: tz, label: tz.replace('_', ' ') }))
-
 const COUNTRIES = [
   { code: 'AE', name: 'UAE' }, { code: 'AF', name: 'Afghanistan' },
   { code: 'AL', name: 'Albania' }, { code: 'AU', name: 'Australia' },
@@ -628,7 +607,6 @@ export function AddLeadDialog({ open, onOpenChange, lead, initialStatus }: AddLe
   const genderOptions     = loc(GENDER_OPTIONS)
   const paymentOptions    = loc(PAYMENT_OPTIONS)
   const rejectionOptions  = loc(REJECTION_OPTIONS)
-  const durationOptions   = loc(SESSION_DURATION_OPTIONS)
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -671,17 +649,14 @@ export function AddLeadDialog({ open, onOpenChange, lead, initialStatus }: AddLe
         await update.mutateAsync(updatePayload)
 
         if (isClosing) {
+          // Quick close: only hours + price are collected. Course/currency ride along from the
+          // lead when known; teacher, timezone, student type and duration are kept from the
+          // student the lead already provisioned (the converter leaves omitted keys untouched).
           await convert.mutateAsync({
-            course_id:            Number(enrollment.course_id),
-            assigned_teacher_id:  Number(enrollment.assigned_teacher_id),
-            timezone:             enrollment.timezone,
-            student_type:         enrollment.student_type,
-            session_duration_min: Number(enrollment.session_duration_min),
-            package_hours:        Number(enrollment.package_hours),
-            package_price_minor:  Math.round(parseFloat(enrollment.package_price || '0') * 100),
-            currency:             enrollment.currency,
-            guardian_name:        enrollment.guardian_name || undefined,
-            guardian_whatsapp:    enrollment.guardian_whatsapp || undefined,
+            package_hours:       Number(enrollment.package_hours),
+            package_price_minor: Math.round(parseFloat(enrollment.package_price || '0') * 100),
+            course_id:           enrollment.course_id ? Number(enrollment.course_id) : undefined,
+            currency:            enrollment.currency || undefined,
           })
           toast.success(t('leads.toastConverted'))
         } else {
@@ -881,43 +856,16 @@ export function AddLeadDialog({ open, onOpenChange, lead, initialStatus }: AddLe
                 </div>
               </SectionCard>
 
-              {/* ─── 7: Student Enrollment (only when closing a non-closed lead) ─── */}
+              {/* ─── 7: Quick close → convert (only Package Hours + Price; the rest is derived
+                     from the student the lead already provisioned) ─── */}
               {isClosing && (
                 <SectionCard title={t('leads.sectionEnrollmentDetails')}>
                   <div className="space-y-3">
                     <EnrollmentBanner />
 
-                    <div className="grid grid-cols-2 gap-3">
-                      <Field label={t('common.course')} required>
-                        <SearchSelect value={enrollment.course_id} onChange={v => setEnr('course_id', v)} options={courseOptions} placeholder={t('leads.selectCourse')} clearable={false} />
-                      </Field>
-                      <Field label={t('leads.fieldAssignedTeacher')} required>
-                        <SearchSelect value={enrollment.assigned_teacher_id} onChange={v => setEnr('assigned_teacher_id', v)} options={teacherOptions} placeholder={t('leads.selectTeacher')} clearable={false} />
-                      </Field>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-3">
-                      <Field label={t('common.timezone')} required>
-                        <SearchSelect value={enrollment.timezone} onChange={v => setEnr('timezone', v)} options={TIMEZONE_OPTIONS} placeholder={t('leads.selectTimezone')} clearable={false} />
-                      </Field>
-                      <Field label={t('leads.fieldStudentType')} required>
-                        <div className="flex items-center gap-6 px-1 py-2">
-                          {(['adult', 'child'] as const).map(st => (
-                            <label key={st} className="flex items-center gap-2 cursor-pointer">
-                              <input type="radio" name="student_type" value={st} checked={enrollment.student_type === st} onChange={() => setEnr('student_type', st)} className="accent-[#0d9488]" />
-                              <span className="text-sm" style={{ color: NAVY }}>{st === 'adult' ? t('leads.studentTypeAdult') : t('leads.studentTypeChild')}</span>
-                            </label>
-                          ))}
-                        </div>
-                      </Field>
-                    </div>
-
-                    <div className="grid grid-cols-4 gap-3">
+                    <div className="grid grid-cols-3 gap-3">
                       <Field label={t('leads.fieldPackageHours')} required>
                         <input type="number" min={1} required={isClosing} className={inp} style={inpStyle} placeholder="8" value={enrollment.package_hours} onChange={e => setEnr('package_hours', e.target.value)} />
-                      </Field>
-                      <Field label={t('common.duration')} required>
-                        <SearchSelect value={enrollment.session_duration_min} onChange={v => setEnr('session_duration_min', v)} options={durationOptions} clearable={false} />
                       </Field>
                       <Field label={t('leads.fieldPackagePrice')} required>
                         <input type="number" min={0} step="0.01" required={isClosing} className={inp} style={inpStyle} placeholder="120" value={enrollment.package_price} onChange={e => setEnr('package_price', e.target.value)} />
@@ -926,17 +874,6 @@ export function AddLeadDialog({ open, onOpenChange, lead, initialStatus }: AddLe
                         <SearchSelect value={enrollment.currency} onChange={v => setEnr('currency', v)} options={CURRENCY_OPTIONS} clearable={false} />
                       </Field>
                     </div>
-
-                    {enrollment.student_type === 'child' && (
-                      <div className="grid grid-cols-2 gap-3">
-                        <Field label={t('leads.fieldGuardianName')} required>
-                          <input required={isClosing && enrollment.student_type === 'child'} className={inp} style={inpStyle} placeholder={t('leads.guardianNamePlaceholder')} value={enrollment.guardian_name} onChange={e => setEnr('guardian_name', e.target.value)} />
-                        </Field>
-                        <Field label={t('leads.fieldGuardianWhatsApp')} required>
-                          <input required={isClosing && enrollment.student_type === 'child'} className={inp} style={inpStyle} placeholder="+1 234 567 890" value={enrollment.guardian_whatsapp} onChange={e => setEnr('guardian_whatsapp', e.target.value)} />
-                        </Field>
-                      </div>
-                    )}
                   </div>
                 </SectionCard>
               )}

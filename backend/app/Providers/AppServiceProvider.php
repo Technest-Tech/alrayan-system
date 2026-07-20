@@ -40,6 +40,7 @@ use App\Models\System\MakeupRequest;
 use App\Models\System\MessageTemplate;
 use App\Models\System\Payroll;
 use App\Models\System\Payment;
+use App\Models\System\QcEvaluation;
 use App\Models\System\QualityReview;
 use App\Models\System\SchedulePattern;
 use App\Models\System\Session;
@@ -64,6 +65,7 @@ use App\Policies\System\MakeupRequestPolicy;
 use App\Policies\System\MessageTemplatePolicy;
 use App\Policies\System\PaymentPolicy;
 use App\Policies\System\PayrollPolicy;
+use App\Policies\System\QcEvaluationPolicy;
 use App\Policies\System\QualityReviewPolicy;
 use App\Policies\System\SchedulePatternPolicy;
 use App\Policies\System\SessionPolicy;
@@ -192,6 +194,9 @@ class AppServiceProvider extends ServiceProvider
 
         // Policies — SYS-10 (Tasks)
         Gate::policy(Task::class, TaskPolicy::class);
+
+        // Policies — QC (Quality Control / lesson evaluations)
+        Gate::policy(QcEvaluation::class, QcEvaluationPolicy::class);
 
         // Observers — SYS-04
         Session::observe(SessionObserver::class);
