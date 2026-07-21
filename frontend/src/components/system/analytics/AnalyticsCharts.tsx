@@ -117,7 +117,7 @@ export function HoursAcrossMonths({
               contentStyle={{ fontSize: 12, borderRadius: 10, border: '1px solid rgb(var(--border-default))' }}
               formatter={(v) => [`${Number(v).toFixed(2)}h`, t('analytics.hours')]}
             />
-            <Area type="monotone" dataKey="hours" stroke={HOURS_CLR} strokeWidth={2} fill="url(#grad-hours)" dot={false} />
+            <Area type="monotone" dataKey="hours" stroke={HOURS_CLR} strokeWidth={2} fill="url(#grad-hours)" dot={false} isAnimationActive={false} />
           </AreaChart>
         </ResponsiveContainer>
       )}
@@ -145,7 +145,7 @@ export function TopTeachersChart({ data, loading }: { data: TopTeacher[]; loadin
             <Tooltip cursor={{ fill: 'rgb(var(--surface-card-2))' }}
               contentStyle={{ fontSize: 12, borderRadius: 10, border: '1px solid rgb(var(--border-default))' }}
               formatter={(v) => [`${Number(v).toFixed(2)}h`, t('analytics.hours')]} />
-            <Bar dataKey="hours" fill={GOLD} radius={[0, 6, 6, 0]} barSize={16} />
+            <Bar dataKey="hours" fill={GOLD} radius={[0, 6, 6, 0]} barSize={16} isAnimationActive={false} />
           </BarChart>
         </ResponsiveContainer>
       )}
@@ -182,7 +182,7 @@ export function BestDaysChart({ data, totalLessons, loading }: { data: BestDay[]
             <Tooltip cursor={{ fill: 'rgb(var(--surface-card-2))' }}
               contentStyle={{ fontSize: 12, borderRadius: 10, border: '1px solid rgb(var(--border-default))' }}
               formatter={(v) => [`${v}`, t('analytics.lessons')]} />
-            <Bar dataKey="lessons" radius={[6, 6, 0, 0]} barSize={30}>
+            <Bar dataKey="lessons" radius={[6, 6, 0, 0]} barSize={30} isAnimationActive={false}>
               {rows.map((_, i) => <Cell key={i} fill={i === 0 ? GREEN : '#8FBFAE'} />)}
             </Bar>
           </BarChart>

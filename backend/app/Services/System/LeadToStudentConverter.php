@@ -90,13 +90,13 @@ class LeadToStudentConverter
                 ], $studentData));
             }
 
-            // The student's first payment is a down payment (Package #0) — its own charge priced at
-            // one package, NOT tied to any lessons. Lesson packages (#1+) are only created once real
-            // lessons are scheduled/consumed, so a brand-new student is never "pending" for lessons
-            // they haven't taken. If a lesson package already exists (e.g. a trial lesson created one
-            // lazily), capture the entered hours/tariff on it and re-shift; otherwise leave it.
+            // The student's first payment is the down payment — and it IS lesson Package #1: a real
+            // package carrying the enrolled hours that follows the pending → paid lifecycle, and whose
+            // lessons count as paid once it is paid. If a lesson package already exists (e.g. a trial
+            // lesson created one lazily), capture the entered hours/tariff on it and re-shift;
+            // otherwise create Package #1 upfront so the down payment can be collected before lessons.
             $lessonPackage = $student->packages()
-                ->where('package_number', '>', PackageService::DOWN_PAYMENT_NUMBER)
+                ->where('package_hours', '>', 0)
                 ->orderBy('package_number')
                 ->first();
             if ($lessonPackage) {
@@ -106,9 +106,9 @@ class LeadToStudentConverter
                     'currency'       => $student->currency,
                 ]);
                 $this->packages->rebuild($student);
+            } else {
+                $this->packages->ensureFirstPackage($student, $packageHours);
             }
-
-            $this->packages->createDownPayment($student);
 
             $lead->update([
                 'status'                  => 'closed',

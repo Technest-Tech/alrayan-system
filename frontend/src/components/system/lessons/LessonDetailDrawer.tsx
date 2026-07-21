@@ -1,10 +1,10 @@
 'use client'
 import { useState } from 'react'
-import { X, Pencil, Trash2, User, GraduationCap, Clock, CalendarDays, BookOpen, ChevronRight } from 'lucide-react'
-import type { Lesson } from '@/types/system/lesson'
-import { useDeleteLesson, useLesson } from '@/hooks/system/useLessons'
+import { X, Pencil, Trash2, User, GraduationCap, Clock, CalendarDays, BookOpen, ChevronRight, Loader2 } from 'lucide-react'
+import type { Lesson, LessonStatus } from '@/types/system/lesson'
+import { useDeleteLesson, useLesson, useUpdateLesson } from '@/hooks/system/useLessons'
 import { LessonForm } from './LessonForm'
-import { STATUS_PILL, STATUS_LABEL } from '@/lib/system/lessonStatus'
+import { STATUS_PILL, STATUS_LABEL, LESSON_STATUSES } from '@/lib/system/lessonStatus'
 import { useI18n } from '@/lib/system/i18n'
 
 /* Map lesson-status enum values → i18n keys (labels in lessonStatus.ts are not translated). */
@@ -40,17 +40,6 @@ function formatMinutes(min: number) {
   if (h === 0) return `${m}m`
   if (m === 0) return `${h}h`
   return `${h}h ${m}m`
-}
-
-function Pill({ status }: { status: string }) {
-  const { t } = useI18n()
-  const s = STATUS_PILL[status as keyof typeof STATUS_PILL] ?? { bg: '#F3F4F6', color: '#6B7280' }
-  const label = STATUS_KEY[status] ? t(STATUS_KEY[status]) : (STATUS_LABEL[status as keyof typeof STATUS_LABEL] ?? status)
-  return (
-    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium" style={{ background: s.bg, color: s.color }}>
-      {label}
-    </span>
-  )
 }
 
 function InfoRow({ icon, label, value }: { icon: React.ReactNode; label: string; value: React.ReactNode }) {
@@ -90,6 +79,7 @@ export function LessonDetailDrawer({ lesson: selected, open, onClose, onUpdate }
   const { t } = useI18n()
   const [editing, setEditing] = useState(false)
   const deleteLesson = useDeleteLesson()
+  const updateLesson = useUpdateLesson()
 
   // The prop is a snapshot taken when the row was clicked, so an edit saved from
   // this drawer would leave it showing the pre-edit report. Re-read the lesson —
@@ -103,6 +93,14 @@ export function LessonDetailDrawer({ lesson: selected, open, onClose, onUpdate }
     await deleteLesson.mutateAsync(lesson.id)
     onUpdate?.()
     onClose()
+  }
+
+  // Quick status change — the server re-runs the package consumption engine, and
+  // invalidating the lesson/packages/analytics queries reflects it everywhere.
+  async function handleStatusChange(status: LessonStatus) {
+    if (!lesson || status === lesson.status) return
+    await updateLesson.mutateAsync({ id: lesson.id, status })
+    onUpdate?.()
   }
 
   return (
@@ -158,8 +156,35 @@ export function LessonDetailDrawer({ lesson: selected, open, onClose, onUpdate }
 
             {/* Package Progress */}
             <SectionTitle>{t('lessons.detail.packageProgress')}</SectionTitle>
+
+            {/* Quick status editor — saves immediately and re-runs the package engine. */}
+            <div className="mb-3">
+              <p className="text-xs font-medium mb-1.5" style={{ color: MUTED }}>{t('common.status')}</p>
+              <div className="relative">
+                <select
+                  value={lesson.status}
+                  disabled={updateLesson.isPending}
+                  onChange={e => handleStatusChange(e.target.value as LessonStatus)}
+                  className="w-full appearance-none px-3 py-2.5 pr-9 rounded-xl border text-sm font-medium outline-none focus:ring-2 focus:ring-[#0d9488] disabled:opacity-60 cursor-pointer"
+                  style={{
+                    borderColor: BORDER,
+                    background: (STATUS_PILL[lesson.status]?.bg ?? '#fff'),
+                    color:      (STATUS_PILL[lesson.status]?.color ?? NAVY),
+                  }}
+                >
+                  {LESSON_STATUSES.map(s => (
+                    <option key={s.value} value={s.value} style={{ color: NAVY, background: '#fff' }}>
+                      {STATUS_KEY[s.value] ? t(STATUS_KEY[s.value]) : (STATUS_LABEL[s.value] ?? s.label)}
+                    </option>
+                  ))}
+                </select>
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: MUTED }}>
+                  {updateLesson.isPending ? <Loader2 size={14} className="animate-spin" /> : <ChevronRight size={14} className="rotate-90" />}
+                </span>
+              </div>
+            </div>
+
             <div className="flex flex-wrap gap-2 mb-3">
-              <Pill status={lesson.status} />
               {lesson.evaluation && (
                 <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-50 text-purple-700">
                   {lesson.evaluation.label}

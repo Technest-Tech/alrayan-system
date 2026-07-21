@@ -7,15 +7,47 @@ import { MonthPicker } from '@/components/system/payroll/MonthPicker'
 import { HoursAcrossMonths, TopTeachersChart, BestDaysChart } from '@/components/system/analytics/AnalyticsCharts'
 import { TeacherBalanceTable } from '@/components/system/analytics/TeacherBalanceTable'
 import { TeacherMonthModal } from '@/components/system/analytics/TeacherMonthModal'
+import { FxRatesStrip } from '@/components/system/analytics/FxRatesStrip'
 import { useAnalytics, useSetTeacherExclusion } from '@/hooks/system/useAnalytics'
 import { useSystemUser } from '@/components/system/shell/SystemShell'
 import { can } from '@/lib/system/permissions'
 import { formatMoney } from '@/lib/money'
 import { useI18n } from '@/lib/system/i18n'
+import type { CurrencyTotal } from '@/types/system/analytics'
 
 function currentMonth(): string {
   const d = new Date()
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+}
+
+/** KPI card that lists a money figure per currency (never converted to a single currency). */
+function MoneyKpiCard({ label, totals, field, suffix = '', loading }: {
+  label: string
+  totals: CurrencyTotal[]
+  field: 'income_minor' | 'avg_rate_minor'
+  suffix?: string
+  loading?: boolean
+}) {
+  return (
+    <div className="rounded-2xl p-5 flex flex-col gap-1" style={{ background: 'rgb(var(--surface-card))', border: '1px solid rgb(var(--border-default))' }}>
+      <p className="text-xs font-medium opacity-50 uppercase tracking-wide">{label}</p>
+      {loading ? (
+        <div className="h-8 w-24 rounded-lg bg-black/5 animate-pulse" />
+      ) : totals.length === 0 ? (
+        <p className="text-3xl font-bold tabular-nums">—</p>
+      ) : totals.length === 1 ? (
+        <p className="text-3xl font-bold tabular-nums">{formatMoney(totals[0][field], totals[0].currency)}{suffix}</p>
+      ) : (
+        <div className="flex flex-col gap-0.5 mt-0.5">
+          {totals.map(tc => (
+            <p key={tc.currency} className="text-xl font-bold tabular-nums leading-tight">
+              {formatMoney(tc[field], tc.currency)}{suffix}
+            </p>
+          ))}
+        </div>
+      )}
+    </div>
+  )
 }
 
 export default function AnalyticsPage() {
@@ -31,7 +63,7 @@ export default function AnalyticsPage() {
   const setExclusion = useSetTeacherExclusion()
 
   const kpis = data?.kpis
-  const currency = data?.currency ?? 'EUR'
+  const totals = kpis?.totals_by_currency ?? []
 
   async function handleToggleExclude(id: number, excluded: boolean) {
     try {
@@ -50,24 +82,21 @@ export default function AnalyticsPage() {
         actions={<MonthPicker value={month} onChange={setMonth} />}
       />
 
-      {/* KPIs */}
+      {/* KPIs — money stays in each teacher's own currency */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <KpiCard
-          label={t('analytics.totalIncome')}
-          value={kpis ? formatMoney(kpis.total_income_minor, currency) : '—'}
-          loading={isLoading}
-        />
+        <MoneyKpiCard label={t('analytics.totalIncome')} totals={totals} field="income_minor" loading={isLoading} />
         <KpiCard
           label={t('analytics.totalHours')}
           value={kpis ? `${kpis.total_hours.toFixed(2)}h` : '—'}
           sub={kpis ? t('analytics.hoursAverage', { n: kpis.avg_hours_per_teacher.toFixed(2) }) : undefined}
           loading={isLoading}
         />
-        <KpiCard
-          label={t('analytics.avgRate')}
-          value={kpis ? `${formatMoney(kpis.avg_rate_minor, currency)}/h` : '—'}
-          loading={isLoading}
-        />
+        <MoneyKpiCard label={t('analytics.avgRate')} totals={totals} field="avg_rate_minor" suffix="/h" loading={isLoading} />
+      </div>
+
+      {/* Live exchange rates → EGP */}
+      <div className="mt-4">
+        <FxRatesStrip />
       </div>
 
       {/* Charts */}
@@ -95,7 +124,6 @@ export default function AnalyticsPage() {
         ) : (
           <TeacherBalanceTable
             balances={data?.teacher_balances ?? []}
-            currency={currency}
             canEdit={canEdit}
             onRowClick={setModalTeacher}
             onToggleExclude={handleToggleExclude}

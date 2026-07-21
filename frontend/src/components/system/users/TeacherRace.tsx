@@ -79,8 +79,7 @@ export default function TeacherRace({ currentTeacherId, month }: { currentTeache
   const racers = data?.racers ?? []
   const leaderHours = data?.leader_hours ?? 0
   const k = racers.length
-  const lanes = Math.max(3, Math.min(6, Math.ceil(k / 5)))
-  const trackWidth = Math.max(1000, 900 + Math.ceil(k / lanes) * 135)
+  const trackWidth = Math.max(1000, 140 + k * 160)          // one straight line — a column per racer
 
   const RANGES: { key: RaceRange; label: string }[] = [
     { key: 'month', label: t('users.teacherRaceRangeMonth') },
@@ -180,16 +179,14 @@ export default function TeacherRace({ currentTeacherId, month }: { currentTeache
 
         {/* Racers overlay */}
         {!isLoading && racers.map((r, i) => {
-          const progress = leaderHours > 0 ? r.hours / leaderHours : 0
-          const rankSpread = k > 1 ? 1 - i / (k - 1) : 1
-          const eff = leaderHours > 0 ? 0.35 * progress + 0.65 * rankSpread : rankSpread
-          const target = 7 + eff * 72                                   // % — near finish for the leader
-          const left = motion ? (mounted ? target : 8) : target        // slide in from the start line
-          const lane = i % lanes
-          const top = 84 - lane * (38 / (lanes - 1))                    // lane 0 = front/low, deeper lanes recede
-          const scale = 1.0 - lane * (0.4 / (lanes - 1))                // depth: front bigger
+          // everyone races on a single line — evenly spaced by rank, leader at the finish
+          const pos = k > 1 ? 1 - i / (k - 1) : 1                        // 1 = leader (right) … 0 = last (left)
+          const target = 6 + pos * 88                                   // %
+          const left = motion ? (mounted ? target : 6) : target        // slide out from the start line
+          const top = 70                                                // single shared track line
+          const scale = 1
           const isYou = r.teacher_id === currentTeacherId
-          const z = (lanes - lane) * 1000 + Math.round(target * 2) + (isYou ? 5000 : 0)
+          const z = (k - i) + (isYou ? 5000 : 0)
           const tier = mode === 'race' ? tierFor(r.rank) : 'camel'
           return (
             <RacerNode key={r.teacher_id} racer={r} tier={tier} left={left} top={top} scale={scale} z={z} isYou={isYou}

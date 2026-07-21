@@ -1,5 +1,6 @@
 'use client'
 import { useRef, useState, useEffect, useCallback } from 'react'
+import { createPortal } from 'react-dom'
 import { Check, ChevronDown, Search, X } from 'lucide-react'
 import { useI18n } from '@/lib/system/i18n'
 
@@ -128,8 +129,10 @@ export function SearchableSelect({ options, value, onChange, placeholder, cleara
         </div>
       </button>
 
-      {/* Floating dropdown */}
-      {open && pos && (
+      {/* Floating dropdown — portaled to <body> so an ancestor's CSS transform
+          (e.g. the slide-in drawer) can't become its containing block and shove
+          the fixed-positioned menu off-screen. */}
+      {open && pos && typeof document !== 'undefined' && createPortal(
         <div ref={dropRef} className="fixed z-[9999]" style={pos}>
           <div
             className="rounded-xl overflow-hidden"
@@ -172,7 +175,8 @@ export function SearchableSelect({ options, value, onChange, placeholder, cleara
               ))}
             </div>
           </div>
-        </div>
+        </div>,
+        document.body,
       )}
     </div>
   )

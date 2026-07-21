@@ -19,24 +19,60 @@ class LessonReportRenderer
 
     public function render(Lesson $lesson): string
     {
+        $url = $this->publicUrl($this->rasterise($lesson));
+
+        // Fail here rather than let the queued send die on a 422 from Acadmyq.
+        WhatsAppDispatcher::assertPubliclyFetchableUrl($url);
+
+        return $url;
+    }
+
+    /**
+     * Raw PNG bytes for a direct download. Unlike render(), the browser receives
+     * the image straight from us, so there is no public-URL fetchability to assert.
+     */
+    public function bytes(Lesson $lesson): string
+    {
+        $disk = Storage::disk(config('reports.lesson_report.disk'));
+
+        return (string) $disk->get($this->rasterise($lesson));
+    }
+
+    /**
+     * The report's HTML — a browsable fallback for the download when no rasteriser
+     * is configured (local/CI). Production overrides this by producing a real PNG.
+     */
+    public function html(Lesson $lesson): string
+    {
+        $locale = (string) config('reports.lesson_report.locale');
+
+        return view('system.reports.lesson-report', $this->data->build($lesson, $locale))->render();
+    }
+
+    /** Whether bytes() yields a genuine raster image (false for the no-Chromium fake). */
+    public function producesRasterImage(): bool
+    {
+        return true;
+    }
+
+    /**
+     * Rasterises the report to a PNG on the disk and returns its path. The path is
+     * content-addressed, so an unchanged lesson re-uses the PNG it already produced
+     * instead of paying for another Chromium boot.
+     */
+    private function rasterise(Lesson $lesson): string
+    {
         $locale = (string) config('reports.lesson_report.locale');
         $html   = view('system.reports.lesson-report', $this->data->build($lesson, $locale))->render();
 
         $path = $this->pathFor($lesson, $html);
         $disk = Storage::disk(config('reports.lesson_report.disk'));
 
-        // The path is content-addressed, so an unchanged lesson re-uses the PNG
-        // it already produced instead of paying for another Chromium boot.
         if (! $disk->exists($path)) {
             $disk->put($path, $this->screenshot($html));
         }
 
-        $url = $this->publicUrl($path);
-
-        // Fail here rather than let the queued send die on a 422 from Acadmyq.
-        WhatsAppDispatcher::assertPubliclyFetchableUrl($url);
-
-        return $url;
+        return $path;
     }
 
     protected function screenshot(string $html): string

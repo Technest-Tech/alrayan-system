@@ -20,11 +20,11 @@ class PackageService
     private const PROTECTED_STATUSES = ['paid', 'suspended'];
 
     /**
-     * The down-payment "package" number. Package #0 is the student's initial down payment:
-     * its own charge (amount = one package price), NOT a lesson-consuming package. It never
-     * receives lesson allocations and is never auto-deleted. Lesson packages start at #1.
+     * A package's hours determine whether it consumes lessons. `package_hours > 0` is a real
+     * lesson package (a "slot" the engine fills); `package_hours <= 0` is a legacy down-payment
+     * record (Package #0) kept only for backwards compatibility — it never consumes and is never
+     * auto-deleted. New students no longer get a #0: their first payment IS lesson Package #1.
      */
-    public const DOWN_PAYMENT_NUMBER = 0;
 
     /**
      * Return a live package to satisfy the lesson FK at creation time.
@@ -33,7 +33,7 @@ class PackageService
     public function resolvePackageForLesson(Student $student, ?Carbon $lessonDate = null): StudentPackage
     {
         $live = StudentPackage::where('student_id', $student->id)
-            ->where('package_number', '>', self::DOWN_PAYMENT_NUMBER)
+            ->where('package_hours', '>', 0)
             ->orderByDesc('package_number')
             ->first();
         if ($live) {
@@ -42,7 +42,7 @@ class PackageService
 
         $trashed = StudentPackage::withTrashed()
             ->where('student_id', $student->id)
-            ->where('package_number', '>', self::DOWN_PAYMENT_NUMBER)
+            ->where('package_hours', '>', 0)
             ->orderBy('package_number')
             ->first();
         if ($trashed) {
@@ -50,7 +50,14 @@ class PackageService
             return $trashed;
         }
 
-        return $this->createPackage($student, 1);
+        return $this->createPackage($student, $this->nextPackageNumber($student));
+    }
+
+    /** Next 1-indexed package number for the student (max existing + 1, min 1). */
+    private function nextPackageNumber(Student $student): int
+    {
+        $max = (int) StudentPackage::withTrashed()->where('student_id', $student->id)->max('package_number');
+        return max(1, $max + 1);
     }
 
     /** Create a new package for the student, snapshotting current rates. */
@@ -67,15 +74,17 @@ class PackageService
     }
 
     /**
-     * Create (idempotently) the student's down payment — Package #0. It is a standalone charge
-     * priced at one package (the enrolled price), never consumes lessons, and follows the normal
-     * pending → paid lifecycle. Returns the existing row if one is already present.
+     * Ensure the student's first lesson package exists — this IS the "down payment": a real
+     * Package #1 carrying the enrolled hours, following the normal pending → paid lifecycle, and
+     * whose lessons count as paid once it is paid. Idempotent: returns the existing first lesson
+     * package if one is already present (restoring it if it was soft-deleted).
      */
-    public function createDownPayment(Student $student): StudentPackage
+    public function ensureFirstPackage(Student $student, ?int $hours = null): StudentPackage
     {
         $existing = StudentPackage::withTrashed()
             ->where('student_id', $student->id)
-            ->where('package_number', self::DOWN_PAYMENT_NUMBER)
+            ->where('package_hours', '>', 0)
+            ->orderBy('package_number')
             ->first();
         if ($existing) {
             if ($existing->trashed()) {
@@ -84,14 +93,7 @@ class PackageService
             return $existing;
         }
 
-        return StudentPackage::create([
-            'student_id'     => $student->id,
-            'package_number' => self::DOWN_PAYMENT_NUMBER,
-            'package_hours'  => 0,
-            'tariff_at_time' => (int) $student->hourly_rate_minor,
-            'currency'       => $student->currency,
-            'status'         => 'pending',
-        ]);
+        return $this->createPackage($student, $this->nextPackageNumber($student), $hours);
     }
 
     /** Hours consumed in a package (allocation-based, split-aware). */
@@ -135,14 +137,16 @@ class PackageService
                 LessonPackageAllocation::whereIn('package_id', $allPackageIds)->delete();
             }
 
-            // Lesson packages (#1+), in number order, are the slots we refill first (new ones
-            // appended). The down payment (#0) is never a slot — it doesn't consume lessons.
+            // Real lesson packages (hours > 0), in number order, are the slots we refill first
+            // (new ones appended). Legacy 0-hour down-payment rows are never slots — they don't
+            // consume lessons.
             $slots      = $packages
-                ->where('package_number', '>', self::DOWN_PAYMENT_NUMBER)
+                ->where('package_hours', '>', 0)
                 ->sortBy('package_number')
                 ->values();
             $slotIndex  = 0;
             $maxNumber  = (int) ($packages->max('package_number') ?? 0);
+            $firstNumber = (int) ($packages->min('package_number') ?? 1);
 
             $nextPackage = function () use (&$slots, &$slotIndex, &$maxNumber, $student, $defaultHours) {
                 if ($slotIndex < $slots->count()) {
@@ -234,10 +238,12 @@ class PackageService
                 LessonPackageAllocation::insert($allocRows);
             }
 
-            // Keep used packages live, paid/suspended ones protected, and the down payment (#0)
-            // always kept; soft-delete the rest.
+            // Keep used packages live, paid/suspended ones protected, the first package (the down
+            // payment, collected upfront) always kept, and legacy 0-hour rows always kept;
+            // soft-delete the rest.
             foreach (StudentPackage::withTrashed()->where('student_id', $student->id)->get() as $p) {
-                $isProtected = ($p->package_number === self::DOWN_PAYMENT_NUMBER)
+                $isProtected = ((int) $p->package_number === $firstNumber && is_null($p->deleted_at))
+                    || ((int) $p->package_hours <= 0)
                     || (in_array($p->status, self::PROTECTED_STATUSES, true) && is_null($p->deleted_at));
                 if (isset($usedPackageIds[$p->id]) || $isProtected) {
                     if ($p->trashed()) { $p->restore(); }

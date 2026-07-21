@@ -1,10 +1,11 @@
 'use client'
 import { useRef, useState } from 'react'
-import { Mic, Upload, GraduationCap, BookOpen, BookMarked, Smile, Gamepad2, Brain, Send } from 'lucide-react'
+import { Mic, Upload, GraduationCap, BookOpen, BookMarked, Smile, Gamepad2, Brain, Download } from 'lucide-react'
 import { SearchableSelect } from './SearchableSelect'
 import { toast } from 'sonner'
 import { ApiError } from '@/lib/system/api'
 import { uploadFile } from '@/lib/system/upload'
+import { downloadLessonReport } from '@/lib/system/reports'
 import { useLessonSubjects, useLessonEvaluations, useCreateLesson, useUpdateLesson } from '@/hooks/system/useLessons'
 import { useTeachers } from '@/hooks/system/useTeachers'
 import { useStudents } from '@/hooks/system/useStudents'
@@ -173,7 +174,7 @@ export function LessonForm({ initialValues, prefill, onSuccess, onCancel }: Prop
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   /* ── Form state ─────────────────────────────────────────── */
-  const [status,       setStatus]       = useState<LessonStatus>(initialValues?.status ?? 'scheduled')
+  const [status,       setStatus]       = useState<LessonStatus>(initialValues?.status ?? 'attended')
   const [evaluationId, setEvaluationId] = useState(initialValues?.evaluation_id ? String(initialValues.evaluation_id) : '')
   const [subjectId,    setSubjectId]    = useState(initialValues?.subject_id ? String(initialValues.subject_id) : '')
 
@@ -203,10 +204,10 @@ export function LessonForm({ initialValues, prefill, onSuccess, onCancel }: Prop
     setTrial(p => ({ ...p, [k]: v }))
 
   /* Which button is mid-flight — drives the two buttons' labels and disabled state. */
-  const [pending, setPending] = useState<'save' | 'send' | null>(null)
+  const [pending, setPending] = useState<'save' | 'download' | null>(null)
 
   /* ── Submit ─────────────────────────────────────────────── */
-  async function save(sendReport: boolean) {
+  async function save(downloadReport: boolean) {
     if (!teacherId || !studentId || !scheduledAt) {
       toast.error(t('lessons.form.toastRequiredFields'))
       return
@@ -214,7 +215,7 @@ export function LessonForm({ initialValues, prefill, onSuccess, onCancel }: Prop
     const durationMinutes = durationH * 60 + durationM
     if (durationMinutes === 0) { toast.error(t('lessons.form.toastDurationPositive')); return }
 
-    setPending(sendReport ? 'send' : 'save')
+    setPending(downloadReport ? 'download' : 'save')
     try {
       // A freshly picked file must be uploaded first — the lesson stores the
       // resulting public URL, not the File itself. With no new file we send back
@@ -223,7 +224,8 @@ export function LessonForm({ initialValues, prefill, onSuccess, onCancel }: Prop
 
       // Every report field goes out as null rather than undefined when empty, so
       // correcting a mistake by clearing the box actually erases it — an omitted
-      // key would leave the wrong text on the lesson.
+      // key would leave the wrong text on the lesson. The report is downloaded and
+      // shared by hand now, so we never dispatch it over WhatsApp.
       const payload: StoreLessonPayload = {
         teacher_id:      Number(teacherId),
         student_id:      Number(studentId),
@@ -238,23 +240,36 @@ export function LessonForm({ initialValues, prefill, onSuccess, onCancel }: Prop
         subject_details: Object.keys(subjectDetails).length ? subjectDetails : null,
         trial_evaluation: status === 'trial' && Object.keys(trial).length ? trial : null,
         souvenir_image:  souvenir,
-        send_report:     sendReport,
+        send_report:     false,
       }
 
+      let lessonId: number
       if (isEdit) {
         await updateLesson.mutateAsync({ id: initialValues.id, ...payload })
+        lessonId = initialValues.id
       } else {
-        await createLesson.mutateAsync(payload)
+        // A single resource comes back wrapped as { data: {...} }.
+        const created = await createLesson.mutateAsync(payload) as unknown as { data: Lesson }
+        lessonId = created.data.id
       }
+
+      // Render the report on the server (post-rebuild, so progress is settled) and
+      // hand the PNG straight to the browser for the teacher to forward manually.
+      if (downloadReport) {
+        const studentName = students.find(s => String(s.id) === studentId)?.name
+        const fileStem = `report-${studentName ?? 'lesson'}-${scheduledAt.slice(0, 10)}`.replace(/\s+/g, '-')
+        await downloadLessonReport(lessonId, fileStem)
+      }
+
       toast.success(
-        sendReport ? t('lessons.form.toastReportQueued')
-        : isEdit   ? t('lessons.form.toastUpdated')
-        :            t('lessons.form.toastCreated'),
+        downloadReport ? t('lessons.form.toastReportDownloaded')
+        : isEdit        ? t('lessons.form.toastUpdated')
+        :                 t('lessons.form.toastCreated'),
       )
       onSuccess?.()
     } catch (err) {
-      // The lesson is left untouched when the report has nowhere to go, and the
-      // backend says exactly why — surface that instead of a generic failure.
+      // The backend explains a 422 (e.g. a lesson with no student to report on) —
+      // surface that instead of a generic failure.
       const unreachable = err instanceof ApiError && err.status === 422
       toast.error(unreachable ? err.message : t('lessons.form.toastError'))
     } finally {
@@ -656,10 +671,10 @@ export function LessonForm({ initialValues, prefill, onSuccess, onCancel }: Prop
           className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-white flex items-center justify-center gap-2 transition-opacity hover:opacity-90 disabled:opacity-50"
           style={{ background: TEAL_600 }}
         >
-          <Send size={15} />
-          {pending === 'send' ? t('lessons.form.sendingReport')
-            : isEdit ? t('lessons.form.updateAndSend')
-            : t('lessons.form.createAndSend')}
+          <Download size={15} />
+          {pending === 'download' ? t('lessons.form.downloadingReport')
+            : isEdit ? t('lessons.form.updateAndDownload')
+            : t('lessons.form.createAndDownload')}
         </button>
       </div>
     </form>

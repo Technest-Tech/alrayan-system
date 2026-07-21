@@ -81,21 +81,18 @@ class SystemDemoSeeder extends Seeder
 
         $countries = ['US', 'GB', 'CA', 'EG', 'SA', 'AE', 'DE', 'FR'];
         $students = [];
+        $adminId  = User::where('role', 'admin')->value('id') ?? User::min('id');
 
         foreach ($statuses as $i => $status) {
-            $course = $courses->get($i % $courses->count());
+            $course  = $courses->get($i % $courses->count());
             $teacher = $teachers[$i % count($teachers)];
 
-            $student = Student::create([
-                'name'                 => fake()->name(),
-                'email'                => fake()->unique()->safeEmail(),
-                'phone'                => '+1' . fake()->numerify('##########'),
-                'whatsapp'             => '+1' . fake()->numerify('##########'),
+            // Use the factory so students are created against the current (unified
+            // identity) schema and each gets a linked `users` row via withUser().
+            $student = Student::factory()->withUser()->create([
                 'country'              => $countries[$i % count($countries)],
                 'timezone'             => 'America/New_York',
-                'age_category'         => $i % 5 === 0 ? 'child' : 'adult',
-                'parent_name'          => $i % 5 === 0 ? fake()->name() : null,
-                'parent_phone'         => $i % 5 === 0 ? '+1' . fake()->numerify('##########') : null,
+                'student_type'         => $i % 5 === 0 ? 'child' : 'adult',
                 'course_id'            => $course->id,
                 'assigned_teacher_id'  => $teacher->id,
                 'sessions_per_month'   => fake()->randomElement([4, 8, 12]),
@@ -120,7 +117,7 @@ class SystemDemoSeeder extends Seeder
 
             StudentNote::create([
                 'student_id'     => $student->id,
-                'author_user_id' => 1,
+                'author_user_id' => $adminId,
                 'body'           => 'Initial note for ' . $student->name,
             ]);
 
@@ -140,7 +137,7 @@ class SystemDemoSeeder extends Seeder
         foreach ($teachers as $teacher) {
             TeacherNote::firstOrCreate([
                 'teacher_id'     => $teacher->id,
-                'author_user_id' => 1,
+                'author_user_id' => $adminId,
             ], [
                 'body' => 'Excellent teacher, very punctual.',
             ]);

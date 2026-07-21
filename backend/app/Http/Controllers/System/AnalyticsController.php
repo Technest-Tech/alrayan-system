@@ -4,6 +4,7 @@ namespace App\Http\Controllers\System;
 
 use App\Http\Controllers\Controller;
 use App\Models\System\Teacher;
+use App\Services\System\LiveFxRateService;
 use App\Services\System\TeacherAnalyticsService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -11,7 +12,10 @@ use Illuminate\Support\Facades\Cache;
 
 class AnalyticsController extends Controller
 {
-    public function __construct(private readonly TeacherAnalyticsService $analytics) {}
+    public function __construct(
+        private readonly TeacherAnalyticsService $analytics,
+        private readonly LiveFxRateService $fx,
+    ) {}
 
     /** Teacher hours / rates / earnings overview for one month (+ all-time hours chart). */
     public function index(Request $request): JsonResponse
@@ -28,6 +32,16 @@ class AnalyticsController extends Controller
         return response()->json(
             Cache::remember($key, 120, fn () => $this->analytics->overview($month, $teacherId))
         );
+    }
+
+    /** Live FX rates → EGP (external source, manual-settings fallback). */
+    public function fxRates(Request $request): JsonResponse
+    {
+        if ($request->boolean('refresh')) {
+            $this->fx->forget();
+        }
+
+        return response()->json($this->fx->toEgp());
     }
 
     /** Per-teacher month drill-in: revenue + recompenses/deductions (modal). */

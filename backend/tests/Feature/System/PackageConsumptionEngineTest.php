@@ -223,41 +223,52 @@ class PackageConsumptionEngineTest extends SystemTestCase
         $this->assertDatabaseHas('sys_tasks', ['type' => 'package_complete']);
     }
 
-    /* ── Down payment (Package #0) ── */
+    /* ── Down payment = the first lesson package (#1) ── */
 
-    public function test_down_payment_is_never_fed_lessons_and_never_deleted(): void
+    public function test_first_package_is_the_down_payment_holds_lessons_and_survives_empty_rebuild(): void
     {
         $s  = $this->student(2);
-        $dp = app(PackageService::class)->createDownPayment($s);
-        $this->assertSame(0, $dp->package_number, 'the down payment is package #0');
+        $dp = app(PackageService::class)->ensureFirstPackage($s, 2);
+        $this->assertSame(1, $dp->package_number, 'the down payment IS lesson package #1');
+        $this->assertSame(2, (int) $dp->package_hours, 'it carries the enrolled hours');
+        $this->assertSame('pending', $dp->status);
 
-        // A rebuild with no lessons at all still keeps the down payment.
+        // A rebuild with no lessons at all still keeps it (it is collected upfront).
         $this->rebuild($s);
-        $this->assertNull($dp->fresh()->deleted_at, 'down payment survives an empty rebuild');
+        $this->assertNull($dp->fresh()->deleted_at, 'the down payment survives an empty rebuild');
 
-        // Consuming lessons flow into lesson package #1 — never into #0.
+        // Consuming lessons flow INTO #1 now — it is a real, payable lesson package.
         $this->lesson($s, 'attended', 60, now()->setTime(9, 0));
         $this->rebuild($s);
 
         $dp->refresh();
-        $this->assertNull($dp->deleted_at, 'down payment is never auto-deleted');
-        $this->assertSame(0, LessonPackageAllocation::where('package_id', $dp->id)->count(), 'no lessons allocate to #0');
-        $this->assertEqualsWithDelta(0.0, $dp->consumed_hours, 0.001);
-        $this->assertSame('pending', $dp->status);
-
-        // The first lesson package is #1 (not #0) and it holds the lesson.
-        $pkg1 = StudentPackage::where('student_id', $s->id)->where('package_number', 1)->first();
-        $this->assertNotNull($pkg1, 'the first lesson package is #1, not #0');
-        $this->assertEqualsWithDelta(1.0, $pkg1->consumed_hours, 0.001);
+        $this->assertNull($dp->deleted_at, 'the first package is never auto-deleted');
+        $this->assertEqualsWithDelta(1.0, $dp->consumed_hours, 0.001, 'the lesson consumes from #1');
     }
 
-    public function test_create_down_payment_is_idempotent(): void
+    public function test_ensure_first_package_is_idempotent(): void
     {
         $s = $this->student(2);
-        $a = app(PackageService::class)->createDownPayment($s);
-        $b = app(PackageService::class)->createDownPayment($s);
+        $a = app(PackageService::class)->ensureFirstPackage($s, 2);
+        $b = app(PackageService::class)->ensureFirstPackage($s, 2);
 
-        $this->assertSame($a->id, $b->id, 're-creating returns the existing down payment');
-        $this->assertSame(1, StudentPackage::where('student_id', $s->id)->where('package_number', 0)->count());
+        $this->assertSame($a->id, $b->id, 're-ensuring returns the existing first package');
+        $this->assertSame(1, StudentPackage::where('student_id', $s->id)->where('package_number', 1)->count());
+    }
+
+    public function test_paying_the_first_package_makes_its_lessons_paid(): void
+    {
+        $s = $this->student(4);
+        app(PackageService::class)->ensureFirstPackage($s, 4);
+
+        $lesson = $this->lesson($s, 'attended', 60, now()->setTime(9, 0));
+        $this->rebuild($s);
+
+        $pkg1 = StudentPackage::where('student_id', $s->id)->where('package_number', 1)->first();
+        $this->assertSame($pkg1->id, $lesson->fresh()->package_id, 'the lesson belongs to package #1');
+
+        // Paying #1 → its lessons are paid (a lesson's paid state is derived from its package).
+        $pkg1->update(['status' => 'paid', 'paid_at' => now()]);
+        $this->assertSame('paid', $lesson->fresh()->package->status, "the lesson's package is now paid");
     }
 }

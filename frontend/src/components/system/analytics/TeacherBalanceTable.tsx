@@ -8,7 +8,7 @@ import type { TeacherBalance } from '@/types/system/analytics'
 /** Rate at or below this (minor units / hour) is flagged low. Currency-relative; tuned for the €2.50–4.00 band. */
 const LOW_RATE_MINOR = 300
 
-type SortKey = 'name' | 'hours' | 'rate'
+type SortKey = 'name' | 'hours' | 'earnings' | 'rate'
 type SortDir = 'asc' | 'desc'
 
 function RatePill({ minor, currency }: { minor: number; currency: string }) {
@@ -40,11 +40,16 @@ function SortHeader({ label, active, dir, align, onClick }: {
   )
 }
 
+/** Join per-currency money figures with a separator, e.g. "€6.00 · $12.00". */
+function multiMoney(entries: { minor: number; currency: string }[]): string {
+  if (entries.length === 0) return '—'
+  return entries.map(e => formatMoney(e.minor, e.currency)).join(' · ')
+}
+
 export function TeacherBalanceTable({
-  balances, currency, canEdit, onRowClick, onToggleExclude,
+  balances, canEdit, onRowClick, onToggleExclude,
 }: {
   balances: TeacherBalance[]
-  currency: string
   canEdit: boolean
   onRowClick: (teacherId: number) => void
   onToggleExclude: (teacherId: number, excluded: boolean) => void
@@ -64,6 +69,7 @@ export function TeacherBalanceTable({
       let c = 0
       if (sortKey === 'name') c = a.name.localeCompare(b.name)
       else if (sortKey === 'hours') c = a.hours - b.hours
+      else if (sortKey === 'earnings') c = a.income_minor - b.income_minor
       else c = a.rate_minor - b.rate_minor
       return sortDir === 'asc' ? c : -c
     })
@@ -72,13 +78,20 @@ export function TeacherBalanceTable({
 
   const totals = useMemo(() => {
     const counted = balances.filter(b => !b.excluded)
-    const income = counted.reduce((s, b) => s + b.income_minor, 0)
     const hours = counted.reduce((s, b) => s + b.hours, 0)
-    return {
-      hours,
-      avgRateMinor: hours > 0 ? Math.round(income / hours) : 0,
-      excludedCount: balances.length - counted.length,
+    // group income + hours per currency so nothing is summed across currencies
+    const byCcy = new Map<string, { income: number; hours: number }>()
+    for (const b of counted) {
+      const g = byCcy.get(b.currency) ?? { income: 0, hours: 0 }
+      g.income += b.income_minor
+      g.hours += b.hours
+      byCcy.set(b.currency, g)
     }
+    const earnings = [...byCcy.entries()].map(([currency, g]) => ({ currency, minor: g.income }))
+    const rates = [...byCcy.entries()]
+      .filter(([, g]) => g.hours > 0)
+      .map(([currency, g]) => ({ currency, minor: Math.round(g.income / g.hours) }))
+    return { hours, earnings, rates, excludedCount: balances.length - counted.length }
   }, [balances])
 
   return (
@@ -89,6 +102,7 @@ export function TeacherBalanceTable({
             <tr className="text-left" style={{ borderBottom: '1px solid rgb(var(--border-default))' }}>
               <th className="px-4 py-3"><SortHeader label={t('analytics.teacherName')} active={sortKey === 'name'} dir={sortDir} onClick={() => toggleSort('name')} /></th>
               <th className="px-4 py-3 text-right"><SortHeader label={t('analytics.hours')} active={sortKey === 'hours'} dir={sortDir} align="right" onClick={() => toggleSort('hours')} /></th>
+              <th className="px-4 py-3 text-right"><SortHeader label={t('analytics.earnings')} active={sortKey === 'earnings'} dir={sortDir} align="right" onClick={() => toggleSort('earnings')} /></th>
               <th className="px-4 py-3 text-right"><SortHeader label={t('analytics.rate')} active={sortKey === 'rate'} dir={sortDir} align="right" onClick={() => toggleSort('rate')} /></th>
               {canEdit && <th className="px-2 py-3 w-8" />}
             </tr>
@@ -112,6 +126,7 @@ export function TeacherBalanceTable({
                   </div>
                 </td>
                 <td className="px-4 py-3 text-right tabular-nums">{b.hours.toFixed(2)}h</td>
+                <td className="px-4 py-3 text-right tabular-nums">{b.income_minor > 0 ? formatMoney(b.income_minor, b.currency) : '—'}</td>
                 <td className="px-4 py-3 text-right"><RatePill minor={b.rate_minor} currency={b.currency} /></td>
                 {canEdit && (
                   <td className="px-2 py-3 text-right" onClick={e => e.stopPropagation()}>
@@ -131,7 +146,8 @@ export function TeacherBalanceTable({
             <tr className="font-semibold" style={{ background: 'rgb(var(--surface-card-2))' }}>
               <td className="px-4 py-3">{t('analytics.total')}</td>
               <td className="px-4 py-3 text-right tabular-nums">{totals.hours.toFixed(2)}h</td>
-              <td className="px-4 py-3 text-right tabular-nums">{totals.avgRateMinor > 0 ? `${formatMoney(totals.avgRateMinor, currency)} *` : '—'}</td>
+              <td className="px-4 py-3 text-right tabular-nums">{multiMoney(totals.earnings)}</td>
+              <td className="px-4 py-3 text-right tabular-nums">{totals.rates.length ? `${multiMoney(totals.rates)} *` : '—'}</td>
               {canEdit && <td />}
             </tr>
           </tfoot>

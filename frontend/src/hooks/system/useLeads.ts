@@ -97,14 +97,20 @@ export function useDeleteLead() {
   })
 }
 
-export function useConvertLead(id: number | string) {
+// The lead id travels in the mutation variables so a freshly-created lead (walk-in close from the
+// Add dialog) can be converted too, not just an existing one.
+export function useConvertLead() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: (data: Record<string, unknown>) =>
+    mutationFn: ({ id, ...data }: { id: number | string } & Record<string, unknown>) =>
       api<{ message: string; student_id: number }>(`/leads/${id}/convert`, {
         method: 'POST',
         body: JSON.stringify(data),
       }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['system', 'leads'] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['system', 'leads'] })
+      // The converted student becomes active in the users directory.
+      qc.invalidateQueries({ queryKey: ['system', 'user-directory'] })
+    },
   })
 }

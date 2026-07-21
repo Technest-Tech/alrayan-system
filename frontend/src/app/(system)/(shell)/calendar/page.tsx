@@ -507,6 +507,16 @@ export default function CalendarPage() {
   const [listMode,    setListMode]    = useState(false)
   const [showFullDay, setShowFullDay] = useState(false)
 
+  // Remember the last-chosen Calendar/List view and restore it on the next visit.
+  const LIST_MODE_KEY = 'calendar.listMode'
+  useEffect(() => {
+    const saved = localStorage.getItem(LIST_MODE_KEY)
+    if (saved !== null) setListMode(saved === 'true')
+  }, [])
+  useEffect(() => {
+    localStorage.setItem(LIST_MODE_KEY, String(listMode))
+  }, [listMode])
+
   const [teacherFilter, setTeacherFilter] = useState('')
   const [studentFilter, setStudentFilter] = useState<number[]>([])
 

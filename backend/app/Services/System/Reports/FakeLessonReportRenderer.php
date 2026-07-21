@@ -17,4 +17,10 @@ class FakeLessonReportRenderer extends LessonReportRenderer
     {
         return $html;
     }
+
+    /** No Chromium here, so bytes() would only ever be HTML wearing a .png name. */
+    public function producesRasterImage(): bool
+    {
+        return false;
+    }
 }

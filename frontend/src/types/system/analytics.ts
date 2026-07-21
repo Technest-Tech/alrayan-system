@@ -1,9 +1,16 @@
+export interface CurrencyTotal {
+  currency:       string
+  income_minor:   number
+  hours:          number
+  avg_rate_minor: number
+  teacher_count:  number
+}
+
 export interface AnalyticsKpis {
-  total_income_minor:    number
   total_hours:           number
   avg_hours_per_teacher: number
-  avg_rate_minor:        number
   total_lessons:         number
+  totals_by_currency:    CurrencyTotal[]
 }
 
 export interface TopTeacher {
@@ -40,9 +47,9 @@ export interface AnalyticsTeacherOption {
 }
 
 export interface AnalyticsOverview {
-  month:    string
-  currency: string
-  kpis:     AnalyticsKpis
+  month:         string
+  base_currency: string
+  kpis:          AnalyticsKpis
   top_teachers: TopTeacher[]
   best_days:    BestDay[]
   hours_by_month: {
@@ -69,4 +76,17 @@ export interface TeacherMonthBreakdown {
   revenue_minor: number
   recompenses:   TeacherAdjustment[]
   deductions:    TeacherAdjustment[]
+}
+
+export interface FxRate {
+  currency: string
+  to_egp:   number | null
+  source:   'live' | 'manual' | 'unavailable'
+}
+
+export interface FxRatesResponse {
+  base:       string
+  source:     'live' | 'manual' | 'mixed' | 'unavailable'
+  fetched_at: string | null
+  rates:      FxRate[]
 }

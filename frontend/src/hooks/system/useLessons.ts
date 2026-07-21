@@ -119,6 +119,8 @@ export function useCreateLesson() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['system', 'lessons'] })
       qc.invalidateQueries({ queryKey: ['system', 'calendar'] })
+      qc.invalidateQueries({ queryKey: ['system', 'student-packages'] })
+      qc.invalidateQueries({ queryKey: ['system', 'analytics'] })
     },
   })
 }
@@ -133,6 +135,10 @@ export function useUpdateLesson() {
       qc.invalidateQueries({ queryKey: ['system', 'lessons', id] })
       qc.invalidateQueries({ queryKey: ['system', 'lessons'] })
       qc.invalidateQueries({ queryKey: ['system', 'calendar'] })
+      // A status change re-runs the package consumption engine on the server, so
+      // refresh everything derived from it: package progress and analytics totals.
+      qc.invalidateQueries({ queryKey: ['system', 'student-packages'] })
+      qc.invalidateQueries({ queryKey: ['system', 'analytics'] })
     },
   })
 }
@@ -146,6 +152,8 @@ export function useDeleteLesson() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['system', 'lessons'] })
       qc.invalidateQueries({ queryKey: ['system', 'calendar'] })
+      qc.invalidateQueries({ queryKey: ['system', 'student-packages'] })
+      qc.invalidateQueries({ queryKey: ['system', 'analytics'] })
     },
   })
 }

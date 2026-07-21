@@ -470,20 +470,19 @@ class LeadEndpointsTest extends SystemTestCase
             'hourly_rate_minor'     => 120000,
         ]);
 
-        // The first payment is a down payment (Package #0) priced at one package — its own charge,
-        // not tied to lessons. No lesson package (#1) is created until real lessons are scheduled,
-        // so a brand-new student is never "pending" for lessons they haven't taken.
+        // The first payment IS lesson Package #1 — a real package carrying the enrolled hours,
+        // pending until paid, whose lessons count as paid once it is paid. No separate #0.
         $student = \App\Models\System\Student::where('lead_id', $lead->id)->firstOrFail();
         $this->assertDatabaseHas('sys_student_packages', [
             'student_id'     => $student->id,
-            'package_number' => 0,
-            'package_hours'  => 0,
+            'package_number' => 1,
+            'package_hours'  => 8,
             'tariff_at_time' => 120000,
             'status'         => 'pending',
         ]);
         $this->assertDatabaseMissing('sys_student_packages', [
             'student_id'     => $student->id,
-            'package_number' => 1,
+            'package_number' => 0,
         ]);
     }
 
@@ -518,18 +517,19 @@ class LeadEndpointsTest extends SystemTestCase
         $this->assertSame('Asia/Riyadh', $student->timezone, 'provisioned timezone preserved');
         $this->assertSame('adult', $student->student_type);
         $this->assertSame($teacher->id, $student->assigned_teacher_id, 'assigned teacher preserved');
-        // The two values we DID send seed the package defaults + down payment.
+        // The two values we DID send seed the package defaults + the first package (down payment).
         $this->assertSame(6, (int) $student->package_hours_default);
         $this->assertSame(90000, (int) $student->hourly_rate_minor);
         $this->assertDatabaseHas('sys_student_packages', [
             'student_id'     => $student->id,
-            'package_number' => 0,
+            'package_number' => 1,
+            'package_hours'  => 6,
             'tariff_at_time' => 90000,
             'status'         => 'pending',
         ]);
         $this->assertDatabaseMissing('sys_student_packages', [
             'student_id'     => $student->id,
-            'package_number' => 1,
+            'package_number' => 0,
         ]);
     }
 

@@ -67,7 +67,7 @@ class TeacherAnalyticsService
     public function overview(?string $month, ?int $teacherId = null): array
     {
         [$start, $end] = $this->monthWindow($month);
-        $currency = $this->baseCurrency();
+        $base = $this->baseCurrency();
 
         /** @var \Illuminate\Support\Collection<int,Teacher> $teachers */
         $teachers    = Teacher::with('user:id,name,photo_url')->get();
@@ -109,25 +109,46 @@ class TeacherAnalyticsService
                 'lessons'      => (int) ($row->lessons ?? 0),
                 'income_minor' => $income,
                 'rate_minor'   => $rateMinor,
-                'currency'     => $t->currency ?: $currency,
+                'currency'     => $t->currency ?: $base,
                 'excluded'     => (bool) $t->exclude_from_analytics,
             ];
         }
 
-        // Totals — everything below excludes flagged teachers.
+        // Totals — everything below excludes flagged teachers. Money is NEVER
+        // converted across currencies; income/rate roll up per currency.
         $counted     = array_values(array_filter($balances, fn($b) => ! $b['excluded']));
         $totalMinutes = 0;
-        $totalIncome  = 0;
         $totalLessons = 0;
+        $byCurrency   = [];
         foreach ($counted as $b) {
-            $totalMinutes += (int) round($b['hours'] * 60);
-            $totalIncome  += $b['income_minor'];
+            $mins = (int) round($b['hours'] * 60);
+            $totalMinutes += $mins;
             $totalLessons += $b['lessons'];
+
+            $c = $b['currency'];
+            $byCurrency[$c] ??= ['currency' => $c, 'income_minor' => 0, 'minutes' => 0, 'teacher_count' => 0];
+            $byCurrency[$c]['income_minor']  += $b['income_minor'];
+            $byCurrency[$c]['minutes']       += $mins;
+            $byCurrency[$c]['teacher_count'] += 1;
         }
-        $totalHours     = round($totalMinutes / 60, 2);
+        $totalHours      = round($totalMinutes / 60, 2);
         $countedTeachers = count($counted);
-        $avgHours       = $countedTeachers > 0 ? round($totalHours / $countedTeachers, 2) : 0.0;
-        $avgRateMinor   = $totalHours > 0 ? (int) round($totalIncome / $totalHours) : 0;
+        $avgHours        = $countedTeachers > 0 ? round($totalHours / $countedTeachers, 2) : 0.0;
+
+        $totalsByCurrency = collect($byCurrency)
+            ->map(function ($g) {
+                $hours = round($g['minutes'] / 60, 2);
+                return [
+                    'currency'       => $g['currency'],
+                    'income_minor'   => $g['income_minor'],
+                    'hours'          => $hours,
+                    'avg_rate_minor' => $hours > 0 ? (int) round($g['income_minor'] / $hours) : 0,
+                    'teacher_count'  => $g['teacher_count'],
+                ];
+            })
+            ->sortByDesc('income_minor')
+            ->values()
+            ->all();
 
         // ── Top 5 teachers by hours this month ────────────────────────────────
         $topTeachers = collect($counted)
@@ -143,14 +164,13 @@ class TeacherAnalyticsService
             ->all();
 
         return [
-            'month'      => $start->format('Y-m'),
-            'currency'   => $currency,
+            'month'         => $start->format('Y-m'),
+            'base_currency' => $base,
             'kpis'       => [
-                'total_income_minor'    => $totalIncome,
                 'total_hours'           => $totalHours,
                 'avg_hours_per_teacher' => $avgHours,
-                'avg_rate_minor'        => $avgRateMinor,
                 'total_lessons'         => $totalLessons,
+                'totals_by_currency'    => $totalsByCurrency,
             ],
             'top_teachers'    => $topTeachers,
             'best_days'       => $this->bestDaysByLessons($start, $end, $excludedIds),

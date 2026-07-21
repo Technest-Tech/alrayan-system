@@ -91,6 +91,7 @@ Route::prefix('system')->name('system.')->group(function () {
         // Analytics — teacher hours / rates / earnings (payroll-sensitive).
         Route::middleware('system.can:payroll.view_any')->group(function () {
             Route::get('/analytics',                          [AnalyticsController::class, 'index'])->name('analytics.index');
+            Route::get('/analytics/fx-rates',                 [AnalyticsController::class, 'fxRates'])->name('analytics.fx-rates');
             Route::get('/analytics/teachers/{teacher}',       [AnalyticsController::class, 'teacher'])->name('analytics.teacher');
         });
         Route::middleware('system.can:teachers.edit')
@@ -617,6 +618,7 @@ Route::prefix('system')->name('system.')->group(function () {
             Route::put('/lessons/{lesson}',                              [LessonController::class,         'update'])->name('lessons.update');
             Route::patch('/lessons/{lesson}',                            [LessonController::class,         'update']);
             Route::post('/lessons/{lesson}/report',                      [LessonReportController::class,   'store'])->name('lessons.report.store');
+            Route::get('/lessons/{lesson}/report/download',              [LessonReportController::class,   'download'])->name('lessons.report.download');
             Route::put('/lesson-schedules/{lessonSchedule}',             [LessonScheduleController::class, 'update'])->name('lesson-schedules.update');
             Route::patch('/student-packages/{studentPackage}',           [StudentPackageController::class, 'update'])->name('student-packages.update');
             Route::post('/student-packages/{studentPackage}/confirm',    [StudentPackageController::class, 'confirm'])->name('student-packages.confirm');

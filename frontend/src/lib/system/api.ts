@@ -30,7 +30,10 @@ export async function api<T>(path: string, init?: RequestInit): Promise<T> {
   })
 
   if (res.status === 401) {
-    clearToken()
+    // Do NOT wipe the shared token here. A 401 from one incidental request (e.g. a dialog's
+    // dropdown query on a request-heavy page like Leads) must not tear down the whole session.
+    // The `/auth/me` session probe is the single source of truth for auth — SystemShell clears
+    // the token and redirects to /login only when THAT returns 401.
     throw new ApiError(401, 'Unauthenticated')
   }
 

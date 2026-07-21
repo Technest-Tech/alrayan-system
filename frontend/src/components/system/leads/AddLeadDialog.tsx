@@ -71,12 +71,11 @@ const STATUS_OPTIONS_ADD: { value: LeadStatus; key: string }[] = [
   { value: 'waiting_for_payment', key: 'leads.statusWaitingForPayment' },
   { value: 'not_interested',      key: 'leads.statusNotInterested' },
   { value: 'lost',                key: 'leads.statusLost' },
+  // Closed converts to a student. In the Add dialog it's a walk-in: create the lead then enrol.
+  { value: 'closed',              key: 'leads.statusClosedConvert' },
 ]
 
-const STATUS_OPTIONS_EDIT: { value: LeadStatus; key: string }[] = [
-  ...STATUS_OPTIONS_ADD,
-  { value: 'closed', key: 'leads.statusClosedConvert' },
-]
+const STATUS_OPTIONS_EDIT = STATUS_OPTIONS_ADD
 
 const PLATFORM_OPTIONS: { value: string; key: string }[] = [
   { value: 'website',   key: 'leads.platformWebsite' },
@@ -517,7 +516,7 @@ export function AddLeadDialog({ open, onOpenChange, lead, initialStatus }: AddLe
 
   const create  = useCreateLead()
   const update  = useUpdateLead(lead?.id ?? 0)
-  const convert = useConvertLead(lead?.id ?? 0)
+  const convert = useConvertLead()
 
   const { data: coursesData } = useCourses()
   const { data: teachersData } = useTeachers({ per_page: 200 } as Parameters<typeof useTeachers>[0])
@@ -534,7 +533,8 @@ export function AddLeadDialog({ open, onOpenChange, lead, initialStatus }: AddLe
   const [phones,     setPhones]     = useState<ContactEntry[]>([])
   const [enrollment, setEnrollment] = useState<EnrollmentState>(EMPTY_ENROLLMENT)
 
-  const isClosing = isEditMode && !isAlreadyClosed && form.status === 'closed'
+  // "Closed" enrols a student — in edit it converts the lead, in add it's a walk-in (create + convert).
+  const isClosing = !isAlreadyClosed && form.status === 'closed'
 
   /* Pre-fill when lead changes / dialog opens */
   useEffect(() => {
@@ -641,6 +641,17 @@ export function AddLeadDialog({ open, onOpenChange, lead, initialStatus }: AddLe
       },
     }
 
+    // Quick close: only hours + price are collected. Course/currency ride along from the form/lead
+    // when known; teacher, timezone, student type and duration are kept from the student the lead
+    // already provisioned (the converter leaves omitted keys untouched).
+    const courseId = enrollment.course_id || form.course_interest_id
+    const convertData = {
+      package_hours:       Number(enrollment.package_hours),
+      package_price_minor: Math.round(parseFloat(enrollment.package_price || '0') * 100),
+      course_id:           courseId ? Number(courseId) : undefined,
+      currency:            enrollment.currency || undefined,
+    }
+
     try {
       if (isEditMode) {
         /* ── Edit: don't send status if going to closed (convert handles it) ── */
@@ -649,19 +660,18 @@ export function AddLeadDialog({ open, onOpenChange, lead, initialStatus }: AddLe
         await update.mutateAsync(updatePayload)
 
         if (isClosing) {
-          // Quick close: only hours + price are collected. Course/currency ride along from the
-          // lead when known; teacher, timezone, student type and duration are kept from the
-          // student the lead already provisioned (the converter leaves omitted keys untouched).
-          await convert.mutateAsync({
-            package_hours:       Number(enrollment.package_hours),
-            package_price_minor: Math.round(parseFloat(enrollment.package_price || '0') * 100),
-            course_id:           enrollment.course_id ? Number(enrollment.course_id) : undefined,
-            currency:            enrollment.currency || undefined,
-          })
+          await convert.mutateAsync({ id: lead?.id ?? 0, ...convertData })
           toast.success(t('leads.toastConverted'))
         } else {
           toast.success(t('leads.toastUpdated'))
         }
+      } else if (isClosing) {
+        /* ── Walk-in: create the lead (provisions a student) then convert it in one step. The
+              lead can't be created as 'closed' (convert would reject it), so it lands ready-to-pay. ── */
+        basePayload.status = 'waiting_for_payment'
+        const createdLead = await create.mutateAsync(basePayload)
+        await convert.mutateAsync({ id: createdLead.id, ...convertData })
+        toast.success(t('leads.toastConverted'))
       } else {
         /* ── Create ── */
         basePayload.status = form.status
