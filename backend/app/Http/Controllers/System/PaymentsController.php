@@ -14,6 +14,7 @@ class PaymentsController extends Controller
     {
         $latestIds = StudentPackage::selectRaw('MAX(id) as id')
             ->whereNull('deleted_at')
+            ->where('package_number', '>', 0)
             ->groupBy('student_id');
 
         $query = StudentPackage::whereIn('id', $latestIds)
@@ -50,6 +51,7 @@ class PaymentsController extends Controller
     {
         $latestIds = StudentPackage::selectRaw('MAX(id) as id')
             ->whereNull('deleted_at')
+            ->where('package_number', '>', 0)
             ->groupBy('student_id');
 
         $pendingStudents = StudentPackage::whereIn('id', $latestIds)

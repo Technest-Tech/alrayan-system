@@ -232,6 +232,14 @@ class UserManagementEndpointsTest extends SystemTestCase
             'package_hours_default' => 4,
             'hourly_rate_minor'     => 1500,
         ]);
+        $this->assertDatabaseHas('sys_student_packages', [
+            'student_id'     => $student->id,
+            'package_number' => 0,
+            'package_hours'  => 4,
+            'tariff_at_time' => 4000,
+            'currency'       => 'EUR',
+            'status'         => 'paid',
+        ]);
     }
 
     public function test_patch_persists_student_profile_changes(): void

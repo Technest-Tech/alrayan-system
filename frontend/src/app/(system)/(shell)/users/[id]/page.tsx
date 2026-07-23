@@ -47,8 +47,9 @@ export default function UserProfilePage({ params }: { params: Promise<{ id: stri
 
   const stats = useMemo(() => {
     const now = new Date()
-    // The down payment (#0) is not a lesson package, so it never counts as the "current" package.
-    const current = [...packages].filter((p) => p.package_number > 0).sort((a, b) => b.package_number - a.package_number)[0]
+    // #0 is a real lesson package now (the paid down payment), so it can be the current one —
+    // it's the only package a freshly enrolled student has. Legacy 0-hour down payments can't.
+    const current = [...packages].filter((p) => p.package_hours > 0).sort((a, b) => b.package_number - a.package_number)[0]
     const usedH = current?.consumed_hours ?? 0
     const totalH = current?.package_hours ?? 0
     const upcoming = lessons
@@ -138,7 +139,7 @@ export default function UserProfilePage({ params }: { params: Promise<{ id: stri
 
               {/* Stat tiles */}
               <div className="md:col-span-7 grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <Tile icon={<Box size={16} />} label={t('users.currentPackage')} value={stats.current ? `#${stats.current.package_number}` : '—'} />
+                <Tile icon={<Box size={16} />} label={t('users.currentPackage')} value={!stats.current ? '—' : stats.current.package_number === 0 ? t('users.downPayment') : `#${stats.current.package_number}`} />
                 <Tile icon={<Clock size={16} />} label={t('users.remainingHours')} value={`${stats.remainingH.toFixed(1)}h`} sub={`of ${stats.totalH}h`} />
                 <Tile icon={<BookOpen size={16} />} label={t('users.usedHours')} value={`${stats.usedH.toFixed(1)}h`} />
                 <Tile icon={<CalendarDays size={16} />} label={t('users.lessonsToday')} value={String(stats.todayCount)} />
@@ -233,8 +234,8 @@ export default function UserProfilePage({ params }: { params: Promise<{ id: stri
                 <ul className="space-y-2">
                   {[...packages].sort((a, b) => b.package_number - a.package_number).map((p) => {
                     const isCurrent = p.package_number === stats.current?.package_number
-                    // The down payment (#0) carries its whole amount in tariff_at_time (0 hours).
-                    const price = p.package_number === 0 ? (p.tariff_at_time ?? 0) : p.package_hours * (p.tariff_at_time ?? 0)
+                    // tariff_at_time is the snapshotted charge for the whole package.
+                    const price = p.tariff_at_time ?? 0
                     return (
                       <li key={p.id} className="flex items-center justify-between rounded-lg px-3 py-2 text-sm" style={isCurrent ? { background: 'rgb(254 243 199)', border: '1px solid rgb(234 179 8 / 0.4)' } : { background: '#fff' }}>
                         <span className="font-medium" style={{ color: NAVY }}>{p.package_number === 0 ? t('users.downPayment') : `${t('users.packageLabel')}${p.package_number}`}</span>

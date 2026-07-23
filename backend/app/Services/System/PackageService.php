@@ -20,10 +20,19 @@ class PackageService
     private const PROTECTED_STATUSES = ['paid', 'suspended'];
 
     /**
+     * A student's first package is #0 — the enrolment down payment. It carries real hours and
+     * is consumed by lessons exactly like any other package, but it is created already `paid`
+     * (and dated, so it counts as received revenue), so its lessons are paid from the start and
+     * it never lands on the payments page as owed. Numbering then continues 1, 2, … on the
+     * normal pending → paid lifecycle.
+     */
+    public const FIRST_PACKAGE_NUMBER = 0;
+
+    /**
      * A package's hours determine whether it consumes lessons. `package_hours > 0` is a real
-     * lesson package (a "slot" the engine fills); `package_hours <= 0` is a legacy down-payment
-     * record (Package #0) kept only for backwards compatibility — it never consumes and is never
-     * auto-deleted. New students no longer get a #0: their first payment IS lesson Package #1.
+     * lesson package (a "slot" the engine fills) — which now includes #0. `package_hours <= 0`
+     * is a legacy down-payment record kept only for backwards compatibility: it never consumes
+     * and is never auto-deleted.
      */
 
     /**
@@ -53,47 +62,82 @@ class PackageService
         return $this->createPackage($student, $this->nextPackageNumber($student));
     }
 
-    /** Next 1-indexed package number for the student (max existing + 1, min 1). */
+    /** #0 for a student with no packages yet (the down payment), then 1, 2, … */
     private function nextPackageNumber(Student $student): int
     {
-        $max = (int) StudentPackage::withTrashed()->where('student_id', $student->id)->max('package_number');
-        return max(1, $max + 1);
+        $max = StudentPackage::withTrashed()->where('student_id', $student->id)->max('package_number');
+
+        return $max === null ? self::FIRST_PACKAGE_NUMBER : ((int) $max) + 1;
     }
 
     /** Create a new package for the student, snapshotting current rates. */
     public function createPackage(Student $student, int $packageNumber, ?int $hours = null): StudentPackage
     {
+        // #0 is the down payment, already collected at enrolment: it opens paid (and dated, so it
+        // counts as received) rather than going to the payments page to be chased.
+        $isDownPayment = $packageNumber === self::FIRST_PACKAGE_NUMBER;
+        // Manual student creation stores the package price in monthly_price_minor, while the lead
+        // conversion flow historically stores it in hourly_rate_minor. Prefer the explicit package
+        // price and retain the fallback so both creation paths snapshot the correct charge.
+        $packagePrice = (int) ($student->monthly_price_minor ?: $student->hourly_rate_minor);
+
         return StudentPackage::create([
             'student_id'     => $student->id,
             'package_number' => $packageNumber,
             'package_hours'  => $hours ?? max(1, (int) $student->package_hours_default),
-            'tariff_at_time' => $student->hourly_rate_minor,
+            'tariff_at_time' => $packagePrice,
             'currency'       => $student->currency,
-            'status'         => 'pending',
+            'status'         => $isDownPayment ? 'paid' : 'pending',
+            'paid_at'        => $isDownPayment ? now() : null,
         ]);
     }
 
     /**
-     * Ensure the student's first lesson package exists — this IS the "down payment": a real
-     * Package #1 carrying the enrolled hours, following the normal pending → paid lifecycle, and
-     * whose lessons count as paid once it is paid. Idempotent: returns the existing first lesson
-     * package if one is already present (restoring it if it was soft-deleted).
+     * Ensure the student's first lesson package exists — this IS the "down payment": Package #0,
+     * carrying the enrolled hours and opening already paid, so every lesson it swallows counts as
+     * paid and it never appears as owed. Idempotent: returns the existing first lesson package if
+     * one is already present (restoring it if it was soft-deleted).
      */
     public function ensureFirstPackage(Student $student, ?int $hours = null): StudentPackage
     {
+        // Upgrade a legacy #0 (formerly a zero-hour bill) in place. This keeps its accounting
+        // history while turning it into the real lesson package required by the current rules.
         $existing = StudentPackage::withTrashed()
             ->where('student_id', $student->id)
-            ->where('package_hours', '>', 0)
-            ->orderBy('package_number')
+            ->where('package_number', self::FIRST_PACKAGE_NUMBER)
             ->first();
+
+        if (! $existing) {
+            // Students who took a trial under the previous numbering may already have #1 but no
+            // #0. Reuse that lesson-bearing row so its lesson foreign keys remain intact.
+            $existing = StudentPackage::withTrashed()
+                ->where('student_id', $student->id)
+                ->where('package_hours', '>', 0)
+                ->orderBy('package_number')
+                ->first();
+        }
+
         if ($existing) {
             if ($existing->trashed()) {
                 $existing->restore();
             }
-            return $existing;
+
+            $resolvedHours = $hours
+                ?? ((int) $existing->package_hours > 0
+                    ? (int) $existing->package_hours
+                    : max(1, (int) $student->package_hours_default));
+
+            $existing->update([
+                'package_number' => self::FIRST_PACKAGE_NUMBER,
+                'package_hours'  => $resolvedHours,
+                'status'         => 'paid',
+                'paid_at'        => $existing->paid_at ?? now(),
+            ]);
+
+            return $existing->fresh();
         }
 
-        return $this->createPackage($student, $this->nextPackageNumber($student), $hours);
+        return $this->createPackage($student, self::FIRST_PACKAGE_NUMBER, $hours);
     }
 
     /** Hours consumed in a package (allocation-based, split-aware). */
@@ -145,8 +189,11 @@ class PackageService
                 ->sortBy('package_number')
                 ->values();
             $slotIndex  = 0;
-            $maxNumber  = (int) ($packages->max('package_number') ?? 0);
-            $firstNumber = (int) ($packages->min('package_number') ?? 1);
+            // Seed one below #0 when the student has no packages at all, so the first package the
+            // engine has to invent is the paid down payment rather than a pending #1.
+            $highest    = $packages->max('package_number');
+            $maxNumber  = $highest === null ? self::FIRST_PACKAGE_NUMBER - 1 : (int) $highest;
+            $firstNumber = (int) ($packages->min('package_number') ?? self::FIRST_PACKAGE_NUMBER);
 
             $nextPackage = function () use (&$slots, &$slotIndex, &$maxNumber, $student, $defaultHours) {
                 if ($slotIndex < $slots->count()) {
@@ -256,7 +303,12 @@ class PackageService
         // Dispatch after commit so a rolled-back tx never spawns a task. Idempotent downstream.
         foreach (array_keys($completedPackageIds) as $pid) {
             $pkg = StudentPackage::find($pid);
-            if ($pkg && $pkg->status === 'pending') {
+            // A pending package running out needs chasing — and so does the down payment #0, whose
+            // completion is exactly the moment the student moves onto the normal payable packages.
+            // Later already-settled packages stay quiet.
+            $worthATask = $pkg && ($pkg->status === 'pending'
+                || (int) $pkg->package_number === self::FIRST_PACKAGE_NUMBER);
+            if ($worthATask) {
                 PackageCompleted::dispatch($pkg);
             }
         }

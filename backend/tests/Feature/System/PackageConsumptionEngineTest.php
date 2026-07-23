@@ -126,9 +126,10 @@ class PackageConsumptionEngineTest extends SystemTestCase
         $this->assertSame($pkg1->id, $l0->fresh()->package_id, 'l0 shifts into the paid package');
         $this->assertSame($pkg1->id, $l1->fresh()->package_id);
 
-        $pkg2 = StudentPackage::where('student_id', $s->id)->where('package_number', 2)->first();
+        // The first package is the down payment #0, so the overflow opens #1.
+        $pkg2 = StudentPackage::where('student_id', $s->id)->where('package_number', 1)->first();
         $this->assertNotNull($pkg2);
-        $this->assertSame($pkg2->id, $l2->fresh()->package_id, 'overflow pushed into package #2');
+        $this->assertSame($pkg2->id, $l2->fresh()->package_id, 'overflow pushed into the next package');
     }
 
     public function test_paid_package_is_protected_from_auto_deletion_when_emptied(): void
@@ -223,27 +224,28 @@ class PackageConsumptionEngineTest extends SystemTestCase
         $this->assertDatabaseHas('sys_tasks', ['type' => 'package_complete']);
     }
 
-    /* ── Down payment = the first lesson package (#1) ── */
+    /* ── Down payment = the first lesson package (#0, already paid) ── */
 
-    public function test_first_package_is_the_down_payment_holds_lessons_and_survives_empty_rebuild(): void
+    public function test_first_package_is_a_paid_down_payment_numbered_zero(): void
     {
         $s  = $this->student(2);
         $dp = app(PackageService::class)->ensureFirstPackage($s, 2);
-        $this->assertSame(1, $dp->package_number, 'the down payment IS lesson package #1');
+        $this->assertSame(0, $dp->package_number, 'the down payment IS lesson package #0');
         $this->assertSame(2, (int) $dp->package_hours, 'it carries the enrolled hours');
-        $this->assertSame('pending', $dp->status);
+        $this->assertSame('paid', $dp->status, 'it opens paid — never chased on the payments page');
+        $this->assertNotNull($dp->paid_at, 'and dated, so it counts as received revenue');
 
         // A rebuild with no lessons at all still keeps it (it is collected upfront).
         $this->rebuild($s);
         $this->assertNull($dp->fresh()->deleted_at, 'the down payment survives an empty rebuild');
 
-        // Consuming lessons flow INTO #1 now — it is a real, payable lesson package.
+        // Consuming lessons flow INTO #0 — it is a real lesson package.
         $this->lesson($s, 'attended', 60, now()->setTime(9, 0));
         $this->rebuild($s);
 
         $dp->refresh();
         $this->assertNull($dp->deleted_at, 'the first package is never auto-deleted');
-        $this->assertEqualsWithDelta(1.0, $dp->consumed_hours, 0.001, 'the lesson consumes from #1');
+        $this->assertEqualsWithDelta(1.0, $dp->consumed_hours, 0.001, 'the lesson consumes from #0');
     }
 
     public function test_ensure_first_package_is_idempotent(): void
@@ -253,22 +255,85 @@ class PackageConsumptionEngineTest extends SystemTestCase
         $b = app(PackageService::class)->ensureFirstPackage($s, 2);
 
         $this->assertSame($a->id, $b->id, 're-ensuring returns the existing first package');
-        $this->assertSame(1, StudentPackage::where('student_id', $s->id)->where('package_number', 1)->count());
+        $this->assertSame(1, StudentPackage::where('student_id', $s->id)->where('package_number', 0)->count());
     }
 
-    public function test_paying_the_first_package_makes_its_lessons_paid(): void
+    public function test_down_payment_lessons_are_paid_and_the_overflow_opens_a_pending_package_one(): void
     {
-        $s = $this->student(4);
-        app(PackageService::class)->ensureFirstPackage($s, 4);
+        $s = $this->student(2);
+        app(PackageService::class)->ensureFirstPackage($s, 2);
 
-        $lesson = $this->lesson($s, 'attended', 60, now()->setTime(9, 0));
+        // Two hours fill #0 exactly; the next lesson spills into a brand-new #1.
+        $inside  = $this->lesson($s, 'attended', 120, now()->setTime(9, 0));
+        $outside = $this->lesson($s, 'attended', 60, now()->addDay()->setTime(9, 0));
         $this->rebuild($s);
 
-        $pkg1 = StudentPackage::where('student_id', $s->id)->where('package_number', 1)->first();
-        $this->assertSame($pkg1->id, $lesson->fresh()->package_id, 'the lesson belongs to package #1');
+        $zero = StudentPackage::where('student_id', $s->id)->where('package_number', 0)->first();
+        $one  = StudentPackage::where('student_id', $s->id)->where('package_number', 1)->first();
 
-        // Paying #1 → its lessons are paid (a lesson's paid state is derived from its package).
-        $pkg1->update(['status' => 'paid', 'paid_at' => now()]);
-        $this->assertSame('paid', $lesson->fresh()->package->status, "the lesson's package is now paid");
+        $this->assertSame($zero->id, $inside->fresh()->package_id, 'lessons land in #0 while it has room');
+        $this->assertSame('paid', $inside->fresh()->package->status, 'so they are paid with no payment step');
+
+        $this->assertNotNull($one, 'once #0 is full the normal numbering resumes at #1');
+        $this->assertSame($one->id, $outside->fresh()->package_id, 'the overflow lesson belongs to #1');
+        $this->assertSame('pending', $one->status, '#1 goes through the usual payments flow');
+        $this->assertNull($one->paid_at);
+    }
+
+    public function test_a_lazily_created_first_package_is_also_the_paid_zero(): void
+    {
+        $s = $this->student(2);
+
+        // Nothing ensured upfront: logging a lesson must still open #0, not a pending #1.
+        $this->lesson($s, 'attended', 60, now()->setTime(9, 0));
+        $this->rebuild($s);
+
+        $first = $this->packages($s)->first();
+        $this->assertSame(0, $first->package_number);
+        $this->assertSame('paid', $first->status);
+    }
+
+    public function test_legacy_zero_hour_down_payment_is_upgraded_in_place(): void
+    {
+        $s = $this->student(4);
+        $legacy = StudentPackage::create([
+            'student_id'     => $s->id,
+            'package_number' => 0,
+            'package_hours'  => 0,
+            'tariff_at_time' => 2000,
+            'currency'       => 'USD',
+            'status'         => 'pending',
+        ]);
+
+        $first = app(PackageService::class)->ensureFirstPackage($s, 4);
+
+        $this->assertSame($legacy->id, $first->id);
+        $this->assertSame(0, $first->package_number);
+        $this->assertSame(4, $first->package_hours);
+        $this->assertSame('paid', $first->status);
+        $this->assertNotNull($first->paid_at);
+    }
+
+    public function test_legacy_first_lesson_package_is_renumbered_without_replacing_it(): void
+    {
+        $s = $this->student(4);
+        $legacy = StudentPackage::create([
+            'student_id'     => $s->id,
+            'package_number' => 1,
+            'package_hours'  => 4,
+            'tariff_at_time' => 2000,
+            'currency'       => 'USD',
+            'status'         => 'pending',
+        ]);
+
+        $first = app(PackageService::class)->ensureFirstPackage($s, 4);
+
+        $this->assertSame($legacy->id, $first->id);
+        $this->assertSame(0, $first->package_number);
+        $this->assertSame('paid', $first->status);
+        $this->assertDatabaseMissing('sys_student_packages', [
+            'student_id'     => $s->id,
+            'package_number' => 1,
+        ]);
     }
 }

@@ -90,25 +90,18 @@ class LeadToStudentConverter
                 ], $studentData));
             }
 
-            // The student's first payment is the down payment — and it IS lesson Package #1: a real
-            // package carrying the enrolled hours that follows the pending → paid lifecycle, and whose
-            // lessons count as paid once it is paid. If a lesson package already exists (e.g. a trial
-            // lesson created one lazily), capture the entered hours/tariff on it and re-shift;
-            // otherwise create Package #1 upfront so the down payment can be collected before lessons.
-            $lessonPackage = $student->packages()
-                ->where('package_hours', '>', 0)
-                ->orderBy('package_number')
-                ->first();
-            if ($lessonPackage) {
-                $lessonPackage->update([
-                    'package_hours'  => $packageHours,
-                    'tariff_at_time' => $student->hourly_rate_minor,
-                    'currency'       => $student->currency,
-                ]);
-                $this->packages->rebuild($student);
-            } else {
-                $this->packages->ensureFirstPackage($student, $packageHours);
-            }
+            // The student's down payment IS lesson Package #0: a real package carrying the enrolled
+            // hours that opens already paid. ensureFirstPackage also upgrades the legacy forms of
+            // this record (#0 with zero hours, or a trial package numbered #1) without losing lessons.
+            $lessonPackage = $this->packages->ensureFirstPackage($student, $packageHours);
+            $lessonPackage->update([
+                'package_hours'  => $packageHours,
+                'tariff_at_time' => $student->hourly_rate_minor,
+                'currency'       => $student->currency,
+                'status'         => 'paid',
+                'paid_at'        => $lessonPackage->paid_at ?? now(),
+            ]);
+            $this->packages->rebuild($student);
 
             $lead->update([
                 'status'                  => 'closed',

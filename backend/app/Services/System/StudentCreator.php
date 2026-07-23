@@ -17,7 +17,10 @@ use Illuminate\Support\Facades\DB;
  */
 class StudentCreator
 {
-    public function __construct(private readonly UserProvisioner $provisioner) {}
+    public function __construct(
+        private readonly UserProvisioner $provisioner,
+        private readonly PackageService $packages,
+    ) {}
 
     /**
      * @param  array<string,mixed>  $data
@@ -85,6 +88,13 @@ class StudentCreator
             if (! empty($data['trial_booking_id'])) {
                 TrialBooking::where('id', $data['trial_booking_id'])
                     ->update(['converted_to_student_id' => $student->id]);
+            }
+
+            // Open the enrolment down payment (Package #0, already paid) so the student's first
+            // lessons are covered from the start. With no package size on file there is nothing
+            // to size it from — the first logged lesson then opens #0 lazily instead.
+            if ((int) $student->package_hours_default > 0) {
+                $this->packages->ensureFirstPackage($student, (int) $student->package_hours_default);
             }
 
             AuditLog::record('student.created', $student);

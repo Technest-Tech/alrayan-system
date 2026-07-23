@@ -470,19 +470,20 @@ class LeadEndpointsTest extends SystemTestCase
             'hourly_rate_minor'     => 120000,
         ]);
 
-        // The first payment IS lesson Package #1 — a real package carrying the enrolled hours,
-        // pending until paid, whose lessons count as paid once it is paid. No separate #0.
+        // The down payment IS lesson Package #0 — a real package carrying the enrolled hours that
+        // opens already paid, so its lessons are paid and it never shows up as owed.
         $student = \App\Models\System\Student::where('lead_id', $lead->id)->firstOrFail();
         $this->assertDatabaseHas('sys_student_packages', [
             'student_id'     => $student->id,
-            'package_number' => 1,
+            'package_number' => 0,
             'package_hours'  => 8,
             'tariff_at_time' => 120000,
-            'status'         => 'pending',
+            'status'         => 'paid',
         ]);
+        // Nothing pending is created upfront — #1 only appears once #0 is used up.
         $this->assertDatabaseMissing('sys_student_packages', [
             'student_id'     => $student->id,
-            'package_number' => 0,
+            'package_number' => 1,
         ]);
     }
 
@@ -522,14 +523,14 @@ class LeadEndpointsTest extends SystemTestCase
         $this->assertSame(90000, (int) $student->hourly_rate_minor);
         $this->assertDatabaseHas('sys_student_packages', [
             'student_id'     => $student->id,
-            'package_number' => 1,
+            'package_number' => 0,
             'package_hours'  => 6,
             'tariff_at_time' => 90000,
-            'status'         => 'pending',
+            'status'         => 'paid',
         ]);
         $this->assertDatabaseMissing('sys_student_packages', [
             'student_id'     => $student->id,
-            'package_number' => 0,
+            'package_number' => 1,
         ]);
     }
 
