@@ -8,6 +8,9 @@ class StudentResource extends JsonResource
 {
     public function toArray($request): array
     {
+        // Pricing is finance-only — teachers/students must not receive student prices.
+        $hidePricing = in_array($request->user()?->role, ['teacher', 'student'], true);
+
         return [
             'id'                   => $this->id,
             'name'                 => $this->name,
@@ -33,8 +36,8 @@ class StudentResource extends JsonResource
             'sessions_per_month'   => $this->sessions_per_month,
             'session_duration_min' => $this->session_duration_min,
             'currency'             => $this->currency,
-            'monthly_price_minor'  => $this->monthly_price_minor,
-            'custom_discount_pct'  => $this->custom_discount_pct,
+            'monthly_price_minor'  => $hidePricing ? null : $this->monthly_price_minor,
+            'custom_discount_pct'  => $hidePricing ? null : $this->custom_discount_pct,
             'whatsapp_group_id'    => $this->whatsapp_group_id,
             'whatsapp_group_link'  => $this->whatsapp_group_link,
             'whatsapp_group_status'=> $this->whatsapp_group_status,

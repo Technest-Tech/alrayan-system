@@ -6,6 +6,7 @@ import { useDeleteLesson, useLesson, useUpdateLesson } from '@/hooks/system/useL
 import { LessonForm } from './LessonForm'
 import { STATUS_PILL, STATUS_LABEL, LESSON_STATUSES } from '@/lib/system/lessonStatus'
 import { useI18n } from '@/lib/system/i18n'
+import { useUser } from '@/lib/system/auth'
 
 /* Map lesson-status enum values → i18n keys (labels in lessonStatus.ts are not translated). */
 const STATUS_KEY: Record<string, string> = {
@@ -77,6 +78,10 @@ interface Props {
 
 export function LessonDetailDrawer({ lesson: selected, open, onClose, onUpdate }: Props) {
   const { t } = useI18n()
+  const { data: me } = useUser()
+  // Pricing (package tariff) is finance-only — teachers must never see student prices.
+  // Hidden until the user is loaded AND confirmed to be a non-teacher role.
+  const canSeePricing = !!me && me.role !== 'teacher'
   const [editing, setEditing] = useState(false)
   const deleteLesson = useDeleteLesson()
   const updateLesson = useUpdateLesson()
@@ -232,17 +237,19 @@ export function LessonDetailDrawer({ lesson: selected, open, onClose, onUpdate }
                 </div>
               </div>
 
-              {/* Admin config row */}
-              <div className="pt-1">
-                <div className="flex items-center justify-between text-xs" style={{ color: MUTED }}>
-                  <span className="font-semibold uppercase tracking-wider">{t('lessons.detail.packageConfig')}</span>
-                  <ChevronRight size={12} />
+              {/* Admin config row — pricing is finance-only, hidden from teachers */}
+              {canSeePricing && (
+                <div className="pt-1">
+                  <div className="flex items-center justify-between text-xs" style={{ color: MUTED }}>
+                    <span className="font-semibold uppercase tracking-wider">{t('lessons.detail.packageConfig')}</span>
+                    <ChevronRight size={12} />
+                  </div>
+                  <div className="mt-2 flex gap-4 text-xs">
+                    <span style={{ color: MUTED }}>{t('lessons.detail.tariff')}: <strong style={{ color: NAVY }}>{lesson.package.tariff_at_time / 100} {lesson.package.currency}</strong></span>
+                    <span style={{ color: MUTED }}>{t('lessons.detail.hours')}: <strong style={{ color: NAVY }}>{lesson.package.package_hours}h</strong></span>
+                  </div>
                 </div>
-                <div className="mt-2 flex gap-4 text-xs">
-                  <span style={{ color: MUTED }}>{t('lessons.detail.tariff')}: <strong style={{ color: NAVY }}>{lesson.package.tariff_at_time / 100} {lesson.package.currency}</strong></span>
-                  <span style={{ color: MUTED }}>{t('lessons.detail.hours')}: <strong style={{ color: NAVY }}>{lesson.package.package_hours}h</strong></span>
-                </div>
-              </div>
+              )}
             </div>
 
             {/* Subject */}
