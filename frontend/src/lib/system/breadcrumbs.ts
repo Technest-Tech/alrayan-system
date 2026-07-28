@@ -18,6 +18,7 @@ const PATH_KEYS: Record<string, string> = {
   payments:            'breadcrumbs.payments',
   overdue:             'breadcrumbs.overdue',
   payroll:             'breadcrumbs.payroll',
+  'salary-tiers':      'breadcrumbs.salaryTiers',
   accounting:          'breadcrumbs.accounting',
   revenue:             'breadcrumbs.revenue',
   expenses:            'breadcrumbs.expenses',

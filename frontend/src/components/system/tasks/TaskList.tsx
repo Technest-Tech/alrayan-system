@@ -53,7 +53,14 @@ export function TaskList({ tasks, isLoading, onSelect }: Props) {
                     <Icon size={13} /> {typeKey ? t(typeKey) : meta.label}
                   </span>
                 </td>
-                <td className="px-4 py-2.5 font-medium" style={{ color: 'rgb(11 31 58)' }}>{task.title}</td>
+                <td className="px-4 py-2.5">
+                  <p className="font-medium" style={{ color: 'rgb(11 31 58)' }}>{task.title}</p>
+                  {task.type === 'package_complete' && task.teacher_name && (
+                    <p className="mt-0.5 text-[11px]" style={{ color: 'rgb(90 100 112)' }}>
+                      {t('common.teacher')}: {task.teacher_name}
+                    </p>
+                  )}
+                </td>
                 <td className="px-4 py-2.5 text-xs" style={{ color: 'rgb(90 100 112)' }}>{t(TASK_STATUS_KEYS[task.status as TaskStatus])}</td>
                 <td className="px-4 py-2.5">
                   <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full" style={pr}>

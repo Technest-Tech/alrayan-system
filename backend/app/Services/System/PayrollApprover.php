@@ -25,7 +25,7 @@ class PayrollApprover
                 $p->teacher->user,
                 'payroll.approved',
                 'Payroll approved: ' . Carbon::create($p->period_year, $p->period_month, 1)->format('F Y'),
-                'EGP ' . number_format($p->net_salary_minor / 100, 2),
+                ($p->currency ?: 'EGP') . ' ' . number_format($p->net_salary_minor / 100, 2),
                 '/teacher/salary'
             );
         }

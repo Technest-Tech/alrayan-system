@@ -42,6 +42,7 @@ use App\Http\Controllers\System\SessionController;
 use App\Http\Controllers\System\SessionReportController;
 use App\Http\Controllers\System\GuardianController;
 use App\Http\Controllers\System\StudentController;
+use App\Http\Controllers\System\StudentAnalyticsController;
 use App\Http\Controllers\System\StudentFamilyController;
 use App\Http\Controllers\System\StudentNoteController;
 use App\Http\Controllers\System\StudentTransitionController;
@@ -93,6 +94,9 @@ Route::prefix('system')->name('system.')->group(function () {
             Route::get('/analytics',                          [AnalyticsController::class, 'index'])->name('analytics.index');
             Route::get('/analytics/fx-rates',                 [AnalyticsController::class, 'fxRates'])->name('analytics.fx-rates');
             Route::get('/analytics/teachers/{teacher}',       [AnalyticsController::class, 'teacher'])->name('analytics.teacher');
+
+            // Salary tiers — the hour ladder salaries are paid on, + who sits where.
+            Route::get('/salary-tiers', [\App\Http\Controllers\System\SalaryTierController::class, 'index'])->name('salary-tiers.index');
         });
         Route::middleware('system.can:teachers.edit')
             ->patch('/analytics/teachers/{teacher}/exclusion', [AnalyticsController::class, 'setExclusion'])->name('analytics.teacher.exclusion');
@@ -159,6 +163,7 @@ Route::prefix('system')->name('system.')->group(function () {
         Route::get('/teachers/me/profile',          [TeacherSelfController::class, 'profile'])->name('teachers.me.profile');
         Route::patch('/teachers/me/profile',        [TeacherSelfController::class, 'updateProfile'])->name('teachers.me.profile.update');
         Route::get('/teachers/me/salary-statement', [TeacherSelfController::class, 'salaryStatement'])->name('teachers.me.salary-statement');
+        Route::get('/teachers/me/salary-tier',      [TeacherSelfController::class, 'salaryTier'])->name('teachers.me.salary-tier');
 
         Route::middleware('system.can:teachers.view')->group(function () {
             Route::get('/teachers',      [TeacherController::class, 'index'])->name('teachers.index');
@@ -192,6 +197,7 @@ Route::prefix('system')->name('system.')->group(function () {
 
         // Students
         Route::middleware('system.can:students.view')->group(function () {
+            Route::get('/students/analytics', StudentAnalyticsController::class)->name('students.analytics');
             Route::get('/students',           [StudentController::class, 'index'])->name('students.index');
             Route::get('/students/{student}', [StudentController::class, 'show'])->name('students.show');
             Route::get('/students/{student}/notes', [StudentNoteController::class, 'index'])->name('students.notes.index');

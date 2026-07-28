@@ -508,7 +508,9 @@ class TaskEndpointsTest extends SystemTestCase
 
     public function test_package_complete_generator_is_idempotent(): void
     {
-        ['package' => $package] = $this->makeLesson();
+        ['student' => $student, 'teacher' => $teacher, 'package' => $package] = $this->makeLesson();
+        $student->update(['name' => 'Package Student']);
+        $teacher->user->update(['name' => 'Package Teacher']);
         $generator = app(TaskGenerator::class);
 
         $generator->forPackageComplete($package);
@@ -518,7 +520,37 @@ class TaskEndpointsTest extends SystemTestCase
 
         $task = Task::where('type', 'package_complete')->first();
         $this->assertFalse(Task::isActionable('package_complete'));
+        $this->assertSame($student->id, $task->student_id);
+        $this->assertSame($teacher->id, $task->teacher_id);
+        $this->assertSame('Package Student', $task->payload['student_name'] ?? null);
+        $this->assertSame('Package Teacher', $task->payload['teacher_name'] ?? null);
         $this->assertSame(1, (int) ($task->payload['package_number'] ?? 0));
+    }
+
+    public function test_existing_package_complete_tasks_are_backfilled_with_student_and_teacher_names(): void
+    {
+        ['student' => $student, 'teacher' => $teacher, 'package' => $package] = $this->makeLesson();
+        $student->update(['name' => 'Existing Student']);
+        $teacher->user->update(['name' => 'Existing Teacher']);
+
+        $task = Task::create([
+            'type'         => 'package_complete',
+            'status'       => 'new',
+            'priority'     => 'medium',
+            'title'        => 'Existing Student',
+            'payload'      => ['package_number' => 1],
+            'related_type' => $package->getMorphClass(),
+            'related_id'   => $package->id,
+        ]);
+
+        $migration = require database_path('migrations/2026_10_04_000001_backfill_package_complete_task_names.php');
+        $migration->up();
+
+        $task->refresh();
+        $this->assertSame($student->id, $task->student_id);
+        $this->assertSame($teacher->id, $task->teacher_id);
+        $this->assertSame('Existing Student', $task->payload['student_name'] ?? null);
+        $this->assertSame('Existing Teacher', $task->payload['teacher_name'] ?? null);
     }
 
     // ═══════════════════════════════════════════════════ AUTHORIZATION ═══

@@ -4,8 +4,10 @@ namespace Tests\Unit\System;
 
 use App\Models\System\Expense;
 use App\Models\System\Payment;
+use App\Models\System\Payroll;
 use App\Services\System\ProfitLossCalculator;
 use App\Services\System\RevenueAggregator;
+use App\Support\System\Setting;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
@@ -181,5 +183,30 @@ class ProfitLossCalculatorTest extends TestCase
         $this->assertEquals(100000, $stmt->revenue);
         $this->assertEquals(0, $stmt->expenses);
         $this->assertEquals(100000, $stmt->netProfit);
+    }
+
+    public function test_usd_tier_payroll_is_converted_without_double_counting_bonuses(): void
+    {
+        Setting::set('pricing.fx.USD_to_EGP', '50');
+        Payroll::factory()->approved()->create([
+            'period_year'       => 2026,
+            'period_month'      => 7,
+            'base_salary_minor' => 1000,
+            'bonuses_minor'     => 100,
+            'deductions_minor'  => 50,
+            'net_salary_minor'  => 1050,
+            'currency'          => 'USD',
+        ]);
+
+        Cache::flush();
+        $stmt = $this->calculator->statement(
+            Carbon::parse('2026-07-01'),
+            Carbon::parse('2026-07-31'),
+            'EGP',
+        );
+
+        $this->assertSame(47500, $stmt->salaries);
+        $this->assertSame(5000, $stmt->bonuses);
+        $this->assertSame(52500, $stmt->totalCosts);
     }
 }

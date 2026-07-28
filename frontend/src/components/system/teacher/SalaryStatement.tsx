@@ -3,6 +3,7 @@ import { formatMoney } from '@/lib/money'
 import { PayrollStatusBadge } from '@/components/system/payroll/PayrollStatusBadge'
 import type { Payroll } from '@/types/system/payroll'
 import { useI18n } from '@/lib/system/i18n'
+import { TierBadge } from '@/components/system/salary/TierBadge'
 
 interface SalaryStatementProps {
   payroll: Payroll
@@ -21,6 +22,7 @@ export function SalaryStatement({ payroll }: SalaryStatementProps) {
   const bonuses = adjustments.filter(a => a.type === 'bonus')
   const deductions = adjustments.filter(a => a.type === 'deduction')
   const breakdown = payroll.breakdown_by_duration ?? {}
+  const currency = payroll.currency ?? 'EGP'
 
   return (
     <div className="rounded-xl border bg-white shadow-sm overflow-hidden">
@@ -38,10 +40,10 @@ export function SalaryStatement({ payroll }: SalaryStatementProps) {
         <div className="pb-4">
           <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-2">{t('common.sessions')}</p>
           <div className="space-y-1.5">
-            {Object.entries(breakdown).map(([dur, sessions]) => (
+            {Object.entries(breakdown).map(([dur, minutes]) => (
               <div key={dur} className="flex justify-between text-gray-700">
                 <span>{t('teacher.salary.durationMin', { n: String(dur) })}</span>
-                <span className="tabular-nums">{String(sessions)} {sessions !== 1 ? t('teachers.salarySessionPlural') : t('teachers.salarySessionSingular')}</span>
+                <span className="tabular-nums">{t('payroll.detail.minutesLabel', { n: String(minutes) })}</span>
               </div>
             ))}
             <div className="flex justify-between font-medium pt-1 border-t">
@@ -53,9 +55,20 @@ export function SalaryStatement({ payroll }: SalaryStatementProps) {
 
         {/* Base salary */}
         <div className="py-4">
+          {payroll.tier_index != null && (
+            <div className="flex flex-wrap items-center justify-between gap-2 pb-3 mb-3 border-b">
+              <span className="inline-flex items-center gap-2 text-gray-600">
+                {t('salaryTiers.calculationLevel')}
+                <TierBadge index={payroll.tier_index} size="sm" />
+              </span>
+              <span className="tabular-nums font-medium">
+                {payroll.total_hours.toFixed(2)}h × {formatMoney(payroll.hourly_rate_minor, currency)}/h
+              </span>
+            </div>
+          )}
           <div className="flex justify-between font-medium">
             <span>{t('teachers.salaryBase')}</span>
-            <span className="tabular-nums">{formatMoney(payroll.base_salary_minor, 'EGP')}</span>
+            <span className="tabular-nums">{formatMoney(payroll.base_salary_minor, currency)}</span>
           </div>
         </div>
 
@@ -67,12 +80,12 @@ export function SalaryStatement({ payroll }: SalaryStatementProps) {
               {bonuses.map(adj => (
                 <div key={adj.id} className="flex justify-between text-green-700">
                   <span>{adj.reason || adj.category}</span>
-                  <span className="tabular-nums">+{formatMoney(adj.amount_minor, 'EGP')}</span>
+                  <span className="tabular-nums">+{formatMoney(adj.amount_minor, currency)}</span>
                 </div>
               ))}
               <div className="flex justify-between font-medium text-green-700 pt-1 border-t border-green-100">
                 <span>{t('teachers.salaryTotalBonuses')}</span>
-                <span className="tabular-nums">+{formatMoney(payroll.bonuses_minor, 'EGP')}</span>
+                <span className="tabular-nums">+{formatMoney(payroll.bonuses_minor, currency)}</span>
               </div>
             </div>
           </div>
@@ -86,12 +99,12 @@ export function SalaryStatement({ payroll }: SalaryStatementProps) {
               {deductions.map(adj => (
                 <div key={adj.id} className="flex justify-between text-red-600">
                   <span>{adj.reason || adj.category}</span>
-                  <span className="tabular-nums">-{formatMoney(adj.amount_minor, 'EGP')}</span>
+                  <span className="tabular-nums">-{formatMoney(adj.amount_minor, currency)}</span>
                 </div>
               ))}
               <div className="flex justify-between font-medium text-red-600 pt-1 border-t border-red-100">
                 <span>{t('teachers.salaryTotalDeductions')}</span>
-                <span className="tabular-nums">-{formatMoney(payroll.deductions_minor, 'EGP')}</span>
+                <span className="tabular-nums">-{formatMoney(payroll.deductions_minor, currency)}</span>
               </div>
             </div>
           </div>
@@ -101,7 +114,7 @@ export function SalaryStatement({ payroll }: SalaryStatementProps) {
         <div className="pt-4">
           <div className="flex justify-between text-base font-bold">
             <span>{t('teachers.salaryNet')}</span>
-            <span className="tabular-nums">{formatMoney(payroll.net_salary_minor, 'EGP')}</span>
+            <span className="tabular-nums">{formatMoney(payroll.net_salary_minor, currency)}</span>
           </div>
         </div>
       </div>

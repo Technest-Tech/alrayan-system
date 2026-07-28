@@ -35,6 +35,10 @@ class PayrollGenerator
                 'period_month'           => $month,
                 'total_sessions'         => $comp->totalSessions,
                 'total_minutes'          => $comp->totalMinutes,
+                'total_hours'            => $comp->totalHours,
+                'hourly_rate_minor'      => $comp->hourlyRateMinor,
+                'tier_index'             => $comp->tierIndex,
+                'currency'               => $comp->currency,
                 'breakdown_by_duration'  => $comp->breakdownByDuration,
                 'base_salary_minor'      => $comp->baseSalaryMinor,
                 'bonuses_minor'          => 0,
@@ -66,8 +70,13 @@ class PayrollGenerator
         $payroll->update([
             'total_sessions'        => $comp->totalSessions,
             'total_minutes'         => $comp->totalMinutes,
+            'total_hours'           => $comp->totalHours,
+            'hourly_rate_minor'     => $comp->hourlyRateMinor,
+            'tier_index'            => $comp->tierIndex,
+            'currency'              => $comp->currency,
             'breakdown_by_duration' => $comp->breakdownByDuration,
             'base_salary_minor'     => $comp->baseSalaryMinor,
+            'snapshot'              => $comp->rateSnapshot,
         ]);
 
         $payroll->recomputeTotals();
@@ -84,8 +93,10 @@ class PayrollGenerator
             ->whereBetween('scheduled_start', [$start, $end])
             ->pluck('id');
 
+        if ($sessions->isEmpty()) return;
+
         $lateReports = SessionReport::whereIn('session_id', $sessions)
-            ->whereRaw('created_at > DATE_ADD((SELECT scheduled_end FROM sys_sessions WHERE id = session_id), INTERVAL 24 HOUR)')
+            ->whereRaw('created_at > ' . $this->plus24hExpr('(SELECT scheduled_end FROM sys_sessions WHERE id = session_id)'))
             ->count();
 
         if ($lateReports > 0) {
@@ -98,5 +109,15 @@ class PayrollGenerator
                 'added_by_user_id' => 1,
             ]);
         }
+    }
+
+    /** "24 hours after `$expr`", in the dialect of the current connection. */
+    private function plus24hExpr(string $expr): string
+    {
+        return match (DB::connection()->getDriverName()) {
+            'sqlite' => "datetime($expr, '+24 hours')",
+            'pgsql'  => "($expr + INTERVAL '24 hours')",
+            default  => "DATE_ADD($expr, INTERVAL 24 HOUR)",
+        };
     }
 }

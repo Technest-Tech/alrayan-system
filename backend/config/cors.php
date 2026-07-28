@@ -12,6 +12,7 @@ return [
         env('SYSTEM_FRONTEND_URL_STAGING'),   // app-staging.alrayan-academy.com
         'http://localhost:3000',
         'http://app.localhost:3000',
+        'http://system.localhost:3000',
     ]),
 
     'allowed_origins_patterns' => [],

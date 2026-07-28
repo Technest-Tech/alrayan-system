@@ -9,7 +9,29 @@ import { useSystemUser } from '@/components/system/shell/SystemShell'
 import { useI18n } from '@/lib/system/i18n'
 import TeacherRace from '@/components/system/users/TeacherRace'
 import TeacherProfileDashboard from '@/components/system/users/TeacherProfileDashboard'
+import { MySalaryTierCard } from '@/components/system/salary/MySalaryTierCard'
 import type { DirectoryUser, TeacherProfile } from '@/types/system/user-directory'
+
+const CURRENCY_SYMBOL: Record<string, string> = {
+  USD: '$', EUR: '€', GBP: '£', EGP: 'E£', SAR: 'SAR ', AED: 'AED ',
+  MAD: 'MAD ', QAR: 'QAR ', OMR: 'OMR ', KWD: 'KWD ',
+}
+const symbolFor = (code: string) => CURRENCY_SYMBOL[code] ?? `${code} `
+
+/** Minor units → display amount, e.g. 12345 EUR → "€123.45". */
+function money(minor: number, currency: string): string {
+  return `${symbolFor(currency)}${(minor / 100).toLocaleString(undefined, { maximumFractionDigits: 2 })}`
+}
+
+/**
+ * Amounts are kept per currency (converting them would invent numbers), so a
+ * multi-currency total renders as "€1,200 · $340".
+ */
+function moneyByCurrency(map: Record<string, number> | undefined, empty: string): string {
+  const entries = Object.entries(map ?? {}).filter(([, v]) => v > 0)
+  if (entries.length === 0) return empty
+  return entries.map(([code, minor]) => money(minor, code)).join(' · ')
+}
 
 function BarChart({ items, valueKey, labelKey, formatValue }: {
   items: Record<string, number | string>[]
@@ -58,8 +80,26 @@ function AdminDashboard() {
     <>
       <PageHeader title={t('dashboard.title')} description={t('dashboard.description')} />
 
-      {/* KPI grid — 8 cards across 2 rows of 4 */}
+      {/* KPI grid — 12 cards across 3 rows of 4 */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-6">
+        <KpiCard
+          label={t('dashboard.totalUsers')}
+          value={kpis?.total_users ?? 0}
+          sub={kpis ? t('dashboard.usersBreakdown', {
+            students: String(kpis.total_students),
+            teachers: String(kpis.total_teachers),
+          }) : undefined}
+          loading={isLoading}
+        />
+        <KpiCard
+          label={t('dashboard.totalStudents')}
+          value={kpis?.total_students ?? 0}
+          sub={kpis ? t('dashboard.studentsBreakdown', {
+            active: String(kpis.active_students),
+            trial:  String(kpis.trial_students),
+          }) : undefined}
+          loading={isLoading}
+        />
         <KpiCard
           label={t('dashboard.activeStudents')}
           value={kpis?.active_students ?? 0}
@@ -67,9 +107,14 @@ function AdminDashboard() {
           loading={isLoading}
         />
         <KpiCard
+          label={t('dashboard.teachers')}
+          value={kpis?.total_teachers ?? 0}
+          sub={kpis ? t('dashboard.teachersActive', { n: String(kpis.active_teachers) }) : undefined}
+          loading={isLoading}
+        />
+        <KpiCard
           label={t('dashboard.trialStudents')}
           value={kpis?.trial_students ?? 0}
-          delta={kpis?.trial_students_delta ? t('dashboard.thisMonth', { n: String(kpis.trial_students_delta) }) : undefined}
           loading={isLoading}
         />
         <KpiCard
@@ -83,25 +128,49 @@ function AdminDashboard() {
           loading={isLoading}
         />
         <KpiCard
-          label={t('dashboard.todaySessions')}
-          value={kpis?.today_sessions ?? 0}
+          label={t('dashboard.conversionRate')}
+          value={kpis?.conversion_rate != null ? `${Math.round(kpis.conversion_rate * 100)}%` : '—'}
+          sub={t('dashboard.momPercent')}
+          loading={isLoading}
+        />
+        <KpiCard
+          label={t('dashboard.lessonsToday')}
+          value={kpis?.lessons_today ?? 0}
+          sub={kpis ? t('dashboard.hoursValue', { h: kpis.hours_today.toFixed(1) }) : undefined}
+          loading={isLoading}
+        />
+        <KpiCard
+          label={t('dashboard.hoursMonth')}
+          value={kpis ? kpis.hours_month.toFixed(1) : 0}
+          sub={kpis ? t('dashboard.lastMonthHours', { h: kpis.hours_last_month.toFixed(1) }) : undefined}
+          loading={isLoading}
+        />
+        <KpiCard
+          label={t('dashboard.totalHours')}
+          value={kpis ? kpis.hours_total.toFixed(1) : 0}
+          sub={kpis ? t('dashboard.lessonsThisMonth', { n: String(kpis.lessons_month) }) : undefined}
           loading={isLoading}
         />
         <KpiCard
           label={t('dashboard.revenueMonth')}
-          value={kpis?.month_revenue?.USD != null ? `$${(kpis.month_revenue.USD / 100).toLocaleString()}` : '—'}
+          value={moneyByCurrency(kpis?.month_revenue, '—')}
+          sub={t('dashboard.paidPackages')}
           loading={isLoading}
         />
+      </div>
+
+      {/* Outstanding sits on its own line so long multi-currency strings can breathe */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
         <KpiCard
           label={t('dashboard.outstanding')}
-          value={kpis?.outstanding?.USD != null ? `$${(kpis.outstanding.USD / 100).toLocaleString()}` : '—'}
-          sub={t('dashboard.overdueInvoices')}
+          value={moneyByCurrency(kpis?.outstanding, '—')}
+          sub={t('dashboard.unpaidPackages')}
           loading={isLoading}
         />
         <KpiCard
-          label={t('dashboard.conversionRate')}
-          value={kpis?.conversion_rate != null ? `${Math.round(kpis.conversion_rate * 100)}%` : '—'}
-          sub={t('dashboard.momPercent')}
+          label={t('dashboard.revenueLastMonth')}
+          value={moneyByCurrency(kpis?.last_month_revenue, '—')}
+          sub={t('dashboard.paidPackages')}
           loading={isLoading}
         />
       </div>
@@ -119,15 +188,29 @@ function AdminDashboard() {
 
       {/* Charts — 2×2 grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-4">
-        <ChartCard title={t('dashboard.revenue12m')}>
+        <ChartCard title={t('dashboard.hours12m')}>
           {isLoading
             ? <div className="h-24 animate-pulse rounded" style={{ background: 'rgb(var(--surface-card-2))' }} />
-            : charts?.revenue_12m?.length
+            : charts?.hours_12m?.some(p => p.hours > 0)
+              ? <BarChart
+                  items={charts.hours_12m as unknown as Record<string, number | string>[]}
+                  labelKey="label"
+                  valueKey="hours"
+                  formatValue={v => `${v.toFixed(1)}h`}
+                />
+              : <p className="text-xs opacity-40">{t('dashboard.noData')}</p>
+          }
+        </ChartCard>
+
+        <ChartCard title={t('dashboard.revenue12m', { currency: charts?.revenue_12m?.[0]?.currency ?? '' })}>
+          {isLoading
+            ? <div className="h-24 animate-pulse rounded" style={{ background: 'rgb(var(--surface-card-2))' }} />
+            : charts?.revenue_12m?.some(p => p.amount > 0)
               ? <BarChart
                   items={charts.revenue_12m as unknown as Record<string, number | string>[]}
-                  labelKey="month"
+                  labelKey="label"
                   valueKey="amount"
-                  formatValue={v => `$${(v / 100).toLocaleString()}`}
+                  formatValue={v => money(v, charts.revenue_12m[0]?.currency ?? 'USD')}
                 />
               : <p className="text-xs opacity-40">{t('dashboard.noData')}</p>
           }
@@ -139,37 +222,26 @@ function AdminDashboard() {
             : charts?.student_growth_12m?.length
               ? <BarChart
                   items={charts.student_growth_12m as unknown as Record<string, number | string>[]}
-                  labelKey="month"
+                  labelKey="label"
                   valueKey="active"
                 />
               : <p className="text-xs opacity-40">{t('dashboard.noData')}</p>
           }
         </ChartCard>
 
-        <ChartCard title={t('dashboard.expenses30d')}>
+        <ChartCard title={t('dashboard.lessonStatus30d')}>
           {isLoading
             ? <div className="h-24 animate-pulse rounded" style={{ background: 'rgb(var(--surface-card-2))' }} />
-            : charts?.expenses_breakdown_30d?.length
+            : charts?.lesson_status_30d?.length
               ? <BarChart
-                  items={charts.expenses_breakdown_30d as unknown as Record<string, number | string>[]}
-                  labelKey="category"
-                  valueKey="amount"
-                  formatValue={v => `$${(v / 100).toLocaleString()}`}
-                />
-              : <p className="text-xs opacity-40">{t('dashboard.noExpenses')}</p>
-          }
-        </ChartCard>
-
-        <ChartCard title={t('dashboard.cancellationReasons')}>
-          {isLoading
-            ? <div className="h-24 animate-pulse rounded" style={{ background: 'rgb(var(--surface-card-2))' }} />
-            : charts?.cancellation_reasons?.length
-              ? <BarChart
-                  items={charts.cancellation_reasons as unknown as Record<string, number | string>[]}
-                  labelKey="reason"
+                  items={charts.lesson_status_30d.map(s => ({
+                    label: t(`dashboard.status.${s.status}`),
+                    count: s.count,
+                  }))}
+                  labelKey="label"
                   valueKey="count"
                 />
-              : <p className="text-xs opacity-40">{t('dashboard.noCancellations')}</p>
+              : <p className="text-xs opacity-40">{t('dashboard.noLessons')}</p>
           }
         </ChartCard>
       </div>
@@ -244,6 +316,7 @@ function TeacherDashboard() {
         <h1 className="text-2xl font-bold">{t('dashboard.welcome', { name: user.name })}</h1>
         <p className="opacity-50 mt-1 text-sm">{today}</p>
       </div>
+      <MySalaryTierCard compact />
       <TeacherProfileDashboard user={teacherAsDirectoryUser(user)} selfView />
     </div>
   )

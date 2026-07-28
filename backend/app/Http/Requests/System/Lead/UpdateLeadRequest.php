@@ -10,7 +10,10 @@ class UpdateLeadRequest extends FormRequest
     {
         return [
             'name'                   => 'sometimes|string|max:100',
-            'status'                 => 'sometimes|in:new_lead,interested,waiting_for_trial,waiting_for_payment,not_interested,lost',
+            // `closed` is accepted so an already-converted lead can still have its other
+            // fields edited (the controller treats a same-status save as a no-op). Moving
+            // a lead *into* `closed` still goes through the conversion flow, not here.
+            'status'                 => 'sometimes|in:new_lead,interested,waiting_for_trial,waiting_for_payment,closed,not_interested,lost',
             'email'                  => 'sometimes|nullable|email|max:255',
             'phone'                  => 'sometimes|nullable|string|max:32',
             'whatsapp'               => 'sometimes|nullable|string|max:32',
@@ -31,6 +34,8 @@ class UpdateLeadRequest extends FormRequest
             'payment_method'         => 'sometimes|nullable|in:none,card,cash,bank_transfer',
             'notes'                  => 'sometimes|nullable|string|max:5000',
             'rejection_reason'       => 'sometimes|nullable|in:price,schedule,not_interested,no_response,other',
+            'lost_reason'            => 'sometimes|nullable|in:price,schedule,teacher,no_response,personal,quality,other',
+            'lost_notes'             => 'sometimes|nullable|string|max:5000',
             'is_family_lead'         => 'sometimes|nullable|boolean',
             'assigned_supervisor_id' => 'sometimes|nullable|exists:users,id',
             'assigned_teacher_id'    => 'sometimes|nullable|exists:sys_teachers,id',

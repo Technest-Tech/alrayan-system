@@ -190,7 +190,8 @@ export function LeadTable({ leads, isLoading, filters, onFiltersChange }: Props)
           className="text-xs font-medium px-2 py-0.5 rounded-md"
           style={{ background: 'rgb(244 246 250)', color: 'rgb(11 31 58)' }}
         >
-          {(row.original.source ? SOURCE_LABELS[row.original.source] : null) ?? row.original.source}
+          {row.original.source_detail
+            ?? ((row.original.source ? SOURCE_LABELS[row.original.source] : null) ?? row.original.source)}
         </span>
       ),
     },

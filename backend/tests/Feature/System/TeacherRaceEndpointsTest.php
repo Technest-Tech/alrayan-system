@@ -2,19 +2,38 @@
 
 namespace Tests\Feature\System;
 
-use App\Models\System\Session;
+use App\Models\System\Lesson;
+use App\Models\System\Student;
+use App\Models\System\StudentPackage;
 use App\Models\System\Teacher;
 use Tests\SystemTestCase;
 
 class TeacherRaceEndpointsTest extends SystemTestCase
 {
-    private function attendedSession(Teacher $teacher, string $start, int $duration): void
+    /** A lesson the teacher is credited for — the Race counts these, nothing else. */
+    private function attendedLesson(Teacher $teacher, string $start, int $duration): void
     {
-        Session::factory()->create([
-            'teacher_id'      => $teacher->id,
-            'status'          => 'attended',
-            'scheduled_start' => $start,
-            'duration_min'    => $duration,
+        $student = Student::factory()->create([
+            'assigned_teacher_id' => $teacher->id,
+            'currency'            => 'USD',
+        ]);
+
+        $package = StudentPackage::create([
+            'student_id'     => $student->id,
+            'package_number' => 1,
+            'package_hours'  => 8,
+            'tariff_at_time' => 5000,
+            'currency'       => 'USD',
+            'status'         => 'paid',
+        ]);
+
+        Lesson::create([
+            'package_id'       => $package->id,
+            'teacher_id'       => $teacher->id,
+            'student_id'       => $student->id,
+            'status'           => 'attended',
+            'scheduled_at'     => $start,
+            'duration_minutes' => $duration,
         ]);
     }
 
@@ -25,9 +44,9 @@ class TeacherRaceEndpointsTest extends SystemTestCase
         $idle   = Teacher::factory()->create();
         Teacher::factory()->inactive()->create();
 
-        $this->attendedSession($leader, '2026-07-10 10:00:00', 120);
-        $this->attendedSession($second, '2026-07-11 10:00:00', 60);
-        $this->attendedSession($second, '2026-06-11 10:00:00', 180);
+        $this->attendedLesson($leader, '2026-07-10 10:00:00', 120);
+        $this->attendedLesson($second, '2026-07-11 10:00:00', 60);
+        $this->attendedLesson($second, '2026-06-11 10:00:00', 180);
 
         $response = $this->actingAs($this->adminUser(), 'sanctum')
             ->getJson('/api/system/teachers/race?month=2026-07')
@@ -46,8 +65,8 @@ class TeacherRaceEndpointsTest extends SystemTestCase
     public function test_all_time_and_custom_ranges_use_the_requested_windows(): void
     {
         $teacher = Teacher::factory()->create();
-        $this->attendedSession($teacher, '2026-05-10 10:00:00', 60);
-        $this->attendedSession($teacher, '2026-07-10 10:00:00', 120);
+        $this->attendedLesson($teacher, '2026-05-10 10:00:00', 60);
+        $this->attendedLesson($teacher, '2026-07-10 10:00:00', 120);
 
         $this->actingAs($this->adminUser(), 'sanctum')
             ->getJson('/api/system/teachers/race?range=all')

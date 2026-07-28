@@ -55,7 +55,7 @@ export function ApprovePayrollDialog({
               period: periodLabel(payroll.period_year, payroll.period_month),
             })}
             <br />
-            {t('payroll.detail.net')}: <strong>{formatMoney(payroll.net_salary_minor, 'EGP')}</strong>
+            {t('payroll.detail.net')}: <strong>{formatMoney(payroll.net_salary_minor, payroll.currency ?? 'EGP')}</strong>
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>

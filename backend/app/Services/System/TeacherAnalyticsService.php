@@ -3,7 +3,6 @@
 namespace App\Services\System;
 
 use App\Models\System\Payroll;
-use App\Models\System\Session;
 use App\Models\System\Teacher;
 use App\Support\System\Setting;
 use Carbon\Carbon;
@@ -11,23 +10,25 @@ use Illuminate\Support\Facades\DB;
 
 /**
  * Aggregations behind the admin "Analytics" page (teacher hours / rates /
- * earnings). Everything reads from `sys_sessions` (status = attended) so the
- * numbers line up with payroll and the existing Teacher Race — the newer
- * `sys_lessons` engine is intentionally NOT used here (payroll doesn't use it).
+ * earnings). Everything reads from `sys_lessons` via LessonMetrics — the same
+ * source as payroll, the Teacher Race and the teacher dashboard, so all four
+ * always show the same hours.
  *
- * Money is in integer minor units. Income uses the same per-minute-by-duration
- * formula as PayrollCalculator; the per-teacher "rate" column is the nominal
- * `hourly_rate` display field (which, unlike the per-minute rates, can hold odd
- * hourly amounts like €3.25 exactly).
+ * Money is in integer minor units. Income uses the same hour-tier formula as
+ * PayrollCalculator (see SalaryTiers): total taught hours × the rate of the
+ * tier those hours reach, in USD. The "rate" column is that tier rate.
  */
 class TeacherAnalyticsService
 {
-    /** Snap a raw session length to its 30/45/60 rate bucket (mirrors PayrollCalculator). */
+    public function __construct(
+        private readonly LessonMetrics $metrics,
+        private readonly SalaryTiers $tiers,
+    ) {}
+
+    /** Snap a raw lesson length to its 30/45/60 rate bucket (mirrors PayrollCalculator). */
     private function bucket(int $minutes): int
     {
-        if ($minutes <= 37) return 30;
-        if ($minutes <= 52) return 45;
-        return 60;
+        return $this->metrics->bucket($minutes);
     }
 
     private function baseCurrency(): string
@@ -73,43 +74,31 @@ class TeacherAnalyticsService
         $teachers    = Teacher::with('user:id,name,photo_url')->get();
         $excludedIds = $teachers->where('exclude_from_analytics', true)->pluck('id')->all();
 
-        // ── Per-teacher attended-session aggregation for the month ────────────
-        $agg = Session::query()
-            ->where('status', 'attended')
-            ->whereBetween('scheduled_start', [$start, $end])
-            ->selectRaw(
-                'teacher_id,
-                 COUNT(*) as lessons,
-                 COALESCE(SUM(duration_min),0) as total_min,
-                 COALESCE(SUM(CASE WHEN duration_min <= 37 THEN duration_min ELSE 0 END),0) as min30,
-                 COALESCE(SUM(CASE WHEN duration_min > 37 AND duration_min <= 52 THEN duration_min ELSE 0 END),0) as min45,
-                 COALESCE(SUM(CASE WHEN duration_min > 52 THEN duration_min ELSE 0 END),0) as min60'
-            )
-            ->groupBy('teacher_id')
-            ->get()
-            ->keyBy('teacher_id');
+        // ── Per-teacher taught-lesson aggregation for the month ───────────────
+        $agg = $this->metrics->bucketedByTeacher($start, $end);
 
         $balances = [];
         foreach ($teachers as $t) {
             $row      = $agg->get($t->id);
             $totalMin = (int) ($row->total_min ?? 0);
-            $income   = $row
-                ? (int) $row->min30 * (int) $t->per_minute_rate_30
-                    + (int) $row->min45 * (int) $t->per_minute_rate_45
-                    + (int) $row->min60 * (int) $t->per_minute_rate_60
-                : 0;
+            $hours    = round($totalMin / 60, 2);
 
-            $rateMinor = (int) ($t->hourly_rate ?: ((int) $t->per_minute_rate_60 * 60));
+            // Earnings follow the hour ladder (SalaryTiers) — the same formula
+            // payroll pays on, so Analytics and the salary slip always agree.
+            $tier      = $this->tiers->tierForHours($hours);
+            $income    = $this->tiers->salaryMinor($hours);
+            $rateMinor = $tier['rate_minor'];
 
             $balances[] = [
                 'teacher_id'   => $t->id,
                 'name'         => $t->user->name ?? "#{$t->id}",
                 'photo_url'    => $t->user->photo_url ?? null,
-                'hours'        => round($totalMin / 60, 2),
+                'hours'        => $hours,
                 'lessons'      => (int) ($row->lessons ?? 0),
                 'income_minor' => $income,
                 'rate_minor'   => $rateMinor,
-                'currency'     => $t->currency ?: $base,
+                'tier_index'   => $tier['index'],
+                'currency'     => SalaryTiers::CURRENCY,
                 'excluded'     => (bool) $t->exclude_from_analytics,
             ];
         }
@@ -186,16 +175,14 @@ class TeacherAnalyticsService
         ];
     }
 
-    /** Attended-lesson counts grouped by weekday (0 = Sunday … 6 = Saturday). */
+    /** Taught-lesson counts grouped by weekday (0 = Sunday … 6 = Saturday). */
     private function bestDaysByLessons(Carbon $start, Carbon $end, array $excludedIds): array
     {
         $counts = array_fill(0, 7, 0);
 
-        Session::query()
-            ->where('status', 'attended')
-            ->whereBetween('scheduled_start', [$start, $end])
+        $this->metrics->taughtQuery($start, $end)
             ->when($excludedIds, fn($q) => $q->whereNotIn('teacher_id', $excludedIds))
-            ->pluck('scheduled_start')
+            ->pluck('scheduled_at')
             ->each(function ($ts) use (&$counts) {
                 $counts[Carbon::parse($ts)->dayOfWeek]++;
             });
@@ -207,16 +194,15 @@ class TeacherAnalyticsService
     }
 
     /**
-     * All-time attended hours grouped by month, gaps filled with 0 so the area
+     * All-time taught hours grouped by month, gaps filled with 0 so the area
      * chart draws a continuous line. Returns the series plus its all-time total.
      */
     private function hoursByMonth(?int $teacherId, array $excludedIds): array
     {
-        $rows = Session::query()
-            ->where('status', 'attended')
+        $rows = $this->metrics->taughtQuery()
             ->when($teacherId, fn($q) => $q->where('teacher_id', $teacherId))
             ->when($excludedIds, fn($q) => $q->whereNotIn('teacher_id', $excludedIds))
-            ->selectRaw($this->monthExpr('scheduled_start') . ' as ym, COALESCE(SUM(duration_min),0) as mins')
+            ->selectRaw($this->monthExpr('scheduled_at') . ' as ym, COALESCE(SUM(duration_minutes),0) as mins')
             ->groupBy('ym')
             ->orderBy('ym')
             ->pluck('mins', 'ym');
@@ -244,24 +230,14 @@ class TeacherAnalyticsService
 
     /**
      * Per-teacher month breakdown for the drill-in modal: revenue (base earnings
-     * from sessions) plus any bonus ("recompense") / deduction adjustments from
+     * from lessons) plus any bonus ("recompense") / deduction adjustments from
      * the teacher's payroll record for that month, if one has been generated.
      */
     public function teacherMonth(Teacher $teacher, ?string $month): array
     {
         [$start, $end] = $this->monthWindow($month);
 
-        $sessions = Session::query()
-            ->where('teacher_id', $teacher->id)
-            ->where('status', 'attended')
-            ->whereBetween('scheduled_start', [$start, $end])
-            ->get(['duration_min']);
-
-        $revenue = 0;
-        foreach ($sessions as $s) {
-            $rate = (int) $teacher->{'per_minute_rate_' . $this->bucket((int) $s->duration_min)};
-            $revenue += (int) $s->duration_min * $rate;
-        }
+        $revenue = $this->metrics->earningsMinor($teacher, $start, $end);
 
         $payroll = Payroll::query()
             ->where('teacher_id', $teacher->id)

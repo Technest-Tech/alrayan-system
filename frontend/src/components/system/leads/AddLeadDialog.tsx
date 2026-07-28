@@ -95,6 +95,7 @@ const SOURCE_OPTIONS: { value: string; key: string }[] = [
   { value: 'student_referral', key: 'leads.sourceStudentReferral' },
   { value: 'website_form',     key: 'leads.sourceWebsiteForm' },
   { value: 'manual_entry',     key: 'leads.sourceManualEntry' },
+  { value: '__custom__',       key: 'leads.sourceCustom' },
 ]
 
 const PRIORITY_OPTIONS: { value: string; key: string }[] = [
@@ -118,6 +119,7 @@ const PAYMENT_OPTIONS: { value: string; key: string }[] = [
   { value: 'card',          key: 'leads.paymentCard' },
   { value: 'cash',          key: 'leads.paymentCash' },
   { value: 'bank_transfer', key: 'leads.paymentBankTransfer' },
+  { value: '__custom__',    key: 'leads.paymentCustom' },
 ]
 
 const REJECTION_OPTIONS: { value: string; key: string }[] = [
@@ -160,6 +162,13 @@ const COUNTRIES = [
 function flag(code: string) {
   const off = 0x1f1e6 - 65
   return [...code.toUpperCase()].map(c => String.fromCodePoint(c.charCodeAt(0) + off)).join('')
+}
+
+/* An emptied box means "clear this field". JSON.stringify drops `undefined` keys, so sending
+   one is the same as not sending the field at all — the old value silently survives the save.
+   Send an explicit null so the API actually clears the column. */
+function orNull<T>(value: T | '' | undefined): T | null {
+  return value === '' || value === undefined ? null : value
 }
 
 /* ── Shared input styles ────────────────────────── */
@@ -468,10 +477,10 @@ interface FormState {
   status: LeadStatus; name: string; gender: string; age: string
   country: string; city: string; course_interest_id: string
   sections: string[]; assigned_teacher_id: string
-  platform: string; platform_url: string; source: string
+  platform: string; platform_url: string; source: string; source_detail: string
   parent_mode: 'adult' | 'new_family' | 'existing'
   package_hours: string; subscription_price: string
-  currency: string; payment_method: string
+  currency: string; payment_method: string; payment_method_detail: string
   next_followup: string; priority: LeadPriority; assigned_to: string
   notes: string; rejection_reason: string; is_family_lead: boolean
 }
@@ -479,9 +488,9 @@ interface FormState {
 const EMPTY: FormState = {
   status: 'new_lead', name: '', gender: '', age: '', country: '', city: '',
   course_interest_id: '', sections: [], assigned_teacher_id: '',
-  platform: '', platform_url: '', source: '', parent_mode: 'adult',
+  platform: '', platform_url: '', source: '', source_detail: '', parent_mode: 'adult',
   package_hours: '', subscription_price: '',
-  currency: 'EUR', payment_method: 'none',
+  currency: 'EUR', payment_method: 'none', payment_method_detail: '',
   next_followup: '', priority: 'medium', assigned_to: '',
   notes: '', rejection_reason: '', is_family_lead: false,
 }
@@ -557,12 +566,14 @@ export function AddLeadDialog({ open, onOpenChange, lead, initialStatus }: AddLe
       assigned_teacher_id: lead.assigned_teacher_id ? String(lead.assigned_teacher_id) : '',
       platform:           lead.platform ?? '',
       platform_url:       lead.platform_url ?? '',
-      source:             lead.source ?? '',
+      source:             lead.source === 'manual_entry' && lead.source_detail ? '__custom__' : lead.source ?? '',
+      source_detail:      lead.source_detail ?? '',
       parent_mode:        (payload?.parent_mode as 'adult' | 'new_family' | 'existing' | undefined) ?? 'adult',
       package_hours:      lead.package_hours ? String(lead.package_hours) : '',
       subscription_price: lead.subscription_price ? String(lead.subscription_price) : '',
       currency:           lead.currency ?? 'EUR',
-      payment_method:     lead.payment_method ?? 'none',
+      payment_method:     payload?.custom_payment_method ? '__custom__' : lead.payment_method ?? 'none',
+      payment_method_detail: (payload?.custom_payment_method as string | undefined) ?? '',
       next_followup:      (payload?.next_followup as string | undefined) ?? '',
       priority:           lead.priority,
       assigned_to:        lead.assigned_supervisor_id ? String(lead.assigned_supervisor_id) : '',
@@ -615,29 +626,34 @@ export function AddLeadDialog({ open, onOpenChange, lead, initialStatus }: AddLe
 
     const basePayload: Record<string, unknown> = {
       name: form.name,
-      email: primaryEmail || undefined, phone: primaryPhone || undefined,
-      gender: form.gender || undefined, age: form.age ? Number(form.age) : undefined,
-      country: form.country || undefined, city: form.city || undefined,
-      course_interest_id: form.course_interest_id || undefined,
-      platform: (form.platform as LeadPlatform) || undefined,
-      platform_url: form.platform_url || undefined,
-      source: (form.source as LeadSource) || undefined,
-      package_hours: form.package_hours ? Number(form.package_hours) : undefined,
-      subscription_price: form.subscription_price ? Number(form.subscription_price) : undefined,
-      currency: form.currency || undefined, payment_method: form.payment_method || undefined,
+      email: orNull(primaryEmail), phone: orNull(primaryPhone),
+      gender: orNull(form.gender), age: form.age ? Number(form.age) : null,
+      country: orNull(form.country), city: orNull(form.city),
+      course_interest_id: orNull(form.course_interest_id),
+      platform: orNull(form.platform as LeadPlatform),
+      platform_url: orNull(form.platform_url),
+      // Custom labels use the existing source_detail field while retaining a valid source enum.
+      source: form.source === '__custom__' ? 'manual_entry' : (form.source as LeadSource) || undefined,
+      source_detail: orNull(form.source_detail.trim()),
+      package_hours: form.package_hours ? Number(form.package_hours) : null,
+      subscription_price: form.subscription_price ? Number(form.subscription_price) : null,
+      currency: orNull(form.currency),
+      payment_method: form.payment_method === '__custom__' ? 'none' : orNull(form.payment_method),
       priority: form.priority,
-      notes: form.notes || undefined, rejection_reason: form.rejection_reason || undefined,
+      notes: orNull(form.notes), rejection_reason: orNull(form.rejection_reason),
       is_family_lead: form.is_family_lead,
-      assigned_supervisor_id: form.assigned_to ? Number(form.assigned_to) : undefined,
+      assigned_supervisor_id: form.assigned_to ? Number(form.assigned_to) : null,
       // Assigning a teacher flows onto the provisioned student so the calendar's
       // create-lesson form can filter students by teacher.
-      assigned_teacher_id: form.assigned_teacher_id ? Number(form.assigned_teacher_id) : undefined,
+      assigned_teacher_id: form.assigned_teacher_id ? Number(form.assigned_teacher_id) : null,
       payload: {
         emails: emails.filter(e => e.value),
         phones: phones.filter(p => p.value),
         sections: form.sections,
         parent_mode: form.parent_mode,
-        next_followup: form.next_followup || undefined,
+        next_followup: form.next_followup || null,
+        custom_payment_method:
+          form.payment_method === '__custom__' ? orNull(form.payment_method_detail.trim()) : null,
       },
     }
 
@@ -654,9 +670,11 @@ export function AddLeadDialog({ open, onOpenChange, lead, initialStatus }: AddLe
 
     try {
       if (isEditMode) {
-        /* ── Edit: don't send status if going to closed (convert handles it) ── */
+        /* ── Edit: only send the status when it actually moves. Going to closed is the
+              conversion flow's job, and re-posting the status a terminal lead already has
+              is a no-op the pipeline shouldn't be asked to rule on. ── */
         const updatePayload = { ...basePayload }
-        if (!isClosing) updatePayload.status = form.status
+        if (!isClosing && form.status !== lead?.status) updatePayload.status = form.status
         await update.mutateAsync(updatePayload)
 
         if (isClosing) {
@@ -795,7 +813,29 @@ export function AddLeadDialog({ open, onOpenChange, lead, initialStatus }: AddLe
                       <SearchSelect value={form.platform} onChange={v => set('platform', v)} options={platformOptions} placeholder={t('leads.platformPlaceholder')} />
                     </Field>
                     <Field label={t('leads.fieldSource')}>
-                      <SearchSelect value={form.source} onChange={v => set('source', v)} options={sourceOptions} placeholder={t('leads.sourcePlaceholder')} />
+                      <SearchSelect
+                        value={form.source}
+                        onChange={v =>
+                          setForm(previous => ({
+                            ...previous,
+                            source: v,
+                            source_detail: v === '__custom__' ? previous.source_detail : '',
+                          }))
+                        }
+                        options={sourceOptions}
+                        placeholder={t('leads.sourcePlaceholder')}
+                      />
+                      {form.source === '__custom__' && (
+                        <input
+                          required
+                          aria-label={t('leads.fieldCustomSource')}
+                          className={`${inp} mt-2`}
+                          style={inpStyle}
+                          placeholder={t('leads.customSourcePlaceholder')}
+                          value={form.source_detail}
+                          onChange={e => set('source_detail', e.target.value)}
+                        />
+                      )}
                     </Field>
                   </div>
                   <Field label={t('leads.fieldPlatformUrl')}>
@@ -834,7 +874,31 @@ export function AddLeadDialog({ open, onOpenChange, lead, initialStatus }: AddLe
                   </div>
                   <div className="grid grid-cols-2 gap-3">
                     <Field label={t('leads.fieldPaymentMethod')}>
-                      <SearchSelect value={form.payment_method} onChange={v => set('payment_method', v)} options={paymentOptions} placeholder={t('leads.selectMethod')} clearable={false} />
+                      <SearchSelect
+                        value={form.payment_method}
+                        onChange={value =>
+                          setForm(previous => ({
+                            ...previous,
+                            payment_method: value,
+                            payment_method_detail:
+                              value === '__custom__' ? previous.payment_method_detail : '',
+                          }))
+                        }
+                        options={paymentOptions}
+                        placeholder={t('leads.selectMethod')}
+                        clearable={false}
+                      />
+                      {form.payment_method === '__custom__' && (
+                        <input
+                          required
+                          aria-label={t('leads.fieldCustomPayment')}
+                          className={`${inp} mt-2`}
+                          style={inpStyle}
+                          placeholder={t('leads.customPaymentPlaceholder')}
+                          value={form.payment_method_detail}
+                          onChange={e => set('payment_method_detail', e.target.value)}
+                        />
+                      )}
                     </Field>
                   </div>
                 </div>

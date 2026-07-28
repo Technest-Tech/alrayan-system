@@ -6,6 +6,7 @@ use App\Models\System\Lesson;
 use App\Models\System\LessonPackageAllocation;
 use App\Models\System\Student;
 use App\Models\System\StudentPackage;
+use App\Models\System\Task;
 use App\Models\System\Teacher;
 use App\Services\System\PackageService;
 use Tests\SystemTestCase;
@@ -220,8 +221,13 @@ class PackageConsumptionEngineTest extends SystemTestCase
         $this->rebuild($s);
 
         $pkg1 = $this->packages($s)->first();
+        $task = Task::where('type', 'package_complete')->where('related_id', $pkg1->id)->firstOrFail();
+
         $this->assertEqualsWithDelta(2.0, $pkg1->consumed_hours, 0.001);
-        $this->assertDatabaseHas('sys_tasks', ['type' => 'package_complete']);
+        $this->assertSame($s->id, $task->student_id);
+        $this->assertSame($this->teacher->id, $task->teacher_id);
+        $this->assertSame($s->name, $task->payload['student_name'] ?? null);
+        $this->assertSame($this->teacher->user->name, $task->payload['teacher_name'] ?? null);
     }
 
     /* ── Down payment = the first lesson package (#0, already paid) ── */

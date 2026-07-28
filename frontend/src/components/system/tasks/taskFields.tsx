@@ -72,6 +72,7 @@ export function taskFields(task: Task): Field[] {
 
   switch (task.type) {
     case 'package_complete':
+      push('common.teacher', str(d.teacher_name) ?? task.teacher_name ?? null)
       push('tasks.fields.packageNumber', str(d.package_number))
       push('tasks.fields.packageHours', d.package_hours ? `${d.package_hours}h` : null)
       push('tasks.fields.consumed', d.consumed_hours != null ? `${d.consumed_hours}h` : null)

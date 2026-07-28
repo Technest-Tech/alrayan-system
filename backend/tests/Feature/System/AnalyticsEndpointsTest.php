@@ -2,7 +2,9 @@
 
 namespace Tests\Feature\System;
 
-use App\Models\System\Session;
+use App\Models\System\Lesson;
+use App\Models\System\Student;
+use App\Models\System\StudentPackage;
 use App\Models\System\Teacher;
 use App\Support\System\Setting;
 use Illuminate\Support\Facades\Http;
@@ -22,13 +24,30 @@ class AnalyticsEndpointsTest extends SystemTestCase
         ]);
     }
 
-    private function attendedSession(Teacher $teacher, string $start, int $duration): void
+    /** A lesson the teacher is credited for — Analytics counts these, nothing else. */
+    private function attendedLesson(Teacher $teacher, string $start, int $duration): void
     {
-        Session::factory()->create([
-            'teacher_id'      => $teacher->id,
-            'status'          => 'attended',
-            'scheduled_start' => $start,
-            'duration_min'    => $duration,
+        $student = Student::factory()->create([
+            'assigned_teacher_id' => $teacher->id,
+            'currency'            => 'USD',
+        ]);
+
+        $package = StudentPackage::create([
+            'student_id'     => $student->id,
+            'package_number' => 1,
+            'package_hours'  => 8,
+            'tariff_at_time' => 5000,
+            'currency'       => 'USD',
+            'status'         => 'paid',
+        ]);
+
+        Lesson::create([
+            'package_id'       => $package->id,
+            'teacher_id'       => $teacher->id,
+            'student_id'       => $student->id,
+            'status'           => 'attended',
+            'scheduled_at'     => $start,
+            'duration_minutes' => $duration,
         ]);
     }
 
@@ -42,27 +61,29 @@ class AnalyticsEndpointsTest extends SystemTestCase
     public function test_overview_computes_hours_income_and_rate(): void
     {
         $teacher = $this->teacherWithRates(perMinute: 5, hourly: 300, currency: 'EUR');
-        // 2 × 60-minute attended sessions in May 2026 → 2h, income = 2 × (60 × 5) = 600.
-        $this->attendedSession($teacher, '2026-05-15 10:00:00', 60);
-        $this->attendedSession($teacher, '2026-05-16 10:00:00', 60);
+        // 2 × 60-minute attended lessons in May 2026 → 2h on the 0–35h tier,
+        // so income = 2 × $2.50 = $5.00 (the ladder, not the teacher's rate card).
+        $this->attendedLesson($teacher, '2026-05-15 10:00:00', 60);
+        $this->attendedLesson($teacher, '2026-05-16 10:00:00', 60);
 
         $res = $this->actingAs($this->adminUser(), 'sanctum')
             ->getJson('/api/system/analytics?month=2026-05')
             ->assertOk()
             ->assertJsonPath('kpis.total_hours', 2)
             ->assertJsonPath('kpis.total_lessons', 2)
-            // income + weighted rate roll up under the teacher's own currency (no EGP conversion)
-            ->assertJsonPath('kpis.totals_by_currency.0.currency', 'EUR')
-            ->assertJsonPath('kpis.totals_by_currency.0.income_minor', 600)
-            ->assertJsonPath('kpis.totals_by_currency.0.avg_rate_minor', 300);
+            // earnings are the USD hour ladder — never converted, never per-teacher
+            ->assertJsonPath('kpis.totals_by_currency.0.currency', 'USD')
+            ->assertJsonPath('kpis.totals_by_currency.0.income_minor', 500)
+            ->assertJsonPath('kpis.totals_by_currency.0.avg_rate_minor', 250);
 
-        // teacher appears in the balance table with the nominal hourly rate + own currency
+        // teacher appears in the balance table with the tier rate they reached
         $balances = collect($res->json('teacher_balances'));
         $row = $balances->firstWhere('teacher_id', $teacher->id);
         $this->assertNotNull($row);
-        $this->assertSame(300, $row['rate_minor']);
-        $this->assertSame('EUR', $row['currency']);
-        $this->assertSame(600, $row['income_minor']);
+        $this->assertSame(250, $row['rate_minor']);
+        $this->assertSame(0, $row['tier_index']);
+        $this->assertSame('USD', $row['currency']);
+        $this->assertSame(500, $row['income_minor']);
         $this->assertEqualsWithDelta(2.0, $row['hours'], 0.001);
 
         // hours-by-month series contains the May bucket
@@ -78,8 +99,8 @@ class AnalyticsEndpointsTest extends SystemTestCase
         $excluded = $this->teacherWithRates(5, 300);
         $excluded->update(['exclude_from_analytics' => true]);
 
-        $this->attendedSession($counted, '2026-05-15 10:00:00', 60);   // 1h counted
-        $this->attendedSession($excluded, '2026-05-15 10:00:00', 60);  // 1h ignored in totals
+        $this->attendedLesson($counted, '2026-05-15 10:00:00', 60);   // 1h counted
+        $this->attendedLesson($excluded, '2026-05-15 10:00:00', 60);  // 1h ignored in totals
 
         $res = $this->actingAs($this->adminUser(), 'sanctum')
             ->getJson('/api/system/analytics?month=2026-05')
@@ -96,8 +117,8 @@ class AnalyticsEndpointsTest extends SystemTestCase
     {
         $teacher = $this->teacherWithRates(5, 300);
         // 2026-05-15 is a Friday (Carbon dayOfWeek = 5).
-        $this->attendedSession($teacher, '2026-05-15 10:00:00', 60);
-        $this->attendedSession($teacher, '2026-05-15 12:00:00', 60);
+        $this->attendedLesson($teacher, '2026-05-15 10:00:00', 60);
+        $this->attendedLesson($teacher, '2026-05-15 12:00:00', 60);
 
         $res = $this->actingAs($this->adminUser(), 'sanctum')
             ->getJson('/api/system/analytics?month=2026-05')
@@ -125,32 +146,33 @@ class AnalyticsEndpointsTest extends SystemTestCase
     public function test_teacher_month_breakdown_returns_revenue_and_empty_adjustments(): void
     {
         $teacher = $this->teacherWithRates(5, 300);
-        $this->attendedSession($teacher, '2026-05-15 10:00:00', 60); // revenue = 60 × 5 = 300
+        $this->attendedLesson($teacher, '2026-05-15 10:00:00', 60); // 1h × $2.50 tier rate
 
         $this->actingAs($this->adminUser(), 'sanctum')
             ->getJson("/api/system/analytics/teachers/{$teacher->id}?month=2026-05")
             ->assertOk()
-            ->assertJsonPath('revenue_minor', 300)
+            ->assertJsonPath('revenue_minor', 250)
             ->assertJsonPath('deductions', [])
             ->assertJsonPath('recompenses', []);
     }
 
-    public function test_different_currencies_are_never_summed_together(): void
+    public function test_every_teacher_earns_on_the_same_usd_ladder(): void
     {
+        // The teacher's own display currency and rate card no longer price the
+        // month — the hour ladder does, in USD, for everyone.
         $eur = $this->teacherWithRates(5, 300, 'EUR');
         $usd = $this->teacherWithRates(10, 400, 'USD');
-        $this->attendedSession($eur, '2026-05-15 10:00:00', 60); // EUR income 300
-        $this->attendedSession($usd, '2026-05-15 10:00:00', 60); // USD income 600
+        $this->attendedLesson($eur, '2026-05-15 10:00:00', 60); // 1h → $2.50
+        $this->attendedLesson($usd, '2026-05-15 10:00:00', 60); // 1h → $2.50
 
         $res = $this->actingAs($this->adminUser(), 'sanctum')
             ->getJson('/api/system/analytics?month=2026-05')
             ->assertOk()
-            ->assertJsonPath('kpis.total_hours', 2); // hours are currency-agnostic
+            ->assertJsonPath('kpis.total_hours', 2);
 
         $totals = collect($res->json('kpis.totals_by_currency'))->keyBy('currency');
-        $this->assertSame(300, $totals['EUR']['income_minor']);
-        $this->assertSame(600, $totals['USD']['income_minor']);
-        $this->assertCount(2, $totals); // two separate currency buckets, not one EGP total
+        $this->assertCount(1, $totals);
+        $this->assertSame(500, $totals['USD']['income_minor']);
     }
 
     public function test_fx_rates_endpoint_returns_live_rates_to_egp(): void

@@ -29,7 +29,7 @@ export function SalaryHistoryTable({ history, onSelect, selectedId }: SalaryHist
         <thead className="bg-gray-50">
           <tr>
             <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">{t('teachers.salaryColumnPeriod')}</th>
-            <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wide">{t('teachers.salaryColumnNetEGP')}</th>
+            <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wide">{t('teachers.salaryColumnNet')}</th>
             <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">{t('teachers.salaryColumnStatus')}</th>
             <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">{t('teachers.salaryColumnReference')}</th>
           </tr>
@@ -45,7 +45,7 @@ export function SalaryHistoryTable({ history, onSelect, selectedId }: SalaryHist
                 {periodLabel(p.period_year, p.period_month)}
               </td>
               <td className="px-4 py-3 text-right tabular-nums font-medium">
-                {formatMoney(p.net_salary_minor, 'EGP')}
+                {formatMoney(p.net_salary_minor, p.currency ?? 'EGP')}
               </td>
               <td className="px-4 py-3">
                 <PayrollStatusBadge status={p.status} />

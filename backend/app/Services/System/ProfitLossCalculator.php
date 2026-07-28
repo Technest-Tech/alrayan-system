@@ -81,27 +81,42 @@ class ProfitLossCalculator
 
     private function salariesInBase(Carbon $from, Carbon $to, string $base): int
     {
-        $total = Payroll::where('period_year', '>=', (int) $from->format('Y'))
-            ->where('period_year', '<=', (int) $to->format('Y'))
+        $rows = Payroll::query()
+            ->whereRaw('(period_year * 100 + period_month) BETWEEN ? AND ?', [
+                ((int) $from->format('Y') * 100) + (int) $from->format('n'),
+                ((int) $to->format('Y') * 100) + (int) $to->format('n'),
+            ])
             ->whereIn('status', ['approved', 'transferred'])
-            ->sum('net_salary_minor');
+            // Bonuses are reported separately below. Deductions reduce the
+            // academy's salary cost, so base minus deductions + bonuses = net.
+            ->selectRaw("COALESCE(currency, 'EGP') as currency, SUM(base_salary_minor - deductions_minor) as total")
+            ->groupBy('currency')
+            ->get();
 
-        $payrollCurrency = 'EGP';
-        return $payrollCurrency === $base
-            ? (int) $total
-            : $this->safeConvert((int) $total, $payrollCurrency, $base);
+        return $rows->sum(fn ($row) =>
+            $row->currency === $base
+                ? (int) $row->total
+                : $this->safeConvert((int) $row->total, $row->currency, $base)
+        );
     }
 
     private function bonusesInBase(Carbon $from, Carbon $to, string $base): int
     {
-        $total = (int) \App\Models\System\PayrollAdjustment::where('type', 'bonus')
-            ->whereBetween('created_at', [$from, $to])
-            ->sum('amount_minor');
+        $rows = Payroll::query()
+            ->whereRaw('(period_year * 100 + period_month) BETWEEN ? AND ?', [
+                ((int) $from->format('Y') * 100) + (int) $from->format('n'),
+                ((int) $to->format('Y') * 100) + (int) $to->format('n'),
+            ])
+            ->whereIn('status', ['approved', 'transferred'])
+            ->selectRaw("COALESCE(currency, 'EGP') as currency, SUM(bonuses_minor) as total")
+            ->groupBy('currency')
+            ->get();
 
-        $adjustmentCurrency = 'EGP';
-        return $adjustmentCurrency === $base
-            ? $total
-            : $this->safeConvert($total, $adjustmentCurrency, $base);
+        return $rows->sum(fn ($row) =>
+            $row->currency === $base
+                ? (int) $row->total
+                : $this->safeConvert((int) $row->total, $row->currency, $base)
+        );
     }
 
     private function expensesInBase(Carbon $from, Carbon $to, string $base): int

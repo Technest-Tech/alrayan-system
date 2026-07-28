@@ -18,6 +18,7 @@ class Payroll extends Model
 
     protected $casts = [
         'breakdown_by_duration' => 'array',
+        'total_hours'           => 'float',
         'snapshot'              => 'array',
         'approved_at'           => 'datetime',
         'rejected_at'           => 'datetime',

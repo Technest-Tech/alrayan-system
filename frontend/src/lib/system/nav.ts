@@ -3,6 +3,7 @@ import {
   Award, DollarSign, Wallet, BarChart3, TrendingUp,
   Bell, Settings, ScrollText, UserCheck, CreditCard, ListChecks,
   GraduationCap, MessageSquare, ClipboardCheck,
+  BadgeDollarSign, ChartNoAxesCombined,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 
@@ -37,8 +38,10 @@ export const SYSTEM_NAV: readonly NavSection[] = [
       { label: 'nav.payments',   href: '/payments',           icon: CreditCard, perm: 'lessons.view'  },
       { label: 'nav.billing',    href: '/billing/invoices',   icon: DollarSign, perm: 'invoices.view' },
       { label: 'nav.payroll',    href: '/payroll',            icon: Wallet,     perm: 'payroll.view' },
+      { label: 'nav.salaryTiers', href: '/salary-tiers',       icon: BadgeDollarSign, perm: 'payroll.view_any' },
       { label: 'nav.accounting', href: '/accounting/revenue', icon: BarChart3,  perm: 'accounting.view' },
       { label: 'nav.analytics',  href: '/analytics',          icon: TrendingUp, perm: 'payroll.view_any' },
+      { label: 'nav.studentAnalytics', href: '/students/analytics', icon: ChartNoAxesCombined, perm: 'students.view' },
     ],
   },
   {
@@ -71,6 +74,7 @@ export const TEACHER_NAV: readonly NavSection[] = [
       { label: 'nav.dashboard',  href: '/dashboard',        icon: LayoutDashboard, perm: null },
       { label: 'nav.myStudents', href: '/teacher/students', icon: GraduationCap,   perm: null },
       { label: 'nav.calendar',   href: '/calendar',         icon: CalendarDays,    perm: null },
+      { label: 'nav.mySalary',   href: '/teacher/salary',   icon: Wallet,          perm: null },
     ],
   },
   {

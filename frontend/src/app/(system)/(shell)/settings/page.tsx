@@ -1,9 +1,10 @@
 'use client'
 import { useState } from 'react'
-import { SlidersHorizontal, BookOpen, Building2, Layers } from 'lucide-react'
+import { SlidersHorizontal, BookOpen, Building2, Layers, ClipboardCheck } from 'lucide-react'
 import { SubjectsSection } from '@/components/system/settings/SubjectsSection'
 import { SectionsSection } from '@/components/system/settings/SectionsSection'
 import { GeneralSettingsSection } from '@/components/system/settings/GeneralSettingsSection'
+import { LessonEvaluationsSection } from '@/components/system/settings/LessonEvaluationsSection'
 import { TeacherSettings } from '@/components/system/teacher/TeacherSettings'
 import { useSystemUser } from '@/components/system/shell/SystemShell'
 import { useI18n } from '@/lib/system/i18n'
@@ -15,6 +16,7 @@ const CARD = 'rgb(var(--surface-card, 255 255 255))'
 const TABS = [
   { id: 'subjects', labelKey: 'settings.tabs.subjects', hintKey: 'settings.tabs.subjectsHint', icon: BookOpen },
   { id: 'sections', labelKey: 'settings.tabs.sections', hintKey: 'settings.tabs.sectionsHint', icon: Layers },
+  { id: 'evaluations', labelKey: 'settings.tabs.evaluations', hintKey: 'settings.tabs.evaluationsHint', icon: ClipboardCheck },
   { id: 'general', labelKey: 'settings.tabs.general', hintKey: 'settings.tabs.generalHint', icon: Building2 },
 ] as const
 
@@ -96,7 +98,10 @@ export default function SettingsPage() {
 
         {/* Active section */}
         <div className="min-w-0">
-          {tab === 'subjects' ? <SubjectsSection /> : tab === 'sections' ? <SectionsSection /> : <GeneralSettingsSection />}
+          {tab === 'subjects' && <SubjectsSection />}
+          {tab === 'sections' && <SectionsSection />}
+          {tab === 'evaluations' && <LessonEvaluationsSection />}
+          {tab === 'general' && <GeneralSettingsSection />}
         </div>
       </div>
     </div>

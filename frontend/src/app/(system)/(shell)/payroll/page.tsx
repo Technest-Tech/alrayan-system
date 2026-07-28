@@ -12,6 +12,7 @@ import { usePayrolls } from '@/hooks/system/usePayrolls'
 import { useRecalculate } from '@/hooks/system/usePayrollActions'
 import { formatMoney } from '@/lib/money'
 import { useI18n } from '@/lib/system/i18n'
+import { TierBadge } from '@/components/system/salary/TierBadge'
 import type { Payroll } from '@/types/system/payroll'
 
 function currentPeriod(): string {
@@ -102,9 +103,10 @@ export default function PayrollPage() {
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">{t('common.teacher')}</th>
                 <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wide">{t('common.sessions')}</th>
-                <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wide">{t('common.minutes')}</th>
-                <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wide">{t('payroll.columnBaseEgp')}</th>
-                <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wide">{t('payroll.columnNetEgp')}</th>
+                <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wide">{t('salaryTiers.hours')}</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">{t('salaryTiers.levelAndRate')}</th>
+                <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wide">{t('payroll.columnBase')}</th>
+                <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wide">{t('payroll.columnNet')}</th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">{t('common.status')}</th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">{t('common.actions')}</th>
               </tr>
@@ -131,9 +133,21 @@ export default function PayrollPage() {
                     {p.teacher?.name ?? t('payroll.teacherFallback', { id: String(p.teacher_id) })}
                   </td>
                   <td className="px-4 py-3 text-center tabular-nums">{p.total_sessions}</td>
-                  <td className="px-4 py-3 text-center tabular-nums">{p.total_minutes}</td>
-                  <td className="px-4 py-3 text-right tabular-nums">{formatMoney(p.base_salary_minor, 'EGP')}</td>
-                  <td className="px-4 py-3 text-right tabular-nums font-medium">{formatMoney(p.net_salary_minor, 'EGP')}</td>
+                  <td className="px-4 py-3 text-center tabular-nums">{p.total_hours.toFixed(2)}h</td>
+                  <td className="px-4 py-3">
+                    {p.tier_index != null ? (
+                      <div className="flex items-center gap-2">
+                        <TierBadge index={p.tier_index} size="sm" />
+                        <span className="text-xs tabular-nums text-gray-500">
+                          {formatMoney(p.hourly_rate_minor, p.currency)}/h
+                        </span>
+                      </div>
+                    ) : (
+                      <span className="text-xs text-gray-400">{t('salaryTiers.legacyRate')}</span>
+                    )}
+                  </td>
+                  <td className="px-4 py-3 text-right tabular-nums">{formatMoney(p.base_salary_minor, p.currency ?? 'EGP')}</td>
+                  <td className="px-4 py-3 text-right tabular-nums font-medium">{formatMoney(p.net_salary_minor, p.currency ?? 'EGP')}</td>
                   <td className="px-4 py-3">
                     <PayrollStatusBadge status={p.status} />
                   </td>

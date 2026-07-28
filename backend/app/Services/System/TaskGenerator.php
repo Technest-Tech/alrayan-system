@@ -43,14 +43,30 @@ class TaskGenerator
     /** Package fully consumed → support reviews and prepares the next package. */
     public function forPackageComplete(StudentPackage $package): Task
     {
-        $package->loadMissing('student');
+        $package->loadMissing([
+            'student.assignedTeacher.user',
+            'allocations.lesson.teacher.user',
+            'lessons.teacher.user',
+        ]);
+
         $student = $package->student;
+        $teacher = $package->allocations
+            ->sortByDesc(fn ($allocation) => $allocation->lesson?->scheduled_at?->getTimestamp() ?? 0)
+            ->map(fn ($allocation) => $allocation->lesson?->teacher)
+            ->first(fn ($candidate) => $candidate !== null)
+            ?? $package->lessons
+                ->sortByDesc(fn ($lesson) => $lesson->scheduled_at?->getTimestamp() ?? 0)
+                ->map(fn ($lesson) => $lesson->teacher)
+                ->first(fn ($candidate) => $candidate !== null)
+            ?? $student?->assignedTeacher;
 
         return $this->generate('package_complete', $package, [
             'title'      => $student?->name ?? "Package #{$package->package_number}",
             'student_id' => $package->student_id,
+            'teacher_id' => $teacher?->id,
             'payload'    => [
                 'student_name'   => $student?->name,
+                'teacher_name'   => $teacher?->user?->name,
                 'package_number' => $package->package_number,
                 'package_hours'  => $package->package_hours,
                 'consumed_hours' => $package->consumed_hours,

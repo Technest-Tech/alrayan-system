@@ -3,15 +3,47 @@
 namespace App\Http\Controllers\System;
 
 use App\Http\Controllers\Controller;
-use App\Models\System\QualityReview;
-use App\Models\System\Session;
+use App\Models\System\Lesson;
+use App\Models\System\QcEvaluation;
 use App\Models\System\Teacher;
-use App\Services\System\PayrollCalculator;
-use App\Support\System\Setting;
+use App\Services\System\LessonMetrics;
 use Carbon\Carbon;
 
+/**
+ * Teacher-facing reporting. Every number here is derived from `sys_lessons`
+ * (via LessonMetrics) — the table the calendar writes to — so the Race, the
+ * profile dashboard and Analytics always agree.
+ */
 class TeacherReportController extends Controller
 {
+    public function __construct(private readonly LessonMetrics $lessons) {}
+
+    /**
+     * Collapse the 8 lesson statuses into the 4 buckets the reports UI shows.
+     * `trial`/`free` are lessons that were actually given, so they land in
+     * "attended"; a paid absence is still an absence from the student's side.
+     */
+    private function bucketFor(string $status): string
+    {
+        return match ($status) {
+            'attended', 'trial', 'free'                        => 'attended',
+            'absent', 'paid_absence'                           => 'absent',
+            'cancelled_by_student', 'cancelled_by_teacher',
+            'cancelled'                                        => 'cancelled',
+            default                                            => 'scheduled',
+        };
+    }
+
+    /** @param array<string,int> $counts */
+    private function bucketCount(array $counts, string $bucket): int
+    {
+        $sum = 0;
+        foreach ($counts as $status => $count) {
+            if ($this->bucketFor($status) === $bucket) $sum += (int) $count;
+        }
+        return $sum;
+    }
+
     public function summary(Teacher $teacher): \Illuminate\Http\JsonResponse
     {
         $this->authorize('view', $teacher);
@@ -23,33 +55,23 @@ class TeacherReportController extends Controller
         $days      = in_array((int) request('period'), [30, 90, 180]) ? (int) request('period') : 30;
         $since     = $now->copy()->subDays($days);
 
-        // ── Sessions over chosen period ───────────────────────────────────────
-        $sessionRows = Session::where('teacher_id', $teacher->id)
-            ->where('scheduled_start', '>=', $since)
-            ->selectRaw('status, count(*) as count')
-            ->groupBy('status')
-            ->pluck('count', 'status')
-            ->toArray();
+        // ── Lessons over chosen period ────────────────────────────────────────
+        $counts = $this->lessons->statusCounts($teacher->id, $since, $now);
 
-        $total     = array_sum($sessionRows);
-        $attended  = $sessionRows['attended']  ?? 0;
-        $absent    = $sessionRows['absent']    ?? 0;
-        $cancelled = ($sessionRows['cancelled'] ?? 0) + ($sessionRows['rescheduled'] ?? 0);
-        $scheduled = $sessionRows['scheduled'] ?? 0;
+        $total     = array_sum($counts);
+        $attended  = $this->bucketCount($counts, 'attended');
+        $absent    = $this->bucketCount($counts, 'absent');
+        $cancelled = $this->bucketCount($counts, 'cancelled');
+        $scheduled = $this->bucketCount($counts, 'scheduled');
 
-        // ── Total hours taught (attended sessions) ────────────────────────────
-        $hoursRow = Session::where('teacher_id', $teacher->id)
-            ->where('status', 'attended')
-            ->where('scheduled_start', '>=', $since)
-            ->selectRaw('COALESCE(SUM(duration_min), 0) as total_min')
-            ->value('total_min');
-        $hoursTaught = round($hoursRow / 60, 1);
+        // ── Total hours taught (attended / paid absence / free) ───────────────
+        $hoursTaught = round($this->lessons->hoursForTeacher($teacher->id, $since, $now), 1);
 
-        // ── Sessions by month (covers the chosen period, rounded to months) ──
+        // ── Lessons by month (covers the chosen period, rounded to months) ────
         $monthCount  = $days <= 30 ? 1 : ($days <= 90 ? 3 : 6);
-        $monthlyRows = Session::where('teacher_id', $teacher->id)
-            ->where('scheduled_start', '>=', $now->copy()->subMonths($monthCount)->startOfMonth())
-            ->selectRaw("DATE_FORMAT(scheduled_start, '%Y-%m') as month, status, count(*) as cnt")
+        $monthlyRows = Lesson::where('teacher_id', $teacher->id)
+            ->where('scheduled_at', '>=', $now->copy()->subMonths($monthCount)->startOfMonth())
+            ->selectRaw($this->lessons->monthExpr('scheduled_at') . ' as month, status, count(*) as cnt')
             ->groupBy('month', 'status')
             ->orderBy('month')
             ->get();
@@ -57,8 +79,7 @@ class TeacherReportController extends Controller
         $monthly = [];
         foreach ($monthlyRows as $row) {
             $monthly[$row->month] ??= ['month' => $row->month, 'attended' => 0, 'cancelled' => 0, 'absent' => 0, 'scheduled' => 0];
-            $key = in_array($row->status, ['cancelled', 'rescheduled']) ? 'cancelled' : $row->status;
-            $monthly[$row->month][$key] += $row->cnt;
+            $monthly[$row->month][$this->bucketFor($row->status)] += $row->cnt;
         }
         $monthly = array_values($monthly);
 
@@ -149,11 +170,7 @@ class TeacherReportController extends Controller
             }
         }
 
-        $minsByTeacher = Session::where('status', 'attended')
-            ->when($windowStart && $windowEnd, fn($q) => $q->whereBetween('scheduled_start', [$windowStart, $windowEnd]))
-            ->selectRaw('teacher_id, COALESCE(SUM(duration_min), 0) as mins')
-            ->groupBy('teacher_id')
-            ->pluck('mins', 'teacher_id');
+        $hoursByTeacher = $this->lessons->hoursByTeacher($windowStart, $windowEnd);
 
         $racers = Teacher::where('is_active', true)
             ->with('user:id,name,photo_url')
@@ -162,7 +179,7 @@ class TeacherReportController extends Controller
                 'teacher_id' => $t->id,
                 'name'       => optional($t->user)->name,
                 'photo_url'  => optional($t->user)->photo_url,
-                'hours'      => round((int) ($minsByTeacher[$t->id] ?? 0) / 60, 1),
+                'hours'      => round((float) ($hoursByTeacher[$t->id] ?? 0), 1),
             ])
             ->sortBy([
                 ['hours', 'desc'],
@@ -185,7 +202,7 @@ class TeacherReportController extends Controller
      * Dashboard stats for the rich teacher profile (KPI cards, mini-calendar, today's lessons).
      * Accepts ?month=YYYY-MM (defaults to the current month) for the calendar / month KPIs.
      */
-    public function profileStats(Teacher $teacher, PayrollCalculator $payroll): \Illuminate\Http\JsonResponse
+    public function profileStats(Teacher $teacher): \Illuminate\Http\JsonResponse
     {
         $this->authorize('view', $teacher);
 
@@ -203,62 +220,56 @@ class TeacherReportController extends Controller
         $prevMonthStart = $monthStart->copy()->subMonth()->startOfMonth();
         $prevMonthEnd   = $monthStart->copy()->subMonth()->endOfMonth();
 
-        // Hours = attended-session minutes / 60 within a range.
+        // Hours = taught lesson minutes / 60 within a range.
         $hours = fn(Carbon $from, Carbon $to): float => round(
-            Session::where('teacher_id', $teacher->id)
-                ->where('status', 'attended')
-                ->whereBetween('scheduled_start', [$from, $to])
-                ->sum('duration_min') / 60,
-            1
+            $this->lessons->hoursForTeacher($teacher->id, $from, $to), 1
         );
 
-        // ── Revenue (teacher earnings = payroll base) for selected & prev month
-        $revenue     = $payroll->calculate($teacher, $monthStart, $monthEndClamped)->baseSalaryMinor;
-        $revenuePrev = $payroll->calculate($teacher, $prevMonthStart, $prevMonthEnd)->baseSalaryMinor;
+        // ── Revenue (what the teacher earned) for the selected & previous month
+        $revenue     = $this->lessons->earningsMinor($teacher, $monthStart, $monthEndClamped);
+        $revenuePrev = $this->lessons->earningsMinor($teacher, $prevMonthStart, $prevMonthEnd);
 
         // ── Today / last-7-days windows (relative to now, not the selected month)
         $todayStart   = $now->copy()->startOfDay();
         $todayEnd     = $now->copy()->endOfDay();
         $lastWeekDay  = $now->copy()->subDays(7);
 
-        // ── Quality: latest review score + reviews in the last 30 days ───────
-        $latestQuality = QualityReview::where('teacher_id', $teacher->id)
-            ->orderByDesc('period_year')->orderByDesc('period_month')
-            ->value('overall_score');
-        $reviews30d = QualityReview::where('teacher_id', $teacher->id)
-            ->where('created_at', '>=', $now->copy()->subDays(30))
+        // ── Quality: average QC evaluation score + evaluations in the last 30 days
+        $qualityScore = QcEvaluation::where('teacher_id', $teacher->id)->avg('score');
+        $reviews30d   = QcEvaluation::where('teacher_id', $teacher->id)
+            ->where('evaluated_at', '>=', $now->copy()->subDays(30))
             ->count();
 
-        // ── Per-day session counts for the selected month (calendar dots) ────
-        $calendar = Session::where('teacher_id', $teacher->id)
-            ->whereBetween('scheduled_start', [$monthStart, $monthEnd])
-            ->whereIn('status', ['attended', 'scheduled'])
-            ->get(['scheduled_start'])
-            ->groupBy(fn($s) => Carbon::parse($s->scheduled_start)->toDateString())
+        // ── Per-day lesson counts for the selected month (calendar dots) ─────
+        $calendar = Lesson::where('teacher_id', $teacher->id)
+            ->whereBetween('scheduled_at', [$monthStart, $monthEnd])
+            ->whereNotIn('status', ['cancelled_by_student', 'cancelled_by_teacher', 'cancelled'])
+            ->get(['scheduled_at'])
+            ->groupBy(fn($l) => Carbon::parse($l->scheduled_at)->toDateString())
             ->map->count();
 
         // ── Today's lessons list ─────────────────────────────────────────────
-        $todayLessons = Session::where('teacher_id', $teacher->id)
-            ->whereBetween('scheduled_start', [$todayStart, $todayEnd])
+        $todayLessons = Lesson::where('teacher_id', $teacher->id)
+            ->whereBetween('scheduled_at', [$todayStart, $todayEnd])
             ->with('student.user')
-            ->orderBy('scheduled_start')
+            ->orderBy('scheduled_at')
             ->get()
-            ->map(fn($s) => [
-                'id'           => $s->id,
-                'time'         => Carbon::parse($s->scheduled_start)->toIso8601String(),
-                'student'      => optional(optional($s->student)->user)->name,
-                'status'       => $s->status,
-                'duration_min' => $s->duration_min,
+            ->map(fn($l) => [
+                'id'           => $l->id,
+                'time'         => Carbon::parse($l->scheduled_at)->toIso8601String(),
+                'student'      => optional($l->student)->name,
+                'status'       => $l->status,
+                'duration_min' => $l->duration_minutes,
             ]);
 
-        $todayAttended  = $todayLessons->where('status', 'attended')->count();
+        $todayAttended  = $todayLessons->whereIn('status', Lesson::TEACHER_PAID_STATUSES)->count();
         $todayScheduled = $todayLessons->where('status', 'scheduled')->count();
 
-        // ── Pending session reports (attended, overdue, no report submitted) ──
-        $pendingReports = Session::where('teacher_id', $teacher->id)
-            ->where('status', 'attended')
-            ->whereNotNull('report_overdue_at')
-            ->whereDoesntHave('report')
+        // ── Pending reports: past lessons that were given but have no report text
+        $pendingReports = Lesson::where('teacher_id', $teacher->id)
+            ->whereIn('status', Lesson::TEACHER_PAID_STATUSES)
+            ->where('scheduled_at', '<', $now)
+            ->where(fn($q) => $q->whereNull('content')->orWhere('content', ''))
             ->count();
 
         $totalStudents  = $teacher->students()->count();
@@ -266,7 +277,10 @@ class TeacherReportController extends Controller
 
         return response()->json([
             'month'              => $monthStart->format('Y-m'),
-            'currency'           => Setting::get('reports.base_currency', config('system.default_base_currency', 'EGP')),
+            // Teacher earnings are paid on the USD hour ladder (SalaryTiers),
+            // so the money on this card is USD regardless of the teacher's
+            // display currency.
+            'currency'           => \App\Services\System\SalaryTiers::CURRENCY,
             'total_students'     => $totalStudents,
             'active_students'    => $activeStudents,
             'non_active_students'=> max(0, $totalStudents - $activeStudents),
@@ -279,7 +293,7 @@ class TeacherReportController extends Controller
             'hours_prev_week_day'=> $hours($lastWeekDay->copy()->startOfDay(), $lastWeekDay->copy()->endOfDay()),
             'hours_last_7'       => $hours($now->copy()->subDays(7), $now),
             'hours_prev_7'       => $hours($now->copy()->subDays(14), $now->copy()->subDays(7)),
-            'quality_score'      => $latestQuality !== null ? (int) $latestQuality : 100,
+            'quality_score'      => $qualityScore !== null ? (int) round((float) $qualityScore) : 100,
             'quality_reviews_30d'=> $reviews30d,
             'calendar'           => $calendar,
             'today'              => [

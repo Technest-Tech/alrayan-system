@@ -212,6 +212,7 @@ export function LeadDetailPanel({ leadId, onClose }: Props) {
 
   const payloadPhones = (lead?.payload as Record<string, unknown> | null)?.phones as Array<{ value: string; primary: boolean }> | undefined
   const payloadEmails = (lead?.payload as Record<string, unknown> | null)?.emails as Array<{ value: string; primary: boolean }> | undefined
+  const customPaymentMethod = (lead?.payload as Record<string, unknown> | null)?.custom_payment_method as string | undefined
 
   return (
     <>
@@ -313,7 +314,7 @@ export function LeadDetailPanel({ leadId, onClose }: Props) {
                 )}
                 {lead.source && (
                   <span className="text-[10px] font-medium px-2 py-0.5 rounded-md" style={{ background: 'rgba(201,162,75,0.15)', color: 'rgba(201,162,75,0.9)' }}>
-                    {SOURCE_LABEL_KEYS[lead.source] ? t(SOURCE_LABEL_KEYS[lead.source]) : lead.source}
+                    {lead.source_detail ?? (SOURCE_LABEL_KEYS[lead.source] ? t(SOURCE_LABEL_KEYS[lead.source]) : lead.source)}
                   </span>
                 )}
               </div>
@@ -398,7 +399,7 @@ export function LeadDetailPanel({ leadId, onClose }: Props) {
                   <DetailRow
                     icon={Tag}
                     label={t('leads.fieldSource')}
-                    value={SOURCE_LABEL_KEYS[lead.source] ? t(SOURCE_LABEL_KEYS[lead.source]) : lead.source}
+                    value={lead.source_detail ?? (SOURCE_LABEL_KEYS[lead.source] ? t(SOURCE_LABEL_KEYS[lead.source]) : lead.source)}
                     accent="rgb(154 113 23)"
                   />
                 )}
@@ -431,11 +432,11 @@ export function LeadDetailPanel({ leadId, onClose }: Props) {
                       accent="rgb(14 124 90)"
                     />
                   )}
-                  {lead.payment_method && lead.payment_method !== 'none' && (
+                  {(customPaymentMethod || (lead.payment_method && lead.payment_method !== 'none')) && (
                     <DetailRow
                       icon={Tag}
                       label={t('leads.fieldPaymentMethod')}
-                      value={lead.payment_method.replace('_', ' ')}
+                      value={customPaymentMethod ?? lead.payment_method!.replace('_', ' ')}
                       accent="rgb(101 56 182)"
                     />
                   )}

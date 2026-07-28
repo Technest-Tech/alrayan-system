@@ -531,6 +531,16 @@ export default function CalendarPage() {
   const [chooserSel,         setChooserSel]         = useState<ChooserSelection | null>(null)
   const [settingsOpen,       setSettingsOpen]       = useState(false)
 
+  // The page header pins under the topbar; past this offset it condenses so the
+  // calendar keeps most of the viewport while Create Schedule/Lesson stay reachable.
+  const [headerCondensed, setHeaderCondensed] = useState(false)
+  useEffect(() => {
+    function onScroll() { setHeaderCondensed(window.scrollY > 24) }
+    onScroll()
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [])
+
   // Teachers get a self-scoped calendar: they can create/manage their own
   // lessons & schedules, but not the admin-only filters/settings.
   const user = useSystemUser()
@@ -682,58 +692,75 @@ export default function CalendarPage() {
 
   return (
     <>
-      {/* ── Page header ─────────────────────────────────── */}
-      <div className="relative rounded-2xl mb-5 px-6 py-5 overflow-hidden" style={{ background: `linear-gradient(135deg, #fff 60%, ${TEAL_50})`, border: `1px solid ${TEAL_100}` }}>
-        {/* Corner diamonds */}
-        {(['top-3 left-4', 'top-3 right-4', 'bottom-3 left-4', 'bottom-3 right-4'] as const).map(pos => (
-          <span key={pos} className={`absolute ${pos} select-none pointer-events-none text-sm`} style={{ color: TEAL_400 }}>◇</span>
-        ))}
-        {/* Teal top accent line */}
-        <div className="absolute top-0 left-0 right-0 h-0.5 rounded-t-2xl" style={{ background: `linear-gradient(to right, ${TEAL_600}, ${TEAL_400}, transparent)` }} />
+      {/* ── Page header (pinned under the 60px topbar) ──── */}
+      <div
+        className="sticky top-[60px] z-20 -mt-2 pt-2 pb-4 -mx-4 px-4 lg:-mx-6 lg:px-6"
+        style={{ background: 'rgb(var(--surface-bg, 244 246 250))' }}
+      >
+        <div
+          className={`relative rounded-2xl overflow-hidden transition-all duration-200 ${headerCondensed ? 'px-4 py-2.5' : 'px-6 py-5'}`}
+          style={{
+            background: `linear-gradient(135deg, #fff 60%, ${TEAL_50})`,
+            border: `1px solid ${TEAL_100}`,
+            boxShadow: headerCondensed ? '0 4px 14px rgb(0 0 0 / 0.07)' : undefined,
+          }}
+        >
+          {/* Corner diamonds — dropped in the condensed state, no room for them */}
+          {!headerCondensed && (['top-3 left-4', 'top-3 right-4', 'bottom-3 left-4', 'bottom-3 right-4'] as const).map(pos => (
+            <span key={pos} className={`absolute ${pos} select-none pointer-events-none text-sm`} style={{ color: TEAL_400 }}>◇</span>
+          ))}
+          {/* Teal top accent line */}
+          <div className="absolute top-0 left-0 right-0 h-0.5 rounded-t-2xl" style={{ background: `linear-gradient(to right, ${TEAL_600}, ${TEAL_400}, transparent)` }} />
 
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: TEAL_50, border: `1px solid ${TEAL_100}` }}>
-              <CalendarDays size={20} style={{ color: TEAL_600 }} />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h1 className="text-xl font-bold" style={{ color: NAVY }}>{t('schedule.page.title')}</h1>
-                <span style={{ color: TEAL_400, fontSize: 11, lineHeight: 1 }}>✦</span>
-              </div>
-              <p className="text-sm mt-0.5" style={{ color: MUTED }}>{t('schedule.page.subtitle')}</p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2">
-            {/* Calendar settings is an admin-only configuration surface. */}
-            {!isTeacher && (
-              <button
-                onClick={() => setSettingsOpen(true)}
-                className="inline-flex items-center justify-center w-10 h-10 rounded-xl border transition-colors hover:bg-black/[0.02]"
-                style={{ borderColor: BORDER, color: MUTED, background: '#fff' }}
-                aria-label={t('schedule.page.calendarSettings')}
-                title={t('schedule.page.calendarSettings')}
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3 min-w-0">
+              <div
+                className={`rounded-xl flex items-center justify-center shrink-0 transition-all duration-200 ${headerCondensed ? 'w-8 h-8' : 'w-10 h-10'}`}
+                style={{ background: TEAL_50, border: `1px solid ${TEAL_100}` }}
               >
-                <Settings size={16} />
+                <CalendarDays size={headerCondensed ? 16 : 20} style={{ color: TEAL_600 }} />
+              </div>
+              <div className="min-w-0">
+                <div className="flex items-center gap-2">
+                  <h1 className={`font-bold truncate ${headerCondensed ? 'text-base' : 'text-xl'}`} style={{ color: NAVY }}>{t('schedule.page.title')}</h1>
+                  <span style={{ color: TEAL_400, fontSize: 11, lineHeight: 1 }}>✦</span>
+                </div>
+                {!headerCondensed && (
+                  <p className="text-sm mt-0.5" style={{ color: MUTED }}>{t('schedule.page.subtitle')}</p>
+                )}
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 shrink-0">
+              {/* Calendar settings is an admin-only configuration surface. */}
+              {!isTeacher && (
+                <button
+                  onClick={() => setSettingsOpen(true)}
+                  className={`inline-flex items-center justify-center rounded-xl border transition-all duration-200 hover:bg-black/[0.02] ${headerCondensed ? 'w-9 h-9' : 'w-10 h-10'}`}
+                  style={{ borderColor: BORDER, color: MUTED, background: '#fff' }}
+                  aria-label={t('schedule.page.calendarSettings')}
+                  title={t('schedule.page.calendarSettings')}
+                >
+                  <Settings size={16} />
+                </button>
+              )}
+              <button
+                onClick={() => { setEditSchedule(undefined); setSchedulePrefill(undefined); setCreateScheduleOpen(true) }}
+                className={`inline-flex items-center gap-2 rounded-xl text-sm font-medium border transition-all duration-200 hover:bg-black/[0.02] ${headerCondensed ? 'px-3 py-2' : 'px-4 py-2.5'}`}
+                style={{ borderColor: BORDER, color: NAVY, background: '#fff' }}
+              >
+                <CalendarRange size={14} />
+                {t('schedule.page.createSchedule')}
               </button>
-            )}
-            <button
-              onClick={() => { setEditSchedule(undefined); setSchedulePrefill(undefined); setCreateScheduleOpen(true) }}
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium border transition-colors hover:bg-black/[0.02]"
-              style={{ borderColor: BORDER, color: NAVY, background: '#fff' }}
-            >
-              <CalendarRange size={14} />
-              {t('schedule.page.createSchedule')}
-            </button>
-            <button
-              onClick={() => { setEditLesson(undefined); setLessonPrefill(undefined); setCreateLessonOpen(true) }}
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-white transition-opacity hover:opacity-90"
-              style={{ background: TEAL_600 }}
-            >
-              <Plus size={14} />
-              {t('schedule.page.createLesson')}
-            </button>
+              <button
+                onClick={() => { setEditLesson(undefined); setLessonPrefill(undefined); setCreateLessonOpen(true) }}
+                className={`inline-flex items-center gap-2 rounded-xl text-sm font-semibold text-white transition-all duration-200 hover:opacity-90 ${headerCondensed ? 'px-3 py-2' : 'px-4 py-2.5'}`}
+                style={{ background: TEAL_600 }}
+              >
+                <Plus size={14} />
+                {t('schedule.page.createLesson')}
+              </button>
+            </div>
           </div>
         </div>
       </div>

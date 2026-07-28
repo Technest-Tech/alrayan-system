@@ -32,12 +32,19 @@ class BuildPayrollExport implements ShouldQueue
             ->get();
 
         // Build CSV export inline (Excel/XLSX export via Maatwebsite queued in a future improvement)
-        $rows = [['Teacher', 'Sessions', 'Minutes', 'Base (minor)', 'Bonuses (minor)', 'Deductions (minor)', 'Net (minor)', 'Status']];
+        $rows = [[
+            'Teacher', 'Sessions', 'Minutes', 'Hours', 'Tier', 'Hourly rate (minor)',
+            'Currency', 'Base (minor)', 'Bonuses (minor)', 'Deductions (minor)', 'Net (minor)', 'Status',
+        ]];
         foreach ($payrolls as $p) {
             $rows[] = [
                 $p->teacher?->user?->name ?? '—',
                 $p->total_sessions,
                 $p->total_minutes,
+                $p->total_hours,
+                $p->tier_index !== null ? $p->tier_index + 1 : null,
+                $p->hourly_rate_minor,
+                $p->currency,
                 $p->base_salary_minor,
                 $p->bonuses_minor,
                 $p->deductions_minor,

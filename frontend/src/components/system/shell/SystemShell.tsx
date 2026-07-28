@@ -124,7 +124,9 @@ export function SystemShell({ children }: { children: React.ReactNode }) {
           }`}
         >
           <Topbar onToggleSidebar={() => setMobileOpen(true)} />
-          <main className="flex-1 min-w-0 px-4 py-4 lg:px-6 lg:py-6 overflow-x-hidden">
+          {/* overflow-x-clip, not -hidden: `hidden` would make <main> a scroll
+              container and break `position: sticky` for page headers inside it. */}
+          <main className="flex-1 min-w-0 px-4 py-4 lg:px-6 lg:py-6 overflow-x-clip">
             <div className="max-w-[1600px] mx-auto">{children}</div>
           </main>
         </div>

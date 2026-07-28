@@ -248,6 +248,38 @@ class LeadEndpointsTest extends SystemTestCase
         ]);
     }
 
+    public function test_create_lead_accepts_explicit_nulls_for_empty_boxes(): void
+    {
+        // The form posts null (not undefined) for every box left empty, so that clearing one
+        // on edit actually clears it. Creation has to swallow the same shape.
+        $this->actingAs($this->adminUser(), 'sanctum')
+            ->postJson('/api/system/leads', [
+                'name'                   => 'Bare Minimum',
+                'source'                 => 'manual_entry',
+                'email'                  => null,
+                'phone'                  => null,
+                'age'                    => null,
+                'gender'                 => null,
+                'country'                => null,
+                'city'                   => null,
+                'course_interest_id'     => null,
+                'platform'               => null,
+                'platform_url'           => null,
+                'package_hours'          => null,
+                'subscription_price'     => null,
+                'currency'               => null,
+                'payment_method'         => null,
+                'notes'                  => null,
+                'rejection_reason'       => null,
+                'assigned_supervisor_id' => null,
+                'assigned_teacher_id'    => null,
+            ])
+            ->assertCreated();
+
+        $lead = Lead::where('name', 'Bare Minimum')->firstOrFail();
+        $this->assertNotNull($lead->student, 'A lead still provisions a student.');
+    }
+
     public function test_create_lead_validates_required_name(): void
     {
         $this->actingAs($this->adminUser(), 'sanctum')
@@ -350,6 +382,185 @@ class LeadEndpointsTest extends SystemTestCase
             ->patchJson("/api/system/leads/{$lead->id}", ['status' => 'interested'])
             ->assertStatus(422)
             ->assertJsonValidationErrors(['status']);
+    }
+
+    public function test_a_terminal_lead_can_still_have_its_other_fields_edited(): void
+    {
+        // The edit form always posts back the status it loaded. Re-stating the current status
+        // is a no-op, not a transition — otherwise no closed or lost lead could ever be edited.
+        foreach (['closed', 'lost'] as $status) {
+            $lead = Lead::factory()->{$status === 'closed' ? 'closed' : 'lost'}()->create();
+
+            $this->actingAs($this->adminUser(), 'sanctum')
+                ->patchJson("/api/system/leads/{$lead->id}", [
+                    'name'   => "Edited {$status}",
+                    'notes'  => 'Reached them again.',
+                    'status' => $status,
+                ])
+                ->assertOk()
+                ->assertJsonPath('data.name', "Edited {$status}");
+
+            $this->assertDatabaseHas('sys_leads', [
+                'id'     => $lead->id,
+                'name'   => "Edited {$status}",
+                'notes'  => 'Reached them again.',
+                'status' => $status,
+            ]);
+        }
+    }
+
+    public function test_marking_a_lead_lost_from_the_edit_form_derives_the_reason(): void
+    {
+        // The edit form collects a `rejection_reason`, never a `lost_reason` — the pipeline's
+        // "a reason is required" guard must be satisfied from that rather than failing the save.
+        $lead = Lead::factory()->newLead()->create();
+
+        $this->actingAs($this->adminUser(), 'sanctum')
+            ->patchJson("/api/system/leads/{$lead->id}", [
+                'status'           => 'lost',
+                'rejection_reason' => 'price',
+            ])
+            ->assertOk()
+            ->assertJsonPath('data.status', 'lost');
+
+        $this->assertSame('price', $lead->fresh()->lost_reason);
+    }
+
+    public function test_dragging_a_lead_to_lost_without_a_reason_still_works(): void
+    {
+        // The kanban drop sends nothing but the status.
+        $lead = Lead::factory()->newLead()->create();
+
+        $this->actingAs($this->adminUser(), 'sanctum')
+            ->patchJson("/api/system/leads/{$lead->id}", ['status' => 'lost'])
+            ->assertOk()
+            ->assertJsonPath('data.status', 'lost');
+
+        $this->assertSame('other', $lead->fresh()->lost_reason);
+    }
+
+    public function test_an_explicit_status_wins_over_the_teacher_auto_advance(): void
+    {
+        $this->actingAs($this->adminUser(), 'sanctum')
+            ->postJson('/api/system/leads', ['name' => 'Both At Once', 'source' => 'manual_entry'])
+            ->assertCreated();
+
+        $lead    = Lead::where('name', 'Both At Once')->firstOrFail();
+        $teacher = Teacher::factory()->create();
+
+        $this->actingAs($this->adminUser(), 'sanctum')
+            ->patchJson("/api/system/leads/{$lead->id}", [
+                'assigned_teacher_id' => $teacher->id,
+                'status'              => 'interested',
+            ])
+            ->assertOk()
+            ->assertJsonPath('data.status', 'interested');
+    }
+
+    public function test_a_teacher_can_be_unassigned_from_a_lead(): void
+    {
+        $teacher = Teacher::factory()->create();
+
+        $this->actingAs($this->adminUser(), 'sanctum')
+            ->postJson('/api/system/leads', [
+                'name' => 'Drop Teacher', 'source' => 'manual_entry', 'assigned_teacher_id' => $teacher->id,
+            ])
+            ->assertCreated();
+
+        $lead = Lead::where('name', 'Drop Teacher')->firstOrFail();
+        $this->assertSame($teacher->id, $lead->student->assigned_teacher_id);
+
+        $this->actingAs($this->adminUser(), 'sanctum')
+            ->patchJson("/api/system/leads/{$lead->id}", ['assigned_teacher_id' => null])
+            ->assertOk();
+
+        $this->assertNull($lead->fresh()->student->assigned_teacher_id);
+    }
+
+    public function test_editing_a_lead_mirrors_the_identity_onto_its_provisioned_student(): void
+    {
+        // Every lead provisions a real student + users row up front, and the directory,
+        // calendar and WhatsApp report all read THAT record — not sys_leads.
+        $this->actingAs($this->adminUser(), 'sanctum')
+            ->postJson('/api/system/leads', [
+                'name'   => 'Original Name',
+                'email'  => 'orig@example.com',
+                'phone'  => '+1000',
+                'source' => 'manual_entry',
+            ])
+            ->assertCreated();
+
+        $lead = Lead::where('name', 'Original Name')->firstOrFail();
+
+        $this->actingAs($this->adminUser(), 'sanctum')
+            ->patchJson("/api/system/leads/{$lead->id}", [
+                'name'    => 'Renamed Person',
+                'email'   => 'new@example.com',
+                'phone'   => '+2000',
+                'country' => 'EG',
+                'gender'  => 'male',
+                'payload' => [
+                    'emails' => [['value' => 'new@example.com', 'primary' => true]],
+                    'phones' => [['value' => '+2000', 'primary' => true]],
+                ],
+            ])
+            ->assertOk();
+
+        $student = $lead->fresh()->student;
+
+        $this->assertDatabaseHas('sys_students', [
+            'id'       => $student->id,
+            'name'     => 'Renamed Person',
+            'email'    => 'new@example.com',
+            'whatsapp' => '+2000',
+            'country'  => 'EG',
+        ]);
+
+        $this->assertDatabaseHas('users', [
+            'id'       => $student->user_id,
+            'name'     => 'Renamed Person',
+            'email'    => 'new@example.com',
+            'whatsapp' => '+2000',
+            'gender'   => 'male',
+        ]);
+    }
+
+    public function test_an_email_already_taken_by_someone_else_does_not_break_the_edit(): void
+    {
+        $other = User::factory()->create(['email' => 'taken@example.com']);
+
+        $this->actingAs($this->adminUser(), 'sanctum')
+            ->postJson('/api/system/leads', ['name' => 'Clash', 'source' => 'manual_entry'])
+            ->assertCreated();
+
+        $lead = Lead::where('name', 'Clash')->firstOrFail();
+
+        // The lead keeps the address; the identity row is simply left alone.
+        $this->actingAs($this->adminUser(), 'sanctum')
+            ->patchJson("/api/system/leads/{$lead->id}", [
+                'name'  => 'Clash Renamed',
+                'email' => 'taken@example.com',
+            ])
+            ->assertOk();
+
+        $this->assertSame('taken@example.com', $lead->fresh()->email);
+        $this->assertSame('Clash Renamed', $lead->fresh()->student->name);
+        $this->assertNotSame('taken@example.com', $lead->fresh()->student->user->email);
+        $this->assertSame($other->id, User::where('email', 'taken@example.com')->sole()->id);
+    }
+
+    public function test_a_cleared_field_is_actually_cleared(): void
+    {
+        $lead = Lead::factory()->newLead()->create(['city' => 'Cairo', 'notes' => 'old note', 'age' => 30]);
+
+        $this->actingAs($this->adminUser(), 'sanctum')
+            ->patchJson("/api/system/leads/{$lead->id}", ['city' => null, 'notes' => null, 'age' => null])
+            ->assertOk();
+
+        $fresh = $lead->fresh();
+        $this->assertNull($fresh->city);
+        $this->assertNull($fresh->notes);
+        $this->assertNull($fresh->age);
     }
 
     // -------------------------------------------------------------- DELETE ---

@@ -14,9 +14,12 @@ export function AlertsPanel({ alerts, loading }: AlertsPanelProps) {
 
   const alertLabel = (kind: string) => {
     const key = {
-      'invoice.overdue':     'dashboard.alertInvoiceOverdue',
-      'report.missing':      'dashboard.alertReportMissing',
-      'student.no_whatsapp': 'dashboard.alertNoWhatsapp',
+      'invoice.overdue':               'dashboard.alertInvoiceOverdue',
+      'report.missing':                'dashboard.alertReportMissing',
+      'lesson.report_missing':         'dashboard.alertLessonReportMissing',
+      'package.unpaid':                'dashboard.alertPackageUnpaid',
+      'package.needs_reconfirmation':  'dashboard.alertPackageNeedsReconfirm',
+      'student.no_whatsapp':           'dashboard.alertNoWhatsapp',
     }[kind]
     return key ? t(key) : kind
   }

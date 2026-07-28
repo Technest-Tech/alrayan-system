@@ -46,27 +46,48 @@
     </div>
   </div>
 
+  @php
+    $bd = $payroll->breakdown_by_duration ?? [];
+    $snap = $payroll->snapshot ?? [];
+    $tierMode = ($snap['mode'] ?? null) === 'hour_tier' || $payroll->tier_index !== null;
+    $currency = $payroll->currency ?: ($tierMode ? 'USD' : 'EGP');
+  @endphp
+
+  @if($tierMode)
   <table>
-    <thead><tr><th>Duration</th><th>Sessions</th><th>Minutes</th><th>Rate / min (piastres)</th><th>Sub-total (EGP)</th></tr></thead>
+    <thead><tr><th>Calculation level</th><th>Sessions</th><th>Hours</th><th>Rate / hour</th><th style="text-align:right">Base salary ({{ $currency }})</th></tr></thead>
     <tbody>
-    @php $bd = $payroll->breakdown_by_duration ?? []; $snap = $payroll->snapshot ?? []; @endphp
-    @foreach([30, 45, 60] as $dur)
-      @php $mins = $bd[$dur] ?? 0; $rate = $snap[$dur] ?? 0; $sessions = $mins > 0 ? round($mins / $dur) : 0; @endphp
-      @if($mins > 0)
       <tr>
-        <td>{{ $dur }}-min</td>
-        <td>{{ $sessions }}</td>
-        <td>{{ number_format($mins) }}</td>
-        <td>{{ number_format($rate) }}</td>
-        <td>{{ number_format(($mins * $rate) / 100, 2) }}</td>
+        <td>Level {{ ((int) $payroll->tier_index) + 1 }}</td>
+        <td>{{ number_format($payroll->total_sessions) }}</td>
+        <td>{{ number_format($payroll->total_hours, 2) }}</td>
+        <td>{{ $currency }} {{ number_format($payroll->hourly_rate_minor / 100, 2) }}</td>
+        <td style="text-align:right">{{ number_format($payroll->base_salary_minor / 100, 2) }}</td>
       </tr>
-      @endif
-    @endforeach
     </tbody>
   </table>
+  @else
+  <table>
+    <thead><tr><th>Duration</th><th>Sessions</th><th>Minutes</th><th>Rate / min (minor)</th><th>Sub-total ({{ $currency }})</th></tr></thead>
+    <tbody>
+      @foreach([30, 45, 60] as $dur)
+        @php $mins = $bd[$dur] ?? 0; $rate = $snap[$dur] ?? 0; $sessions = $mins > 0 ? round($mins / $dur) : 0; @endphp
+        @if($mins > 0)
+        <tr>
+          <td>{{ $dur }}-min</td>
+          <td>{{ $sessions }}</td>
+          <td>{{ number_format($mins) }}</td>
+          <td>{{ number_format($rate) }}</td>
+          <td>{{ number_format(($mins * $rate) / 100, 2) }}</td>
+        </tr>
+        @endif
+      @endforeach
+    </tbody>
+  </table>
+  @endif
 
   <table>
-    <thead><tr><th>Item</th><th>Category</th><th>Notes</th><th style="text-align:right">Amount (EGP)</th></tr></thead>
+    <thead><tr><th>Item</th><th>Category</th><th>Notes</th><th style="text-align:right">Amount ({{ $currency }})</th></tr></thead>
     <tbody>
       <tr><td colspan="3"><strong>Base salary</strong></td><td style="text-align:right">{{ number_format($payroll->base_salary_minor / 100, 2) }}</td></tr>
       @foreach($payroll->adjustments->where('type','bonus') as $adj)
@@ -75,7 +96,7 @@
       @foreach($payroll->adjustments->where('type','deduction') as $adj)
       <tr><td>&ndash; Deduction</td><td>{{ ucfirst(str_replace('_',' ',$adj->category)) }}</td><td>{{ $adj->reason }}</td><td style="text-align:right;color:#dc2626">-{{ number_format($adj->amount_minor / 100, 2) }}</td></tr>
       @endforeach
-      <tr class="total-row"><td colspan="3">Net Salary</td><td style="text-align:right">EGP {{ number_format($payroll->net_salary_minor / 100, 2) }}</td></tr>
+      <tr class="total-row"><td colspan="3">Net Salary</td><td style="text-align:right">{{ $currency }} {{ number_format($payroll->net_salary_minor / 100, 2) }}</td></tr>
     </tbody>
   </table>
 

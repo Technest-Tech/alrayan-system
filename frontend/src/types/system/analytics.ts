@@ -37,6 +37,7 @@ export interface TeacherBalance {
   lessons:      number
   income_minor: number
   rate_minor:   number
+  tier_index:   number
   currency:     string
   excluded:     boolean
 }

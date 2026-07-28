@@ -1,6 +1,6 @@
 'use client'
 import Link from 'next/link'
-import { MessageCircle, Baby, BookOpen, CalendarDays, Clock3, Globe } from 'lucide-react'
+import { MessageCircle, Baby, BookOpen, CalendarDays, Clock3, Globe, Mail } from 'lucide-react'
 import type { Student, StudentStatus } from '@/types/system/student'
 import { useI18n } from '@/lib/system/i18n'
 
@@ -82,6 +82,10 @@ function StudentCard({ student }: { student: Student }) {
   const isChild = student.student_type === 'child'
   const border  = 'rgb(var(--border-default, 229 233 240))'
 
+  // Children rarely own a phone — fall back to the guardian's number, but say so.
+  const waNumber   = student.whatsapp || student.guardian?.whatsapp || null
+  const waIsProxy  = !student.whatsapp && !!student.guardian?.whatsapp
+
   return (
     <div
       className="rounded-2xl border flex flex-col overflow-hidden transition-shadow hover:shadow-md"
@@ -113,11 +117,11 @@ function StudentCard({ student }: { student: Student }) {
             <p className="font-semibold text-sm truncate" style={{ color: 'rgb(11 31 58)' }}>
               {student.name}
             </p>
-            <p className="text-xs truncate mt-0.5" style={{ color: 'rgb(90 100 112)' }}>
-              {isChild && student.guardian?.name
-                ? `${t('teachers.guardianLabel')} ${student.guardian.name}`
-                : (student.email ?? student.country)}
-            </p>
+            {isChild && student.guardian?.name && (
+              <p className="text-xs truncate mt-0.5" style={{ color: 'rgb(90 100 112)' }}>
+                {`${t('teachers.guardianLabel')} ${student.guardian.name}`}
+              </p>
+            )}
           </div>
         </div>
 
@@ -135,6 +139,41 @@ function StudentCard({ student }: { student: Student }) {
 
       {/* ── Details ── */}
       <div className="px-5 py-4 space-y-2.5 flex-1">
+        <DetailRow icon={<MessageCircle size={13} />}>
+          {waNumber ? (
+            <a
+              href={whatsappHref(waNumber)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-medium hover:underline"
+              style={{ color: 'rgb(11 31 58)' }}
+              dir="ltr"
+            >
+              {waNumber}
+              {waIsProxy && (
+                <span className="opacity-60 font-normal"> · {t('teachers.guardianNumber')}</span>
+              )}
+            </a>
+          ) : (
+            <span className="italic" style={{ color: 'rgb(203 211 222)' }}>{t('teachers.noWhatsapp')}</span>
+          )}
+        </DetailRow>
+
+        <DetailRow icon={<Mail size={13} />}>
+          {student.email ? (
+            <a
+              href={`mailto:${student.email}`}
+              className="font-medium hover:underline break-all"
+              style={{ color: 'rgb(11 31 58)' }}
+              dir="ltr"
+            >
+              {student.email}
+            </a>
+          ) : (
+            <span className="italic" style={{ color: 'rgb(203 211 222)' }}>{t('teachers.noEmail')}</span>
+          )}
+        </DetailRow>
+
         <DetailRow icon={<BookOpen size={13} />}>
           {student.course?.name
             ? <span className="font-medium" style={{ color: 'rgb(11 31 58)' }}>{student.course.name}</span>
@@ -173,9 +212,9 @@ function StudentCard({ student }: { student: Student }) {
 
       {/* ── Actions ── */}
       <div className="flex items-center gap-2 px-5 py-3.5">
-        {student.whatsapp ? (
+        {waNumber ? (
           <a
-            href={whatsappHref(student.whatsapp)}
+            href={whatsappHref(waNumber)}
             target="_blank"
             rel="noopener noreferrer"
             onClick={e => e.stopPropagation()}
@@ -186,7 +225,19 @@ function StudentCard({ student }: { student: Student }) {
             {t('common.whatsapp')}
           </a>
         ) : (
-          <span className="text-xs opacity-30 italic">No WhatsApp</span>
+          <span className="text-xs opacity-30 italic">{t('teachers.noWhatsapp')}</span>
+        )}
+
+        {student.email && (
+          <a
+            href={`mailto:${student.email}`}
+            onClick={e => e.stopPropagation()}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-colors hover:bg-black/5"
+            style={{ borderColor: border, color: 'rgb(11 31 58)' }}
+          >
+            <Mail size={13} style={{ color: 'rgb(30 90 171)' }} />
+            {t('common.email')}
+          </a>
         )}
 
         <Link

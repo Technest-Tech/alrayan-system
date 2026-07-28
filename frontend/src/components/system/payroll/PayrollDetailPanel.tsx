@@ -9,6 +9,7 @@ import { ApprovePayrollDialog } from './ApprovePayrollDialog'
 import { MarkTransferredDialog } from './MarkTransferredDialog'
 import { useDeleteAdjustment } from '@/hooks/system/usePayrollAdjustments'
 import { useI18n } from '@/lib/system/i18n'
+import { TierBadge } from '@/components/system/salary/TierBadge'
 import type { Payroll } from '@/types/system/payroll'
 
 const MONTH_KEYS = [
@@ -35,6 +36,7 @@ export function PayrollDetailPanel({ payroll, onUpdated }: PayrollDetailPanelPro
 
   const adjustments = payroll.adjustments ?? []
   const breakdown = payroll.breakdown_by_duration ?? {}
+  const currency = payroll.currency ?? 'EGP'
 
   async function handleDeleteAdjustment(id: number) {
     await deleteAdjustment.mutateAsync(id)
@@ -60,20 +62,22 @@ export function PayrollDetailPanel({ payroll, onUpdated }: PayrollDetailPanelPro
       <div>
         <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-2">{t('common.sessions')}</p>
         <div className="rounded-lg border divide-y text-sm">
-          {Object.entries(breakdown).map(([dur, sessions]) => {
-            const minutes = sessions * Number(dur)
-            return (
-              <div key={dur} className="flex items-center justify-between px-3 py-2 gap-2">
-                <span className="text-gray-600">{t('payroll.detail.minutesLabel', { n: dur })}</span>
-                <span className="text-gray-500 tabular-nums">{t('payroll.detail.sessionsCount', { n: String(sessions) })}</span>
-                <span className="text-gray-500 tabular-nums">{t('payroll.detail.minutesLabel', { n: String(minutes) })}</span>
-              </div>
-            )
-          })}
+          {Object.entries(breakdown).map(([dur, minutes]) => (
+            <div key={dur} className="flex items-center justify-between px-3 py-2 gap-2">
+              <span className="text-gray-600">{t('teacher.salary.durationMin', { n: dur })}</span>
+              <span className="text-gray-500 tabular-nums">
+                {t('payroll.detail.minutesLabel', { n: String(minutes) })}
+              </span>
+            </div>
+          ))}
           <div className="flex items-center justify-between px-3 py-2 bg-gray-50 font-medium">
             <span>{t('common.total')}</span>
-            <span className="tabular-nums">{t('payroll.detail.sessionsCount', { n: String(payroll.total_sessions) })}</span>
-            <span className="tabular-nums">{t('payroll.detail.minutesLabel', { n: String(payroll.total_minutes) })}</span>
+            <span className="tabular-nums">
+              {t('teacher.salary.totalSessionsMinutes', {
+                sessions: String(payroll.total_sessions),
+                minutes: String(payroll.total_minutes),
+              })}
+            </span>
           </div>
         </div>
       </div>
@@ -82,21 +86,32 @@ export function PayrollDetailPanel({ payroll, onUpdated }: PayrollDetailPanelPro
       <div>
         <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-2">{t('payroll.detail.salary')}</p>
         <div className="rounded-lg border text-sm divide-y">
+          {payroll.tier_index != null && (
+            <div className="flex flex-wrap items-center justify-between gap-2 px-3 py-2 bg-emerald-50/70">
+              <span className="inline-flex items-center gap-2 text-gray-600">
+                {t('salaryTiers.calculationLevel')}
+                <TierBadge index={payroll.tier_index} size="sm" />
+              </span>
+              <span className="tabular-nums font-medium">
+                {payroll.total_hours.toFixed(2)}h × {formatMoney(payroll.hourly_rate_minor, currency)}/h
+              </span>
+            </div>
+          )}
           <div className="flex justify-between px-3 py-2">
             <span className="text-gray-600">{t('payroll.detail.baseSalary')}</span>
-            <span className="tabular-nums">{formatMoney(payroll.base_salary_minor, 'EGP')}</span>
+            <span className="tabular-nums">{formatMoney(payroll.base_salary_minor, currency)}</span>
           </div>
           <div className="flex justify-between px-3 py-2 text-green-700">
             <span>{t('payroll.adjustments.bonuses')}</span>
-            <span className="tabular-nums">+{formatMoney(payroll.bonuses_minor, 'EGP')}</span>
+            <span className="tabular-nums">+{formatMoney(payroll.bonuses_minor, currency)}</span>
           </div>
           <div className="flex justify-between px-3 py-2 text-red-600">
             <span>{t('payroll.adjustments.deductions')}</span>
-            <span className="tabular-nums">-{formatMoney(payroll.deductions_minor, 'EGP')}</span>
+            <span className="tabular-nums">-{formatMoney(payroll.deductions_minor, currency)}</span>
           </div>
           <div className="flex justify-between px-3 py-2 bg-gray-50 font-semibold">
             <span>{t('payroll.detail.netSalary')}</span>
-            <span className="tabular-nums">{formatMoney(payroll.net_salary_minor, 'EGP')}</span>
+            <span className="tabular-nums">{formatMoney(payroll.net_salary_minor, currency)}</span>
           </div>
         </div>
       </div>
@@ -117,6 +132,7 @@ export function PayrollDetailPanel({ payroll, onUpdated }: PayrollDetailPanelPro
         <PayrollAdjustmentsList
           adjustments={adjustments}
           payrollStatus={payroll.status}
+          currency={currency}
           onDelete={handleDeleteAdjustment}
         />
       </div>
@@ -173,6 +189,7 @@ export function PayrollDetailPanel({ payroll, onUpdated }: PayrollDetailPanelPro
       {addOpen && (
         <AddAdjustmentSheet
           payrollId={payroll.id}
+          currency={currency}
           open={addOpen}
           onClose={() => setAddOpen(false)}
           onSuccess={() => onUpdated?.()}

@@ -60,6 +60,10 @@ class PayrollController extends Controller
         return response()->json([
             'total_sessions'        => $comp->totalSessions,
             'total_minutes'         => $comp->totalMinutes,
+            'total_hours'           => $comp->totalHours,
+            'hourly_rate_minor'     => $comp->hourlyRateMinor,
+            'tier_index'            => $comp->tierIndex,
+            'currency'              => $comp->currency,
             'breakdown_by_duration' => $comp->breakdownByDuration,
             'base_salary_minor'     => $comp->baseSalaryMinor,
             'rate_snapshot'         => $comp->rateSnapshot,

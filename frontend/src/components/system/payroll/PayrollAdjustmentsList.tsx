@@ -20,12 +20,14 @@ const CATEGORY_KEYS: Record<string, string> = {
 interface PayrollAdjustmentsListProps {
   adjustments: PayrollAdjustment[]
   payrollStatus: PayrollStatus
+  currency: string
   onDelete: (id: number) => void
 }
 
 export function PayrollAdjustmentsList({
   adjustments,
   payrollStatus,
+  currency,
   onDelete,
 }: PayrollAdjustmentsListProps) {
   const { t } = useI18n()
@@ -55,7 +57,7 @@ export function PayrollAdjustmentsList({
                 )}
               </span>
               <span className={`font-medium tabular-nums ${sign === '+' ? 'text-green-700' : 'text-red-600'}`}>
-                {sign}{formatMoney(adj.amount_minor, 'EGP')}
+                {sign}{formatMoney(adj.amount_minor, currency)}
               </span>
               {canDelete && (
                 <button

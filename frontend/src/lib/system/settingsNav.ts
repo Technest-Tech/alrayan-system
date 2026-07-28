@@ -7,10 +7,10 @@ export interface SettingsTab {
 
 export const SETTINGS_TABS: readonly SettingsTab[] = [
   { label: 'Subjects',         href: '/settings/subjects' },
+  { label: 'Lesson Evaluations', href: '/settings/lesson-evaluations' },
   { label: 'General Settings', href: '/settings/academy' },
   // Other sections removed for now — restore by adding them back here:
   // { label: 'Lesson Subjects',    href: '/settings/lesson-subjects' },
-  // { label: 'Lesson Evaluations', href: '/settings/lesson-evaluations' },
   // { label: 'Pricing',            href: '/settings/pricing' },
   // { label: 'Billing',            href: '/settings/billing' },
   // { label: 'Expense Categories', href: '/settings/expense-categories' },

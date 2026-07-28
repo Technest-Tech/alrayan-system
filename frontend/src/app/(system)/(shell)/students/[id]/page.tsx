@@ -735,7 +735,8 @@ export default function StudentDetailPage({ params }: { params: Promise<{ id: st
       />
 
       {/* ── Tab bar ── */}
-      <div className="sticky top-0 z-10 -mx-1 px-1 bg-[rgb(var(--surface-bg,244_246_250))] pb-0">
+      {/* top-[60px] clears the sticky topbar, which would otherwise cover this */}
+      <div className="sticky top-[60px] z-10 -mx-1 px-1 bg-[rgb(var(--surface-bg,244_246_250))] pb-0">
         <div className="flex gap-0 border-b overflow-x-auto"
           style={{ borderColor: 'rgb(var(--border-default,229 233 240))' }}>
           {TABS.map((tabName) => (

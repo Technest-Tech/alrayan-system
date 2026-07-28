@@ -40,6 +40,7 @@ const DEDUCTION_CATEGORIES: { value: AdjustmentCategory; key: string }[] = [
 
 interface AddAdjustmentSheetProps {
   payrollId: number
+  currency: string
   open: boolean
   onClose: () => void
   onSuccess: () => void
@@ -47,6 +48,7 @@ interface AddAdjustmentSheetProps {
 
 export function AddAdjustmentSheet({
   payrollId,
+  currency,
   open,
   onClose,
   onSuccess,
@@ -54,7 +56,7 @@ export function AddAdjustmentSheet({
   const { t } = useI18n()
   const [type, setType] = useState<AdjustmentType>('bonus')
   const [category, setCategory] = useState<AdjustmentCategory | ''>('')
-  const [amountEgp, setAmountEgp] = useState('')
+  const [amount, setAmount] = useState('')
   const [reason, setReason] = useState('')
 
   const addAdjustment = useAddAdjustment()
@@ -67,8 +69,8 @@ export function AddAdjustmentSheet({
   }
 
   async function handleSubmit() {
-    if (!category || !amountEgp || !reason.trim()) return
-    const amount_minor = Math.round(parseFloat(amountEgp) * 100)
+    if (!category || !amount || !reason.trim()) return
+    const amount_minor = Math.round(parseFloat(amount) * 100)
     if (isNaN(amount_minor) || amount_minor <= 0) return
 
     await addAdjustment.mutateAsync({
@@ -81,7 +83,7 @@ export function AddAdjustmentSheet({
 
     setType('bonus')
     setCategory('')
-    setAmountEgp('')
+    setAmount('')
     setReason('')
     onSuccess()
     onClose()
@@ -137,14 +139,16 @@ export function AddAdjustmentSheet({
 
           {/* Amount */}
           <div>
-            <Label className="mb-1.5 block text-sm font-medium">{t('payroll.adjustments.amountEgp')}</Label>
+            <Label className="mb-1.5 block text-sm font-medium">
+              {t('payroll.adjustments.amountCurrency', { currency })}
+            </Label>
             <Input
               type="number"
               min="0"
               step="0.01"
               placeholder="0.00"
-              value={amountEgp}
-              onChange={e => setAmountEgp(e.target.value)}
+              value={amount}
+              onChange={e => setAmount(e.target.value)}
             />
           </div>
 
@@ -166,7 +170,7 @@ export function AddAdjustmentSheet({
           </Button>
           <Button
             onClick={handleSubmit}
-            disabled={!category || !amountEgp || !reason.trim() || addAdjustment.isPending}
+            disabled={!category || !amount || !reason.trim() || addAdjustment.isPending}
           >
             {addAdjustment.isPending ? t('common.saving') : t('common.save')}
           </Button>

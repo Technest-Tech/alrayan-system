@@ -13,9 +13,11 @@ use App\Http\Resources\System\LeadDetailResource;
 use App\Http\Resources\System\LeadResource;
 use App\Http\Resources\System\StudentDetailResource;
 use App\Models\System\Lead;
+use App\Models\User;
 use App\Services\System\LeadPipelineService;
 use App\Services\System\LeadToStudentConverter;
 use App\Services\System\StudentCreator;
+use App\Services\System\UserProvisioner;
 use App\Support\System\Setting;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -29,6 +31,7 @@ class LeadController extends Controller
         private LeadPipelineService $pipeline,
         private LeadToStudentConverter $converter,
         private StudentCreator $studentCreator,
+        private UserProvisioner $provisioner,
     ) {}
 
     public function index(Request $request): \Illuminate\Http\Resources\Json\AnonymousResourceCollection
@@ -112,27 +115,161 @@ class LeadController extends Controller
 
         $data = $request->validated();
 
-        if (isset($data['status'])) {
-            $this->pipeline->transition($lead, $data['status'], $request->user());
-            unset($data['status']);
-        }
+        // The status is applied last and only through the pipeline — writing it as a plain
+        // field would skip the transition rules.
+        $status = $data['status'] ?? null;
+        unset($data['status']);
 
-        // assigned_teacher_id isn't a lead column — propagate any (re)assignment to the
-        // linked student so it stays filterable by teacher in the calendar.
-        if (array_key_exists('assigned_teacher_id', $data)) {
-            $teacherId = $data['assigned_teacher_id'];
-            unset($data['assigned_teacher_id']);
-            if ($teacherId && $lead->student) {
-                $lead->student->update(['assigned_teacher_id' => $teacherId]);
-            }
-            // Assigning a teacher advances an early-stage lead to "waiting for trial".
-            if ($teacherId && in_array($lead->status, ['new_lead', 'interested'], true)) {
-                $lead->update(['status' => 'waiting_for_trial']);
-            }
-        }
+        // assigned_teacher_id isn't a lead column — it lives on the linked student.
+        $teacherTouched = array_key_exists('assigned_teacher_id', $data);
+        $teacherId      = $data['assigned_teacher_id'] ?? null;
+        unset($data['assigned_teacher_id']);
 
-        $lead->update($data);
+        DB::transaction(function () use ($lead, $data, $status, $teacherId, $teacherTouched, $request) {
+            $lead->update($data);
+
+            if ($teacherTouched) {
+                // Propagate the (re)assignment to the linked student so it stays filterable
+                // by teacher in the calendar. A null clears the assignment.
+                $lead->student?->update(['assigned_teacher_id' => $teacherId]);
+
+                // Assigning a teacher advances an early-stage lead to "waiting for trial" —
+                // unless the same edit picked a status of its own, which always wins.
+                if ($teacherId && $status === null && in_array($lead->status, ['new_lead', 'interested'], true)) {
+                    $status = 'waiting_for_trial';
+                }
+            }
+
+            // Re-saving a lead on the status it already has is a no-op, not a transition.
+            // Without this, editing any closed or lost lead would be rejected outright —
+            // the edit form always posts the status it loaded.
+            if ($status !== null && $status !== $lead->status) {
+                $this->pipeline->transition($lead, $status, $request->user(), $this->transitionExtra($lead, $status));
+            }
+
+            $this->mirrorIdentityToStudent($lead, $data);
+        });
+
         return new LeadDetailResource($lead->fresh(['supervisor', 'courseInterest', 'followUps', 'student']));
+    }
+
+    /**
+     * Extra attributes the pipeline needs to complete a transition.
+     *
+     * Marking a lead lost requires a reason, but the edit form collects one as
+     * `rejection_reason` (a slightly different vocabulary). Map it onto the lost_reason
+     * enum instead of failing the whole save on a field the form never asked for.
+     *
+     * @return array<string,mixed>
+     */
+    private function transitionExtra(Lead $lead, string $status): array
+    {
+        if ($status !== 'lost') {
+            return [];
+        }
+
+        $fromRejection = [
+            'price'          => 'price',
+            'schedule'       => 'schedule',
+            'no_response'    => 'no_response',
+            'not_interested' => 'other',
+            'other'          => 'other',
+        ];
+
+        return [
+            'lost_reason' => $lead->lost_reason
+                ?? ($fromRejection[$lead->rejection_reason] ?? 'other'),
+        ];
+    }
+
+    /**
+     * A lead provisions a real student (+ `users` identity row) the moment it is created, and
+     * the rest of the system reads THAT record — the user directory, the calendar, the WhatsApp
+     * lesson report. An edit that only touched sys_leads would never surface there, so mirror
+     * the fields the two records share — and only the ones this request actually sent.
+     *
+     * @param  array<string,mixed>  $data  The validated payload, minus status/teacher.
+     */
+    private function mirrorIdentityToStudent(Lead $lead, array $data): void
+    {
+        $student = $lead->student;
+
+        if (! $student) {
+            return;
+        }
+
+        $profile  = [];   // sys_students columns
+        $identity = [];   // users columns, via the provisioner
+
+        if (array_key_exists('name', $data) && $lead->name) {
+            $profile['name'] = $identity['name'] = $lead->name;
+        }
+
+        if (array_key_exists('country', $data) && $lead->country) {
+            $profile['country'] = $lead->country;
+        }
+
+        if (array_key_exists('gender', $data)) {
+            $identity['gender'] = $lead->gender;
+        }
+
+        // Every WhatsApp send reads the student's number, so keep it on the lead's primary
+        // contact — but never blank it, which would cut the student off from their reports.
+        $contactTouched = array_key_exists('phone', $data)
+            || array_key_exists('whatsapp', $data)
+            || array_key_exists('payload', $data);
+
+        if ($contactTouched && ($number = $lead->whatsapp ?: $lead->phone)) {
+            $profile['whatsapp'] = $identity['whatsapp'] = $number;
+        }
+
+        // users.email is unique — an address shared with another person must not blow up
+        // an otherwise valid lead edit.
+        $emailIsFree = $lead->email
+            && ! User::where('email', $lead->email)->whereKeyNot($student->user_id)->exists();
+
+        if (array_key_exists('email', $data) && $emailIsFree) {
+            $profile['email'] = $identity['email'] = $lead->email;
+        }
+
+        // The form's extra addresses/numbers become the identity's contact rows. Emails only
+        // ride along when the primary above was safe to set: the provisioner replaces the whole
+        // list, and it would otherwise promote a duplicate address to primary.
+        if (array_key_exists('payload', $data)) {
+            if ($emailIsFree && $rows = $this->contactRows(data_get($lead->payload, 'emails', []), 'email')) {
+                $identity['emails'] = $rows;
+            }
+            if ($rows = $this->contactRows(data_get($lead->payload, 'phones', []), 'phone')) {
+                $identity['phones'] = $rows;
+            }
+        }
+
+        if ($profile) {
+            $student->update($profile);
+        }
+
+        if ($identity && $student->user) {
+            $this->provisioner->update($student->user, $identity);
+        }
+    }
+
+    /**
+     * The lead form stores contacts as {value, primary}; the provisioner wants {email|phone, is_primary}.
+     *
+     * @param  mixed  $entries
+     * @return array<int,array<string,mixed>>
+     */
+    private function contactRows($entries, string $key): array
+    {
+        if (! is_array($entries)) {
+            return [];
+        }
+
+        return collect($entries)
+            ->filter(fn ($e) => is_array($e) && ! empty($e['value']))
+            ->map(fn ($e) => [$key => $e['value'], 'is_primary' => (bool) ($e['primary'] ?? false)])
+            ->values()
+            ->all();
     }
 
     public function assign(AssignLeadRequest $request, Lead $lead): LeadDetailResource

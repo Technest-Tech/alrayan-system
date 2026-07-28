@@ -86,7 +86,9 @@ export function LeadCard({ lead, dragging, onClick, onEdit, onDelete }: LeadCard
   const { t }        = useI18n()
   const av           = avatarStyle(lead.name)
   const srcStyle     = SOURCE_COLORS[lead.source ?? ''] ?? SOURCE_COLORS.manual_entry
-  const srcLabel     = lead.source
+  const srcLabel     = lead.source_detail
+    ? lead.source_detail
+    : lead.source
     ? (SOURCE_LABEL_KEYS[lead.source] ? t(SOURCE_LABEL_KEYS[lead.source]) : lead.source)
     : t('leads.sourceManual')
   const PlatformIcon = lead.platform ? (PLATFORM_ICONS[lead.platform] ?? Globe) : null

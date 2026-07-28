@@ -22,6 +22,10 @@ export interface Payroll {
   period_month: number
   total_sessions: number
   total_minutes: number
+  total_hours: number
+  hourly_rate_minor: number
+  tier_index: number | null
+  currency: string
   breakdown_by_duration: Record<string, number>
   base_salary_minor: number
   bonuses_minor: number
@@ -33,7 +37,7 @@ export interface Payroll {
   rejection_reason: string | null
   transferred_at: string | null
   transfer_reference: string | null
-  snapshot: Record<string, number> | null
+  snapshot: Record<string, unknown> | null
   teacher?: { id: number; name: string; payment_method?: string }
   adjustments?: PayrollAdjustment[]
   approver?: { id: number; name: string } | null

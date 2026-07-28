@@ -8,8 +8,11 @@ use App\Http\Resources\System\PayrollDetailResource;
 use App\Http\Resources\System\PayrollResource;
 use App\Http\Resources\System\StudentResource;
 use App\Models\System\Teacher;
+use App\Services\System\LessonMetrics;
 use App\Services\System\SalaryStatementBuilder;
+use App\Services\System\SalaryTiers;
 use App\Services\System\UserProvisioner;
+use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -82,6 +85,67 @@ class TeacherSelfController extends Controller
             ],
             'current' => $stmt->current ? new PayrollDetailResource($stmt->current) : null,
             'history' => PayrollResource::collection($stmt->history),
+        ]);
+    }
+
+    /**
+     * Where the teacher stands on the hour ladder this month: hours taught,
+     * the tier (and rate) those hours have earned, how far the next tier is,
+     * and the last 6 months of attained tiers.
+     */
+    public function salaryTier(Request $request, LessonMetrics $metrics, SalaryTiers $tiers): JsonResponse
+    {
+        $teacher = $this->currentTeacher();
+
+        $now   = Carbon::now();
+        $validated = $request->validate([
+            'month' => ['nullable', 'date_format:Y-m'],
+        ]);
+        $month = $validated['month'] ?? null;
+        $start = is_string($month) && preg_match('/^\d{4}-\d{2}$/', $month)
+            ? Carbon::createFromFormat('Y-m-d', $month . '-01')->startOfMonth()
+            : $now->copy()->startOfMonth();
+        $end = $start->copy()->endOfMonth();
+        if ($end->greaterThan($now)) $end = $now->copy();
+
+        $row      = $metrics->bucketedByTeacher($start, $end)->get($teacher->id);
+        $hours    = round((int) ($row->total_min ?? 0) / 60, 2);
+        $progress = $tiers->progress($hours);
+
+        // Attained tier per month, oldest first — the ladder as a track record.
+        $history = [];
+        foreach (array_reverse(range(0, 5)) as $back) {
+            $mStart = $now->copy()->subMonths($back)->startOfMonth();
+            $mEnd   = $mStart->copy()->endOfMonth();
+            if ($mEnd->greaterThan($now)) $mEnd = $now->copy();
+
+            $mHours = $metrics->hoursForTeacher($teacher->id, $mStart, $mEnd);
+            $mTier  = $tiers->tierForHours($mHours);
+
+            $history[] = [
+                'month'        => $mStart->format('Y-m'),
+                'label'        => $mStart->format('M Y'),
+                'hours'        => $mHours,
+                'tier_index'   => $mTier['index'],
+                'rate_minor'   => $mTier['rate_minor'],
+                'salary_minor' => $tiers->salaryMinor($mHours),
+            ];
+        }
+
+        return response()->json([
+            'month'                  => $start->format('Y-m'),
+            'currency'               => SalaryTiers::CURRENCY,
+            'hours'                  => $progress['hours'],
+            'lessons'                => (int) ($row->lessons ?? 0),
+            'tier'                   => $progress['tier'],
+            'next_tier'              => $progress['next_tier'],
+            'hours_to_next'          => $progress['hours_to_next'],
+            'progress_pct'           => $progress['progress_pct'],
+            'rate_minor'             => $progress['rate_minor'],
+            'salary_minor'           => $progress['salary_minor'],
+            'next_tier_salary_minor' => $progress['next_tier_salary_minor'],
+            'ladder'                 => $tiers->ladder(),
+            'history'                => $history,
         ]);
     }
 

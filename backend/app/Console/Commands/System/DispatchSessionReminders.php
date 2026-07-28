@@ -24,9 +24,11 @@ class DispatchSessionReminders extends Command
                 $window->copy()->addMinute(),
             ])
             ->with(['student.whatsappGroup', 'student.course', 'teacher.user', 'teacher.whatsappGroup'])
-            ->whereDoesntHave('wassenderLogs', function ($q) {
-                $q->where('template_key', 'like', 'session_reminder%')
-                  ->whereRaw("JSON_EXTRACT(payload, '$.session_id') = sys_sessions.id");
+            ->whereNotExists(function ($q) {
+                $q->selectRaw('1')
+                    ->from('sys_wassender_logs')
+                    ->where('template_key', 'like', 'session_reminder%')
+                    ->whereRaw("JSON_EXTRACT(payload, '$.session_id') = sys_sessions.id");
             })
             ->limit(500)
             ->get();

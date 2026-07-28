@@ -4,6 +4,7 @@ import { Download } from 'lucide-react'
 import { PageHeader } from '@/components/system/primitives/PageHeader'
 import { SalaryStatement } from '@/components/system/teacher/SalaryStatement'
 import { SalaryHistoryTable } from '@/components/system/teacher/SalaryHistoryTable'
+import { MySalaryTierCard } from '@/components/system/salary/MySalaryTierCard'
 import { useQuery } from '@tanstack/react-query'
 import { api } from '@/lib/system/api'
 import { useI18n } from '@/lib/system/i18n'
@@ -52,6 +53,10 @@ export default function TeacherSalaryPage() {
           )
         }
       />
+
+      <div className="mb-6">
+        <MySalaryTierCard />
+      </div>
 
       {isLoading ? (
         <div className="py-20 text-center text-sm opacity-40">{t('common.loading')}</div>

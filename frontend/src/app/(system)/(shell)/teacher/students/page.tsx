@@ -35,7 +35,10 @@ export default function TeacherStudentsPage() {
         tab === 'all' ? true
         : tab === 'paused' ? (s.status === 'paused' || s.status === 'suspended')
         : s.status === tab
-      const matchesQ = !needle || s.name.toLowerCase().includes(needle) || (s.email ?? '').toLowerCase().includes(needle)
+      const matchesQ = !needle
+        || s.name.toLowerCase().includes(needle)
+        || (s.email ?? '').toLowerCase().includes(needle)
+        || (s.whatsapp ?? '').includes(needle)
       return matchesTab && matchesQ
     })
   }, [students, tab, q])
