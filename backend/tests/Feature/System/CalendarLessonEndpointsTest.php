@@ -205,6 +205,50 @@ class CalendarLessonEndpointsTest extends SystemTestCase
         $this->assertSame('attended', $data[0]['status']);
     }
 
+    /**
+     * The calendar's list view browses one month at a time; without a date window it
+     * always showed the newest lessons no matter which month was selected.
+     */
+    public function test_lessons_index_filters_by_date_window(): void
+    {
+        $teacher = Teacher::factory()->create();
+        $student = $this->lessonStudent();
+        $package = $this->makePackage($student);
+
+        $this->makeLesson($student, $teacher, $package, ['scheduled_at' => '2026-03-15 10:00:00']);
+        $this->makeLesson($student, $teacher, $package, ['scheduled_at' => '2026-04-01 10:00:00']);
+        $this->makeLesson($student, $teacher, $package, ['scheduled_at' => '2026-04-30 23:30:00']);
+        $this->makeLesson($student, $teacher, $package, ['scheduled_at' => '2026-05-02 10:00:00']);
+
+        $data = $this->actingAs($this->adminUser(), 'sanctum')
+            ->getJson('/api/system/lessons?from=2026-04-01&to=2026-04-30')
+            ->assertOk()
+            ->json('data');
+
+        $this->assertCount(2, $data, 'only April lessons — the boundary days included');
+        foreach ($data as $lesson) {
+            $this->assertStringStartsWith('2026-04', $lesson['scheduled_at']);
+        }
+    }
+
+    public function test_lessons_index_honours_per_page(): void
+    {
+        $teacher = Teacher::factory()->create();
+        $student = $this->lessonStudent();
+        $package = $this->makePackage($student);
+
+        foreach (range(0, 2) as $i) {
+            $this->makeLesson($student, $teacher, $package, ['scheduled_at' => now()->addDays($i)->setTime(10, 0)]);
+        }
+
+        $this->actingAs($this->adminUser(), 'sanctum')
+            ->getJson('/api/system/lessons?per_page=2')
+            ->assertOk()
+            ->assertJsonCount(2, 'data')
+            ->assertJsonPath('meta.per_page', 2)
+            ->assertJsonPath('meta.total', 3);
+    }
+
     /* ─────────────────────────────  SHOW  ───────────────────────────── */
 
     public function test_admin_can_show_lesson(): void

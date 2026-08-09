@@ -206,6 +206,39 @@ class LessonReportEndpointsTest extends SystemTestCase
         $this->assertStringNotContainsString('Nous avons remarqué', $html);
     }
 
+    /**
+     * The panel sends its selected language on every request; the report is rendered in
+     * that language instead of the fixed REPORTS_LOCALE (French here).
+     */
+    public function test_the_report_follows_the_panel_language(): void
+    {
+        $student = $this->lessonStudent();
+        $teacher = Teacher::factory()->create();
+
+        $this->asAdmin()
+            ->withHeader('X-System-Locale', 'en')
+            ->postJson('/api/system/lessons', $this->payload($student, $teacher, ['send_report' => true]))
+            ->assertCreated();
+
+        $html = $this->storedReport();
+
+        $this->assertStringContainsString('A lesson has been recorded for', $html);
+        $this->assertStringNotContainsString('Un cours a été enregistré pour', $html);
+    }
+
+    public function test_an_unsupported_panel_language_falls_back_to_the_configured_locale(): void
+    {
+        $student = $this->lessonStudent();
+        $teacher = Teacher::factory()->create();
+
+        $this->asAdmin()
+            ->withHeader('X-System-Locale', 'zz')
+            ->postJson('/api/system/lessons', $this->payload($student, $teacher, ['send_report' => true]))
+            ->assertCreated();
+
+        $this->assertStringContainsString('Un cours a été enregistré pour', $this->storedReport());
+    }
+
     public function test_an_absent_lesson_renders_the_condolence_variant(): void
     {
         $student = $this->lessonStudent();

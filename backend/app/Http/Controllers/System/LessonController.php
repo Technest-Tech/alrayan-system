@@ -13,6 +13,7 @@ use App\Models\System\Lesson;
 use App\Models\System\Student;
 use App\Services\System\PackageService;
 use App\Services\System\Reports\LessonReportService;
+use App\Services\System\Reports\ReportLocale;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -80,6 +81,15 @@ class LessonController extends Controller
         if ($request->filled('package_id')) {
             $query->where('package_id', $request->input('package_id'));
         }
+        // Date window (inclusive, whole days) — this is what makes the calendar's list
+        // view follow the month the user is looking at instead of always showing the
+        // newest lessons regardless of the period.
+        if ($request->filled('from')) {
+            $query->where('scheduled_at', '>=', Carbon::parse($request->input('from'))->startOfDay());
+        }
+        if ($request->filled('to')) {
+            $query->where('scheduled_at', '<=', Carbon::parse($request->input('to'))->endOfDay());
+        }
 
         $sort = $request->input('sort', '-scheduled_at');
         if ($sort === 'session_number_hours') {
@@ -92,7 +102,9 @@ class LessonController extends Controller
             $query->orderByDesc('scheduled_at');
         }
 
-        return LessonResource::collection($query->paginate(50));
+        $perPage = min(max((int) $request->input('per_page', 50), 1), 500);
+
+        return LessonResource::collection($query->paginate($perPage));
     }
 
     public function show(Lesson $lesson): LessonResource
@@ -151,7 +163,7 @@ class LessonController extends Controller
 
         // Dispatched after the rebuild so the report shows settled package progress.
         if ($sendReport) {
-            SendLessonReport::dispatch($lesson->id)->onQueue('notifications');
+            SendLessonReport::dispatch($lesson->id, $this->reportLocale($request))->onQueue('notifications');
         }
 
         return new LessonResource($lesson);
@@ -224,10 +236,16 @@ class LessonController extends Controller
         $lesson->refresh()->load(['package', 'teacher.user', 'student', 'subject', 'evaluation', 'addedBy', 'allocations.package']);
 
         if ($sendReport) {
-            SendLessonReport::dispatch($lesson->id)->onQueue('notifications');
+            SendLessonReport::dispatch($lesson->id, $this->reportLocale($request))->onQueue('notifications');
         }
 
         return new LessonResource($lesson);
+    }
+
+    /** The panel language of whoever triggered the send — the report follows it. */
+    private function reportLocale(Request $request): string
+    {
+        return ReportLocale::resolve($request->header('X-System-Locale'));
     }
 
     public function destroy(Lesson $lesson): Response

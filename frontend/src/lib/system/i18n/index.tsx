@@ -3,11 +3,12 @@ import { createContext, useCallback, useContext, useEffect, useState } from 'rea
 import { en } from './en'
 import { fr } from './fr'
 import type { Messages } from './en'
+import { LOCALE_KEY } from '../api'
 
 export type Locale = 'en' | 'fr'
 
 const MESSAGES: Record<Locale, Messages> = { en, fr }
-const STORAGE_KEY = 'system:locale'
+const STORAGE_KEY = LOCALE_KEY
 const COOKIE_NAME = 'system_locale'
 
 function getNestedValue(obj: Record<string, unknown>, path: string): string | undefined {
@@ -30,16 +31,18 @@ const I18nContext = createContext<I18nContextValue | null>(null)
 export function I18nProvider({ children }: { children: React.ReactNode }) {
   const [locale, setLocaleState] = useState<Locale>('en')
 
-  useEffect(() => {
-    const stored = localStorage.getItem(STORAGE_KEY) as Locale | null
-    if (stored === 'en' || stored === 'fr') setLocaleState(stored)
-  }, [])
-
   const setLocale = useCallback((next: Locale) => {
     setLocaleState(next)
     localStorage.setItem(STORAGE_KEY, next)
     document.cookie = `${COOKIE_NAME}=${next};path=/;max-age=31536000`
   }, [])
+
+  useEffect(() => {
+    const stored = localStorage.getItem(STORAGE_KEY) as Locale | null
+    // Persist even the untouched default: the API client reads this key to tell the
+    // server which language to render server-side artefacts (lesson reports) in.
+    setLocale(stored === 'en' || stored === 'fr' ? stored : 'en')
+  }, [setLocale])
 
   const t = useCallback(
     (key: string, vars?: Record<string, string>): string => {

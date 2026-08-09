@@ -18,6 +18,7 @@ class StudentPackage extends Model
         'package_hours'        => 'integer',
         'tariff_at_time'       => 'integer',
         'needs_reconfirmation' => 'boolean',
+        'is_manual'            => 'boolean',
         'paid_at'              => 'datetime',
     ];
 

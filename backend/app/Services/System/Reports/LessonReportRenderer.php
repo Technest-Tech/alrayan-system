@@ -17,9 +17,9 @@ class LessonReportRenderer
 {
     public function __construct(private LessonReportData $data) {}
 
-    public function render(Lesson $lesson): string
+    public function render(Lesson $lesson, ?string $locale = null): string
     {
-        $url = $this->publicUrl($this->rasterise($lesson));
+        $url = $this->publicUrl($this->rasterise($lesson, $locale));
 
         // Fail here rather than let the queued send die on a 422 from Acadmyq.
         WhatsAppDispatcher::assertPubliclyFetchableUrl($url);
@@ -31,22 +31,20 @@ class LessonReportRenderer
      * Raw PNG bytes for a direct download. Unlike render(), the browser receives
      * the image straight from us, so there is no public-URL fetchability to assert.
      */
-    public function bytes(Lesson $lesson): string
+    public function bytes(Lesson $lesson, ?string $locale = null): string
     {
         $disk = Storage::disk(config('reports.lesson_report.disk'));
 
-        return (string) $disk->get($this->rasterise($lesson));
+        return (string) $disk->get($this->rasterise($lesson, $locale));
     }
 
     /**
      * The report's HTML — a browsable fallback for the download when no rasteriser
      * is configured (local/CI). Production overrides this by producing a real PNG.
      */
-    public function html(Lesson $lesson): string
+    public function html(Lesson $lesson, ?string $locale = null): string
     {
-        $locale = (string) config('reports.lesson_report.locale');
-
-        return view('system.reports.lesson-report', $this->data->build($lesson, $locale))->render();
+        return view('system.reports.lesson-report', $this->data->build($lesson, ReportLocale::resolve($locale)))->render();
     }
 
     /** Whether bytes() yields a genuine raster image (false for the no-Chromium fake). */
@@ -60,10 +58,9 @@ class LessonReportRenderer
      * content-addressed, so an unchanged lesson re-uses the PNG it already produced
      * instead of paying for another Chromium boot.
      */
-    private function rasterise(Lesson $lesson): string
+    private function rasterise(Lesson $lesson, ?string $locale = null): string
     {
-        $locale = (string) config('reports.lesson_report.locale');
-        $html   = view('system.reports.lesson-report', $this->data->build($lesson, $locale))->render();
+        $html = $this->html($lesson, $locale);
 
         $path = $this->pathFor($lesson, $html);
         $disk = Storage::disk(config('reports.lesson_report.disk'));
@@ -120,8 +117,8 @@ class LessonReportRenderer
         return "{$base}/storage/{$path}";
     }
 
-    public function caption(Lesson $lesson): string
+    public function caption(Lesson $lesson, ?string $locale = null): string
     {
-        return $this->data->caption($lesson, (string) config('reports.lesson_report.locale'));
+        return $this->data->caption($lesson, ReportLocale::resolve($locale));
     }
 }

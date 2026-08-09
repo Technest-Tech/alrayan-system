@@ -11,7 +11,9 @@ use App\Models\System\Student;
 use App\Models\System\Teacher;
 use App\Models\User;
 use App\Notifications\System\SystemUserInvitedNotification;
+use App\Models\System\StudentPackage;
 use App\Services\System\AuditLog;
+use App\Services\System\PackageService;
 use App\Services\System\StudentCreator;
 use App\Services\System\TeacherCreator;
 use App\Services\System\UserProvisioner;
@@ -30,6 +32,8 @@ use Spatie\QueryBuilder\QueryBuilder;
 class UserDirectoryController extends Controller
 {
     private const STAFF_ROLES = ['admin', 'supervisor', 'quality', 'accountant'];
+
+    public function __construct(private PackageService $packages) {}
 
     public function index(Request $request): AnonymousResourceCollection
     {
@@ -195,6 +199,7 @@ class UserDirectoryController extends Controller
 
             if ($fields) {
                 $user->studentProfile->update($fields);
+                $this->syncOpenPackage($user->studentProfile->fresh(), $fields);
             }
         }
 
@@ -225,6 +230,61 @@ class UserDirectoryController extends Controller
             if ($fields) {
                 $user->teacherProfile->update($fields);
             }
+        }
+    }
+
+    /**
+     * Carry an enrolment edit onto the student's open package.
+     *
+     * Every screen reads the *package*, never sys_students, so re-typing the tariff or the
+     * package size on the user form used to look like it did nothing at all. Only the open
+     * (pending) package moves — a paid one is a settled bill, and rewriting its price would
+     * rewrite revenue that has already been reported. To correct a paid package, edit it
+     * directly under Payments → Manage Packages.
+     *
+     * @param  array<string,mixed>  $fields  The student columns this request actually wrote.
+     */
+    private function syncOpenPackage(Student $student, array $fields): void
+    {
+        $priceTouched = array_key_exists('monthly_price_minor', $fields);
+        $hoursTouched = array_key_exists('package_hours_default', $fields);
+
+        if (! $priceTouched && ! $hoursTouched) {
+            return;
+        }
+
+        $open = StudentPackage::where('student_id', $student->id)
+            ->where('status', 'pending')
+            ->orderByDesc('package_number')
+            ->first();
+
+        if (! $open) {
+            return;
+        }
+
+        $updates = [];
+
+        // A cleared box stores 0, which means "no figure on file" rather than "this package is
+        // free / has no hours" — leave the package on the number it already carries.
+        if ($priceTouched && (int) $student->monthly_price_minor > 0) {
+            $updates['tariff_at_time'] = (int) $student->monthly_price_minor;
+        }
+        if ($hoursTouched && (int) $student->package_hours_default > 0) {
+            $updates['package_hours'] = (int) $student->package_hours_default;
+        }
+
+        if (! $updates) {
+            return;
+        }
+
+        $hoursChanged = array_key_exists('package_hours', $updates)
+            && (int) $updates['package_hours'] !== (int) $open->package_hours;
+
+        // Hand-set figures: the rebuild below must not treat this package as disposable.
+        $open->update($updates + ['is_manual' => true]);
+
+        if ($hoursChanged) {
+            $this->packages->rebuild($student);
         }
     }
 

@@ -1,7 +1,7 @@
 'use client'
 import { useEffect } from 'react'
 import { formatDistanceToNow } from 'date-fns'
-import { X, Globe, Users, Camera, Play, MessageCircle, Music, CircleHelp, Phone, Mail, Tag, Clock, CheckCircle2, PlusCircle, RefreshCw, MapPin, Package, Calendar } from 'lucide-react'
+import { X, Pencil, Globe, Users, Camera, Play, MessageCircle, Music, CircleHelp, Phone, Mail, Tag, Clock, CheckCircle2, PlusCircle, RefreshCw, MapPin, Package, Calendar } from 'lucide-react'
 import { useLead } from '@/hooks/system/useLeads'
 import type { LeadStatus, LeadPriority, LeadActivity } from '@/types/system/lead'
 import { useI18n } from '@/lib/system/i18n'
@@ -189,9 +189,11 @@ function SkeletonBlock({ w = 'full', h = 4 }: { w?: string; h?: number }) {
 interface Props {
   leadId: number | null
   onClose: () => void
+  /** Opens the edit form for this lead. Available at every status, closed included. */
+  onEdit?: () => void
 }
 
-export function LeadDetailPanel({ leadId, onClose }: Props) {
+export function LeadDetailPanel({ leadId, onClose, onEdit }: Props) {
   const { t } = useI18n()
   const { data: lead, isLoading } = useLead(leadId)
 
@@ -289,13 +291,26 @@ export function LeadDetailPanel({ leadId, onClose }: Props) {
                 )}
               </div>
 
-              <button
-                onClick={onClose}
-                className="p-1.5 rounded-lg transition-colors shrink-0"
-                style={{ background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.6)' }}
-              >
-                <X size={15} />
-              </button>
+              <div className="flex items-center gap-1.5 shrink-0">
+                {onEdit && !isLoading && lead && (
+                  <button
+                    onClick={onEdit}
+                    title={t('leads.editLead')}
+                    aria-label={t('leads.editLead')}
+                    className="p-1.5 rounded-lg transition-colors"
+                    style={{ background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.6)' }}
+                  >
+                    <Pencil size={15} />
+                  </button>
+                )}
+                <button
+                  onClick={onClose}
+                  className="p-1.5 rounded-lg transition-colors"
+                  style={{ background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.6)' }}
+                >
+                  <X size={15} />
+                </button>
+              </div>
             </div>
 
             {/* Status / priority badges */}

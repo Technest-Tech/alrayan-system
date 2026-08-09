@@ -65,7 +65,7 @@ class LessonReportService
      *
      * @throws UnreachableRecipientException
      */
-    public function send(Lesson $lesson): WhatsAppSendLog
+    public function send(Lesson $lesson, ?string $locale = null): WhatsAppSendLog
     {
         $student = $lesson->student;
 
@@ -77,8 +77,8 @@ class LessonReportService
 
         return $this->whatsapp->sendImage(
             $recipient->phone,
-            $this->renderer->render($lesson),
-            $this->renderer->caption($lesson),
+            $this->renderer->render($lesson, $locale),
+            $this->renderer->caption($lesson, $locale),
             WhatsAppSendLog::KIND_REPORT,
         );
     }

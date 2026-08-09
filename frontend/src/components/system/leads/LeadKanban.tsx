@@ -189,6 +189,13 @@ export function LeadKanban({ leads, isLoading, filters, onFiltersChange }: Props
       return
     }
 
+    // A converted lead can't be walked back through the pipeline — the backend rejects it.
+    // Say why here, instead of letting it fail as a bare "couldn't move" toast.
+    if (fromStatusRef.current === 'closed') {
+      toast.error(t('leads.toastClosedCannotMove'))
+      return
+    }
+
     moveLead.mutate({ id, status })
   }
 
@@ -395,6 +402,10 @@ export function LeadKanban({ leads, isLoading, filters, onFiltersChange }: Props
       <LeadDetailPanel
         leadId={selectedLeadId}
         onClose={() => setSelectedLeadId(null)}
+        onEdit={() => {
+          const lead = leads.find(l => l.id === selectedLeadId)
+          if (lead) handleEditLead(lead)
+        }}
       />
 
       <AddLeadDialog

@@ -8,7 +8,9 @@ use App\Jobs\System\SendLessonReport;
 use App\Models\System\Lesson;
 use App\Services\System\Reports\LessonReportRenderer;
 use App\Services\System\Reports\LessonReportService;
+use App\Services\System\Reports\ReportLocale;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Validation\ValidationException;
 
@@ -20,7 +22,7 @@ class LessonReportController extends Controller
     ) {}
 
     /** Re-send the report for a lesson that already exists. */
-    public function store(Lesson $lesson): JsonResponse
+    public function store(Request $request, Lesson $lesson): JsonResponse
     {
         $this->authorize('update', $lesson);
 
@@ -36,7 +38,8 @@ class LessonReportController extends Controller
             throw ValidationException::withMessages(['send_report' => $e->getMessage()]);
         }
 
-        SendLessonReport::dispatch($lesson->id)->onQueue('notifications');
+        SendLessonReport::dispatch($lesson->id, ReportLocale::resolve($request->header('X-System-Locale')))
+            ->onQueue('notifications');
 
         return response()->json([
             'message' => 'Lesson report queued.',
@@ -48,7 +51,7 @@ class LessonReportController extends Controller
      * Render the lesson report PNG and stream it straight back as a download, so an
      * admin can forward it by hand instead of dispatching it over WhatsApp.
      */
-    public function download(Lesson $lesson): Response
+    public function download(Request $request, Lesson $lesson): Response
     {
         $this->authorize('update', $lesson);
 
@@ -56,17 +59,19 @@ class LessonReportController extends Controller
             throw ValidationException::withMessages(['lesson' => 'This lesson has no student to report on.']);
         }
 
+        $locale = ReportLocale::resolve($request->header('X-System-Locale'));
+
         // With Chromium wired up (production) this is a real PNG. Without it
         // (local/CI fake mode), hand back the report HTML so it can still be
         // previewed in a browser instead of a .png that is secretly markup.
         if ($this->renderer->producesRasterImage()) {
-            return response($this->renderer->bytes($lesson), 200, [
+            return response($this->renderer->bytes($lesson, $locale), 200, [
                 'Content-Type'        => 'image/png',
                 'Content-Disposition' => sprintf('attachment; filename="lesson-report-%d.png"', $lesson->id),
             ]);
         }
 
-        return response($this->renderer->html($lesson), 200, [
+        return response($this->renderer->html($lesson, $locale), 200, [
             'Content-Type'        => 'text/html; charset=utf-8',
             'Content-Disposition' => sprintf('attachment; filename="lesson-report-%d.html"', $lesson->id),
         ]);

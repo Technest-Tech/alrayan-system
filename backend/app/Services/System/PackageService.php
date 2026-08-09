@@ -76,20 +76,57 @@ class PackageService
         // #0 is the down payment, already collected at enrolment: it opens paid (and dated, so it
         // counts as received) rather than going to the payments page to be chased.
         $isDownPayment = $packageNumber === self::FIRST_PACKAGE_NUMBER;
-        // Manual student creation stores the package price in monthly_price_minor, while the lead
-        // conversion flow historically stores it in hourly_rate_minor. Prefer the explicit package
-        // price and retain the fallback so both creation paths snapshot the correct charge.
-        $packagePrice = (int) ($student->monthly_price_minor ?: $student->hourly_rate_minor);
+
+        // A follow-on package continues the deal the student is already on, so it inherits the
+        // size and price of their latest real package. Re-deriving both from the student row is
+        // what used to make an edited package silently revert to the enrolment defaults.
+        $previous = StudentPackage::withTrashed()
+            ->where('student_id', $student->id)
+            ->where('package_hours', '>', 0)
+            ->orderByDesc('package_number')
+            ->first();
 
         return StudentPackage::create([
             'student_id'     => $student->id,
             'package_number' => $packageNumber,
-            'package_hours'  => $hours ?? max(1, (int) $student->package_hours_default),
-            'tariff_at_time' => $packagePrice,
+            'package_hours'  => $hours ?? $this->inheritedHours($student, $previous),
+            'tariff_at_time' => $this->inheritedPrice($student, $previous),
             'currency'       => $student->currency,
             'status'         => $isDownPayment ? 'paid' : 'pending',
             'paid_at'        => $isDownPayment ? now() : null,
         ]);
+    }
+
+    /** Size for a package nobody sized: the previous one's, else the student's enrolment default. */
+    private function inheritedHours(Student $student, ?StudentPackage $previous): int
+    {
+        if ($previous && (int) $previous->package_hours > 0) {
+            return (int) $previous->package_hours;
+        }
+
+        // 1 is a floor, not a preference: a zero-hour package can never consume a lesson and
+        // would stall the engine.
+        return max(1, (int) $student->package_hours_default);
+    }
+
+    /**
+     * Price for a package nobody priced. `monthly_price_minor` is THE package price — on the
+     * student form `hourly_rate_minor` is the *teacher's* tariff, so reading that as a package
+     * price is only ever right for lead-converted students, where the converter is what stored
+     * the agreed package price in that column. Charging a manually-created student their
+     * teacher's hourly rate was the old behaviour of an unguarded `?:` fallback.
+     */
+    private function inheritedPrice(Student $student, ?StudentPackage $previous): int
+    {
+        if ($previous) {
+            return (int) $previous->tariff_at_time;
+        }
+
+        if ((int) $student->monthly_price_minor > 0) {
+            return (int) $student->monthly_price_minor;
+        }
+
+        return $student->source === 'lead' ? (int) $student->hourly_rate_minor : 0;
     }
 
     /**
@@ -168,8 +205,6 @@ class PackageService
             // Serialize concurrent rebuilds for the same student.
             Student::whereKey($student->id)->lockForUpdate()->first();
 
-            $defaultHours = max(1, (int) $student->package_hours_default);
-
             $packages = StudentPackage::withTrashed()
                 ->where('student_id', $student->id)
                 ->orderBy('package_number')
@@ -195,7 +230,7 @@ class PackageService
             $maxNumber  = $highest === null ? self::FIRST_PACKAGE_NUMBER - 1 : (int) $highest;
             $firstNumber = (int) ($packages->min('package_number') ?? self::FIRST_PACKAGE_NUMBER);
 
-            $nextPackage = function () use (&$slots, &$slotIndex, &$maxNumber, $student, $defaultHours) {
+            $nextPackage = function () use (&$slots, &$slotIndex, &$maxNumber, $student) {
                 if ($slotIndex < $slots->count()) {
                     $pkg = $slots[$slotIndex++];
                     if ($pkg->trashed()) {
@@ -204,7 +239,10 @@ class PackageService
                     return $pkg;
                 }
                 $maxNumber++;
-                return $this->createPackage($student, $maxNumber, $defaultHours);
+                // No size passed on purpose: createPackage() carries the student's latest package
+                // forward, so an overflow package matches the deal they are actually on rather
+                // than resetting to the enrolment default.
+                return $this->createPackage($student, $maxNumber);
             };
 
             $lessons = Lesson::where('student_id', $student->id)
@@ -273,9 +311,16 @@ class PackageService
                 $lessonUpdates[$lesson->id] = ['package_id' => $firstPkgId, 'session_number_hours' => $firstCum];
             }
 
-            // A package that ended exactly full is complete.
+            // A package that ended exactly full is complete. Nothing overflowed into a
+            // successor, so open the next one here: a finished package with no pending
+            // follow-up leaves the student invisible on the payments page even though the
+            // completion task is telling support to chase them for the next one.
             if ($current !== null && $currentMin >= max(1, (int) $current->package_hours) * 60) {
                 $completedPackageIds[$current->id] = true;
+
+                $next = $nextPackage();
+                // Marked used so the cleanup below keeps this (still empty) package alive.
+                $usedPackageIds[$next->id] = true;
             }
 
             foreach ($lessonUpdates as $lessonId => $vals) {
@@ -286,11 +331,12 @@ class PackageService
             }
 
             // Keep used packages live, paid/suspended ones protected, the first package (the down
-            // payment, collected upfront) always kept, and legacy 0-hour rows always kept;
-            // soft-delete the rest.
+            // payment, collected upfront) always kept, legacy 0-hour rows always kept, and any
+            // package a human created or edited always kept; soft-delete the rest.
             foreach (StudentPackage::withTrashed()->where('student_id', $student->id)->get() as $p) {
                 $isProtected = ((int) $p->package_number === $firstNumber && is_null($p->deleted_at))
                     || ((int) $p->package_hours <= 0)
+                    || ($p->is_manual && is_null($p->deleted_at))
                     || (in_array($p->status, self::PROTECTED_STATUSES, true) && is_null($p->deleted_at));
                 if (isset($usedPackageIds[$p->id]) || $isProtected) {
                     if ($p->trashed()) { $p->restore(); }

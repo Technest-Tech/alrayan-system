@@ -554,10 +554,17 @@ export default function CalendarPage() {
   const students  = isTeacher ? (myStudents ?? []) : (studentsData?.data ?? [])
   const schedules = schedulesData ?? []
 
+  const [monthStart, monthEnd] = useMemo(() => {
+    const last = new Date(year, month, 0).getDate()
+    return [
+      `${year}-${String(month).padStart(2,'0')}-01`,
+      `${year}-${String(month).padStart(2,'0')}-${String(last).padStart(2,'0')}`,
+    ]
+  }, [year, month])
+
   const [calStart, calEnd] = useMemo(() => {
     if (listMode || viewMode === 'month') {
-      const last = new Date(year, month, 0).getDate()
-      return [`${year}-${String(month).padStart(2,'0')}-01`, `${year}-${String(month).padStart(2,'0')}-${String(last).padStart(2,'0')}`]
+      return [monthStart, monthEnd]
     }
     if (viewMode === 'week') {
       const end = new Date(wkStart); end.setDate(end.getDate() + 6)
@@ -565,7 +572,7 @@ export default function CalendarPage() {
     }
     const ds = fmt(anchorDate)
     return [ds, ds]
-  }, [listMode, viewMode, year, month, wkStart, anchorDate])
+  }, [listMode, viewMode, monthStart, monthEnd, wkStart, anchorDate])
 
   const { data: calendarDays, refetch } = useCalendarFeed({
     teacherId:  teacherFilter ? Number(teacherFilter) : undefined,
@@ -573,7 +580,17 @@ export default function CalendarPage() {
     start: calStart, end: calEnd,
   })
 
-  const { data: lessonsData } = useLessons({ teacher_id: teacherFilter || undefined, per_page: 1000 })
+  // The list view is bound to the month being browsed, so stepping through the months
+  // actually changes what it shows instead of always listing the newest lessons.
+  const { data: lessonsData } = useLessons(
+    {
+      teacher_id: teacherFilter || undefined,
+      from:       monthStart,
+      to:         monthEnd,
+      per_page:   500,
+    },
+    { enabled: listMode },
+  )
 
   const calendarLessons = useMemo(() => {
     const ls: Lesson[] = []

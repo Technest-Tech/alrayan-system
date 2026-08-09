@@ -8,12 +8,14 @@ use Tests\SystemTestCase;
 
 class PaymentsEndpointsTest extends SystemTestCase
 {
-    public function test_package_zero_is_hidden_until_package_one_enters_the_payment_flow(): void
+    public function test_each_student_is_listed_by_their_latest_package_including_package_zero(): void
     {
         $covered = Student::factory()->withUser()->create();
         $owing   = Student::factory()->withUser()->create();
 
-        $this->package($covered, 0, 'paid', 1000);
+        // A freshly enrolled student has nothing but #0. They still belong on this page: it is
+        // the only route to Manage Packages, where the enrolment hours and price are corrected.
+        $downPayment = $this->package($covered, 0, 'paid', 1000);
         $this->package($owing, 0, 'paid', 1500);
         $pending = $this->package($owing, 1, 'pending', 2500);
 
@@ -21,8 +23,14 @@ class PaymentsEndpointsTest extends SystemTestCase
             ->getJson('/api/system/payments')
             ->assertOk();
 
-        $this->assertSame([$pending->id], collect($response->json('data'))->pluck('package_id')->all());
-        $response->assertJsonPath('data.0.package_number', 1);
+        $listed = collect($response->json('data'))->pluck('package_id')->all();
+
+        sort($listed);
+        $expected = [$downPayment->id, $pending->id];
+        sort($expected);
+
+        // One row per student — the latest package each, never #0 *and* #1 for the same student.
+        $this->assertSame($expected, $listed);
     }
 
     public function test_paid_package_zero_counts_as_received_revenue_but_not_as_pending(): void

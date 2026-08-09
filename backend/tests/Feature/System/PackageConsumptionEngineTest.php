@@ -230,6 +230,39 @@ class PackageConsumptionEngineTest extends SystemTestCase
         $this->assertSame($this->teacher->user->name, $task->payload['teacher_name'] ?? null);
     }
 
+    /**
+     * A completion task tells support to chase the next payment, so there has to BE a next
+     * package to chase — otherwise the student stays invisible on the payments page.
+     */
+    public function test_filling_a_package_exactly_opens_the_next_pending_package(): void
+    {
+        $s = $this->student(2);
+        $this->lesson($s, 'attended', 60, now()->setTime(9, 0));
+        $this->lesson($s, 'attended', 60, now()->setTime(11, 0));
+        $this->rebuild($s);
+
+        $pkgs = $this->packages($s);
+        $this->assertCount(2, $pkgs, 'the filled #0 plus the package now owed');
+        $this->assertEqualsWithDelta(2.0, $pkgs[0]->consumed_hours, 0.001, '#0 is full');
+
+        $next = $pkgs[1];
+        $this->assertSame(1, $next->package_number);
+        $this->assertSame('pending', $next->status, 'the next package is owed, not silently paid');
+        $this->assertNull($next->deleted_at, 'and survives the cleanup despite holding no lessons yet');
+        $this->assertEqualsWithDelta(0.0, $next->consumed_hours, 0.001);
+
+        // Re-running the engine must not pile up more empty packages.
+        $this->rebuild($s);
+        $this->assertCount(2, $this->packages($s));
+
+        // And it is what the payments page reports as owed for this student.
+        $this->asAdmin()
+            ->getJson('/api/system/payments')
+            ->assertOk()
+            ->assertJsonPath('data.0.package_id', $next->id)
+            ->assertJsonPath('data.0.payment_status', 'pending');
+    }
+
     /* ── Down payment = the first lesson package (#0, already paid) ── */
 
     public function test_first_package_is_a_paid_down_payment_numbered_zero(): void

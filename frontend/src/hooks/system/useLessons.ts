@@ -42,12 +42,15 @@ interface LessonFilters {
   student_id?: number | string
   status?: string
   package_id?: number | string
+  /** Inclusive date window (YYYY-MM-DD) on `scheduled_at`. */
+  from?: string
+  to?: string
   sort?: string
   per_page?: number
   page?: number
 }
 
-export function useLessons(filters: LessonFilters = {}) {
+export function useLessons(filters: LessonFilters = {}, options: { enabled?: boolean } = {}) {
   const params = new URLSearchParams()
   Object.entries(filters).forEach(([k, v]) => {
     if (v !== undefined && v !== '') params.set(k, String(v))
@@ -56,6 +59,7 @@ export function useLessons(filters: LessonFilters = {}) {
   return useQuery({
     queryKey: ['system', 'lessons', filters],
     queryFn: () => api<Paginated<Lesson>>(`/lessons?${params}`),
+    enabled: options.enabled ?? true,
   })
 }
 

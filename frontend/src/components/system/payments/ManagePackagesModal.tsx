@@ -286,15 +286,16 @@ interface Props {
 export function ManagePackagesModal({ studentId, studentName, open, onClose }: Props) {
   const { t } = useI18n()
   const { data: packages = [], refetch } = useStudentPackagesList(studentId)
-  // Package #0 is auto-paid enrollment coverage, not a bill staff should manage here.
-  const payablePackages = packages.filter(pkg => pkg.package_number > 0)
+  // #0 (the enrolment down payment) is listed too — it opens already paid, but it carries the
+  // hours and price that were agreed at enrolment, and for a freshly enrolled student it is the
+  // only package there is. Hiding it left those figures with nowhere to be corrected.
   const update = useUpdatePackage()
 
   const [noteText, setNoteText] = useState('')
 
   async function saveNote() {
-    if (!noteText.trim() || !payablePackages.length) return
-    const latest = payablePackages[payablePackages.length - 1]
+    if (!noteText.trim() || !packages.length) return
+    const latest = packages[packages.length - 1]
     try {
       await update.mutateAsync({ id: latest.id, notes: noteText.trim() })
       toast.success(t('payments.toastNoteSaved'))
@@ -365,14 +366,14 @@ export function ManagePackagesModal({ studentId, studentName, open, onClose }: P
                 </tr>
               </thead>
               <tbody>
-                {payablePackages.length === 0 ? (
+                {packages.length === 0 ? (
                   <tr>
                     <td colSpan={7} className="px-4 py-8 text-center text-sm" style={{ color: MUTED }}>
                       {t('payments.noPackages')}
                     </td>
                   </tr>
                 ) : (
-                  payablePackages.map(pkg => (
+                  packages.map(pkg => (
                     <PackageRow key={pkg.id} pkg={pkg} onSaved={() => refetch()} />
                   ))
                 )}

@@ -409,6 +409,59 @@ class LeadEndpointsTest extends SystemTestCase
         }
     }
 
+    public function test_a_converted_lead_can_be_renamed_and_the_rename_reaches_its_student(): void
+    {
+        // The test above uses Lead::factory()->closed(), which has NO linked student, so it never
+        // runs mirrorIdentityToStudent(). In production every lead provisions a student at
+        // creation, so a real closed-lead edit always does. Drive the real path end to end.
+        $admin = $this->adminUser();
+
+        $leadId = $this->actingAs($admin, 'sanctum')
+            ->postJson('/api/system/leads', [
+                'name'     => 'Original Name',
+                'email'    => 'converted-rename@example.com',
+                'phone'    => '+201000000001',
+                'whatsapp' => '+201000000001',
+                'source'   => 'manual_entry',
+                'status'   => 'waiting_for_payment',
+            ])
+            ->assertCreated()
+            ->json('data.id');
+
+        $this->assertNotNull(Lead::findOrFail($leadId)->student_id, 'lead should provision a student');
+
+        $this->actingAs($admin, 'sanctum')
+            ->postJson("/api/system/leads/{$leadId}/convert", [
+                'package_hours'       => 8,
+                'package_price_minor' => 20000,
+            ])
+            ->assertSuccessful();
+
+        $this->assertSame('closed', Lead::findOrFail($leadId)->status);
+
+        // Exactly what AddLeadDialog sends for a closed lead: every field except `status`.
+        $this->actingAs($admin, 'sanctum')
+            ->patchJson("/api/system/leads/{$leadId}", [
+                'name'     => 'Edited Name',
+                'email'    => 'converted-rename@example.com',
+                'phone'    => '+201000000001',
+                'whatsapp' => '+201000000001',
+                'payload'  => [
+                    'emails' => [['value' => 'converted-rename@example.com', 'primary' => true]],
+                    'phones' => [['value' => '+201000000001', 'primary' => true]],
+                ],
+            ])
+            ->assertOk();
+
+        $lead    = Lead::findOrFail($leadId);
+        $student = $lead->student;
+
+        $this->assertSame('Edited Name', $lead->name);
+        $this->assertSame('closed', $lead->status, 'the rename must not disturb the status');
+        $this->assertSame('Edited Name', $student->name, 'the student profile mirrors the rename');
+        $this->assertSame('Edited Name', $student->user->name, 'the users row mirrors the rename');
+    }
+
     public function test_marking_a_lead_lost_from_the_edit_form_derives_the_reason(): void
     {
         // The edit form collects a `rejection_reason`, never a `lost_reason` — the pipeline's

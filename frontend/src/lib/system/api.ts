@@ -16,6 +16,19 @@ export function clearToken(): void {
   localStorage.removeItem(TOKEN_KEY)
 }
 
+/** Where I18nProvider persists the selected panel language. */
+export const LOCALE_KEY = 'system:locale'
+
+/**
+ * The panel language currently selected. Sent on every request so server-generated
+ * artefacts — the lesson report image above all — come back in the language the user
+ * is working in rather than a fixed server default.
+ */
+export function getLocale(): string | null {
+  if (typeof localStorage === 'undefined') return null
+  return localStorage.getItem(LOCALE_KEY)
+}
+
 export async function api<T>(path: string, init?: RequestInit): Promise<T> {
   const headers = new Headers(init?.headers)
   headers.set('Accept', 'application/json')
@@ -23,6 +36,9 @@ export async function api<T>(path: string, init?: RequestInit): Promise<T> {
 
   const token = getToken()
   if (token) headers.set('Authorization', `Bearer ${token}`)
+
+  const locale = getLocale()
+  if (locale) headers.set('X-System-Locale', locale)
 
   const res = await fetch(`${BASE}${PREFIX}${path}`, {
     ...init,

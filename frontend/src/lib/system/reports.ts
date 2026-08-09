@@ -1,4 +1,4 @@
-import { ApiError, getToken } from './api'
+import { ApiError, getToken, getLocale } from './api'
 
 const BASE   = process.env.NEXT_PUBLIC_API_URL!
 const PREFIX = process.env.NEXT_PUBLIC_SYSTEM_API_PREFIX ?? '/api/system'
@@ -15,6 +15,10 @@ export async function downloadLessonReport(lessonId: number, nameStem?: string):
   const token = getToken()
   const headers: Record<string, string> = { Accept: 'image/png, text/html' }
   if (token) headers.Authorization = `Bearer ${token}`
+
+  // The rendered report follows the panel language, same as the WhatsApp send path.
+  const locale = getLocale()
+  if (locale) headers['X-System-Locale'] = locale
 
   const res = await fetch(`${BASE}${PREFIX}/lessons/${lessonId}/report/download`, { headers })
   if (!res.ok) {

@@ -23,7 +23,11 @@ class SendLessonReport implements ShouldQueue
 
     public int $tries = 3;
 
-    public function __construct(public int $lessonId) {}
+    /**
+     * @param string|null $locale Language the report is rendered in — the panel language of
+     *                            whoever triggered it. Null falls back to REPORTS_LOCALE.
+     */
+    public function __construct(public int $lessonId, public ?string $locale = null) {}
 
     /** @return list<int> */
     public function backoff(): array
@@ -40,7 +44,7 @@ class SendLessonReport implements ShouldQueue
         }
 
         try {
-            $reports->send($lesson);
+            $reports->send($lesson, $this->locale);
         } catch (UnreachableRecipientException $e) {
             // The controller already rejected unreachable students; if we still
             // land here the number was removed after queueing. Retrying cannot

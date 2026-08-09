@@ -51,7 +51,11 @@ class StudentPackageController extends Controller
             'status',
             'needs_reconfirmation',
             'notes',
-        ]));
+        ]) + [
+            // Hand-edited: the rebuild below must not soft-delete this row for holding no
+            // lessons, and later rebuilds must not either.
+            'is_manual' => true,
+        ]);
 
         if (
             $request->has('package_hours') &&

@@ -80,12 +80,38 @@ const STATUS_KEY: Record<LessonStatus, string> = {
 const HOUR_OPTIONS   = [0, 1, 2, 3]
 const MINUTE_OPTIONS = [0, 30]
 
-/* ── Trial-lesson evaluation options ─────────────────────── */
-const STUDENT_LEVELS    = ['Beginner', 'Elementary', 'Intermediate', 'Advanced']
-const READING_ABILITIES = ['Cannot read', 'Weak', 'Average', 'Good', 'Excellent']
-const BEHAVIOR_OPTS     = ['Cheerful', 'Calm', 'Shy', 'Confident', 'Quick Tempered', 'Distracted', 'Disciplined', 'Needs Encouragement']
-const MOTIVATION_OPTS   = ['Loves Learning', 'Very Cooperative', 'Forced by Parents', 'Loses Focus Quickly', 'Loves Challenges', 'Prefers Play']
-const LEARNING_OPTS     = ['Visual', 'Auditory', 'Kinesthetic', 'Quick Learner', 'Needs Repetition', 'Fears Mistakes']
+/* ── Trial-lesson evaluation options ─────────────────────────
+ * The canonical English string stays the STORED value — existing trial evaluations
+ * already hold it, and it is what any export/report reads. Only the label shown in
+ * the form follows the selected UI language.
+ */
+type TrialOption = { value: string; key: string }
+
+const opt = (value: string, key: string): TrialOption => ({ value, key })
+
+const STUDENT_LEVELS: TrialOption[] = [
+  opt('Beginner', 'beginner'), opt('Elementary', 'elementary'),
+  opt('Intermediate', 'intermediate'), opt('Advanced', 'advanced'),
+]
+const READING_ABILITIES: TrialOption[] = [
+  opt('Cannot read', 'cannotRead'), opt('Weak', 'weak'), opt('Average', 'average'),
+  opt('Good', 'good'), opt('Excellent', 'excellent'),
+]
+const BEHAVIOR_OPTS: TrialOption[] = [
+  opt('Cheerful', 'cheerful'), opt('Calm', 'calm'), opt('Shy', 'shy'), opt('Confident', 'confident'),
+  opt('Quick Tempered', 'quickTempered'), opt('Distracted', 'distracted'),
+  opt('Disciplined', 'disciplined'), opt('Needs Encouragement', 'needsEncouragement'),
+]
+const MOTIVATION_OPTS: TrialOption[] = [
+  opt('Loves Learning', 'lovesLearning'), opt('Very Cooperative', 'veryCooperative'),
+  opt('Forced by Parents', 'forcedByParents'), opt('Loses Focus Quickly', 'losesFocusQuickly'),
+  opt('Loves Challenges', 'lovesChallenges'), opt('Prefers Play', 'prefersPlay'),
+]
+const LEARNING_OPTS: TrialOption[] = [
+  opt('Visual', 'visual'), opt('Auditory', 'auditory'), opt('Kinesthetic', 'kinesthetic'),
+  opt('Quick Learner', 'quickLearner'), opt('Needs Repetition', 'needsRepetition'),
+  opt('Fears Mistakes', 'fearsMistakes'),
+]
 
 /* Multi-select chip group used across the trial evaluation. */
 function ChipGroup({
@@ -93,12 +119,13 @@ function ChipGroup({
 }: {
   title: string
   icon: React.ReactNode
-  options: string[]
+  options: TrialOption[]
   value: string[]
   onChange: (v: string[]) => void
   accent: string
   accentBg: string
 }) {
+  const { t } = useI18n()
   const toggle = (o: string) => onChange(value.includes(o) ? value.filter(x => x !== o) : [...value, o])
   return (
     <div className="rounded-xl p-3" style={{ background: accentBg, border: `1px solid ${accent}22` }}>
@@ -108,18 +135,18 @@ function ChipGroup({
       </div>
       <div className="flex flex-wrap gap-1.5">
         {options.map(o => {
-          const on = value.includes(o)
+          const on = value.includes(o.value)
           return (
             <button
-              key={o}
+              key={o.value}
               type="button"
-              onClick={() => toggle(o)}
+              onClick={() => toggle(o.value)}
               className="px-2.5 py-1 rounded-full text-xs font-medium border transition-colors"
               style={on
                 ? { background: accent, color: '#fff', borderColor: accent }
                 : { background: '#fff', color: accent, borderColor: `${accent}55` }}
             >
-              {o}
+              {t(`lessons.form.trial.options.${o.key}`)}
             </button>
           )
         })}
@@ -419,7 +446,7 @@ export function LessonForm({ initialValues, prefill, onSuccess, onCancel }: Prop
                 <GraduationCap size={13} style={{ color: '#7C3AED' }} />{t('lessons.form.trial.studentLevel')}
               </label>
               <SearchableSelect
-                options={STUDENT_LEVELS.map(o => ({ value: o, label: o }))}
+                options={STUDENT_LEVELS.map(o => ({ value: o.value, label: t(`lessons.form.trial.options.${o.key}`) }))}
                 value={trial.student_level ?? ''}
                 onChange={v => setTrialField('student_level', v)}
                 placeholder={t('lessons.form.trial.selectLevel')}
@@ -431,7 +458,7 @@ export function LessonForm({ initialValues, prefill, onSuccess, onCancel }: Prop
                 <BookOpen size={13} style={{ color: TEAL_600 }} />{t('lessons.form.trial.readingAbility')}
               </label>
               <SearchableSelect
-                options={READING_ABILITIES.map(o => ({ value: o, label: o }))}
+                options={READING_ABILITIES.map(o => ({ value: o.value, label: t(`lessons.form.trial.options.${o.key}`) }))}
                 value={trial.reading_ability ?? ''}
                 onChange={v => setTrialField('reading_ability', v)}
                 placeholder={t('lessons.form.trial.selectReading')}

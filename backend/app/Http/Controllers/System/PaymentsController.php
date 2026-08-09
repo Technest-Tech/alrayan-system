@@ -12,9 +12,11 @@ class PaymentsController extends Controller
 {
     public function index(Request $request)
     {
+        // #0 counts. It opens already paid, so it adds no debt to chase — but excluding it hid
+        // every freshly enrolled student from this page entirely, and with them the only route
+        // to Manage Packages, where their enrolment hours and price can be corrected.
         $latestIds = StudentPackage::selectRaw('MAX(id) as id')
             ->whereNull('deleted_at')
-            ->where('package_number', '>', 0)
             ->groupBy('student_id');
 
         $query = StudentPackage::whereIn('id', $latestIds)
@@ -49,9 +51,10 @@ class PaymentsController extends Controller
 
     public function stats()
     {
+        // Matches index() so the counters describe the same rows the list shows. #0 is always
+        // paid, so it can never add to the pending tally below.
         $latestIds = StudentPackage::selectRaw('MAX(id) as id')
             ->whereNull('deleted_at')
-            ->where('package_number', '>', 0)
             ->groupBy('student_id');
 
         $pendingStudents = StudentPackage::whereIn('id', $latestIds)
