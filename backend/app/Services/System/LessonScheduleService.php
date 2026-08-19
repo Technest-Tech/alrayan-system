@@ -41,6 +41,7 @@ class LessonScheduleService
                         'teacher_id'       => $schedule->teacher_id,
                         'student_id'       => $schedule->student_id,
                         'subject_id'       => $schedule->subject_id,
+                        'subject_ids'      => $schedule->subject_ids,
                         'scheduled_at'     => $scheduledAt,
                         'duration_minutes' => $slot->duration_minutes,
                         'status'           => 'scheduled',

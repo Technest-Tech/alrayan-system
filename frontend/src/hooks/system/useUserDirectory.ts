@@ -2,6 +2,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { api } from '@/lib/system/api'
 import type { Paginated } from '@/lib/system/api'
+import { invalidatePackageDerived } from '@/lib/system/packageCache'
 import type { DirectoryUser, DirectoryFilters, UserStatus, UserStats } from '@/types/system/user-directory'
 
 const KEY = ['system', 'user-directory'] as const
@@ -59,7 +60,12 @@ export function useUpdateUser() {
   return useMutation({
     mutationFn: ({ id, data }: { id: number; data: Record<string, unknown> }) =>
       api<{ data: DirectoryUser }>(`/users/directory/${id}`, { method: 'PATCH', body: JSON.stringify(data) }).then(r => r.data),
-    onSuccess: () => qc.invalidateQueries({ queryKey: KEY }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: KEY })
+      // Re-typing the enrolment hours/price carries onto the student's open package and
+      // re-runs the consumption engine, so the package-derived screens move with it.
+      invalidatePackageDerived(qc)
+    },
   })
 }
 

@@ -63,6 +63,7 @@ export interface Lesson {
   teacher_id: number
   student_id: number
   subject_id: number | null
+  subject_ids: number[]
   evaluation_id: number | null
   scheduled_at: string
   duration_minutes: number
@@ -79,9 +80,16 @@ export interface Lesson {
   teacher: LessonTeacher | null
   student: LessonStudent | null
   subject: LessonSubject | null
+  subjects: LessonSubjectRef[]
   evaluation: LessonEvaluation | null
   package: StudentPackage
   allocations?: LessonAllocation[]
+}
+
+/** An academy subject (Settings → Subjects) as carried on a lesson or schedule. */
+export interface LessonSubjectRef {
+  id: number
+  name: string
 }
 
 export interface ScheduleSlot {
@@ -96,6 +104,7 @@ export interface LessonSchedule {
   teacher_id: number
   student_id: number
   subject_id: number | null
+  subject_ids: number[]
   recurrence: 'none' | 'weekly' | 'biweekly' | 'every_4_weeks' | 'custom'
   start_date: string
   is_active: boolean
@@ -103,6 +112,7 @@ export interface LessonSchedule {
   teacher: LessonTeacher | null
   student: LessonStudent | null
   subject: LessonSubject | null
+  subjects: LessonSubjectRef[]
   slots: ScheduleSlot[]
 }
 
@@ -117,6 +127,7 @@ export interface StoreLessonPayload {
   scheduled_at: string
   duration_minutes: number
   subject_id?: number | null
+  subject_ids?: number[]
   evaluation_id?: number | null
   status?: LessonStatus
   /** Report fields are sent as null, not omitted, so clearing one on an edit erases it. */
@@ -147,6 +158,7 @@ export interface StoreLessonSchedulePayload {
   teacher_id: number
   student_id: number
   subject_id?: number | null
+  subject_ids?: number[]
   recurrence: LessonSchedule['recurrence']
   start_date: string
   slots: Omit<ScheduleSlot, 'id'>[]

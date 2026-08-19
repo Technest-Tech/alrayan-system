@@ -2,7 +2,9 @@
 import { useState } from 'react'
 import { X, Plus, Trash2, RotateCw } from 'lucide-react'
 import { toast } from 'sonner'
-import { useCreateLessonSchedule, useUpdateLessonSchedule, useLessonSubjects } from '@/hooks/system/useLessons'
+import { useCreateLessonSchedule, useUpdateLessonSchedule } from '@/hooks/system/useLessons'
+import { useSubjectOptions } from '@/hooks/system/useCourses'
+import { MultiSelect } from '@/components/system/primitives/MultiSelect'
 import { useTeachers } from '@/hooks/system/useTeachers'
 import { useStudents } from '@/hooks/system/useStudents'
 import { useMyStudents } from '@/hooks/system/useMyStudents'
@@ -101,7 +103,7 @@ export function CreateScheduleDialog({ open, onOpenChange, onSuccess, schedule, 
   const isTeacher = user?.role === 'teacher'
   const myTeacherId = user?.teacher_id ?? null
 
-  const { data: subjects = [] } = useLessonSubjects()
+  const { data: subjects = [] } = useSubjectOptions()
   const { data: teachersData }  = useTeachers({}, { enabled: !isTeacher })
   const { data: adminStudentsData } = useStudents({ per_page: 500 }, { enabled: !isTeacher })
   const { data: myStudents }        = useMyStudents({ enabled: isTeacher })
@@ -115,7 +117,12 @@ export function CreateScheduleDialog({ open, onOpenChange, onSuccess, schedule, 
   // Seeded once from props — the parent mounts this dialog fresh each time it opens.
   const [teacherId,  setTeacherId]  = useState(() => schedule ? String(schedule.teacher_id) : prefill?.teacherId ? String(prefill.teacherId) : isTeacher && myTeacherId ? String(myTeacherId) : '')
   const [studentId,  setStudentId]  = useState(() => schedule ? String(schedule.student_id) : prefill?.studentId ? String(prefill.studentId) : '')
-  const [subjectId,  setSubjectId]  = useState(() => schedule?.subject_id ? String(schedule.subject_id) : '')
+  const [subjectIds, setSubjectIds] = useState<string[]>(() => (schedule?.subject_ids ?? []).map(String))
+  // Retired subjects stay listed while a lesson still carries them.
+  const subjectOptions = subjects
+    .filter(s => s.is_active_for_system || subjectIds.includes(String(s.id)))
+    .map(s => ({ value: String(s.id), label: s.name }))
+
   const [recurrence, setRecurrence] = useState<LessonSchedule['recurrence']>(() => schedule?.recurrence ?? 'weekly')
   const [startDate,  setStartDate]  = useState(() => schedule ? schedule.start_date.slice(0, 10) : (prefill?.date ?? new Date().toISOString().split('T')[0]))
   const [slots,      setSlots]      = useState<Omit<ScheduleSlot, 'id'>[]>(() => {
@@ -147,7 +154,7 @@ export function CreateScheduleDialog({ open, onOpenChange, onSuccess, schedule, 
     const payload = {
       teacher_id: Number(teacherId),
       student_id: Number(studentId),
-      subject_id: subjectId ? Number(subjectId) : null,
+      subject_ids: subjectIds.map(Number),
       recurrence,
       start_date: startDate,
       slots,
@@ -223,13 +230,14 @@ export function CreateScheduleDialog({ open, onOpenChange, onSuccess, schedule, 
                     placeholder={t('lessons.selectPlaceholder')}
                   />
                 </Field>
-                <Field label={t('lessons.form.fieldSubject')}>
-                  <SearchableSelect
-                    options={subjects.map(s => ({ value: String(s.id), label: s.name }))}
-                    value={subjectId}
-                    onChange={setSubjectId}
-                    placeholder={t('lessons.form.fieldSubject')}
-                    clearable
+                <Field label={t('lessons.form.fieldSubjects')}>
+                  <MultiSelect
+                    options={subjectOptions}
+                    value={subjectIds}
+                    onChange={setSubjectIds}
+                    placeholder={subjectOptions.length === 0
+                      ? t('lessons.form.subjectsNone')
+                      : t('lessons.form.subjectsPlaceholder')}
                   />
                 </Field>
               </div>

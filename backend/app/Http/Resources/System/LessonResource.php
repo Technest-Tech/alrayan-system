@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources\System;
 
+use App\Support\System\SubjectCatalog;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 class LessonResource extends JsonResource
@@ -15,6 +16,7 @@ class LessonResource extends JsonResource
             'teacher_id'           => $this->teacher_id,
             'student_id'           => $this->student_id,
             'subject_id'           => $this->subject_id,
+            'subject_ids'          => array_map('intval', $this->subject_ids ?? []),
             'evaluation_id'        => $this->evaluation_id,
             'added_by'             => $this->added_by,
             'scheduled_at'         => $this->scheduled_at,
@@ -43,6 +45,9 @@ class LessonResource extends JsonResource
             'subject'    => $this->whenLoaded('subject', fn() =>
                 $this->subject ? new LessonSubjectResource($this->subject) : null
             ),
+
+            // Names resolved here so lists and the PDF report don't each re-query courses.
+            'subjects'   => app(SubjectCatalog::class)->expand($this->subject_ids),
 
             'evaluation' => $this->whenLoaded('evaluation', fn() =>
                 $this->evaluation ? new LessonEvaluationResource($this->evaluation) : null

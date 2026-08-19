@@ -613,6 +613,8 @@ Route::prefix('system')->name('system.')->group(function () {
             Route::get('/lesson-schedules/{lessonSchedule}',             [LessonScheduleController::class, 'show'])->name('lesson-schedules.show');
             Route::get('/student-packages',                              [StudentPackageController::class, 'index'])->name('student-packages.index');
             Route::get('/student-packages/{studentPackage}',             [StudentPackageController::class, 'show'])->name('student-packages.show');
+            // Academy subjects (Settings → Subjects) as lesson/schedule picker options.
+            Route::get('/subjects',                                      [CourseController::class,         'options'])->name('subjects.options');
             Route::get('/lesson-subjects',                               [LessonSubjectController::class,  'index'])->name('lesson-subjects.index');
             Route::get('/lesson-evaluations',                            [LessonEvaluationController::class,'index'])->name('lesson-evaluations.index');
         });

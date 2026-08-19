@@ -76,7 +76,7 @@ export function ScheduleDetailsModal({ lesson, open, onClose, onAddReport, onEdi
             <Info icon={<CalendarDays size={13} />}  label={t('common.date')}               value={dateLabel} />
             <Info icon={<Clock size={13} />}         label={t('lessons.schedule.startTime')} value={timeLabel} />
             <Info icon={<Clock size={13} />}         label={t('common.duration')}           value={durLabel} />
-            <Info icon={<BookOpen size={13} />}      label={t('lessons.form.fieldSubject')}  value={lesson.subject?.name ?? '—'} />
+            <Info icon={<BookOpen size={13} />}      label={t('lessons.form.fieldSubjects')} value={lesson.subjects?.map(s => s.name).join(', ') || '—'} />
           </div>
 
           {/* Add report — turns the occurrence into a delivered lesson */}

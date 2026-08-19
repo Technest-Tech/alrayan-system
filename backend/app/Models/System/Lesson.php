@@ -49,6 +49,7 @@ class Lesson extends Model
         'scheduled_at'        => 'datetime',
         'duration_minutes'    => 'integer',
         'session_number_hours' => 'float',
+        'subject_ids'         => 'array',
         'subject_details'     => 'array',
         'trial_evaluation'    => 'array',
     ];

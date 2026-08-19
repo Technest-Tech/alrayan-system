@@ -375,4 +375,59 @@ class PackageConsumptionEngineTest extends SystemTestCase
             'package_number' => 1,
         ]);
     }
+
+    /* ── Resizing a package ── */
+
+    public function test_growing_a_packages_hours_renumbers_the_sessions_it_already_holds(): void
+    {
+        // 4-hour package, 2 of the 4 hours used: growing it to 8 must leave the two sessions
+        // where they are and simply give the package more room.
+        $s = $this->student(4);
+        app(PackageService::class)->ensureFirstPackage($s, 4);
+        $this->lesson($s, 'attended', 60, now()->startOfDay()->addDay()->setTime(9, 0));
+        $this->lesson($s, 'attended', 60, now()->startOfDay()->addDays(2)->setTime(9, 0));
+        $this->rebuild($s);
+
+        $pkg = $this->packages($s)->first();
+
+        $this->asAdmin()
+            ->patchJson("/api/system/student-packages/{$pkg->id}", ['package_hours' => 8])
+            ->assertOk();
+
+        $pkgs = $this->packages($s);
+        $this->assertCount(1, $pkgs);
+        $this->assertSame(8, (int) $pkgs[0]->package_hours);
+        $this->assertEqualsWithDelta(2.0, $pkgs[0]->consumed_hours, 0.001, 'the used hours carry over untouched');
+    }
+
+    public function test_growing_a_package_pulls_overflowed_lessons_back_into_it(): void
+    {
+        // 6 one-hour lessons on a 4-hour package: 4 in #0, 2 spilled into #1. Growing #0 to 8
+        // must reclaim the spill and renumber those sessions 5 and 6 — the whole point of the
+        // edit is that the student has bought a bigger package, not a second one.
+        $s = $this->student(4);
+        app(PackageService::class)->ensureFirstPackage($s, 4);
+        for ($i = 1; $i <= 6; $i++) {
+            $this->lesson($s, 'attended', 60, now()->startOfDay()->addDays($i)->setTime(9, 0));
+        }
+        $this->rebuild($s);
+        $this->assertCount(2, $this->packages($s), 'precondition: the lessons overflowed into a second package');
+
+        $first = $this->packages($s)->first();
+
+        $this->asAdmin()
+            ->patchJson("/api/system/student-packages/{$first->id}", ['package_hours' => 8])
+            ->assertOk();
+
+        $pkgs = $this->packages($s);
+        $this->assertCount(1, $pkgs, 'the emptied overflow package is retired');
+        $this->assertEqualsWithDelta(6.0, $pkgs[0]->consumed_hours, 0.001);
+
+        $sessions = Lesson::where('student_id', $s->id)
+            ->orderBy('scheduled_at')
+            ->pluck('session_number_hours')
+            ->map(fn ($h) => (float) $h)
+            ->all();
+        $this->assertSame([1.0, 2.0, 3.0, 4.0, 5.0, 6.0], $sessions, 'sessions re-count within the grown package');
+    }
 }

@@ -37,6 +37,27 @@ class CourseController extends Controller
         return CourseResource::collection($courses);
     }
 
+    /**
+     * Slim subject list for the lesson/schedule pickers.
+     *
+     * Sits behind `lessons.view` rather than `courses.view` so teachers — who log
+     * lessons but have no business seeing per-course enrolment analytics — can still
+     * fill in what a lesson covered.
+     */
+    public function options(): JsonResponse
+    {
+        return response()->json([
+            'data' => Course::orderBy('sort_order')
+                ->get(['id', 'title', 'is_active_for_system'])
+                ->map(fn(Course $c) => [
+                    'id'                   => $c->id,
+                    'name'                 => $c->title,
+                    'is_active_for_system' => (bool) $c->is_active_for_system,
+                ])
+                ->values(),
+        ]);
+    }
+
     public function store(Request $request): CourseResource
     {
         $data = $request->validate([

@@ -17,6 +17,8 @@ class StoreLessonScheduleRequest extends FormRequest
             'teacher_id'             => ['required', 'integer', 'exists:sys_teachers,id'],
             'student_id'             => ['required', 'integer', 'exists:sys_students,id'],
             'subject_id'             => ['nullable', 'integer', 'exists:sys_lesson_subjects,id'],
+            'subject_ids'            => ['nullable', 'array'],
+            'subject_ids.*'          => ['integer', 'exists:courses,id'],
             'recurrence'             => ['required', 'string', 'in:none,weekly,biweekly,every_4_weeks,custom'],
             'start_date'             => ['required', 'date'],
             'slots'                  => ['required', 'array', 'min:1'],

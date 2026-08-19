@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { api, type Paginated } from '@/lib/system/api'
+import { invalidatePackageDerived } from '@/lib/system/packageCache'
 import type { PaymentRow, PaymentStats, PackageRow } from '@/types/system/payment'
 
 interface PaymentsParams {
@@ -50,11 +51,9 @@ export function useUpdatePackage() {
   return useMutation({
     mutationFn: ({ id, ...data }: Partial<PackageRow> & { id: number }) =>
       api<PackageRow>(`/student-packages/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['student-packages'] })
-      qc.invalidateQueries({ queryKey: ['payments'] })
-      qc.invalidateQueries({ queryKey: ['payment-stats'] })
-    },
+    // Changing the hours re-runs the engine server-side, so the calendar's session
+    // counters and every other engine-derived screen have to be refreshed too.
+    onSuccess: () => invalidatePackageDerived(qc),
   })
 }
 
@@ -63,11 +62,7 @@ export function useConfirmPackage() {
   return useMutation({
     mutationFn: (id: number) =>
       api<PackageRow>(`/student-packages/${id}/confirm`, { method: 'POST' }),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['student-packages'] })
-      qc.invalidateQueries({ queryKey: ['payments'] })
-      qc.invalidateQueries({ queryKey: ['payment-stats'] })
-    },
+    onSuccess: () => invalidatePackageDerived(qc),
   })
 }
 
@@ -83,10 +78,6 @@ export function useDeletePackage() {
   return useMutation({
     mutationFn: (id: number) =>
       api<DeletePackageResult>(`/student-packages/${id}`, { method: 'DELETE' }),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['student-packages'] })
-      qc.invalidateQueries({ queryKey: ['payments'] })
-      qc.invalidateQueries({ queryKey: ['payment-stats'] })
-    },
+    onSuccess: () => invalidatePackageDerived(qc),
   })
 }

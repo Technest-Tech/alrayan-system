@@ -3,6 +3,7 @@
 namespace App\Services\System\Reports;
 
 use App\Models\System\Lesson;
+use App\Support\System\SubjectCatalog;
 use App\Models\System\StudentPackage;
 use App\Support\System\Setting;
 use Illuminate\Support\Facades\Storage;
@@ -40,7 +41,8 @@ class LessonReportData
 
             'studentName'     => $student?->name,
             'teacherName'     => $lesson->teacher?->user?->name,
-            'subjectName'     => $lesson->subject?->name,
+            'subjectName'     => app(SubjectCatalog::class)->label($lesson->subject_ids)
+                                 ?? $lesson->subject?->name,
             'evaluationLabel' => $lesson->evaluation?->label,
 
             'dateLabel'     => $when->locale($locale)->isoFormat('dddd D MMMM YYYY'),

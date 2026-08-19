@@ -19,6 +19,8 @@ class UpdateLessonRequest extends FormRequest
             'scheduled_at'    => ['sometimes', 'nullable', 'date'],
             'duration_minutes'=> ['sometimes', 'nullable', 'integer', 'in:30,60,90,120'],
             'subject_id'      => ['sometimes', 'nullable', 'integer', 'exists:sys_lesson_subjects,id'],
+            'subject_ids'     => ['sometimes', 'nullable', 'array'],
+            'subject_ids.*'   => ['integer', 'exists:courses,id'],
             'evaluation_id'   => ['sometimes', 'nullable', 'integer', 'exists:sys_lesson_evaluations,id'],
             'status'          => ['sometimes', 'nullable', 'string', 'in:scheduled,attended,paid_absence,absent,trial,free,cancelled_by_student,cancelled_by_teacher'],
             'content'         => ['sometimes', 'nullable', 'string', 'max:5000'],

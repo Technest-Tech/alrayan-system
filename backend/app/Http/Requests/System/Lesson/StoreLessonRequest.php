@@ -19,6 +19,8 @@ class StoreLessonRequest extends FormRequest
             'scheduled_at'    => ['required', 'date'],
             'duration_minutes'=> ['required', 'integer', 'in:30,60,90,120'],
             'subject_id'      => ['nullable', 'integer', 'exists:sys_lesson_subjects,id'],
+            'subject_ids'     => ['nullable', 'array'],
+            'subject_ids.*'   => ['integer', 'exists:courses,id'],
             'evaluation_id'   => ['nullable', 'integer', 'exists:sys_lesson_evaluations,id'],
             'status'          => ['nullable', 'string', 'in:scheduled,attended,paid_absence,absent,trial,free,cancelled_by_student,cancelled_by_teacher'],
             'content'         => ['nullable', 'string', 'max:5000'],

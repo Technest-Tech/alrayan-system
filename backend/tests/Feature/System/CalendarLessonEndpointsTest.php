@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\System;
 
+use App\Models\Course;
 use App\Models\System\Lesson;
 use App\Models\System\Student;
 use App\Models\System\StudentPackage;
@@ -42,6 +43,30 @@ class CalendarLessonEndpointsTest extends SystemTestCase
             'duration_minutes' => 60,
             'status'           => 'scheduled',
         ], $overrides));
+    }
+
+    /** An academy subject (Settings → Subjects) a lesson can be tagged with. */
+    private function makeSubject(string $title): Course
+    {
+        return Course::create([
+            'slug'              => 'subject-' . uniqid(),
+            'title'             => $title,
+            'short_description' => $title,
+            'long_description'  => $title,
+            'icon'              => 'BookOpen',
+            'level'             => 'All Levels',
+            'features'          => [],
+            'seo_title'         => $title,
+            'seo_description'   => $title,
+            'outcomes'          => [],
+            'curriculum'        => [],
+            'personas'          => [],
+            'faqs'              => [],
+            'related_slugs'     => [],
+            'specialty_tags'    => [],
+            'active'            => true,
+            'sort_order'        => 0,
+        ]);
     }
 
     /* ─────────────────────────────  AUTH  ───────────────────────────── */
@@ -293,6 +318,115 @@ class CalendarLessonEndpointsTest extends SystemTestCase
         ]);
         // session_number_hours recalculated -> first 60min lesson = 1.0h
         $this->assertEquals(1.0, $response->json('data.session_number_hours'));
+    }
+
+    /* ─────────────────────────  LESSON SUBJECTS  ────────────────────── */
+
+    public function test_lesson_can_carry_several_subjects(): void
+    {
+        $teacher = Teacher::factory()->create();
+        $student = $this->lessonStudent();
+        $quran   = $this->makeSubject('Quran for Kids');
+        $tajweed = $this->makeSubject('Tajweed Course');
+
+        $response = $this->actingAs($this->adminUser(), 'sanctum')
+            ->postJson('/api/system/lessons', [
+                'teacher_id'       => $teacher->id,
+                'student_id'       => $student->id,
+                'scheduled_at'     => now()->setTime(10, 0)->toDateTimeString(),
+                'duration_minutes' => 60,
+                'status'           => 'attended',
+                'subject_ids'      => [$quran->id, $tajweed->id],
+            ])
+            ->assertCreated();
+
+        $this->assertSame([$quran->id, $tajweed->id], $response->json('data.subject_ids'));
+        $this->assertSame(
+            ['Quran for Kids', 'Tajweed Course'],
+            array_column($response->json('data.subjects'), 'name'),
+        );
+    }
+
+    public function test_lesson_subjects_must_be_real_subjects(): void
+    {
+        $teacher = Teacher::factory()->create();
+        $student = $this->lessonStudent();
+
+        $this->actingAs($this->adminUser(), 'sanctum')
+            ->postJson('/api/system/lessons', [
+                'teacher_id'       => $teacher->id,
+                'student_id'       => $student->id,
+                'scheduled_at'     => now()->setTime(10, 0)->toDateTimeString(),
+                'duration_minutes' => 60,
+                'subject_ids'      => [999999],
+            ])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors(['subject_ids.0']);
+    }
+
+    public function test_lesson_subjects_can_be_replaced_on_edit(): void
+    {
+        $teacher = Teacher::factory()->create();
+        $student = $this->lessonStudent();
+        $package = $this->makePackage($student);
+        $quran   = $this->makeSubject('Quran for Kids');
+        $arabic  = $this->makeSubject('Arabic for Non-Arabs');
+        $lesson  = $this->makeLesson($student, $teacher, $package, ['subject_ids' => [$quran->id]]);
+
+        $response = $this->actingAs($this->adminUser(), 'sanctum')
+            ->putJson("/api/system/lessons/{$lesson->id}", ['subject_ids' => [$arabic->id]])
+            ->assertOk();
+
+        $this->assertSame([$arabic->id], $response->json('data.subject_ids'));
+    }
+
+    public function test_schedule_subjects_flow_down_to_generated_lessons(): void
+    {
+        $teacher = Teacher::factory()->create();
+        $student = $this->lessonStudent();
+        $quran   = $this->makeSubject('Quran for Kids');
+        $tajweed = $this->makeSubject('Tajweed Course');
+
+        $response = $this->actingAs($this->adminUser(), 'sanctum')
+            ->postJson('/api/system/lesson-schedules', [
+                'teacher_id'  => $teacher->id,
+                'student_id'  => $student->id,
+                'subject_ids' => [$quran->id, $tajweed->id],
+                'recurrence'  => 'weekly',
+                'start_date'  => now()->startOfWeek()->format('Y-m-d'),
+                'slots'       => [[
+                    'day_of_week'      => 1,
+                    'start_time'       => '10:00',
+                    'duration_minutes' => 60,
+                ]],
+            ])
+            ->assertCreated();
+
+        $this->assertSame([$quran->id, $tajweed->id], $response->json('data.subject_ids'));
+
+        $generated = Lesson::where('schedule_id', $response->json('data.id'))->first();
+        $this->assertNotNull($generated, 'the schedule should have generated lessons');
+        $this->assertSame([$quran->id, $tajweed->id], $generated->subject_ids);
+    }
+
+    public function test_teacher_can_load_subject_options_without_course_permission(): void
+    {
+        $this->makeSubject('Quran for Kids');
+        ['user' => $teacherUser] = $this->teacherUser();
+
+        // The full course list stays off-limits — it carries enrolment analytics.
+        $this->actingAs($teacherUser, 'sanctum')->getJson('/api/system/courses')->assertStatus(403);
+
+        $this->actingAs($teacherUser, 'sanctum')
+            ->getJson('/api/system/subjects')
+            ->assertOk()
+            ->assertJsonPath('data.0.name', 'Quran for Kids')
+            ->assertJsonPath('data.0.is_active_for_system', true);
+    }
+
+    public function test_subject_options_require_authentication(): void
+    {
+        $this->getJson('/api/system/subjects')->assertStatus(401);
     }
 
     public function test_store_validates_required_fields(): void

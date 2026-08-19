@@ -14,8 +14,9 @@ class LessonSchedule extends Model
     protected $guarded = [];
 
     protected $casts = [
-        'is_active'  => 'boolean',
-        'start_date' => 'date',
+        'is_active'   => 'boolean',
+        'start_date'  => 'date',
+        'subject_ids' => 'array',
     ];
 
     public function teacher()

@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources\System;
 
+use App\Support\System\SubjectCatalog;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 class LessonScheduleResource extends JsonResource
@@ -13,6 +14,8 @@ class LessonScheduleResource extends JsonResource
             'teacher_id' => $this->teacher_id,
             'student_id' => $this->student_id,
             'subject_id' => $this->subject_id,
+            'subject_ids' => array_map('intval', $this->subject_ids ?? []),
+            'subjects'   => app(SubjectCatalog::class)->expand($this->subject_ids),
             'recurrence' => $this->recurrence,
             'start_date' => $this->start_date,
             'is_active'  => $this->is_active,

@@ -105,6 +105,10 @@ class AppServiceProvider extends ServiceProvider
     {
         $this->app->singleton(BookingReferenceGenerator::class);
 
+        // One `courses` lookup per request, shared by every lesson resource that
+        // needs to name its subjects.
+        $this->app->scoped(\App\Support\System\SubjectCatalog::class);
+
         // Zoom: real client in production, fake otherwise
         $this->app->bind(ZoomClient::class, function ($app) {
             if (config('system.features.zoom')) {

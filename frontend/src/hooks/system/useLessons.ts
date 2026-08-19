@@ -1,6 +1,7 @@
 'use client'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { api, type Paginated } from '@/lib/system/api'
+import { invalidatePackageDerived } from '@/lib/system/packageCache'
 import type {
   Lesson,
   CalendarDay,
@@ -120,12 +121,7 @@ export function useCreateLesson() {
   return useMutation({
     mutationFn: (data: StoreLessonPayload) =>
       api<Lesson>('/lessons', { method: 'POST', body: JSON.stringify(data) }),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['system', 'lessons'] })
-      qc.invalidateQueries({ queryKey: ['system', 'calendar'] })
-      qc.invalidateQueries({ queryKey: ['system', 'student-packages'] })
-      qc.invalidateQueries({ queryKey: ['system', 'analytics'] })
-    },
+    onSuccess: () => invalidatePackageDerived(qc),
   })
 }
 
@@ -137,12 +133,9 @@ export function useUpdateLesson() {
       api<Lesson>(`/lessons/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
     onSuccess: (_, { id }) => {
       qc.invalidateQueries({ queryKey: ['system', 'lessons', id] })
-      qc.invalidateQueries({ queryKey: ['system', 'lessons'] })
-      qc.invalidateQueries({ queryKey: ['system', 'calendar'] })
-      // A status change re-runs the package consumption engine on the server, so
-      // refresh everything derived from it: package progress and analytics totals.
-      qc.invalidateQueries({ queryKey: ['system', 'student-packages'] })
-      qc.invalidateQueries({ queryKey: ['system', 'analytics'] })
+      // A status or date change re-runs the package consumption engine on the server, so
+      // refresh everything derived from it: session numbers, package progress, money.
+      invalidatePackageDerived(qc)
     },
   })
 }
@@ -153,12 +146,7 @@ export function useDeleteLesson() {
   return useMutation({
     mutationFn: (id: number) =>
       api(`/lessons/${id}`, { method: 'DELETE' }),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['system', 'lessons'] })
-      qc.invalidateQueries({ queryKey: ['system', 'calendar'] })
-      qc.invalidateQueries({ queryKey: ['system', 'student-packages'] })
-      qc.invalidateQueries({ queryKey: ['system', 'analytics'] })
-    },
+    onSuccess: () => invalidatePackageDerived(qc),
   })
 }
 
@@ -180,8 +168,9 @@ export function useUpdateLessonSchedule() {
       api<LessonSchedule>(`/lesson-schedules/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['system', 'lesson-schedules'] })
-      qc.invalidateQueries({ queryKey: ['system', 'calendar'] })
-      qc.invalidateQueries({ queryKey: ['system', 'lessons'] })
+      // Moving or dropping a schedule moves its lessons, and lesson dates are what the
+      // engine walks — so the packages re-shift with them.
+      invalidatePackageDerived(qc)
     },
   })
 }
@@ -193,8 +182,9 @@ export function useDeleteLessonSchedule() {
     mutationFn: (id: number) => api(`/lesson-schedules/${id}`, { method: 'DELETE' }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['system', 'lesson-schedules'] })
-      qc.invalidateQueries({ queryKey: ['system', 'calendar'] })
-      qc.invalidateQueries({ queryKey: ['system', 'lessons'] })
+      // Moving or dropping a schedule moves its lessons, and lesson dates are what the
+      // engine walks — so the packages re-shift with them.
+      invalidatePackageDerived(qc)
     },
   })
 }
@@ -205,7 +195,7 @@ export function useUpdateStudentPackage() {
   return useMutation({
     mutationFn: ({ id, ...data }: Partial<StudentPackage> & { id: number }) =>
       api<StudentPackage>(`/student-packages/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['system', 'student-packages'] }),
+    onSuccess: () => invalidatePackageDerived(qc),
   })
 }
 
@@ -215,7 +205,7 @@ export function useConfirmStudentPackage() {
   return useMutation({
     mutationFn: (id: number) =>
       api<StudentPackage>(`/student-packages/${id}/confirm`, { method: 'POST' }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['system', 'student-packages'] }),
+    onSuccess: () => invalidatePackageDerived(qc),
   })
 }
 

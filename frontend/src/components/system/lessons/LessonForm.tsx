@@ -6,7 +6,9 @@ import { toast } from 'sonner'
 import { ApiError } from '@/lib/system/api'
 import { uploadFile } from '@/lib/system/upload'
 import { downloadLessonReport } from '@/lib/system/reports'
-import { useLessonSubjects, useLessonEvaluations, useCreateLesson, useUpdateLesson } from '@/hooks/system/useLessons'
+import { MultiSelect } from '@/components/system/primitives/MultiSelect'
+import { useLessonEvaluations, useCreateLesson, useUpdateLesson } from '@/hooks/system/useLessons'
+import { useSubjectOptions } from '@/hooks/system/useCourses'
 import { useTeachers } from '@/hooks/system/useTeachers'
 import { useStudents } from '@/hooks/system/useStudents'
 import { useMyStudents } from '@/hooks/system/useMyStudents'
@@ -187,7 +189,7 @@ export function LessonForm({ initialValues, prefill, onSuccess, onCancel }: Prop
   )
   const [studentId, setStudentId] = useState(initialValues ? String(initialValues.student_id) : prefill?.studentId ? String(prefill.studentId) : '')
 
-  const { data: subjects    = [] } = useLessonSubjects()
+  const { data: subjects    = [] } = useSubjectOptions()
   const { data: evaluations = [] } = useLessonEvaluations()
   const { data: teachersData }     = useTeachers({}, { enabled: !isTeacher })
   // Admins load students for the selected teacher; a teacher loads their own students.
@@ -203,7 +205,9 @@ export function LessonForm({ initialValues, prefill, onSuccess, onCancel }: Prop
   /* ── Form state ─────────────────────────────────────────── */
   const [status,       setStatus]       = useState<LessonStatus>(initialValues?.status ?? 'attended')
   const [evaluationId, setEvaluationId] = useState(initialValues?.evaluation_id ? String(initialValues.evaluation_id) : '')
-  const [subjectId,    setSubjectId]    = useState(initialValues?.subject_id ? String(initialValues.subject_id) : '')
+  const [subjectIds,   setSubjectIds]   = useState<string[]>(
+    (initialValues?.subject_ids ?? []).map(String),
+  )
 
   const initDate = initialValues
     ? new Date(initialValues.scheduled_at).toISOString().slice(0, 16)
@@ -223,10 +227,12 @@ export function LessonForm({ initialValues, prefill, onSuccess, onCancel }: Prop
   const [souvenirImage,  setSouvenirImage]  = useState<File | null>(null)
   /** The souvenir already on the lesson. Kept as-is unless a new file replaces it or it is removed. */
   const [souvenirUrl,    setSouvenirUrl]    = useState<string | null>(initialValues?.souvenir_image ?? null)
-  const [subjectDetails, setSubjectDetails] = useState<Record<string, string>>(initialValues?.subject_details ?? {})
   const [trial,          setTrial]          = useState<TrialEvaluation>(initialValues?.trial_evaluation ?? {})
 
-  const selectedSubject = subjects.find(s => String(s.id) === subjectId)
+  // Retired subjects stay listed while a lesson still carries them.
+  const subjectOptions = subjects
+    .filter(s => s.is_active_for_system || subjectIds.includes(String(s.id)))
+    .map(s => ({ value: String(s.id), label: s.name }))
   const setTrialField = <K extends keyof TrialEvaluation>(k: K, v: TrialEvaluation[K]) =>
     setTrial(p => ({ ...p, [k]: v }))
 
@@ -259,12 +265,11 @@ export function LessonForm({ initialValues, prefill, onSuccess, onCancel }: Prop
         scheduled_at:    new Date(scheduledAt).toISOString(),
         duration_minutes: durationMinutes,
         status,
-        subject_id:      subjectId      ? Number(subjectId)      : null,
+        subject_ids:     subjectIds.map(Number),
         evaluation_id:   evaluationId   ? Number(evaluationId)   : null,
         content:         content        || null,
         notes:           notes          || null,
         homework:        homework       || null,
-        subject_details: Object.keys(subjectDetails).length ? subjectDetails : null,
         trial_evaluation: status === 'trial' && Object.keys(trial).length ? trial : null,
         souvenir_image:  souvenir,
         send_report:     false,
@@ -364,13 +369,14 @@ export function LessonForm({ initialValues, prefill, onSuccess, onCancel }: Prop
       {/* ── Schedule ─────────────────────────────────────── */}
       <SectionCard title={t('lessons.form.sectionSchedule')}>
         <div className="grid grid-cols-[1fr_auto] gap-3 items-end mb-3">
-          <Field label={t('lessons.form.fieldSubject')}>
-            <SearchableSelect
-              options={subjects.map(s => ({ value: String(s.id), label: s.name }))}
-              value={subjectId}
-              onChange={v => { setSubjectId(v); setSubjectDetails({}) }}
-              placeholder={t('lessons.form.fieldSubject')}
-              clearable
+          <Field label={t('lessons.form.fieldSubjects')}>
+            <MultiSelect
+              options={subjectOptions}
+              value={subjectIds}
+              onChange={setSubjectIds}
+              placeholder={subjectOptions.length === 0
+                ? t('lessons.form.subjectsNone')
+                : t('lessons.form.subjectsPlaceholder')}
             />
           </Field>
           {/* Duration */}
@@ -407,35 +413,6 @@ export function LessonForm({ initialValues, prefill, onSuccess, onCancel }: Prop
           />
         </Field>
       </SectionCard>
-
-      {/* ── Subject-specific fields ───────────────────────── */}
-      {selectedSubject?.fields && selectedSubject.fields.length > 0 && (
-        <SectionCard title={t('lessons.form.subjectDetailsTitle', { subject: selectedSubject.name })}>
-          <div className="space-y-3">
-            {selectedSubject.fields.map(f => (
-              <Field key={f.key} label={f.label}>
-                {f.type === 'select' && f.options ? (
-                  <SearchableSelect
-                    options={f.options.map(o => ({ value: o, label: o }))}
-                    value={subjectDetails[f.key] ?? ''}
-                    onChange={v => setSubjectDetails(p => ({ ...p, [f.key]: v }))}
-                    placeholder={t('lessons.form.selectOption')}
-                    clearable
-                  />
-                ) : (
-                  <input
-                    type={f.type === 'number' ? 'number' : 'text'}
-                    className={inp}
-                    style={inpStyle}
-                    value={subjectDetails[f.key] ?? ''}
-                    onChange={e => setSubjectDetails(p => ({ ...p, [f.key]: e.target.value }))}
-                  />
-                )}
-              </Field>
-            ))}
-          </div>
-        </SectionCard>
-      )}
 
       {/* ── Trial Lesson Evaluation (only for trial lessons) ── */}
       {status === 'trial' && (

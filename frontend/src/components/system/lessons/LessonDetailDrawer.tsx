@@ -252,14 +252,18 @@ export function LessonDetailDrawer({ lesson: selected, open, onClose, onUpdate }
               )}
             </div>
 
-            {/* Subject */}
-            {lesson.subject && (
+            {/* Subjects — a lesson can cover several */}
+            {lesson.subjects?.length > 0 && (
               <>
-                <SectionTitle>{t('lessons.form.fieldSubject')}</SectionTitle>
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm" style={{ background: '#F0FDF4', color: '#15803D' }}>
-                  <BookOpen size={13} />
-                  {lesson.subject.name}
-                </span>
+                <SectionTitle>{t('lessons.form.fieldSubjects')}</SectionTitle>
+                <div className="flex flex-wrap gap-1.5">
+                  {lesson.subjects.map(s => (
+                    <span key={s.id} className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm" style={{ background: '#F0FDF4', color: '#15803D' }}>
+                      <BookOpen size={13} />
+                      {s.name}
+                    </span>
+                  ))}
+                </div>
               </>
             )}
 
