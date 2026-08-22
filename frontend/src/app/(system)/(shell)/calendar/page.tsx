@@ -56,6 +56,28 @@ const MONTH_KEYS = [
   'schedule.months.september','schedule.months.october','schedule.months.november','schedule.months.december',
 ]
 
+/* ── Month keys ('YYYY-MM') ───────────────────────────── */
+function ymOf(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+}
+
+function ymParts(key: string): [number, number] {
+  const [y, m] = key.split('-').map(Number)
+  return [y, m]
+}
+
+function shiftYm(key: string, delta: number): string {
+  const [y, m] = ymParts(key)
+  return ymOf(new Date(y, m - 1 + delta, 1))
+}
+
+function ymFirstDay(key: string): string { return `${key}-01` }
+
+function ymLastDay(key: string): string {
+  const [y, m] = ymParts(key)
+  return `${key}-${String(new Date(y, m, 0).getDate()).padStart(2, '0')}`
+}
+
 /* ── Lesson pill ────────────────────────────────────────── */
 function LessonPill({ lesson, onClick, onDelete }: {
   lesson: Lesson; onClick: () => void; onDelete: (e: React.MouseEvent) => void
@@ -175,7 +197,9 @@ function MonthCalendar({ year, month, lessons, onLessonClick, onLessonDelete }: 
 /* ── List view (flat, with toolbar — matches the old system) ───────────── */
 const PAGE_SIZES = [10, 25, 50]
 
-function ListView({ lessons, onLessonClick }: { lessons: Lesson[]; onLessonClick: (l: Lesson) => void }) {
+function ListView({ lessons, truncated, onLessonClick }: {
+  lessons: Lesson[]; truncated?: { shown: number; total: number }; onLessonClick: (l: Lesson) => void
+}) {
   const { t } = useI18n()
   const [statusFilter, setStatusFilter] = useState<LessonStatus | ''>('')
   const [pageSize,     setPageSize]     = useState(10)
@@ -231,6 +255,11 @@ function ListView({ lessons, onLessonClick }: { lessons: Lesson[]; onLessonClick
         <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium" style={{ background: '#EEF2FF', color: '#4338CA' }}>
           <Clock size={12} /> {t('schedule.list.hours', { hours: totalHours.toFixed(2) })}
         </span>
+        {truncated && (
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium" style={{ background: '#FEF3C7', color: '#B45309' }}>
+            {t('schedule.list.truncated', { shown: String(truncated.shown), total: String(truncated.total) })}
+          </span>
+        )}
 
         <button
           onClick={() => { setOldestFirst(v => !v); setPage(1) }}
@@ -482,6 +511,162 @@ function StudentMultiSelect({ allStudents, selected, onChange }: {
   )
 }
 
+/* ── Month multi-select ────────────────────────────────
+   Replaces the plain month title between the period arrows: one or several
+   months can be browsed at once, so a whole term fits in a single view. */
+function MonthMultiSelect({ selected, onChange }: {
+  selected: string[]                       // sorted 'YYYY-MM' keys, never empty
+  onChange: (keys: string[]) => void
+}) {
+  const { t }            = useI18n()
+  const [open, setOpen]  = useState(false)
+  const [year, setYear]  = useState(() => ymParts(selected[0])[0])
+  const [pos,  setPos]   = useState<{ top?: number; bottom?: number; left: number; width: number } | null>(null)
+
+  const triggerRef = useRef<HTMLButtonElement>(null)
+  const dropRef    = useRef<HTMLDivElement>(null)
+
+  // Un-picking the last remaining month would leave the calendar with no period
+  // to render, so the selection always keeps at least one.
+  function toggle(key: string) {
+    if (!selected.includes(key)) { onChange([...selected, key].sort()); return }
+    if (selected.length === 1) return
+    onChange(selected.filter(k => k !== key))
+  }
+
+  function computePos() {
+    if (!triggerRef.current) return null
+    const r = triggerRef.current.getBoundingClientRect()
+    const width  = Math.max(r.width, 300)
+    const left   = Math.min(r.left, window.innerWidth - width - 12)
+    const openUp = (window.innerHeight - r.bottom) < 320 && r.top > 320
+    return openUp
+      ? { bottom: window.innerHeight - r.top + 4, left, width }
+      : { top: r.bottom + 4,                      left, width }
+  }
+
+  function openDropdown() { setYear(ymParts(selected[0])[0]); setPos(computePos()); setOpen(true) }
+  function close()        { setOpen(false) }
+
+  useEffect(() => {
+    if (!open) return
+    function handler(e: MouseEvent) {
+      const target = e.target as Node
+      if (!triggerRef.current?.contains(target) && !dropRef.current?.contains(target)) close()
+    }
+    window.addEventListener('mousedown', handler)
+    return () => window.removeEventListener('mousedown', handler)
+  }, [open])
+
+  useEffect(() => {
+    if (!open) return
+    function update() { setPos(computePos()) }
+    window.addEventListener('scroll', update, true)
+    window.addEventListener('resize', update)
+    return () => { window.removeEventListener('scroll', update, true); window.removeEventListener('resize', update) }
+  }, [open])
+
+  useEffect(() => {
+    if (!open) return
+    function handler(e: KeyboardEvent) { if (e.key === 'Escape') close() }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [open])
+
+  const label = selected.length === 1
+    ? `${t(MONTH_KEYS[ymParts(selected[0])[1] - 1])} ${ymParts(selected[0])[0]}`
+    : t('schedule.filter.monthsSelected', { count: String(selected.length) })
+
+  return (
+    <>
+      {/* Trigger */}
+      <button
+        ref={triggerRef}
+        type="button"
+        onClick={open ? close : openDropdown}
+        className="flex items-center justify-center gap-1.5 px-3 py-2 text-sm font-semibold transition-colors hover:bg-black/[0.03]"
+        style={{ color: NAVY, minWidth: 172, background: open ? TEAL_50 : undefined }}
+        title={t('schedule.filter.selectMonths')}
+      >
+        <span className="truncate">{label}</span>
+        <ChevronDown size={14} className="shrink-0" style={{ color: MUTED, transform: open ? 'rotate(180deg)' : undefined, transition: 'transform 0.15s' }} />
+      </button>
+
+      {/* Floating dropdown */}
+      {open && pos && (
+        <div ref={dropRef} className="fixed z-[9999]" style={pos}>
+          <div className="rounded-xl overflow-hidden" style={{ background: '#fff', border: `1px solid ${TEAL_100}`, boxShadow: '0 8px 28px rgb(0 0 0 / 0.14)' }}>
+            {/* Year stepper */}
+            <div className="flex items-center justify-between px-3 py-2.5" style={{ borderBottom: `1px solid ${TEAL_100}` }}>
+              <button
+                type="button"
+                onClick={() => setYear(y => y - 1)}
+                className="p-1.5 rounded-lg hover:bg-black/5 transition-colors"
+                aria-label={t('common.prev')}
+              >
+                <ChevronLeft size={14} style={{ color: MUTED }} />
+              </button>
+              <span className="text-sm font-semibold tabular-nums" style={{ color: NAVY }}>{year}</span>
+              <button
+                type="button"
+                onClick={() => setYear(y => y + 1)}
+                className="p-1.5 rounded-lg hover:bg-black/5 transition-colors"
+                aria-label={t('common.next')}
+              >
+                <ChevronRight size={14} style={{ color: MUTED }} />
+              </button>
+            </div>
+
+            {/* Months of the displayed year */}
+            <div className="grid grid-cols-3 gap-1.5 p-2.5">
+              {MONTH_KEYS.map((mk, i) => {
+                const key   = `${year}-${String(i + 1).padStart(2, '0')}`
+                const isSel = selected.includes(key)
+                return (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() => toggle(key)}
+                    className="flex items-center gap-1.5 px-2 py-2 rounded-lg text-xs font-medium transition-colors hover:bg-[#F0FDFA]"
+                    style={{
+                      background: isSel ? TEAL_50 : '#fff',
+                      color:      isSel ? TEAL_600 : NAVY,
+                      border:     `1px solid ${isSel ? TEAL_100 : BORDER}`,
+                    }}
+                  >
+                    <div
+                      className="w-3.5 h-3.5 rounded flex items-center justify-center shrink-0 transition-colors"
+                      style={{ background: isSel ? TEAL_600 : '#fff', border: `1.5px solid ${isSel ? TEAL_600 : BORDER}` }}
+                    >
+                      {isSel && <Check size={9} color="#fff" strokeWidth={3} />}
+                    </div>
+                    <span className="truncate">{t(mk)}</span>
+                  </button>
+                )
+              })}
+            </div>
+
+            {/* Footer: selection count + quick reset */}
+            <div className="flex items-center justify-between gap-2 px-3 py-2" style={{ borderTop: `1px solid ${TEAL_100}` }}>
+              <span className="text-xs" style={{ color: MUTED }}>
+                {t('schedule.filter.monthsSelected', { count: String(selected.length) })}
+              </span>
+              <button
+                type="button"
+                onClick={() => { const now = new Date(); onChange([ymOf(now)]); setYear(now.getFullYear()) }}
+                className="text-xs underline"
+                style={{ color: TEAL_600 }}
+              >
+                {t('schedule.filter.thisMonth')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  )
+}
+
 /* ── Prefill ──────────────────────────────────────────── */
 interface LessonPrefill {
   scheduledAt?: string; durationMinutes?: number; teacherId?: number; studentId?: number
@@ -495,9 +680,12 @@ export default function CalendarPage() {
   const today = new Date()
 
   const [anchorDate, setAnchorDate] = useState(today)
-  const year    = anchorDate.getFullYear()
-  const month   = anchorDate.getMonth() + 1
   const wkStart = useMemo(() => weekStartOf(anchorDate), [anchorDate])
+
+  // Month/List views browse a *set* of months ('YYYY-MM'), never empty; the week
+  // and day views stay anchored to a single date.
+  const [months, setMonths] = useState<string[]>([ymOf(today)])
+  const sortedMonths = useMemo(() => [...months].sort(), [months])
 
   const weekDays = useMemo(() =>
     Array.from({ length: 7 }, (_, i) => { const d = new Date(wkStart); d.setDate(d.getDate() + i); return d })
@@ -506,6 +694,9 @@ export default function CalendarPage() {
   const [viewMode,    setViewMode]    = useState<ViewMode>('month')
   const [listMode,    setListMode]    = useState(false)
   const [showFullDay, setShowFullDay] = useState(false)
+
+  // Month grid and List both browse by month, so both get the month picker.
+  const monthPicker = listMode || viewMode === 'month'
 
   // Remember the last-chosen Calendar/List view and restore it on the next visit.
   const LIST_MODE_KEY = 'calendar.listMode'
@@ -554,13 +745,12 @@ export default function CalendarPage() {
   const students  = isTeacher ? (myStudents ?? []) : (studentsData?.data ?? [])
   const schedules = schedulesData ?? []
 
-  const [monthStart, monthEnd] = useMemo(() => {
-    const last = new Date(year, month, 0).getDate()
-    return [
-      `${year}-${String(month).padStart(2,'0')}-01`,
-      `${year}-${String(month).padStart(2,'0')}-${String(last).padStart(2,'0')}`,
-    ]
-  }, [year, month])
+  // One fetch covers the whole selection; non-contiguous picks pull the months in
+  // between too, which are filtered back out below.
+  const [monthStart, monthEnd] = useMemo(
+    () => [ymFirstDay(sortedMonths[0]), ymLastDay(sortedMonths[sortedMonths.length - 1])],
+    [sortedMonths],
+  )
 
   const [calStart, calEnd] = useMemo(() => {
     if (listMode || viewMode === 'month') {
@@ -595,43 +785,65 @@ export default function CalendarPage() {
   const calendarLessons = useMemo(() => {
     const ls: Lesson[] = []
     calendarDays?.forEach(d => ls.push(...d.lessons))
-    return ls
-  }, [calendarDays])
+    if (viewMode !== 'month') return ls
+    return ls.filter(l => months.includes(l.scheduled_at.slice(0, 7)))
+  }, [calendarDays, viewMode, months])
+
+  // One grid per picked month, each fed only its own lessons.
+  const lessonsByMonth = useMemo(() => {
+    const m: Record<string, Lesson[]> = {}
+    calendarLessons.forEach(l => {
+      const key = l.scheduled_at.slice(0, 7)
+      if (!m[key]) m[key] = []
+      m[key].push(l)
+    })
+    return m
+  }, [calendarLessons])
+
+  // The server caps a page at 500 rows; across several months that can clip the
+  // list, so say so rather than quietly under-reporting.
+  const listTruncated = lessonsData && lessonsData.meta.total > lessonsData.data.length
+    ? { shown: lessonsData.data.length, total: lessonsData.meta.total }
+    : undefined
 
   const listLessons = useMemo(() => {
     let ls = lessonsData?.data ?? []
+    ls = ls.filter(l => months.includes(l.scheduled_at.slice(0, 7)))
     if (studentFilter.length) ls = ls.filter(l => studentFilter.includes(l.student_id))
     return ls
-  }, [lessonsData, studentFilter])
+  }, [lessonsData, studentFilter, months])
 
-  function prevPeriod() {
-    setAnchorDate(d => {
-      const n = new Date(d)
-      if (listMode || viewMode === 'month') n.setMonth(n.getMonth() - 1, 1)
-      else if (viewMode === 'week')         n.setDate(n.getDate() - 7)
-      else                                  n.setDate(n.getDate() - 1)
-      return n
-    })
+  // Month/List: the arrows walk the *whole* selection, keeping its shape (e.g.
+  // Sep+Nov steps to Oct+Dec). Week/Day: they walk the anchor date as before.
+  function selectMonths(keys: string[]) {
+    if (!keys.length) return
+    const sorted = [...keys].sort()
+    setMonths(sorted)
+    const [y, m] = ymParts(sorted[0])
+    setAnchorDate(new Date(y, m - 1, 1))
   }
 
-  function nextPeriod() {
-    setAnchorDate(d => {
-      const n = new Date(d)
-      if (listMode || viewMode === 'month') n.setMonth(n.getMonth() + 1, 1)
-      else if (viewMode === 'week')         n.setDate(n.getDate() + 7)
-      else                                  n.setDate(n.getDate() + 1)
-      return n
-    })
+  function stepPeriod(delta: number) {
+    if (monthPicker) { selectMonths(sortedMonths.map(k => shiftYm(k, delta))); return }
+    const next = new Date(anchorDate)
+    next.setDate(next.getDate() + (viewMode === 'week' ? delta * 7 : delta))
+    setAnchorDate(next)
+    // Week/Day navigation can walk into another month; keep the picker in step so
+    // switching back to Month/List lands on what you were just looking at.
+    const key = ymOf(next)
+    setMonths(ms => (ms.includes(key) ? ms : [key]))
   }
+
+  function prevPeriod() { stepPeriod(-1) }
+  function nextPeriod() { stepPeriod(1) }
 
   const periodTitle = useMemo(() => {
-    if (listMode || viewMode === 'month') return `${t(MONTH_KEYS[month - 1])} ${year}`
     if (viewMode === 'week') {
       const end = new Date(wkStart); end.setDate(end.getDate() + 6)
       return `${wkStart.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} – ${end.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`
     }
     return anchorDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })
-  }, [listMode, viewMode, month, year, wkStart, anchorDate, t])
+  }, [viewMode, wkStart, anchorDate])
 
   // Drag-select on the grid → the "Create New" chooser (Lesson vs Schedule).
   function handleCellSelect({ date, startTime, durationMinutes }: { date: string; startTime: string; durationMinutes: number }) {
@@ -859,16 +1071,20 @@ export default function CalendarPage() {
                 <button onClick={prevPeriod} className="p-2 hover:bg-black/5 transition-colors" aria-label={t('common.prev')}>
                   <ChevronLeft size={15} style={{ color: MUTED }} />
                 </button>
-                <span className="text-sm font-semibold px-3" style={{ color: NAVY, minWidth: 172, textAlign: 'center' }}>
-                  {periodTitle}
-                </span>
+                {monthPicker ? (
+                  <MonthMultiSelect selected={sortedMonths} onChange={selectMonths} />
+                ) : (
+                  <span className="text-sm font-semibold px-3" style={{ color: NAVY, minWidth: 172, textAlign: 'center' }}>
+                    {periodTitle}
+                  </span>
+                )}
                 <button onClick={nextPeriod} className="p-2 hover:bg-black/5 transition-colors" aria-label={t('common.next')}>
                   <ChevronRight size={15} style={{ color: MUTED }} />
                 </button>
               </div>
 
               <button
-                onClick={() => setAnchorDate(new Date())}
+                onClick={() => { const now = new Date(); setAnchorDate(now); setMonths([ymOf(now)]) }}
                 className="px-3 py-1.5 rounded-xl text-xs font-medium border transition-colors hover:bg-black/[0.03]"
                 style={{ borderColor: BORDER, color: MUTED }}
               >
@@ -921,11 +1137,30 @@ export default function CalendarPage() {
       {/* ── Calendar / List content ─────────────────────── */}
       {!listMode ? (
         viewMode === 'month' ? (
-          <MonthCalendar
-            year={year} month={month} lessons={calendarLessons}
-            onLessonClick={handleLessonClick}
-            onLessonDelete={handleLessonDelete}
-          />
+          <div className="space-y-4">
+            {sortedMonths.map(key => {
+              const [y, m]      = ymParts(key)
+              const monthLessons = lessonsByMonth[key] ?? []
+              return (
+                <div key={key}>
+                  {/* A single month is already named by the picker above. */}
+                  {sortedMonths.length > 1 && (
+                    <div className="flex items-center gap-2 mb-2">
+                      <h2 className="text-sm font-semibold" style={{ color: NAVY }}>{t(MONTH_KEYS[m - 1])} {y}</h2>
+                      <span className="px-2 py-0.5 rounded-full text-xs font-medium" style={{ background: TEAL_50, color: TEAL_600 }}>
+                        {t('schedule.list.lessonsCount', { count: String(monthLessons.length) })}
+                      </span>
+                    </div>
+                  )}
+                  <MonthCalendar
+                    year={y} month={m} lessons={monthLessons}
+                    onLessonClick={handleLessonClick}
+                    onLessonDelete={handleLessonDelete}
+                  />
+                </div>
+              )
+            })}
+          </div>
         ) : (
           <WeekDayGrid
             days={viewMode === 'week' ? weekDays : [anchorDate]}
@@ -936,7 +1171,7 @@ export default function CalendarPage() {
           />
         )
       ) : (
-        <ListView lessons={listLessons} onLessonClick={handleLessonClick} />
+        <ListView lessons={listLessons} truncated={listTruncated} onLessonClick={handleLessonClick} />
       )}
 
       {/* ── Dialogs ─────────────────────────────────────── */}

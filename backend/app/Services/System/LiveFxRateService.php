@@ -79,6 +79,40 @@ class LiveFxRateService
         return $payload;
     }
 
+    /**
+     * Rates as a flat `CCY => rate-to-EGP` map, EGP included as 1.0.
+     * Currencies we could resolve no rate for are omitted.
+     *
+     * @return array<string,float>
+     */
+    public function toEgpMap(): array
+    {
+        $map = ['EGP' => 1.0];
+
+        foreach ($this->toEgp()['rates'] as $row) {
+            if ($row['to_egp'] !== null && (float) $row['to_egp'] > 0) {
+                $map[$row['currency']] = (float) $row['to_egp'];
+            }
+        }
+
+        return $map;
+    }
+
+    /**
+     * Cross-convert minor units between any two supported currencies by pivoting
+     * on EGP. Returns null when either leg has no rate, so callers can surface
+     * "unavailable" instead of silently reporting a wrong number.
+     */
+    public function convertMinor(int $minor, string $from, string $to, ?array $map = null): ?int
+    {
+        if ($from === $to) return $minor;
+
+        $map ??= $this->toEgpMap();
+        if (! isset($map[$from], $map[$to]) || $map[$to] <= 0) return null;
+
+        return (int) round($minor * $map[$from] / $map[$to]);
+    }
+
     /** Force a re-fetch on the next read. */
     public function forget(): void
     {

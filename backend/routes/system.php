@@ -29,6 +29,7 @@ use App\Http\Controllers\System\PaymentController;
 use App\Http\Controllers\System\PaymobIntegrationController;
 use App\Http\Controllers\System\PaymobWebhookController;
 use App\Http\Controllers\System\PricingSettingsController;
+use App\Http\Controllers\System\ProfitabilityController;
 use App\Http\Controllers\System\QcAssignmentController;
 use App\Http\Controllers\System\QcCategoryController;
 use App\Http\Controllers\System\QcCategoryItemController;
@@ -523,12 +524,20 @@ Route::prefix('system')->name('system.')->group(function () {
         });
         Route::middleware('system.can:accounting.view_pnl')->group(function () {
             Route::get('/accounting/profit-loss',   [AccountingController::class, 'profitLoss'])->name('accounting.profit-loss');
+            Route::get('/accounting/profitability', [ProfitabilityController::class, 'index'])->name('accounting.profitability');
             Route::get('/monthly-reports',          [MonthlyReportController::class, 'index'])->name('monthly-reports.index');
             Route::get('/monthly-reports/{id}/pdf', [MonthlyReportController::class, 'showPdf'])->name('monthly-reports.pdf');
             Route::get('/monthly-reports/{id}/xlsx',[MonthlyReportController::class, 'showXlsx'])->name('monthly-reports.xlsx');
         });
         Route::middleware('system.can:accounting.export')
             ->post('/monthly-reports/regenerate', [MonthlyReportController::class, 'regenerate'])->name('monthly-reports.regenerate');
+
+        // The profitability report's percentage lines / partner split are academy-wide
+        // business constants, so editing them needs the settings permission, not just
+        // the ability to read the report.
+        Route::middleware('system.can:settings.edit')
+            ->put('/accounting/profitability/settings', [ProfitabilityController::class, 'updateSettings'])
+            ->name('accounting.profitability.settings');
 
         // Expenses
         Route::middleware('system.can:expenses.view')->group(function () {

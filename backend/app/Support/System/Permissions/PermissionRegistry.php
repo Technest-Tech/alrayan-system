@@ -25,7 +25,7 @@ class PermissionRegistry
         'payments'      => ['view', 'refund'],
         'payroll'       => ['view', 'view_any', 'approve', 'reject', 'mark_transferred', 'adjust', 'export'],
         'expenses'      => ['view', 'create', 'edit', 'delete'],
-        'accounting'    => ['view', 'export'],
+        'accounting'    => ['view', 'view_pnl', 'export'],
         'notifications' => ['view', 'edit_templates'],
         'whatsapp'      => ['view', 'edit'],
         'certificates'  => ['view', 'issue'],
