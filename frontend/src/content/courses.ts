@@ -31,7 +31,7 @@ export const courses: Course[] = [
     level: 'All Levels',
     durationMonths: '3–12',
     features: ['Assessment in your first lesson', 'Recitation corrected live, every session', 'Tajweed taught as you read', 'Optional memorisation track'],
-    seoTitle: 'Online Quran Classes | 1-on-1 Certified Teachers | Azhary',
+    seoTitle: 'Online Quran Classes | 1-on-1 Certified Teachers',
     seoDescription: 'Learn to read and recite the Quran with a certified teacher, one-to-one and online. Any level, any age. Free trial lesson, no card required.',
     outcomes: [
       'Read the Quran fluently from the Mushaf',
@@ -71,7 +71,7 @@ export const courses: Course[] = [
     level: 'All Levels',
     durationMonths: '4–12',
     features: ['Classical and Modern Standard Arabic', 'Speaking practice in every session', 'Grammar taught through real sentences', 'Quranic vocabulary from the start'],
-    seoTitle: 'Learn Arabic Online | 1-on-1 Arabic Classes | Azhary',
+    seoTitle: 'Learn Arabic Online | 1-on-1 Arabic Classes',
     seoDescription: 'Learn Arabic online with a certified teacher. Classical and Modern Standard Arabic, one-to-one, at your own pace. Free trial lesson, no card required.',
     outcomes: [
       'Read and write Arabic script with confidence',
@@ -111,7 +111,7 @@ export const courses: Course[] = [
     level: 'All Levels',
     durationMonths: '6–12',
     features: ['Quran and Arabic in one schedule', 'Vocabulary taken from the verses you read', 'One teacher, one coherent plan', 'Progress tracked on both tracks'],
-    seoTitle: 'Arabic & Quran Classes Online | Learn Both Together | Azhary',
+    seoTitle: 'Arabic & Quran Classes Online | Learn Both Together',
     seoDescription: 'Learn Quran recitation and Arabic language together, one-to-one and online with certified teachers. Understand what you recite. Free trial lesson.',
     outcomes: [
       'Recite with correct Tajweed and understand the verse',
@@ -151,7 +151,7 @@ export const courses: Course[] = [
     level: 'Beginner',
     durationMonths: '2–4',
     features: ['Arabic alphabet mastery', 'Correct pronunciation from day one', 'Vowel marks (harakat)', 'Foundation for Tajweed'],
-    seoTitle: 'Noorani Qaida Online Course | Azhary',
+    seoTitle: 'Noorani Qaida Online Course',
     seoDescription: 'Learn to read Arabic and Quran from scratch with Noorani Qaida. 1-on-1 certified teacher. Free trial class. Students in 50+ countries.',
     outcomes: [
       'Read all 29 Arabic letters in isolation and connected form',
@@ -192,7 +192,7 @@ export const courses: Course[] = [
     ageGroup: 'Ages 5–14',
     level: 'Beginner',
     features: ['Noorani Qaida included', 'Patient, child-specialist teachers', 'Interactive and engaging lessons', 'Progress reports for parents'],
-    seoTitle: 'Online Quran Classes for Kids | Ages 5–14 | Azhary',
+    seoTitle: 'Online Quran Classes for Kids | Ages 5–14',
     seoDescription: 'Fun, structured online Quran classes for children aged 5–14. Certified child-specialist teachers. Free trial class. Join families from 50+ countries.',
     outcomes: [
       'Complete the Noorani Qaida and begin Quran reading',
@@ -233,7 +233,7 @@ export const courses: Course[] = [
     ageGroup: 'Adults 18+',
     level: 'Beginner',
     features: ['Start from scratch or pick up where you left off', 'Flexible scheduling around work and family', 'Certified teacher, 1-on-1 only', 'Tajweed correction from the first lesson'],
-    seoTitle: 'Online Quran Classes for Adults | Azhary',
+    seoTitle: 'Online Quran Classes for Adults',
     seoDescription: 'Start or restart your Quran journey as an adult. 1-on-1 classes at your pace with certified teachers. Free first class. No prior knowledge needed.',
     outcomes: [
       'Read the Quran independently with correct pronunciation',
@@ -274,7 +274,7 @@ export const courses: Course[] = [
     level: 'Beginner',
     durationMonths: '6–12',
     features: ['All Tajweed rules covered', 'Real-time pronunciation correction', 'Practice with actual Quran verses', 'Certificate upon completion'],
-    seoTitle: 'Online Tajweed Course | Master Quran Recitation | Azhary',
+    seoTitle: 'Online Tajweed Course | Master Quran Recitation',
     seoDescription: 'Master all Tajweed rules with a certified teacher. Real-time pronunciation correction, Quran verse practice. Free trial. Students worldwide.',
     outcomes: [
       'Understand and correctly apply all major Tajweed rules',
@@ -314,7 +314,7 @@ export const courses: Course[] = [
     icon: 'Brain',
     level: 'Intermediate',
     features: ['Daily memorization targets', 'Systematic revision schedule', 'Dedicated Hifz teacher', 'Flexible pace options'],
-    seoTitle: 'Hifz Online | Quran Memorization Program | Azhary',
+    seoTitle: 'Hifz Online | Quran Memorization Program',
     seoDescription: 'Memorize the Quran with expert guidance. Structured Hifz program with dedicated teacher, daily targets, and systematic revision. Free trial class.',
     outcomes: [
       'Memorize new Quran portions daily using proven techniques',
@@ -354,7 +354,7 @@ export const courses: Course[] = [
     icon: 'Award',
     level: 'Advanced',
     features: ['Authentic chain of transmission', 'One-on-one with Ijazah-holding sheikh', 'Hafs an Asim + option for other Riwayat', 'Certificate of Ijazah granted'],
-    seoTitle: 'Online Ijazah Program | Authentic Chain | Azhary',
+    seoTitle: 'Online Ijazah Program | Authentic Chain',
     seoDescription: 'Earn an authentic Ijazah with unbroken chain to the Prophet ﷺ. Hafs an Asim and other riwayat. Advanced program for qualified students.',
     outcomes: [
       'Recite the complete Quran with flawless Tajweed',
@@ -395,7 +395,7 @@ export const courses: Course[] = [
     level: 'Beginner',
     durationMonths: '6–18',
     features: ['From zero to conversational', 'MSA + Quranic Arabic tracks', 'Native Arab teachers', 'Grammar + vocabulary focus'],
-    seoTitle: 'Arabic for Non-Arabs Online | Learn Arabic | Azhary',
+    seoTitle: 'Arabic for Non-Arabs Online | Learn Arabic',
     seoDescription: 'Learn Arabic from scratch with native Arab teachers. MSA and Quranic Arabic tracks. Beginner to conversational in 6–18 months. Free trial class.',
     outcomes: [
       'Read and write Arabic script fluently',
@@ -434,7 +434,7 @@ export const courses: Course[] = [
     icon: 'Lightbulb',
     level: 'Intermediate',
     features: ['Verse-by-verse explanation', 'Context and Asbab al-Nuzul', 'Classical + modern scholarship', 'Available in English'],
-    seoTitle: 'Tafseer Course Online | Understand the Quran | Azhary',
+    seoTitle: 'Tafseer Course Online | Understand the Quran',
     seoDescription: 'Go beyond recitation — understand the meaning of the Quran verse by verse. Classical and contemporary Tafseer in English. Free trial class.',
     outcomes: [
       'Understand the meaning of every verse you study',
@@ -474,7 +474,7 @@ export const courses: Course[] = [
     ageGroup: 'Ages 5–14',
     level: 'Beginner',
     features: ['Aqeedah taught through stories', 'Seerah of the Prophet ﷺ', 'Fiqh of wudu, prayer and fasting', 'Akhlaq — manners and character'],
-    seoTitle: 'Islamic Studies for Kids Online | Ages 5–14 | Azhary',
+    seoTitle: 'Islamic Studies for Kids Online | Ages 5–14',
     seoDescription: 'Online Islamic Studies for children aged 5–14 — Aqeedah, Seerah, Fiqh and Islamic manners, one-to-one with certified teachers who specialise in young learners. Free trial lesson.',
     outcomes: [
       'Say who Allah is and what a Muslim believes, in their own words',
@@ -514,7 +514,7 @@ export const courses: Course[] = [
     icon: 'Layers',
     level: 'Advanced',
     features: ['All ten Qiraat covered', 'Taught by Qiraat specialist', 'Prerequisite: Hafs Ijazah', 'Isnad (chain) provided'],
-    seoTitle: 'Ten Qiraat Online Program | Advanced Recitation | Azhary',
+    seoTitle: 'Ten Qiraat Online Program | Advanced Recitation',
     seoDescription: 'Master all ten authentic modes of Quranic recitation (Qiraat). Advanced program for qualified Huffaz. Taught by a Sheikh with Ijazah in all ten. Free trial.',
     outcomes: [
       'Recite the Quran in all ten authenticated Qiraat',
@@ -553,7 +553,7 @@ export const courses: Course[] = [
     icon: 'Heart',
     level: 'All Levels',
     features: ['Female teachers only', 'All courses available', 'Same certifications and quality', 'Flexible scheduling'],
-    seoTitle: 'Female Quran Teachers Online | Learn with Sisters | Azhary',
+    seoTitle: 'Female Quran Teachers Online | Learn with Sisters',
     seoDescription: 'All courses available with certified female Quran teachers. Safe, comfortable, effective. Tajweed, Hifz, Arabic, and more. Free trial with a female teacher.',
     outcomes: [
       'Complete any Azhary course with a certified female teacher',
@@ -597,7 +597,7 @@ export const coursesFr: Course[] = [
     level: 'All Levels',
     durationMonths: '3–12',
     features: ['Évaluation dès le premier cours', 'Récitation corrigée en direct à chaque séance', 'Le Tajwid enseigné au fil de la lecture', 'Parcours de mémorisation en option'],
-    seoTitle: 'Cours de Coran en ligne | Enseignants certifiés | Azhary',
+    seoTitle: 'Cours de Coran en ligne | Enseignants certifiés',
     seoDescription: 'Apprenez à lire et à réciter le Coran avec un enseignant certifié, en cours particuliers en ligne. Tous niveaux, tous âges. Cours d’essai gratuit.',
     outcomes: [
       'Lire le Coran couramment sur le Mushaf',
@@ -637,7 +637,7 @@ export const coursesFr: Course[] = [
     level: 'All Levels',
     durationMonths: '4–12',
     features: ['Arabe classique et standard moderne', 'De l’expression orale à chaque séance', 'La grammaire enseignée par de vraies phrases', 'Le vocabulaire coranique dès le début'],
-    seoTitle: 'Apprendre l’arabe en ligne | Cours particuliers | Azhary',
+    seoTitle: 'Apprendre l’arabe en ligne | Cours particuliers',
     seoDescription: 'Apprenez l’arabe en ligne avec un enseignant certifié. Arabe classique et standard moderne, en cours particuliers, à votre rythme. Cours d’essai gratuit.',
     outcomes: [
       'Lire et écrire l’écriture arabe avec assurance',
@@ -677,7 +677,7 @@ export const coursesFr: Course[] = [
     level: 'All Levels',
     durationMonths: '6–12',
     features: ['Coran et arabe dans un même emploi du temps', 'Un vocabulaire tiré des versets que vous lisez', 'Un seul enseignant, un seul plan cohérent', 'Progression suivie sur les deux parcours'],
-    seoTitle: 'Cours d’arabe et de Coran en ligne | Les deux ensemble | Azhary',
+    seoTitle: 'Cours d’arabe et de Coran en ligne | Les deux ensemble',
     seoDescription: 'Apprenez la récitation du Coran et la langue arabe ensemble, en cours particuliers en ligne avec des enseignants certifiés. Cours d’essai gratuit.',
     outcomes: [
       'Réciter avec un Tajwid correct et comprendre le verset',
@@ -717,7 +717,7 @@ export const coursesFr: Course[] = [
     level: 'Beginner',
     durationMonths: '2–4',
     features: ['Maîtrise de l’alphabet arabe', 'Une prononciation correcte dès le premier jour', 'Signes vocaliques (harakat)', 'Base pour le Tajwid'],
-    seoTitle: 'Cours de Qaïda Nourania en ligne | Azhary',
+    seoTitle: 'Cours de Qaïda Nourania en ligne',
     seoDescription: 'Apprenez à lire l’arabe et le Coran à partir de zéro avec la Qaïda Nourania. Cours particuliers avec enseignant certifié. Cours d’essai gratuit. Élèves dans plus de 50 pays.',
     outcomes: [
       'Lire les 29 lettres arabes de manière isolée et connectée',
@@ -758,7 +758,7 @@ export const coursesFr: Course[] = [
     ageGroup: 'De 5 à 14 ans',
     level: 'Beginner',
     features: ['Qaïda Nourania incluse', 'Enseignants patients, spécialistes des enfants', 'Leçons interactives et stimulantes', 'Rapports de progression pour les parents'],
-    seoTitle: 'Cours de Coran en ligne pour enfants | 5 à 14 ans | Azhary',
+    seoTitle: 'Cours de Coran en ligne pour enfants | 5 à 14 ans',
     seoDescription: 'Cours de Coran en ligne ludiques et structurés pour les enfants de 5 à 14 ans. Enseignants certifiés spécialistes des enfants. Cours d’essai gratuit. Rejoignez des familles de plus de 50 pays.',
     outcomes: [
       'Terminer la Qaïda Nourania et commencer la lecture du Coran',
@@ -799,7 +799,7 @@ export const coursesFr: Course[] = [
     ageGroup: 'Adultes 18+',
     level: 'Beginner',
     features: ['Commencez de zéro ou reprenez là où vous vous êtes arrêté', 'Horaires flexibles autour du travail et de la famille', 'Enseignant certifié, uniquement en cours particuliers', 'Correction du Tajwid dès la première leçon'],
-    seoTitle: 'Cours de Coran en ligne pour adultes | Azhary',
+    seoTitle: 'Cours de Coran en ligne pour adultes',
     seoDescription: 'Commencez ou reprenez votre parcours coranique en tant qu’adulte. Cours particuliers à votre rythme avec des enseignants certifiés. Premier cours gratuit. Aucune connaissance préalable nécessaire.',
     outcomes: [
       'Lire le Coran de manière autonome avec une prononciation correcte',
@@ -840,7 +840,7 @@ export const coursesFr: Course[] = [
     level: 'Beginner',
     durationMonths: '6–12',
     features: ['Toutes les règles du Tajwid couvertes', 'Correction de la prononciation en temps réel', 'Pratique sur de véritables versets coraniques', 'Certificat à la fin du cours'],
-    seoTitle: 'Cours de Tajwid en ligne | Maîtrisez la récitation du Coran | Azhary',
+    seoTitle: 'Cours de Tajwid en ligne | Maîtrisez la récitation du Coran',
     seoDescription: 'Maîtrisez toutes les règles du Tajwid avec un enseignant certifié. Correction de la prononciation en temps réel, pratique sur les versets du Coran. Essai gratuit. Élèves dans le monde entier.',
     outcomes: [
       'Comprendre et appliquer correctement toutes les grandes règles du Tajwid',
@@ -880,7 +880,7 @@ export const coursesFr: Course[] = [
     icon: 'Brain',
     level: 'Intermediate',
     features: ['Objectifs de mémorisation quotidiens', 'Calendrier de révision systématique', 'Enseignant de Hifz dédié', 'Options de rythme flexibles'],
-    seoTitle: 'Hifz en ligne | Programme de mémorisation du Coran | Azhary',
+    seoTitle: 'Hifz en ligne | Programme de mémorisation du Coran',
     seoDescription: 'Mémorisez le Coran avec un accompagnement expert. Programme de Hifz structuré avec enseignant dédié, objectifs quotidiens et révision systématique. Cours d’essai gratuit.',
     outcomes: [
       'Mémoriser quotidiennement de nouvelles portions du Coran grâce à des techniques éprouvées',
@@ -920,7 +920,7 @@ export const coursesFr: Course[] = [
     icon: 'Award',
     level: 'Advanced',
     features: ['Chaîne de transmission authentique', 'Cours particuliers avec un cheikh détenteur d’une Ijazah', 'Hafs an Asim + option pour d’autres Riwayat', 'Certificat d’Ijazah délivré'],
-    seoTitle: 'Programme d’Ijazah en ligne | Chaîne authentique | Azhary',
+    seoTitle: 'Programme d’Ijazah en ligne | Chaîne authentique',
     seoDescription: 'Obtenez une Ijazah authentique avec une chaîne ininterrompue jusqu’au Prophète ﷺ. Hafs an Asim et autres riwayat. Programme avancé pour élèves qualifiés.',
     outcomes: [
       'Réciter le Coran complet avec un Tajwid irréprochable',
@@ -961,7 +961,7 @@ export const coursesFr: Course[] = [
     level: 'Beginner',
     durationMonths: '6–18',
     features: ['De zéro à la conversation', 'Parcours arabe standard moderne + arabe coranique', 'Enseignants arabophones natifs', 'Accent sur la grammaire et le vocabulaire'],
-    seoTitle: 'Arabe pour non-arabophones en ligne | Apprenez l’arabe | Azhary',
+    seoTitle: 'Arabe pour non-arabophones en ligne | Apprenez l’arabe',
     seoDescription: 'Apprenez l’arabe à partir de zéro avec des enseignants arabophones natifs. Parcours arabe standard moderne et arabe coranique. Du débutant à la conversation en 6 à 18 mois. Cours d’essai gratuit.',
     outcomes: [
       'Lire et écrire l’écriture arabe couramment',
@@ -1000,7 +1000,7 @@ export const coursesFr: Course[] = [
     icon: 'Lightbulb',
     level: 'Intermediate',
     features: ['Explication verset par verset', 'Contexte et Asbab al-Nuzul', 'Érudition classique et contemporaine', 'Disponible en français'],
-    seoTitle: 'Cours de Tafsir en ligne | Comprenez le Coran | Azhary',
+    seoTitle: 'Cours de Tafsir en ligne | Comprenez le Coran',
     seoDescription: 'Allez au-delà de la récitation — comprenez le sens du Coran verset par verset. Tafsir classique et contemporain en français. Cours d’essai gratuit.',
     outcomes: [
       'Comprendre le sens de chaque verset que vous étudiez',
@@ -1040,7 +1040,7 @@ export const coursesFr: Course[] = [
     ageGroup: 'De 5 à 14 ans',
     level: 'Beginner',
     features: ['La Aqida enseignée par les récits', 'La Sira du Prophète ﷺ', 'Le Fiqh des ablutions, de la prière et du jeûne', 'Akhlaq — les bonnes manières et le caractère'],
-    seoTitle: 'Sciences islamiques pour enfants en ligne | 5 à 14 ans | Azhary',
+    seoTitle: 'Sciences islamiques pour enfants en ligne | 5 à 14 ans',
     seoDescription: 'Sciences islamiques en ligne pour les enfants de 5 à 14 ans — Aqida, Sira, Fiqh et savoir-vivre islamique, en cours particuliers avec des enseignants certifiés spécialistes des enfants. Cours d’essai gratuit.',
     outcomes: [
       'Dire avec ses propres mots qui est Allah et ce que croit un musulman',
@@ -1080,7 +1080,7 @@ export const coursesFr: Course[] = [
     icon: 'Layers',
     level: 'Advanced',
     features: ['Les dix Qira’at couvertes', 'Enseigné par un spécialiste des Qira’at', 'Prérequis : Ijazah en Hafs', 'Isnad (chaîne) fourni'],
-    seoTitle: 'Programme des dix Qira’at en ligne | Récitation avancée | Azhary',
+    seoTitle: 'Programme des dix Qira’at en ligne | Récitation avancée',
     seoDescription: 'Maîtrisez les dix modes authentiques de récitation coranique (Qira’at). Programme avancé pour Huffaz qualifiés. Enseigné par un Cheikh détenant l’Ijazah dans les dix. Essai gratuit.',
     outcomes: [
       'Réciter le Coran dans les dix Qira’at authentifiées',
@@ -1119,7 +1119,7 @@ export const coursesFr: Course[] = [
     icon: 'Heart',
     level: 'All Levels',
     features: ['Uniquement des enseignantes', 'Tous les cours disponibles', 'Mêmes certifications et même qualité', 'Horaires flexibles'],
-    seoTitle: 'Enseignantes de Coran en ligne | Apprenez avec des sœurs | Azhary',
+    seoTitle: 'Enseignantes de Coran en ligne | Apprenez avec des sœurs',
     seoDescription: 'Tous les cours disponibles avec des enseignantes de Coran certifiées. Sûr, confortable, efficace. Tajwid, Hifz, arabe et plus encore. Essai gratuit avec une enseignante.',
     outcomes: [
       'Suivre n’importe quel cours de Azhary avec une enseignante certifiée',

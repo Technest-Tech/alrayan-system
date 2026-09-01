@@ -14,7 +14,7 @@ export const fr: Messages = {
     whatsapp: 'WhatsApp',
     chatWhatsapp: 'Discuter sur WhatsApp',
     skipToContent: 'Aller au contenu principal',
-    homeAria: 'Zad Academy — Accueil',
+    homeAria: 'Azhary — Accueil',
     mainNavAria: 'Navigation principale',
     mobileNavAria: 'Navigation mobile',
     openMenu: 'Ouvrir le menu de navigation',
@@ -203,7 +203,7 @@ export const fr: Messages = {
   },
 
   home: {
-    whyChooseAria: 'Pourquoi choisir Zad Academy',
+    whyChooseAria: 'Pourquoi choisir Azhary',
     simpleProcess: 'Un processus simple',
     startSteps: 'Commencez en 3 étapes faciles',
     stepsAlt: 'Étape 1 : réservez votre essai gratuit. Étape 2 : soyez mis en relation et planifiez. Étape 3 : commencez votre premier cours.',
@@ -345,7 +345,7 @@ export const fr: Messages = {
     heroReassure: '✓ Premier cours gratuit · ✓ Sans carte bancaire · ✓ Annulation à tout moment',
     waLearnMore: 'Assalamu alaikum, je suis en {country} et je souhaiterais en savoir plus sur vos cours de Coran.',
     whyEyebrow: 'Pourquoi les familles en {country} nous choisissent',
-    whyHeading: 'La différence Zad Academy',
+    whyHeading: 'La différence Azhary',
     schedulingEyebrow: 'Horaires flexibles',
     schedulingHeading: 'Des cours dans votre fuseau horaire',
     pricingEyebrow: 'Tarifs transparents',
@@ -445,18 +445,18 @@ export const fr: Messages = {
   },
 
   meta: {
-    homeTitle: 'Académie coranique en ligne | Cours particuliers | Zad Academy',
+    homeTitle: 'Académie coranique en ligne | Cours particuliers',
     homeDescription: 'Apprenez le Coran en ligne avec des enseignants certifiés d’Al-Azhar. Cours particuliers de Tajwid, Hifz, arabe et sciences islamiques. Essai gratuit partout dans le monde.',
-    coursesTitle: 'Cours de Coran et d’arabe en ligne | Zad Academy',
+    coursesTitle: 'Cours de Coran et d’arabe en ligne',
     coursesDescription: 'Découvrez tous nos cours de Coran, Tajwid, Hifz, arabe et sciences islamiques. Cours particuliers en ligne avec des enseignants certifiés. Essai gratuit.',
-    pricingTitle: 'Tarifs des cours de Coran | Forfaits de cours | Zad Academy',
+    pricingTitle: 'Tarifs des cours de Coran | Forfaits de cours',
     pricingDescription: 'Des forfaits de cours transparents pour apprendre le Coran en ligne. Plus vous réservez, moins vous payez par cours. Premier cours gratuit, sans engagement, annulation à tout moment.',
-    faqTitle: 'FAQ | Cours de Coran en ligne | Zad Academy',
-    faqDescription: 'Les réponses aux questions les plus fréquentes sur les cours de Coran, d’arabe et de sciences islamiques de Zad Academy — enseignants, tarifs, horaires et plus encore.',
-    contactTitle: 'Réserver un cours de Coran d’essai gratuit | Contacter Zad Academy',
+    faqTitle: 'FAQ | Cours de Coran en ligne',
+    faqDescription: 'Les réponses aux questions les plus fréquentes sur les cours de Coran, d’arabe et de sciences islamiques de Azhary — enseignants, tarifs, horaires et plus encore.',
+    contactTitle: 'Réserver un cours de Coran d’essai gratuit | Contacter Azhary',
     contactDescription: 'Réservez votre premier cours de Coran gratuit. Remplissez le formulaire et nous vous mettrons en relation avec un enseignant certifié sous 24 heures. Sans carte bancaire.',
-    blogTitle: 'Blog — Conseils et guides pour apprendre le Coran | Zad Academy',
-    blogDescription: 'Des articles sur le Tajwid, le Hifz, l’apprentissage du Coran en ligne et l’éducation islamique, rédigés par les enseignants certifiés de Zad Academy.',
+    blogTitle: 'Blog — Conseils et guides pour apprendre le Coran',
+    blogDescription: 'Des articles sur le Tajwid, le Hifz, l’apprentissage du Coran en ligne et l’éducation islamique, rédigés par les enseignants certifiés de Azhary.',
   },
 
   notFound: {

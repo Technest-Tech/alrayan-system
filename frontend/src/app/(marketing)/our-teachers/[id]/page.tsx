@@ -41,7 +41,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const t = await fetchTeacher(id, locale)
   if (!t) return {}
   return buildMetadata({
-    title: `${t.name} — ${t.role} | Zad Academy`,
+    title: `${t.name} — ${t.role}`,
     description: t.bio,
     path: `/our-teachers/${id}`,
     locale,

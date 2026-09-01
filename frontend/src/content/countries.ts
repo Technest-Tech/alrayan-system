@@ -140,7 +140,7 @@ export const countriesData: CountryData[] = [
       },
     ],
     seo: {
-      title: 'Online Quran Classes USA | Certified Teachers | Azhary',
+      title: 'Online Quran Classes USA | Certified Teachers',
       description:
         'Learn Quran online in the USA with certified Al-Azhar teachers. All US time zones, 1-on-1 classes, free first lesson. Join thousands of American Muslim families.',
     },
@@ -244,7 +244,7 @@ export const countriesData: CountryData[] = [
       },
     ],
     seo: {
-      title: 'Online Quran Classes UK | Certified Teachers | Azhary',
+      title: 'Online Quran Classes UK | Certified Teachers',
       description:
         'Online Quran classes in the UK with Al-Azhar certified teachers. GMT & BST scheduling, female teachers available, free trial class. Serving England, Scotland, Wales & NI.',
     },
@@ -348,7 +348,7 @@ export const countriesData: CountryData[] = [
       },
     ],
     seo: {
-      title: 'Online Quran Classes Canada | Certified Teachers | Azhary',
+      title: 'Online Quran Classes Canada | Certified Teachers',
       description:
         'Online Quran classes in Canada with Al-Azhar certified teachers. All Canadian time zones, 1-on-1 sessions, free first class. Serving Ontario, BC, Alberta & all provinces.',
     },
@@ -452,7 +452,7 @@ export const countriesData: CountryData[] = [
       },
     ],
     seo: {
-      title: 'Online Quran Classes Australia | Certified Teachers | Azhary',
+      title: 'Online Quran Classes Australia | Certified Teachers',
       description:
         'Online Quran classes in Australia with certified Al-Azhar teachers. AEST, ACST & AWST scheduling, free first class. Serving Sydney, Melbourne, Brisbane, Perth & more.',
     },
@@ -563,7 +563,7 @@ export const countriesDataFr: CountryData[] = [
       },
     ],
     seo: {
-      title: 'Cours de Coran en ligne aux États-Unis | Enseignants certifiés | Azhary',
+      title: 'Cours de Coran en ligne aux États-Unis | Enseignants certifiés',
       description:
         'Apprenez le Coran en ligne aux États-Unis avec des enseignants certifiés d’Al-Azhar. Tous les fuseaux horaires américains, cours particuliers, première leçon gratuite. Rejoignez des milliers de familles musulmanes américaines.',
     },
@@ -667,7 +667,7 @@ export const countriesDataFr: CountryData[] = [
       },
     ],
     seo: {
-      title: 'Cours de Coran en ligne au Royaume-Uni | Enseignants certifiés | Azhary',
+      title: 'Cours de Coran en ligne au Royaume-Uni | Enseignants certifiés',
       description:
         'Cours de Coran en ligne au Royaume-Uni avec des enseignants certifiés d’Al-Azhar. Planification GMT & BST, enseignantes disponibles, cours d’essai gratuit. Au service de l’Angleterre, l’Écosse, le pays de Galles et l’Irlande du Nord.',
     },
@@ -771,7 +771,7 @@ export const countriesDataFr: CountryData[] = [
       },
     ],
     seo: {
-      title: 'Cours de Coran en ligne au Canada | Enseignants certifiés | Azhary',
+      title: 'Cours de Coran en ligne au Canada | Enseignants certifiés',
       description:
         'Cours de Coran en ligne au Canada avec des enseignants certifiés d’Al-Azhar. Tous les fuseaux horaires canadiens, cours particuliers, premier cours gratuit. Au service de l’Ontario, la Colombie-Britannique, l’Alberta et toutes les provinces.',
     },
@@ -875,7 +875,7 @@ export const countriesDataFr: CountryData[] = [
       },
     ],
     seo: {
-      title: 'Cours de Coran en ligne en Australie | Enseignants certifiés | Azhary',
+      title: 'Cours de Coran en ligne en Australie | Enseignants certifiés',
       description:
         'Cours de Coran en ligne en Australie avec des enseignants certifiés d’Al-Azhar. Planification AEST, ACST & AWST, premier cours gratuit. Au service de Sydney, Melbourne, Brisbane, Perth et plus encore.',
     },

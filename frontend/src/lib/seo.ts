@@ -32,6 +32,10 @@ export function buildMetadata({
 }: BuildMetadataArgs): Metadata {
   const url = localeUrl(path, locale)
   const ogImage = image ?? `${siteConfig.url}/og-default.jpg`
+  // `title` is brand-free so the `%s | Azhary` template does not double it up in
+  // <title>. Social cards bypass that template, so brand them here or a shared
+  // link shows the page name with no academy on it.
+  const socialTitle = `${title} | ${siteConfig.name}`
 
   return {
     title,
@@ -48,7 +52,7 @@ export function buildMetadata({
       },
     },
     openGraph: {
-      title,
+      title: socialTitle,
       description,
       url,
       type,
@@ -66,7 +70,7 @@ export function buildMetadata({
     },
     twitter: {
       card: 'summary_large_image',
-      title,
+      title: socialTitle,
       description,
       images: [ogImage],
     },

@@ -15,7 +15,7 @@ export const en = {
     whatsapp: 'WhatsApp',
     chatWhatsapp: 'Chat on WhatsApp',
     skipToContent: 'Skip to main content',
-    homeAria: 'Zad Academy — Home',
+    homeAria: 'Azhary — Home',
     mainNavAria: 'Main navigation',
     mobileNavAria: 'Mobile navigation',
     openMenu: 'Open navigation menu',
@@ -205,7 +205,7 @@ export const en = {
   },
 
   home: {
-    whyChooseAria: 'Why choose Zad Academy',
+    whyChooseAria: 'Why choose Azhary',
     simpleProcess: 'Simple process',
     startSteps: 'Start in 3 easy steps',
     stepsAlt: 'Step 1: Book your free trial. Step 2: Get matched and schedule. Step 3: Start your first lesson.',
@@ -347,7 +347,7 @@ export const en = {
     heroReassure: '✓ Free first class · ✓ No credit card required · ✓ Cancel anytime',
     waLearnMore: 'Assalamu alaikum, I am in {country} and would like to learn more about your Quran classes.',
     whyEyebrow: 'Why {country} Families Choose Us',
-    whyHeading: 'The Zad Academy Difference',
+    whyHeading: 'The Azhary Difference',
     schedulingEyebrow: 'Flexible Scheduling',
     schedulingHeading: 'Classes in Your Timezone',
     pricingEyebrow: 'Transparent Pricing',
@@ -448,18 +448,18 @@ export const en = {
 
   // Per-page SEO titles/descriptions for pages whose copy is not in a content file.
   meta: {
-    homeTitle: 'Online Quran Academy | 1-on-1 Classes | Zad Academy',
+    homeTitle: 'Online Quran Academy | 1-on-1 Classes',
     homeDescription: 'Learn Quran online with certified teachers from Al-Azhar. 1-on-1 Tajweed, Hifz, Arabic, and Islamic studies classes. Free trial available worldwide.',
-    coursesTitle: 'Online Quran & Arabic Courses | Zad Academy',
+    coursesTitle: 'Online Quran & Arabic Courses',
     coursesDescription: 'Browse all Quran, Tajweed, Hifz, Arabic, and Islamic Studies courses. 1-on-1 online classes with certified teachers. Free trial available.',
-    pricingTitle: 'Quran Class Pricing | Lesson Packages | Zad Academy',
+    pricingTitle: 'Quran Class Pricing | Lesson Packages',
     pricingDescription: 'Transparent lesson packages for online Quran classes. The more you book, the less you pay per lesson. Free first lesson, no contracts, cancel anytime.',
-    faqTitle: 'FAQ | Quran Classes Online | Zad Academy',
-    faqDescription: "Answers to common questions about Zad Academy's online Quran, Arabic, and Islamic Studies classes — teachers, pricing, scheduling, and more.",
-    contactTitle: 'Book a Free Trial Quran Class | Contact Zad Academy',
+    faqTitle: 'FAQ | Quran Classes Online',
+    faqDescription: "Answers to common questions about Azhary's online Quran, Arabic, and Islamic Studies classes — teachers, pricing, scheduling, and more.",
+    contactTitle: 'Book a Free Trial Quran Class | Contact Azhary',
     contactDescription: 'Book your free first Quran class. Fill out the form and we will match you with a certified teacher within 24 hours. No credit card required.',
-    blogTitle: 'Blog — Quran Learning Tips & Guides | Zad Academy',
-    blogDescription: 'Articles on Tajweed, Hifz, online Quran learning, and Islamic education from certified teachers at Zad Academy.',
+    blogTitle: 'Blog — Quran Learning Tips & Guides',
+    blogDescription: 'Articles on Tajweed, Hifz, online Quran learning, and Islamic education from certified teachers at Azhary.',
   },
 
   notFound: {
