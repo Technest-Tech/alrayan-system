@@ -32,7 +32,7 @@ export default function TasksPage() {
   return (
     <div className="min-w-0">
       {/* Header */}
-      <div className="rounded-2xl mb-5 overflow-hidden" style={{ background: 'linear-gradient(135deg, #0d2548 0%, #18483C 60%, #071528 100%)', boxShadow: '0 4px 24px rgb(11 31 58 / 0.18)' }}>
+      <div className="rounded-2xl mb-5 overflow-hidden" style={{ background: 'linear-gradient(135deg, #123A30 0%, #18483C 60%, #081F1A 100%)', boxShadow: '0 4px 24px rgb(11 31 58 / 0.18)' }}>
         <div style={{ height: 2, background: 'linear-gradient(90deg, transparent 0%, #C0A854 30%, #C0A854 70%, transparent 100%)' }} />
         <div className="relative px-5 py-4" style={{ overflow: 'hidden' }}>
           <svg className="absolute right-0 top-0 pointer-events-none select-none" width="220" height="90" aria-hidden>

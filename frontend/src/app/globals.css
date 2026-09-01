@@ -8,7 +8,7 @@
 
 @theme inline {
   /* Brand colors — use as bg-primary, text-secondary, etc. */
-  --color-primary:    #18483C;
+  --color-primary:    #0F332B;
   --color-secondary:  #0E7C5A;
   --color-accent:     #C0A854;
   --color-cream:      #F8F4ED;
@@ -18,8 +18,8 @@
   /* Subtle per-section background tints — each home section gets its own shade */
   --color-cream-warm: #FBF7EF; /* lighter, warmer cream */
   --color-cream-deep: #F2ECDF; /* deeper cream */
-  --color-navy-deep:  #081627; /* deeper navy */
-  --color-navy-soft:  #0C2547; /* lighter, bluer navy */
+  --color-navy-deep:  #071E19; /* deepest green surface */
+  --color-navy-soft:  #123A30; /* mid green surface */
   --color-mint-soft:  #EAF3EE; /* soft green-tinted background */
 
   /* Shadcn semantic aliases (maps to our brand) */
@@ -86,7 +86,7 @@
 
   /* Accent — our gold */
   --accent:            #C0A854;
-  --accent-foreground: #18483C;
+  --accent-foreground: #0F332B;
 
   /* Destructive */
   --destructive: oklch(0.577 0.245 27.325);

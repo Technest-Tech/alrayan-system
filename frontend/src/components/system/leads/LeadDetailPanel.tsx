@@ -233,7 +233,7 @@ export function LeadDetailPanel({ leadId, onClose, onEdit }: Props) {
         {/* ── Dark navy header ── */}
         <div
           className="shrink-0 overflow-hidden"
-          style={{ background: 'linear-gradient(135deg, #0d2548 0%, #18483C 65%, #071528 100%)' }}
+          style={{ background: 'linear-gradient(135deg, #123A30 0%, #18483C 65%, #081F1A 100%)' }}
         >
           {/* Gold top line */}
           <div style={{ height: 2, background: 'linear-gradient(90deg, transparent, #C0A854, transparent)' }} />

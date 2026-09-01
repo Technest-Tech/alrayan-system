@@ -31,7 +31,7 @@ export async function Hero() {
   return (
     <section
       className="relative min-h-screen flex items-center overflow-hidden"
-      style={{ background: 'linear-gradient(135deg, #18483C 0%, #0E2649 55%, #18483C 100%)' }}
+      style={{ background: 'linear-gradient(135deg, #18483C 0%, #0C2B24 55%, #18483C 100%)' }}
       aria-labelledby="hero-heading"
     >
       {/* ── Animated background ── */}

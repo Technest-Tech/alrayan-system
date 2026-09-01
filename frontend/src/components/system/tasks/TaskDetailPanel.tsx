@@ -66,7 +66,7 @@ export function TaskDetailPanel({ taskId, canDecide, onClose }: Props) {
         style={{ background: 'rgb(244 246 250)', maxHeight: '90vh' }}
       >
         {/* Header */}
-        <div className="shrink-0" style={{ background: 'linear-gradient(135deg, #0d2548 0%, #18483C 65%, #071528 100%)' }}>
+        <div className="shrink-0" style={{ background: 'linear-gradient(135deg, #123A30 0%, #18483C 65%, #081F1A 100%)' }}>
           <div style={{ height: 2, background: 'linear-gradient(90deg, transparent, #C0A854, transparent)' }} />
           <div className="px-5 py-4">
             <div className="flex items-start gap-3">

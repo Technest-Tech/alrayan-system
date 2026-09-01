@@ -64,11 +64,12 @@ export async function Footer() {
                 className="inline-block"
               >
                 <Image
-                  src="/logo/azhary.png"
+                  /* Footer is always the deep-green surface, so the cream mark. */
+                  src="/logo/azhary-light.png"
                   alt="Azhary"
                   width={512}
                   height={512}
-                  className="h-28 w-auto rounded-xl"
+                  className="h-28 w-auto"
                 />
               </Link>
 

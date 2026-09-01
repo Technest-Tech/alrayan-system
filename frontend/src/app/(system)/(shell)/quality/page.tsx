@@ -57,7 +57,7 @@ export default function QualityControlPage() {
   return (
     <div className="min-w-0 space-y-5">
       {/* Hero header */}
-      <div className="rounded-2xl overflow-hidden" style={{ background: 'linear-gradient(135deg, #0d2548 0%, #18483C 60%, #071528 100%)', boxShadow: '0 4px 24px rgb(11 31 58 / 0.18)' }}>
+      <div className="rounded-2xl overflow-hidden" style={{ background: 'linear-gradient(135deg, #123A30 0%, #18483C 60%, #081F1A 100%)', boxShadow: '0 4px 24px rgb(11 31 58 / 0.18)' }}>
         <div style={{ height: 2, background: 'linear-gradient(90deg, transparent 0%, #C0A854 30%, #C0A854 70%, transparent 100%)' }} />
         <div className="relative px-5 py-4 flex items-center justify-between gap-4">
           <div className="flex items-center gap-3 min-w-0">

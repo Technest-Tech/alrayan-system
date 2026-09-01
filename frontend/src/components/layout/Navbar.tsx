@@ -55,7 +55,7 @@ export function Navbar() {
   const navClass = cn(
     'fixed top-0 left-0 right-0 z-50 transition-all duration-300',
     scrolled
-      ? 'bg-[#18483C]/95 backdrop-blur-md shadow-[0_8px_30px_rgba(0,0,0,0.35)] border-b border-white/10'
+      ? 'bg-[#0F332B]/95 backdrop-blur-md shadow-[0_8px_30px_rgba(0,0,0,0.35)] border-b border-white/10'
       : hasDarkHero
         ? 'bg-transparent'
         : 'bg-white/92 backdrop-blur-md shadow-soft border-b border-border-soft',
@@ -110,12 +110,14 @@ export function Navbar() {
             className="flex items-center leading-none group"
           >
             <Image
-              src="/logo/azhary.png"
+              /* The mark is drawn in the same deep green as the bar, so over a
+                 dark bar it would vanish (1.01:1). Use the cream variant there. */
+              src={useLightText ? '/logo/azhary-light.png' : '/logo/azhary.png'}
               alt="Azhary"
               width={512}
               height={512}
               priority
-              className="h-14 w-auto rounded-lg sm:h-16 md:h-20 lg:h-24"
+              className="h-14 w-auto sm:h-16 md:h-20 lg:h-24"
             />
           </Link>
 

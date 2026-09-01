@@ -10,7 +10,7 @@ export default function LoginPage() {
       {/* ── Left panel ───────────────────────────────────────────────── */}
       <div
         className="hidden lg:flex flex-col relative overflow-hidden w-[52%] shrink-0"
-        style={{ background: 'linear-gradient(160deg, #0d2548 0%, #18483C 55%, #071528 100%)' }}
+        style={{ background: 'linear-gradient(160deg, #123A30 0%, #18483C 55%, #081F1A 100%)' }}
       >
         {/* Decorative geometric background — echoes the brand mark */}
         <svg

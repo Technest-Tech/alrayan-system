@@ -45,7 +45,7 @@ export default function CrmPage() {
       <div
         className="rounded-2xl mb-5 overflow-hidden"
         style={{
-          background: 'linear-gradient(135deg, #0d2548 0%, #18483C 60%, #071528 100%)',
+          background: 'linear-gradient(135deg, #123A30 0%, #18483C 60%, #081F1A 100%)',
           boxShadow: '0 4px 24px rgb(11 31 58 / 0.18)',
         }}
       >
