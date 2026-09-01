@@ -5,23 +5,32 @@ import { Container } from '@/components/layout/Container'
 import { LinkButton } from '@/components/ui/link-button'
 import { whatsappLink } from '@/config/site'
 import { faqSchema, breadcrumbSchema } from '@/lib/schema'
-import { faqs, faqPageContent } from '@/content/faq'
+import { getFaqs, getFaqPageContent } from '@/content/faq'
 import { FaqContent } from '@/components/conversion/FaqContent'
+import { getLocale } from '@/i18n/getLocale'
+import { getT } from '@/i18n/getDictionary'
+import { localizedHref } from '@/i18n/href'
 
-export const metadata: Metadata = buildMetadata({
-  title: 'FAQ | Quran Classes Online | Azhary',
-  description:
-    "Answers to common questions about Azhary's online Quran, Arabic, and Islamic Studies classes — teachers, pricing, scheduling, and more.",
-  path: '/faq',
-})
+export async function generateMetadata(): Promise<Metadata> {
+  const locale = await getLocale()
+  const t = getT(locale)
+  return buildMetadata({
+    title: t('meta.faqTitle'),
+    description: t('meta.faqDescription'),
+    path: '/faq',
+    locale,
+  })
+}
 
-export default function FaqPage() {
-  const { hero, cta } = faqPageContent
+export default async function FaqPage() {
+  const locale = await getLocale()
+  const t = getT(locale)
+  const { hero, cta } = getFaqPageContent(locale)
   const schemas = [
-    faqSchema(faqs.map(({ q, a }) => ({ q, a }))),
+    faqSchema(getFaqs(locale).map(({ q, a }) => ({ q, a }))),
     breadcrumbSchema([
-      { name: 'Home', href: '/' },
-      { name: 'FAQ', href: '/faq' },
+      { name: t('nav.home'), href: localizedHref('/', locale) },
+      { name: t('nav.faq'), href: localizedHref('/faq', locale) },
     ]),
   ]
 
@@ -44,7 +53,7 @@ export default function FaqPage() {
           className="absolute inset-0 opacity-[0.07]"
           style={{
             backgroundImage:
-              'radial-gradient(circle at 20% 80%, #C9A24B 0%, transparent 50%), radial-gradient(circle at 80% 20%, #0E7C5A 0%, transparent 50%)',
+              'radial-gradient(circle at 20% 80%, #C0A854 0%, transparent 50%), radial-gradient(circle at 80% 20%, #0E7C5A 0%, transparent 50%)',
           }}
           aria-hidden="true"
         />

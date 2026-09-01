@@ -23,7 +23,7 @@ const CUR: Record<string, string> = { USD: '$', EUR: '€', GBP: '£', EGP: 'E£
 const sym = (c?: string) => CUR[c ?? 'USD'] ?? `${c} `
 const money = (minor: number, c?: string) => `${sym(c)}${(minor / 100).toLocaleString(undefined, { maximumFractionDigits: 0 })}`
 
-const PALETTE = ['#0E7C5A', '#0B1F3A', '#1E5AAB', '#7C3AED', '#B45309', '#BE185D', '#C05621']
+const PALETTE = ['#0E7C5A', '#18483C', '#1E5AAB', '#7C3AED', '#B45309', '#BE185D', '#C05621']
 const initials = (n: string) => n.split(' ').slice(0, 2).map((p) => p[0]?.toUpperCase() ?? '').join('')
 function avatarColor(name: string) {
   let h = 0

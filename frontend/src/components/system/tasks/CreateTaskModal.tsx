@@ -49,9 +49,9 @@ export function CreateTaskModal({ open, onOpenChange }: Props) {
 
   return (
     <>
-      <div className="fixed inset-0 z-50 bg-[#0B1F3A]/40 backdrop-blur-sm" onClick={() => onOpenChange(false)} />
+      <div className="fixed inset-0 z-50 bg-[#18483C]/40 backdrop-blur-sm" onClick={() => onOpenChange(false)} />
       <div className="fixed left-1/2 top-1/2 z-50 w-full max-w-lg -translate-x-1/2 -translate-y-1/2 rounded-2xl bg-white shadow-2xl overflow-hidden">
-        <div style={{ height: 2, background: 'linear-gradient(90deg, transparent, #C9A24B, transparent)' }} />
+        <div style={{ height: 2, background: 'linear-gradient(90deg, transparent, #C0A854, transparent)' }} />
         <div className="flex items-center justify-between px-5 py-4 border-b" style={{ borderColor: 'rgb(229 233 240)' }}>
           <h2 className="text-lg font-bold" style={{ color: 'rgb(11 31 58)' }}>{t('tasks.createTask')}</h2>
           <button onClick={() => onOpenChange(false)} className="p-1.5 rounded-lg hover:bg-gray-100">
@@ -125,7 +125,7 @@ export function CreateTaskModal({ open, onOpenChange }: Props) {
             onClick={submit}
             disabled={create.isPending}
             className="px-4 py-2 rounded-lg text-sm font-semibold text-white disabled:opacity-50"
-            style={{ background: '#0B1F3A' }}
+            style={{ background: '#18483C' }}
           >
             {create.isPending ? t('common.creating') : t('tasks.createTask')}
           </button>

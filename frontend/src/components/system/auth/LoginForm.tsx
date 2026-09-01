@@ -67,7 +67,7 @@ export function LoginForm() {
           placeholder="you@alrayan-academy.com"
           className={[
             'w-full px-4 py-3 rounded-xl text-sm outline-none transition-all',
-            'focus:bg-white focus:border-[#C9A24B]',
+            'focus:bg-white focus:border-[#C0A854]',
             errors.email
               ? 'border-[1.5px] border-[rgb(var(--status-danger,166_39_30))]'
               : 'border-[1.5px] border-[rgb(var(--border-default,229_233_240))]',
@@ -95,9 +95,9 @@ export function LoginForm() {
           <a
             href="/forgot-password"
             className="text-xs transition-colors"
-            style={{ color: '#C9A24B' }}
+            style={{ color: '#C0A854' }}
             onMouseEnter={e => (e.currentTarget.style.color = '#a07d30')}
-            onMouseLeave={e => (e.currentTarget.style.color = '#C9A24B')}
+            onMouseLeave={e => (e.currentTarget.style.color = '#C0A854')}
           >
             Forgot password?
           </a>
@@ -110,7 +110,7 @@ export function LoginForm() {
             placeholder="••••••••••"
             className={[
               'w-full px-4 py-3 pr-11 rounded-xl text-sm outline-none transition-all',
-              'focus:bg-white focus:border-[#C9A24B]',
+              'focus:bg-white focus:border-[#C0A854]',
               errors.password
                 ? 'border-[1.5px] border-[rgb(var(--status-danger,166_39_30))]'
                 : 'border-[1.5px] border-[rgb(var(--border-default,229_233_240))]',
@@ -153,7 +153,7 @@ export function LoginForm() {
         style={{
           background: isSubmitting
             ? 'rgb(11 31 58 / 0.7)'
-            : 'linear-gradient(135deg, #0B1F3A 0%, #163566 100%)',
+            : 'linear-gradient(135deg, #18483C 0%, #163566 100%)',
           boxShadow: isSubmitting ? 'none' : '0 4px 14px rgba(11,31,58,0.3)',
           letterSpacing: '0.03em',
         }}

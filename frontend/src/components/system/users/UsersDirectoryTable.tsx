@@ -27,7 +27,7 @@ const STATUS_COLORS: Record<UserStatus, string> = {
   active: 'rgb(11 31 58)', inactive: 'rgb(90 100 112)', suspended: 'rgb(166 39 30)', archived: 'rgb(90 100 112)',
 }
 
-const PALETTE = ['#0E7C5A', '#0B1F3A', '#1E5AAB', '#7C3AED', '#B45309', '#BE185D', '#C05621']
+const PALETTE = ['#0E7C5A', '#18483C', '#1E5AAB', '#7C3AED', '#B45309', '#BE185D', '#C05621']
 const initials = (name: string) => name.split(' ').slice(0, 2).map((n) => n[0]?.toUpperCase() ?? '').join('')
 function avatarColor(name: string) {
   let h = 0

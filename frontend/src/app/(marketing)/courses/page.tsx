@@ -5,7 +5,10 @@ import { Section } from '@/components/layout/Section'
 import { Container } from '@/components/layout/Container'
 import { LinkButton } from '@/components/ui/link-button'
 import { whatsappLink } from '@/config/site'
-import { courses } from '@/content/courses'
+import { courses, getCourses } from '@/content/courses'
+import { getLocale } from '@/i18n/getLocale'
+import { getT } from '@/i18n/getDictionary'
+import { localizedHref } from '@/i18n/href'
 import {
   BookOpen,
   Star,
@@ -20,12 +23,16 @@ import {
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 
-export const metadata: Metadata = buildMetadata({
-  title: 'Online Quran & Arabic Courses | Azhary',
-  description:
-    'Browse all Quran, Tajweed, Hifz, Arabic, and Islamic Studies courses. 1-on-1 online classes with certified teachers. Free trial available.',
-  path: '/courses',
-})
+export async function generateMetadata(): Promise<Metadata> {
+  const locale = await getLocale()
+  const t = getT(locale)
+  return buildMetadata({
+    title: t('meta.coursesTitle'),
+    description: t('meta.coursesDescription'),
+    path: '/courses',
+    locale,
+  })
+}
 
 const iconMap: Record<string, LucideIcon> = {
   BookOpen,
@@ -47,10 +54,13 @@ const levelColors: Record<string, string> = {
   'All Levels': 'bg-blue-100 text-blue-800',
 }
 
-export default function CoursesPage() {
+export default async function CoursesPage() {
+  const locale = await getLocale()
+  const t = getT(locale)
+  const localizedCourses = getCourses(locale)
   const crumbs = breadcrumbSchema([
-    { name: 'Home', href: '/' },
-    { name: 'Courses', href: '/courses' },
+    { name: t('nav.home'), href: localizedHref('/', locale) },
+    { name: t('nav.courses'), href: localizedHref('/courses', locale) },
   ])
 
   return (
@@ -69,26 +79,26 @@ export default function CoursesPage() {
           className="absolute inset-0 opacity-[0.07]"
           style={{
             backgroundImage:
-              'radial-gradient(circle at 20% 80%, #C9A24B 0%, transparent 50%), radial-gradient(circle at 80% 20%, #0E7C5A 0%, transparent 50%)',
+              'radial-gradient(circle at 20% 80%, #C0A854 0%, transparent 50%), radial-gradient(circle at 80% 20%, #0E7C5A 0%, transparent 50%)',
           }}
           aria-hidden="true"
         />
         <Container className="relative text-center">
           <p className="text-accent text-sm font-semibold uppercase tracking-widest mb-4">
-            All Courses
+            {t('coursesIndex.eyebrow')}
           </p>
           <h1
             id="courses-index-heading"
             className="heading-display font-display text-white text-balance mb-6 max-w-4xl mx-auto"
           >
-            Learn Quran, Arabic &amp; Islamic Studies Online
+            {t('coursesIndex.heading')}
           </h1>
           <p className="text-white/70 text-xl leading-relaxed max-w-2xl mx-auto mb-10">
-            Every program is 1-on-1 with a certified teacher — scheduled around your life, at your pace.
+            {t('coursesIndex.subheading')}
           </p>
           <div className="flex flex-wrap justify-center gap-4">
-            <LinkButton href="/contact" size="lg" variant="gold">
-              Book Free Trial Class
+            <LinkButton href={localizedHref('/contact', locale)} size="lg" variant="gold">
+              {t('nav.bookFreeTrial')}
             </LinkButton>
             <a
               href={whatsappLink()}
@@ -96,7 +106,7 @@ export default function CoursesPage() {
               rel="noopener noreferrer"
               className="flex items-center gap-2.5 h-14 px-7 rounded-xl border border-white/30 text-white text-base font-medium hover:border-accent hover:text-accent transition-colors"
             >
-              Chat on WhatsApp
+              {t('nav.chatWhatsapp')}
             </a>
           </div>
         </Container>
@@ -107,25 +117,25 @@ export default function CoursesPage() {
         <Container>
           <div className="text-center mb-14">
             <p className="text-secondary text-sm font-semibold uppercase tracking-wider mb-3">
-              11 Programs
+              {t('coursesIndex.programs', { n: localizedCourses.length })}
             </p>
             <h2 id="all-courses-heading" className="heading-xl font-heading text-primary mb-4">
-              Find the Right Program for You
+              {t('coursesIndex.findHeading')}
             </h2>
             <p className="text-muted-text text-lg max-w-xl mx-auto">
-              From complete beginners to advanced students seeking Ijazah — every program is
-              available 1-on-1 with a certified teacher.
+              {t('coursesIndex.findSubheading')}
             </p>
           </div>
 
           <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6" role="list">
-            {courses.map(({ slug, title, shortDescription, icon, level, ageGroup, durationMonths, features }) => {
+            {localizedCourses.map(({ slug, title, shortDescription, icon, level, ageGroup, durationMonths, features }, i) => {
               const Icon = iconMap[icon] ?? BookOpen
-              const levelColor = levelColors[level] ?? levelColors['All Levels']
+              // `level` is translated, so key the badge colour off the English source at the same index.
+              const levelColor = levelColors[courses[i].level] ?? levelColors['All Levels']
               return (
                 <li key={slug}>
                   <a
-                    href={`/courses/${slug}`}
+                    href={localizedHref(`/courses/${slug}`, locale)}
                     className="group flex flex-col h-full bg-white rounded-2xl p-7 border border-border-soft shadow-soft hover:shadow-md hover:border-secondary/30 transition-all duration-200"
                   >
                     <div className="flex items-start justify-between mb-5">
@@ -143,7 +153,7 @@ export default function CoursesPage() {
                         )}
                         {durationMonths && (
                           <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-gray-100 text-gray-700">
-                            {durationMonths} mo
+                            {durationMonths} {t('coursesIndex.months')}
                           </span>
                         )}
                       </div>
@@ -152,7 +162,7 @@ export default function CoursesPage() {
                     <h3 className="font-heading font-semibold text-primary text-lg mb-2">{title}</h3>
                     <p className="text-muted-text text-sm leading-relaxed mb-4 flex-1">{shortDescription}</p>
 
-                    <ul className="space-y-1 mb-5" aria-label={`${title} features`}>
+                    <ul className="space-y-1 mb-5" aria-label={t('coursesIndex.featuresAria', { title })}>
                       {features.slice(0, 2).map((f) => (
                         <li key={f} className="flex items-center gap-2 text-xs text-muted-text">
                           <span className="size-1.5 rounded-full bg-secondary shrink-0" aria-hidden="true" />
@@ -162,7 +172,7 @@ export default function CoursesPage() {
                     </ul>
 
                     <span className="flex items-center justify-between text-secondary text-sm font-semibold">
-                      Learn more
+                      {t('coursesIndex.learnMore')}
                       <span
                         className="text-xl font-display group-hover:translate-x-1 transition-transform"
                         aria-hidden="true"
@@ -186,17 +196,17 @@ export default function CoursesPage() {
               خَيْرُكُمْ مَنْ تَعَلَّمَ الْقُرْآنَ وَعَلَّمَهُ
             </p>
             <p className="text-white/60 text-sm italic mb-8">
-              &ldquo;The best of you are those who learn the Quran and teach it.&rdquo; — Prophet Muhammad ﷺ
+              {t('coursesIndex.hadith')}
             </p>
             <h2 id="courses-cta-heading" className="heading-xl font-display text-white mb-4">
-              Start With a Free Trial Class
+              {t('coursesIndex.ctaHeading')}
             </h2>
             <p className="text-white/70 text-lg mb-10">
-              Pick any course and book your first class completely free — no credit card, no commitment.
+              {t('coursesIndex.ctaSubheading')}
             </p>
             <div className="flex flex-wrap justify-center gap-4">
-              <LinkButton href="/contact" size="lg" variant="gold">
-                Book Free Trial Class
+              <LinkButton href={localizedHref('/contact', locale)} size="lg" variant="gold">
+                {t('nav.bookFreeTrial')}
               </LinkButton>
               <a
                 href={whatsappLink()}
@@ -204,7 +214,7 @@ export default function CoursesPage() {
                 rel="noopener noreferrer"
                 className="flex items-center gap-2.5 h-14 px-7 rounded-xl border border-white/30 text-white font-medium hover:border-accent hover:text-accent transition-colors"
               >
-                Chat on WhatsApp
+                {t('nav.chatWhatsapp')}
               </a>
             </div>
           </div>

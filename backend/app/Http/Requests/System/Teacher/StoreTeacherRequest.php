@@ -12,7 +12,7 @@ class StoreTeacherRequest extends FormRequest
     {
         return [
             'name'                    => ['required', 'string', 'max:255'],
-            'email'                   => ['required', 'email', 'unique:users,email'],
+            'email'                   => ['required', 'email', 'max:255', 'unique:users,email'],
             'password'                => ['required', 'string', 'min:8'],
             'phone'                   => ['nullable', 'string', 'max:32'],
             'whatsapp'                => ['nullable', 'string', 'max:32'],

@@ -13,7 +13,7 @@
 
     /* Gold accent — primary action buttons. Defined as an RGB triplet so
        `rgb(var(--accent))` resolves correctly (the marketing :root --accent is
-       a hex and would produce invalid `rgb(#C9A24B)` → invisible buttons). */
+       a hex and would produce invalid `rgb(#C0A854)` → invisible buttons). */
     --accent:            201 162 75;
     --accent-foreground: 11 31 58;
 

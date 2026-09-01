@@ -68,32 +68,32 @@ function TemplatePicker({ onSelect }: { onSelect: (t: Template) => void }) {
             <svg style={{ position: 'absolute', inset: 0 }} width="100%" height="100%">
               <defs>
                 <pattern id="th-cl-bg" x="0" y="0" width="18" height="18" patternUnits="userSpaceOnUse">
-                  <path d="M9,0 L18,9 L9,18 L0,9 Z" fill="none" stroke="#C9A24B" strokeWidth="0.4" opacity="0.12" />
+                  <path d="M9,0 L18,9 L9,18 L0,9 Z" fill="none" stroke="#C0A854" strokeWidth="0.4" opacity="0.12" />
                 </pattern>
               </defs>
               <rect width="100%" height="100%" fill="url(#th-cl-bg)" />
             </svg>
 
             {/* Gold double border */}
-            <div style={{ position: 'absolute', inset: 10, border: '2px solid #C9A24B' }} />
-            <div style={{ position: 'absolute', inset: 14, border: '1px solid #C9A24B' }} />
+            <div style={{ position: 'absolute', inset: 10, border: '2px solid #C0A854' }} />
+            <div style={{ position: 'absolute', inset: 14, border: '1px solid #C0A854' }} />
 
             {/* Mid-point diamond ornaments */}
             <svg style={{ position: 'absolute', inset: 0 }} width="100%" height="100%">
-              <polygon points="148,10 152,14 148,18 144,14" fill="#C9A24B" opacity="0.5" />
-              <polygon points="148,178 152,182 148,186 144,182" fill="#C9A24B" opacity="0.5" />
-              <polygon points="10,98 14,102 18,98 14,94" fill="#C9A24B" opacity="0.5" />
-              <polygon points="278,98 282,102 286,98 282,94" fill="#C9A24B" opacity="0.5" />
+              <polygon points="148,10 152,14 148,18 144,14" fill="#C0A854" opacity="0.5" />
+              <polygon points="148,178 152,182 148,186 144,182" fill="#C0A854" opacity="0.5" />
+              <polygon points="10,98 14,102 18,98 14,94" fill="#C0A854" opacity="0.5" />
+              <polygon points="278,98 282,102 286,98 282,94" fill="#C0A854" opacity="0.5" />
             </svg>
 
             {/* Corner khatam stars */}
             <svg style={{ position: 'absolute', inset: 0 }} width="100%" height="100%" viewBox="0 0 296 196">
-              <ThumbnailStar cx={14} cy={14} size={18} fill="#C9A24B" />
-              <ThumbnailStar cx={282} cy={14} size={18} fill="#C9A24B" />
-              <ThumbnailStar cx={14} cy={182} size={18} fill="#C9A24B" />
-              <ThumbnailStar cx={282} cy={182} size={18} fill="#C9A24B" />
+              <ThumbnailStar cx={14} cy={14} size={18} fill="#C0A854" />
+              <ThumbnailStar cx={282} cy={14} size={18} fill="#C0A854" />
+              <ThumbnailStar cx={14} cy={182} size={18} fill="#C0A854" />
+              <ThumbnailStar cx={282} cy={182} size={18} fill="#C0A854" />
               {/* Large central watermark */}
-              <ThumbnailStar cx={148} cy={98} size={80} fill="#C9A24B" opacity={0.04} />
+              <ThumbnailStar cx={148} cy={98} size={80} fill="#C0A854" opacity={0.04} />
             </svg>
 
             {/* Content */}
@@ -101,27 +101,27 @@ function TemplatePicker({ onSelect }: { onSelect: (t: Template) => void }) {
               {/* Bismillah hint */}
               <div style={{ fontSize: 9, color: '#9B7A2E', fontFamily: 'serif', direction: 'rtl', marginBottom: 1 }}>بسم الله الرحمن الرحيم</div>
               {/* Logo circle */}
-              <div style={{ width: 28, height: 28, borderRadius: '50%', background: '#E8DFC8', border: '1px solid #C9A24B' }} />
+              <div style={{ width: 28, height: 28, borderRadius: '50%', background: '#E8DFC8', border: '1px solid #C0A854' }} />
               {/* Academy name */}
               <div style={{ width: 90, height: 5, background: '#7A6030', borderRadius: 2, opacity: 0.5 }} />
               {/* Arabic name */}
-              <div style={{ width: 60, height: 5, background: '#C9A24B', borderRadius: 2, opacity: 0.6 }} />
+              <div style={{ width: 60, height: 5, background: '#C0A854', borderRadius: 2, opacity: 0.6 }} />
               {/* Divider with star */}
               <svg width={110} height={10} viewBox="0 0 110 10">
-                <line x1={0} y1={5} x2={48} y2={5} stroke="#C9A24B" strokeWidth={0.6} opacity={0.7} />
-                <line x1={62} y1={5} x2={110} y2={5} stroke="#C9A24B" strokeWidth={0.6} opacity={0.7} />
-                <ThumbnailStar cx={55} cy={5} size={12} fill="#C9A24B" />
+                <line x1={0} y1={5} x2={48} y2={5} stroke="#C0A854" strokeWidth={0.6} opacity={0.7} />
+                <line x1={62} y1={5} x2={110} y2={5} stroke="#C0A854" strokeWidth={0.6} opacity={0.7} />
+                <ThumbnailStar cx={55} cy={5} size={12} fill="#C0A854" />
               </svg>
               {/* Title */}
               <div style={{ width: 105, height: 8, background: '#1C1208', borderRadius: 2, opacity: 0.6 }} />
               {/* Student name with rules */}
-              <div style={{ width: '80%', height: 0.5, background: '#C9A24B', opacity: 0.7 }} />
-              <div style={{ width: 110, height: 9, background: '#0B1F3A', borderRadius: 2, opacity: 0.4 }} />
-              <div style={{ width: '80%', height: 0.5, background: '#C9A24B', opacity: 0.7 }} />
+              <div style={{ width: '80%', height: 0.5, background: '#C0A854', opacity: 0.7 }} />
+              <div style={{ width: 110, height: 9, background: '#18483C', borderRadius: 2, opacity: 0.4 }} />
+              <div style={{ width: '80%', height: 0.5, background: '#C0A854', opacity: 0.7 }} />
               {/* Signatures */}
               <div style={{ display: 'flex', justifyContent: 'space-between', width: 110, marginTop: 5 }}>
-                <div style={{ width: 42, height: 0.5, background: '#C9A24B', opacity: 0.5, marginTop: 8 }} />
-                <div style={{ width: 42, height: 0.5, background: '#C9A24B', opacity: 0.5, marginTop: 8 }} />
+                <div style={{ width: 42, height: 0.5, background: '#C0A854', opacity: 0.5, marginTop: 8 }} />
+                <div style={{ width: 42, height: 0.5, background: '#C0A854', opacity: 0.5, marginTop: 8 }} />
               </div>
             </div>
           </div>
@@ -142,7 +142,7 @@ function TemplatePicker({ onSelect }: { onSelect: (t: Template) => void }) {
           <div style={{ background: '#F9FAFB', position: 'relative', height: 196, overflow: 'hidden' }}>
 
             {/* Navy header with circle pattern */}
-            <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 58, background: '#0B1F3A', overflow: 'hidden' }}>
+            <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 58, background: '#18483C', overflow: 'hidden' }}>
               {/* Circle lattice in header */}
               <svg style={{ position: 'absolute', inset: 0, opacity: 0.18 }} width="100%" height="100%">
                 <defs>
@@ -158,12 +158,12 @@ function TemplatePicker({ onSelect }: { onSelect: (t: Template) => void }) {
               </svg>
               {/* Khatam stars in header */}
               <svg style={{ position: 'absolute', inset: 0 }} width="100%" height="58" viewBox="0 0 296 58">
-                <ThumbnailStar cx={148} cy={29} size={60} fill="#C9A24B" opacity={0.08} />
+                <ThumbnailStar cx={148} cy={29} size={60} fill="#C0A854" opacity={0.08} />
                 <ThumbnailStar cx={8} cy={8} size={10} fill="white" opacity={0.2} />
                 <ThumbnailStar cx={288} cy={8} size={10} fill="white" opacity={0.2} />
               </svg>
               {/* Gold bar */}
-              <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 2.5, background: '#C9A24B' }} />
+              <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 2.5, background: '#C0A854' }} />
               {/* Logo + name */}
               <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7 }}>
                 <div style={{ width: 20, height: 20, borderRadius: '50%', background: 'rgba(255,255,255,0.18)' }} />
@@ -175,11 +175,11 @@ function TemplatePicker({ onSelect }: { onSelect: (t: Template) => void }) {
             </div>
 
             {/* Left gold accent */}
-            <div style={{ position: 'absolute', left: 0, top: 60.5, bottom: 22, width: 3, background: '#C9A24B' }} />
+            <div style={{ position: 'absolute', left: 0, top: 60.5, bottom: 22, width: 3, background: '#C0A854' }} />
             {/* Right khatam column */}
             <svg style={{ position: 'absolute', right: 0, top: 58, width: 20, height: 116 }} viewBox="0 0 20 116">
               {[20, 48, 76, 104].map((y, i) => (
-                <ThumbnailStar key={i} cx={10} cy={y} size={14} fill="#C9A24B" opacity={0.13} />
+                <ThumbnailStar key={i} cx={10} cy={y} size={14} fill="#C0A854" opacity={0.13} />
               ))}
             </svg>
 
@@ -187,7 +187,7 @@ function TemplatePicker({ onSelect }: { onSelect: (t: Template) => void }) {
             <svg style={{ position: 'absolute', top: 60, left: 0, right: 0, bottom: 22, opacity: 0.04 }} width="100%" height="100%">
               <defs>
                 <pattern id="th-md-body" x="0" y="0" width="20" height="20" patternUnits="userSpaceOnUse">
-                  <path d="M10,0 L20,10 L10,20 L0,10 Z" fill="none" stroke="#0B1F3A" strokeWidth="0.4" />
+                  <path d="M10,0 L20,10 L10,20 L0,10 Z" fill="none" stroke="#18483C" strokeWidth="0.4" />
                 </pattern>
               </defs>
               <rect width="100%" height="100%" fill="url(#th-md-body)" />
@@ -195,31 +195,31 @@ function TemplatePicker({ onSelect }: { onSelect: (t: Template) => void }) {
 
             {/* Mock content */}
             <div style={{ position: 'absolute', top: 65, left: 8, right: 20, bottom: 26, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 4, textAlign: 'center' }}>
-              <div style={{ fontSize: 7, color: '#C9A24B', direction: 'rtl', fontFamily: 'serif' }}>بسم الله الرحمن الرحيم</div>
-              <div style={{ width: 55, height: 3, background: '#C9A24B', borderRadius: 2, opacity: 0.65 }} />
-              <div style={{ width: 105, height: 10, background: '#0B1F3A', borderRadius: 2, opacity: 0.65 }} />
+              <div style={{ fontSize: 7, color: '#C0A854', direction: 'rtl', fontFamily: 'serif' }}>بسم الله الرحمن الرحيم</div>
+              <div style={{ width: 55, height: 3, background: '#C0A854', borderRadius: 2, opacity: 0.65 }} />
+              <div style={{ width: 105, height: 10, background: '#18483C', borderRadius: 2, opacity: 0.65 }} />
               {/* Diamond divider */}
               <svg width={90} height={8} viewBox="0 0 90 8">
-                <line x1={0} y1={4} x2={37} y2={4} stroke="#C9A24B" strokeWidth={0.6} opacity={0.7} />
-                <line x1={53} y1={4} x2={90} y2={4} stroke="#C9A24B" strokeWidth={0.6} opacity={0.7} />
-                <ThumbnailStar cx={45} cy={4} size={10} fill="#C9A24B" />
+                <line x1={0} y1={4} x2={37} y2={4} stroke="#C0A854" strokeWidth={0.6} opacity={0.7} />
+                <line x1={53} y1={4} x2={90} y2={4} stroke="#C0A854" strokeWidth={0.6} opacity={0.7} />
+                <ThumbnailStar cx={45} cy={4} size={10} fill="#C0A854" />
               </svg>
               {/* Student name framed */}
               <div style={{ display: 'flex', alignItems: 'center', gap: 5, width: 130 }}>
-                <div style={{ flex: 1, height: 0.5, background: 'linear-gradient(to right, transparent, #C9A24B)' }} />
-                <svg width={7} height={7} viewBox="0 0 100 100"><path d={S8} fill="#C9A24B" /></svg>
-                <div style={{ flex: 1, height: 0.5, background: 'linear-gradient(to left, transparent, #C9A24B)' }} />
+                <div style={{ flex: 1, height: 0.5, background: 'linear-gradient(to right, transparent, #C0A854)' }} />
+                <svg width={7} height={7} viewBox="0 0 100 100"><path d={S8} fill="#C0A854" /></svg>
+                <div style={{ flex: 1, height: 0.5, background: 'linear-gradient(to left, transparent, #C0A854)' }} />
               </div>
-              <div style={{ width: 115, height: 12, background: '#0B1F3A', borderRadius: 2, opacity: 0.35 }} />
+              <div style={{ width: 115, height: 12, background: '#18483C', borderRadius: 2, opacity: 0.35 }} />
               <div style={{ display: 'flex', alignItems: 'center', gap: 5, width: 130 }}>
-                <div style={{ flex: 1, height: 0.5, background: 'linear-gradient(to right, transparent, #C9A24B)' }} />
-                <svg width={7} height={7} viewBox="0 0 100 100"><path d={S8} fill="#C9A24B" /></svg>
-                <div style={{ flex: 1, height: 0.5, background: 'linear-gradient(to left, transparent, #C9A24B)' }} />
+                <div style={{ flex: 1, height: 0.5, background: 'linear-gradient(to right, transparent, #C0A854)' }} />
+                <svg width={7} height={7} viewBox="0 0 100 100"><path d={S8} fill="#C0A854" /></svg>
+                <div style={{ flex: 1, height: 0.5, background: 'linear-gradient(to left, transparent, #C0A854)' }} />
               </div>
               <div style={{ width: 72, height: 5.5, background: '#0E7C5A', borderRadius: 2, opacity: 0.7 }} />
               <div style={{ display: 'flex', justifyContent: 'space-between', width: 110, marginTop: 4 }}>
-                <div style={{ width: 42, height: 1.5, background: '#0B1F3A', opacity: 0.4 }} />
-                <div style={{ width: 42, height: 1.5, background: '#0B1F3A', opacity: 0.4 }} />
+                <div style={{ width: 42, height: 1.5, background: '#18483C', opacity: 0.4 }} />
+                <div style={{ width: 42, height: 1.5, background: '#18483C', opacity: 0.4 }} />
               </div>
             </div>
             {/* Green footer */}
@@ -250,7 +250,7 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
   )
 }
 
-const inputCls = 'w-full rounded-xl border px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#C9A24B]/40'
+const inputCls = 'w-full rounded-xl border px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#C0A854]/40'
 const inputStyle = { borderColor: 'rgb(var(--border-default))' }
 
 // ─── Main Page ─────────────────────────────────────────────────────────────────
@@ -433,7 +433,7 @@ export default function CertificatesPage() {
                       onClick={handleDownload}
                       disabled={downloading}
                       className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold text-white transition-opacity disabled:opacity-60"
-                      style={{ background: '#C9A24B' }}
+                      style={{ background: '#C0A854' }}
                     >
                       <Download size={15} />
                       {downloading ? t('certificates.builder.preparingPdf') : t('certificates.builder.downloadPdf')}

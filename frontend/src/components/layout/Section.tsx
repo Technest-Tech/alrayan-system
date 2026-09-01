@@ -1,3 +1,4 @@
+import { createElement } from 'react'
 import { cn } from '@/lib/utils'
 
 type SectionProps = {
@@ -22,9 +23,9 @@ export function Section({
         ? 'bg-primary text-white'
         : 'bg-white'
 
-  return (
-    <Tag id={id} className={cn('section', bgClass, className)}>
-      {children}
-    </Tag>
+  return createElement(
+    Tag,
+    { id, className: cn('section', bgClass, className) },
+    children,
   )
 }

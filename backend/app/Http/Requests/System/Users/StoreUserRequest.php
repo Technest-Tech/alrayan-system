@@ -24,7 +24,7 @@ class StoreUserRequest extends FormRequest
             // Shared identity
             'role'        => ['required', Rule::in(self::ROLES)],
             'name'        => ['required', 'string', 'max:255'],
-            'email'       => ['nullable', 'email', 'unique:users,email'],
+            'email'       => ['nullable', 'email', 'max:255', 'unique:users,email'],
             'emails'      => ['nullable', 'array'],
             'emails.*'    => ['email'],
             'phone'       => ['nullable', 'string', 'max:32'],

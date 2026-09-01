@@ -1,4 +1,5 @@
 import type { Testimonial } from './testimonials'
+import type { Locale } from '@/i18n/config'
 
 export type CountrySlug = 'usa' | 'uk' | 'canada' | 'australia'
 
@@ -458,3 +459,430 @@ export const countriesData: CountryData[] = [
     schema: { addressLocality: 'Sydney', addressCountry: 'AU' },
   },
 ]
+
+export const countriesDataFr: CountryData[] = [
+  {
+    slug: 'usa',
+    name: 'États-Unis',
+    shortName: 'États-Unis',
+    flagEmoji: '🇺🇸',
+    hero: {
+      h1: 'Cours de Coran en ligne aux États-Unis',
+      subheading:
+        'Des enseignants certifiés d’Al-Azhar disponibles du matin jusqu’au soir dans les quatre fuseaux horaires américains — Est, Centre, Montagnes et Pacifique.',
+    },
+    whyUs: [
+      {
+        icon: 'Clock',
+        title: 'Tous les fuseaux horaires américains couverts',
+        body: 'Les cours ont lieu de 6 h à minuit (heure de l’Est), sept jours sur sept. Que vous soyez à New York ou à Los Angeles, nous avons un créneau adapté à votre emploi du temps.',
+      },
+      {
+        icon: 'ShieldCheck',
+        title: 'Enseignants certifiés d’Al-Azhar',
+        body: 'Chaque enseignant détient une Ijazah authentifiée et a réussi un processus de sélection rigoureux. Moins de 10 % des candidats sont retenus.',
+      },
+      {
+        icon: 'Heart',
+        title: 'Enseignantes disponibles',
+        body: 'Nous disposons d’enseignantes de Coran qualifiées pour les élèves femmes et pour les familles qui préfèrent une enseignante pour leurs enfants.',
+      },
+      {
+        icon: 'Users',
+        title: 'Au service de plus de 10 000 familles dans le monde entier',
+        body: 'De Dearborn à Houston en passant par New York, des milliers de familles musulmanes américaines font confiance à Azhary pour l’éducation coranique de leurs enfants.',
+      },
+    ],
+    timezone: {
+      label: 'ET · CT · MT · PT',
+      note: 'Tous les cours sont planifiés dans votre fuseau horaire local. Nous confirmons le lien de connexion et l’horaire 24 heures avant chaque séance.',
+      slots: [
+        '6 h – 9 h ET (matin)',
+        '12 h – 15 h ET (après-midi)',
+        '17 h – 21 h ET (soir)',
+        '21 h – 0 h ET (nuit)',
+      ],
+    },
+    localCurrencyNote: 'Les prix sont en USD. Les formules commencent à 30 $/mois.',
+    testimonials: [
+      {
+        id: 'usa-1',
+        name: 'Fatima R.',
+        location: 'New York, NY',
+        country: 'usa',
+        quote:
+          'Avoir une enseignante était très important pour moi. Les horaires de cours sont flexibles et s’adaptent parfaitement à mes heures de travail. Je me sens tellement à l’aise et soutenue.',
+        course: 'Tajwid pour adultes',
+        rating: 5,
+      },
+      {
+        id: 'usa-2',
+        name: 'Khalid M.',
+        location: 'Houston, TX',
+        country: 'usa',
+        quote:
+          'Mon fils est parti de zéro et a désormais mémorisé la moitié de son Hifz. L’enseignant prend de nos nouvelles sur WhatsApp chaque semaine — nous nous sentons comme en famille.',
+        course: 'Hifz / Mémorisation',
+        rating: 5,
+      },
+      {
+        id: 'usa-3',
+        name: 'Nadia S.',
+        location: 'Dearborn, MI',
+        country: 'usa',
+        quote:
+          'En tant que convertie, j’avais peur de trouver un enseignant qui serait patient avec mon niveau de grande débutante. Mon enseignant a été formidable — bienveillant, clair et encourageant.',
+        course: 'Noorani Qaida',
+        rating: 5,
+      },
+    ],
+    faqs: [
+      {
+        q: 'Proposez-vous des cours de Coran dans tous les fuseaux horaires américains ?',
+        a: 'Oui. Nous avons des enseignants disponibles de 6 h à minuit (heure de l’Est), ce qui couvre les créneaux tôt le matin pour les États de l’Est et les créneaux du soir pour l’heure du Pacifique. Vous choisissez un horaire récurrent qui vous convient.',
+      },
+      {
+        q: 'Vos enseignants sont-ils reconnus ou certifiés aux États-Unis ?',
+        a: 'Nos enseignants détiennent des certifications Ijazah de l’université Al-Azhar et d’institutions islamiques accréditées équivalentes — ce sont les diplômes les plus reconnus au niveau international dans l’enseignement coranique. La certification est religieuse plutôt que délivrée par l’État, et Al-Azhar est reconnue par les savants et les mosquées à travers les États-Unis.',
+      },
+      {
+        q: 'Mon enfant peut-il s’inscrire s’il n’a jamais appris le Coran auparavant ?',
+        a: 'Absolument. Nous accueillons des grands débutants de tous âges. Nous commençons par le Noorani Qaida — le programme fondamental de reconnaissance des lettres arabes — et progressons au rythme de votre enfant. Aucune connaissance préalable n’est requise.',
+      },
+      {
+        q: 'Servez-vous les élèves de Dearborn, Houston ou d’autres grandes communautés musulmanes ?',
+        a: 'Oui. Les élèves nous rejoignent depuis les 50 États. Étant entièrement en ligne, il n’y a aucune restriction géographique. Il vous suffit d’un appareil, d’une connexion Internet et d’un espace calme.',
+      },
+      {
+        q: 'Quelle plateforme vidéo utilisez-vous pour les cours ?',
+        a: 'Les cours se déroulent via Zoom, Google Meet ou Skype — selon votre préférence. Nous envoyons un lien de connexion avant chaque séance. Aucun logiciel spécial au-delà de l’application vidéo n’est requis.',
+      },
+      {
+        q: 'Le premier cours est-il vraiment gratuit sans carte bancaire ?',
+        a: 'Oui. Le cours d’essai est entièrement gratuit et ne nécessite aucune information de paiement. Nous n’abordons le paiement que si vous décidez de continuer après votre première séance.',
+      },
+    ],
+    seo: {
+      title: 'Cours de Coran en ligne aux États-Unis | Enseignants certifiés | Azhary',
+      description:
+        'Apprenez le Coran en ligne aux États-Unis avec des enseignants certifiés d’Al-Azhar. Tous les fuseaux horaires américains, cours particuliers, première leçon gratuite. Rejoignez des milliers de familles musulmanes américaines.',
+    },
+    schema: { addressLocality: 'Washington D.C.', addressCountry: 'US' },
+  },
+  {
+    slug: 'uk',
+    name: 'Royaume-Uni',
+    shortName: 'Royaume-Uni',
+    flagEmoji: '🇬🇧',
+    hero: {
+      h1: 'Cours de Coran en ligne au Royaume-Uni',
+      subheading:
+        'Des séances le matin et le soir calées sur GMT et BST — au service des élèves d’Angleterre, d’Écosse, du pays de Galles et d’Irlande du Nord.',
+    },
+    whyUs: [
+      {
+        icon: 'Clock',
+        title: 'Planification GMT & BST',
+        body: 'Les cours ont lieu de 6 h à 23 h (heure britannique) tout au long de l’année — avec ajustement automatique pour l’heure d’été britannique. Aucun emploi du temps perturbé lors du changement d’heure.',
+      },
+      {
+        icon: 'GraduationCap',
+        title: 'Enseignants formés à Al-Azhar et à l’école déobandie',
+        body: 'Notre équipe d’enseignants comprend des savants formés à Al-Azhar, dans les institutions Darul Uloom et dans d’autres grandes universités islamiques. Tous détiennent une Ijazah authentifiée.',
+      },
+      {
+        icon: 'BookOpen',
+        title: 'Complétez l’école islamique de votre enfant',
+        body: 'Beaucoup de nos élèves britanniques fréquentent aussi la madrassa du samedi ou une école islamique. Nos cours particuliers offrent un entraînement ciblé que les cours en groupe ne peuvent égaler.',
+      },
+      {
+        icon: 'Heart',
+        title: 'Enseignantes pour les sœurs et les filles',
+        body: 'Une équipe dédiée d’enseignantes qualifiées est disponible pour les élèves femmes de tous âges. De nombreuses familles britanniques demandent spécifiquement notre option d’enseignante.',
+      },
+    ],
+    timezone: {
+      label: 'GMT · BST',
+      note: 'Toutes les séances sont réservées à l’heure locale britannique et s’ajustent automatiquement à l’heure d’été britannique. Vous n’aurez jamais à calculer manuellement les décalages horaires.',
+      slots: [
+        '7 h – 9 h (avant l’école)',
+        '16 h – 19 h (après l’école)',
+        '19 h – 22 h (soir)',
+        'Week-ends 8 h – 12 h',
+      ],
+    },
+    localCurrencyNote: '≈ 24–56 £/mois aux taux de change actuels (facturé en USD).',
+    testimonials: [
+      {
+        id: 'uk-1',
+        name: 'Sarah A.',
+        location: 'Londres, Royaume-Uni',
+        country: 'uk',
+        quote:
+          'Le Tajwid de mes enfants s’est amélioré au point d’être méconnaissable en seulement 3 mois. Les enseignants sont si patients et compétents — ma fille attend même ses cours avec impatience chaque jour.',
+        course: 'Coran pour enfants',
+        rating: 5,
+      },
+      {
+        id: 'uk-2',
+        name: 'Amina H.',
+        location: 'Birmingham, Royaume-Uni',
+        country: 'uk',
+        quote:
+          'J’ai essayé plusieurs académies en ligne. Azhary est la seule où je me suis sentie véritablement soutenue. L’essai gratuit m’a immédiatement convaincue — la qualité est exceptionnelle.',
+        course: 'Arabe pour non-arabophones',
+        rating: 5,
+      },
+      {
+        id: 'uk-3',
+        name: 'Zaynab H.',
+        location: 'Manchester, Royaume-Uni',
+        country: 'uk',
+        quote:
+          'Ma fille avait des difficultés en Tajwid à la madrassa. En deux mois de cours particuliers avec Azhary, son enseignant à la madrassa a remarqué les progrès. Je recommande vivement.',
+        course: 'Cours de Tajwid',
+        rating: 5,
+      },
+    ],
+    faqs: [
+      {
+        q: 'Ajustez-vous les horaires des cours pour l’heure d’été britannique (BST) ?',
+        a: 'Oui. Nous réservons tous les cours à l’heure locale britannique, afin que votre emploi du temps reste constant que le Royaume-Uni soit à l’heure GMT ou BST. Vous n’aurez jamais à recalculer les horaires lors du changement d’heure.',
+      },
+      {
+        q: 'Ces cours peuvent-ils compléter la madrassa ou l’école du samedi de mon enfant ?',
+        a: 'Oui — c’est en fait l’un des usages les plus populaires au Royaume-Uni. Les cours en groupe à la madrassa accueillent de nombreux élèves et peuvent avancer rapidement. Nos cours particuliers permettent à l’enseignant de se concentrer entièrement sur les faiblesses spécifiques de votre enfant, ses erreurs de récitation ou ses objectifs de mémorisation.',
+      },
+      {
+        q: 'Avez-vous des enseignants formés dans des institutions britanniques ou européennes ?',
+        a: 'Nos enseignants sont principalement formés à l’université Al-Azhar en Égypte et dans des institutions similaires accréditées au niveau international. Plusieurs ont également étudié dans des institutions Darul Uloom affiliées au Royaume-Uni. Tous détiennent une chaîne d’Ijazah authentifiée.',
+      },
+      {
+        q: 'Existe-t-il des cours pour les adultes qui souhaitent améliorer leur récitation ?',
+        a: 'Oui. Une grande partie de nos élèves britanniques sont des adultes qui ont appris le Coran enfants mais souhaitent corriger leur Tajwid ou terminer l’ensemble du Coran avec une prononciation correcte. Nous proposons des cours de Tajwid dédiés aux adultes.',
+      },
+      {
+        q: 'Puis-je obtenir un certificat d’Ijazah via Azhary ?',
+        a: 'Oui. Notre programme d’Ijazah est ouvert aux élèves qui ont mémorisé le Coran (Huffaz) et souhaitent recevoir une chaîne de transmission certifiée. Le processus prend généralement de 6 à 12 mois de séances assidues. Des élèves britanniques ont obtenu leur Ijazah avec nous.',
+      },
+    ],
+    seo: {
+      title: 'Cours de Coran en ligne au Royaume-Uni | Enseignants certifiés | Azhary',
+      description:
+        'Cours de Coran en ligne au Royaume-Uni avec des enseignants certifiés d’Al-Azhar. Planification GMT & BST, enseignantes disponibles, cours d’essai gratuit. Au service de l’Angleterre, l’Écosse, le pays de Galles et l’Irlande du Nord.',
+    },
+    schema: { addressLocality: 'London', addressCountry: 'GB' },
+  },
+  {
+    slug: 'canada',
+    name: 'Canada',
+    shortName: 'Canada',
+    flagEmoji: '🇨🇦',
+    hero: {
+      h1: 'Cours de Coran en ligne au Canada',
+      subheading:
+        'Six fuseaux horaires canadiens couverts — de Halifax à l’heure de l’Atlantique à Vancouver à l’heure du Pacifique. Cours particuliers avec des enseignants certifiés, sept jours sur sept.',
+    },
+    whyUs: [
+      {
+        icon: 'Globe',
+        title: 'Les six fuseaux horaires canadiens',
+        body: 'Nous couvrons les heures de l’Atlantique, de l’Est, du Centre, des Rocheuses, du Pacifique et de Terre-Neuve. Que vous soyez à Halifax, Toronto, Calgary ou Vancouver, nous avons un horaire de cours qui convient.',
+      },
+      {
+        icon: 'Users',
+        title: 'Au service des diverses communautés musulmanes du Canada',
+        body: 'La population musulmane du Canada compte des dizaines d’origines ethniques et culturelles. Nos enseignants ont l’expérience du travail avec des élèves d’origine sud-asiatique, arabe, africaine et convertie.',
+      },
+      {
+        icon: 'ShieldCheck',
+        title: 'Enseignants certifiés par Ijazah et entièrement sélectionnés',
+        body: 'Chaque enseignant détient une chaîne authentifiée de transmission du Coran remontant jusqu’au Prophète ﷺ. Tous font l’objet d’une vérification des antécédents et d’une séance d’enseignement d’essai supervisée avant de rejoindre l’équipe.',
+      },
+      {
+        icon: 'BookOpen',
+        title: 'De l’Alif-Ba-Ta à l’Ijazah',
+        body: 'Que votre enfant apprenne ses premières lettres arabes ou que vous soyez un adulte visant à terminer votre Hifz, nous avons un programme et un enseignant pour chaque niveau.',
+      },
+    ],
+    timezone: {
+      label: 'AT · ET · CT · MT · PT · NT',
+      note: 'Les cours sont réservés dans votre fuseau horaire canadien local. Les séances sont disponibles tôt le matin, après l’école et le soir pour s’adapter aux horaires scolaires et professionnels.',
+      slots: [
+        '7 h – 9 h (avant l’école/le travail)',
+        '16 h – 19 h (après l’école)',
+        '19 h – 22 h (soir)',
+        'Week-ends 8 h – 13 h',
+      ],
+    },
+    localCurrencyNote: '≈ 41–95 $ CA/mois aux taux de change actuels (facturé en USD).',
+    testimonials: [
+      {
+        id: 'ca-1',
+        name: 'Ahmed K.',
+        location: 'Toronto, ON',
+        country: 'canada',
+        quote:
+          'J’ai commencé en grand débutant et je lis maintenant le Coran avec assurance. Le format en cours particuliers fait toute la différence — l’enseignant se concentre entièrement sur moi et sur mon rythme.',
+        course: 'Noorani Qaida',
+        rating: 5,
+      },
+      {
+        id: 'ca-2',
+        name: 'Ibrahim F.',
+        location: 'Calgary, AB',
+        country: 'canada',
+        quote:
+          'Calgary est mal desservie par les écoles islamiques locales. Azhary a comblé cette lacune à la perfection. Mes enfants bénéficient désormais d’un enseignement coranique régulier et de grande qualité depuis la maison.',
+        course: 'Coran pour enfants',
+        rating: 5,
+      },
+      {
+        id: 'ca-3',
+        name: 'Maryam T.',
+        location: 'Vancouver, BC',
+        country: 'canada',
+        quote:
+          'Les créneaux du soir à l’heure du Pacifique sont parfaits. Mes enfants finissent l’école, prennent une collation et rejoignent leur cours de Coran avant le dîner. La routine a transformé notre foyer.',
+        course: 'Coran pour enfants',
+        rating: 5,
+      },
+    ],
+    faqs: [
+      {
+        q: 'Servez-vous les élèves de toutes les provinces et de tous les territoires canadiens ?',
+        a: 'Oui. Comme les cours sont entièrement en ligne, les élèves nous rejoignent depuis les dix provinces et les trois territoires. Nous avons des élèves actifs en Ontario, au Québec, en Colombie-Britannique, en Alberta et au-delà.',
+      },
+      {
+        q: 'Les élèves francophones du Québec peuvent-ils s’inscrire ?',
+        a: 'Nos cours sont dispensés en anglais et en arabe. Nous ne proposons pas actuellement d’enseignement en français. Cependant, de nombreux élèves québécois — y compris ceux dont la langue maternelle est le français — suivent nos cours de Coran en anglais sans difficulté, car l’accent principal est mis sur la récitation coranique en arabe.',
+      },
+      {
+        q: 'Quels sont les horaires des cours pour les élèves de Colombie-Britannique (heure du Pacifique) ?',
+        a: 'Les élèves à l’heure du Pacifique réservent généralement des séances tôt le matin (6–9 h PT) ou en soirée (17–22 h PT). Celles-ci correspondent aux créneaux de l’après-midi et de la fin de soirée pour nos enseignants, tous disponibles.',
+      },
+      {
+        q: 'Existe-t-il une réduction pour les fratries des familles canadiennes ayant plusieurs enfants ?',
+        a: 'Oui. Les abonnés à la formule Premium bénéficient d’une réduction de 20 % pour chaque frère ou sœur supplémentaire inscrit. Contactez-nous via WhatsApp après votre essai gratuit pour activer la réduction familiale.',
+      },
+      {
+        q: 'Comment fonctionnent les moyens de paiement canadiens ?',
+        a: 'Les paiements sont traités en USD via Stripe, qui accepte toutes les principales cartes de crédit et de débit canadiennes (Visa, Mastercard, Amex). Il n’y a aucuns frais de conversion supplémentaires de notre côté — votre banque peut appliquer un taux de conversion de change standard.',
+      },
+    ],
+    seo: {
+      title: 'Cours de Coran en ligne au Canada | Enseignants certifiés | Azhary',
+      description:
+        'Cours de Coran en ligne au Canada avec des enseignants certifiés d’Al-Azhar. Tous les fuseaux horaires canadiens, cours particuliers, premier cours gratuit. Au service de l’Ontario, la Colombie-Britannique, l’Alberta et toutes les provinces.',
+    },
+    schema: { addressLocality: 'Toronto', addressCountry: 'CA' },
+  },
+  {
+    slug: 'australia',
+    name: 'Australie',
+    shortName: 'Australie',
+    flagEmoji: '🇦🇺',
+    hero: {
+      h1: 'Cours de Coran en ligne en Australie',
+      subheading:
+        'AEST, ACST et AWST tous couverts — des séances tôt le matin, l’après-midi et le soir pour les élèves de Sydney à Perth.',
+    },
+    whyUs: [
+      {
+        icon: 'Clock',
+        title: 'Planification AEST, ACST & AWST',
+        body: 'Nous servons les élèves dans les trois fuseaux horaires australiens — Est (NSW, VIC, QLD), Centre (SA, NT) et Ouest (WA). Cours disponibles avant l’école, après l’école et en soirée.',
+      },
+      {
+        icon: 'ShieldCheck',
+        title: 'Certification Ijazah authentique',
+        body: 'Les familles musulmanes australiennes exigent de plus en plus des diplômes islamiques authentiques, et pas seulement du soutien scolaire de base. Tous nos enseignants détiennent une chaîne d’Ijazah vérifiée, reconnue par les savants islamiques dans le monde entier.',
+      },
+      {
+        icon: 'Heart',
+        title: 'Disponibilité pendant les vacances scolaires',
+        body: 'Contrairement aux écoles islamiques locales et aux cours du week-end qui ferment pendant les vacances, Azhary fonctionne toute l’année. Nous sommes entièrement disponibles pendant les vacances scolaires australiennes et les jours fériés.',
+      },
+      {
+        icon: 'BookOpen',
+        title: 'Le complément parfait à la madrassa du week-end',
+        body: 'De nombreux élèves australiens fréquentent des cours du week-end à la mosquée. Nos cours particuliers en semaine offrent un entraînement ciblé qui accélère considérablement les progrès.',
+      },
+    ],
+    timezone: {
+      label: 'AEST · ACST · AWST',
+      note: 'Tous les cours sont planifiés dans votre fuseau horaire australien local. Les créneaux tôt le matin (6–9 h) sont particulièrement prisés des élèves qui préfèrent étudier avant l’école.',
+      slots: [
+        '6 h – 9 h AEST (avant l’école)',
+        '16 h – 19 h AEST (après l’école)',
+        '19 h – 22 h AEST (soir)',
+        'Week-ends 7 h – 12 h AEST',
+      ],
+    },
+    localCurrencyNote: '≈ 46–108 $ AU/mois aux taux de change actuels (facturé en USD).',
+    testimonials: [
+      {
+        id: 'au-1',
+        name: 'Omar M.',
+        location: 'Melbourne, VIC',
+        country: 'australia',
+        quote:
+          'Le programme d’Ijazah est rigoureux et authentique. Mon enseignant possède une chaîne directe jusqu’à Al-Azhar. J’ai terminé ma révision de Hifz et reçu mon certificat d’Ijazah — un rêve réalisé.',
+        course: 'Programme Ijazah',
+        rating: 5,
+      },
+      {
+        id: 'au-2',
+        name: 'Aisha N.',
+        location: 'Sydney, NSW',
+        country: 'australia',
+        quote:
+          'Nous avons essayé des professeurs particuliers locaux mais avons eu du mal à être réguliers. L’horaire hebdomadaire fixe de Azhary et les rappels WhatsApp nous ont maintenus sur la bonne voie. Mon fils a terminé son premier Juz en six mois.',
+        course: 'Hifz / Mémorisation',
+        rating: 5,
+      },
+      {
+        id: 'au-3',
+        name: 'Hassan W.',
+        location: 'Brisbane, QLD',
+        country: 'australia',
+        quote:
+          'J’ai commencé à apprendre le Coran à l’âge adulte. Je pensais qu’il était trop tard, mais mon enseignant m’a mis complètement à l’aise. Je lis désormais la sourate Al-Baqarah avec assurance.',
+        course: 'Coran pour adultes',
+        rating: 5,
+      },
+    ],
+    faqs: [
+      {
+        q: 'Proposez-vous des cours de Coran à Perth (heure de l’Australie-Occidentale) ?',
+        a: 'Oui. Les élèves de Perth réservent des séances tôt le matin en AWST, qui correspondent aux créneaux de l’après-midi pour nos enseignants. Nous avons une disponibilité dédiée pour l’Australie-Occidentale, généralement de 6 h à 10 h AWST en semaine et le week-end.',
+      },
+      {
+        q: 'Les cours sont-ils disponibles pendant les vacances scolaires australiennes ?',
+        a: 'Oui. Nous fonctionnons toute l’année, y compris pendant toutes les vacances scolaires des États australiens, les longs week-ends et les jours fériés. De nombreuses familles profitent des vacances scolaires pour programmer des cours supplémentaires et accélérer les progrès de leur enfant.',
+      },
+      {
+        q: 'Pouvez-vous aider mon enfant à se préparer aux sciences islamiques dans une école islamique australienne ?',
+        a: 'Nos cours couvrent la récitation du Coran, le Tajwid, le Hifz, le Tafsir et les sciences islamiques — autant de matières qui s’alignent sur le programme enseigné dans les écoles islamiques australiennes et les madrassas du week-end. Notre format en cours particuliers aide les élèves qui ont besoin d’un soutien ciblé ou d’un enrichissement au-delà de ce qu’offre l’enseignement en classe.',
+      },
+      {
+        q: 'Quelle est la qualité de la connexion pour les cours Zoom depuis l’Australie ?',
+        a: 'La grande majorité de nos élèves australiens signalent une excellente qualité vidéo pour leurs séances Zoom, Google Meet ou Skype. Une connexion NBN standard (25 Mbps ou plus) est amplement suffisante. En cas de problème de connectivité, nous pouvons passer en mode audio seul — la récitation du Coran exige un son clair plus qu’une image.',
+      },
+      {
+        q: 'Avez-vous l’expérience du travail avec des enfants nés en Australie dont l’anglais est la première langue ?',
+        a: 'Oui — c’est très courant parmi nos élèves australiens. Nos enseignants ont l’expérience du travail avec des enfants n’ayant aucune connaissance préalable de l’arabe ou du Coran. Les cours sont dispensés en anglais (avec un enseignement de l’arabe), et les enseignants utilisent des techniques adaptées à l’âge, spécifiquement conçues pour les enfants dont l’anglais est la langue maternelle.',
+      },
+    ],
+    seo: {
+      title: 'Cours de Coran en ligne en Australie | Enseignants certifiés | Azhary',
+      description:
+        'Cours de Coran en ligne en Australie avec des enseignants certifiés d’Al-Azhar. Planification AEST, ACST & AWST, premier cours gratuit. Au service de Sydney, Melbourne, Brisbane, Perth et plus encore.',
+    },
+    schema: { addressLocality: 'Sydney', addressCountry: 'AU' },
+  },
+]
+
+export function getCountriesData(locale: Locale): CountryData[] {
+  return locale === 'fr' ? countriesDataFr : countriesData
+}

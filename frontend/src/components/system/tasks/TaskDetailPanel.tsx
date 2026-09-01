@@ -59,15 +59,15 @@ export function TaskDetailPanel({ taskId, canDecide, onClose }: Props) {
 
   return (
     <>
-      <div className="fixed inset-0 z-40 bg-[#0B1F3A]/40 backdrop-blur-sm" onClick={onClose} />
+      <div className="fixed inset-0 z-40 bg-[#18483C]/40 backdrop-blur-sm" onClick={onClose} />
 
       <div
         className="fixed left-1/2 top-1/2 z-50 w-full max-w-lg -translate-x-1/2 -translate-y-1/2 flex flex-col rounded-2xl shadow-2xl overflow-hidden"
         style={{ background: 'rgb(244 246 250)', maxHeight: '90vh' }}
       >
         {/* Header */}
-        <div className="shrink-0" style={{ background: 'linear-gradient(135deg, #0d2548 0%, #0B1F3A 65%, #071528 100%)' }}>
-          <div style={{ height: 2, background: 'linear-gradient(90deg, transparent, #C9A24B, transparent)' }} />
+        <div className="shrink-0" style={{ background: 'linear-gradient(135deg, #0d2548 0%, #18483C 65%, #071528 100%)' }}>
+          <div style={{ height: 2, background: 'linear-gradient(90deg, transparent, #C0A854, transparent)' }} />
           <div className="px-5 py-4">
             <div className="flex items-start gap-3">
               <div className="flex-1 min-w-0">
@@ -121,7 +121,7 @@ export function TaskDetailPanel({ taskId, canDecide, onClose }: Props) {
               </div>
             )}
           </div>
-          <div style={{ height: 1.5, background: 'linear-gradient(90deg, transparent, #C9A24B66, transparent)' }} />
+          <div style={{ height: 1.5, background: 'linear-gradient(90deg, transparent, #C0A85466, transparent)' }} />
         </div>
 
         {/* Body */}
@@ -136,7 +136,7 @@ export function TaskDetailPanel({ taskId, canDecide, onClose }: Props) {
             <>
               {/* Details */}
               <div className="rounded-xl border bg-white overflow-hidden" style={{ borderColor: 'rgb(229 233 240)' }}>
-                <div style={{ height: 1.5, background: 'linear-gradient(90deg, transparent, #C9A24B44, transparent)' }} />
+                <div style={{ height: 1.5, background: 'linear-gradient(90deg, transparent, #C0A85444, transparent)' }} />
                 <div className="p-4">
                   {task.student_name && <Row label={t('tasks.rowStudent')} value={task.student_name} />}
                   {task.teacher_name && <Row label={t('common.teacher')} value={task.teacher_name} />}
@@ -228,7 +228,7 @@ export function TaskDetailPanel({ taskId, canDecide, onClose }: Props) {
                 </button>
               </>
             ) : (
-              <button onClick={onClose} className="px-4 py-2 rounded-lg text-xs font-semibold text-white" style={{ background: '#0B1F3A' }}>
+              <button onClick={onClose} className="px-4 py-2 rounded-lg text-xs font-semibold text-white" style={{ background: '#18483C' }}>
                 {t('tasks.close')}
               </button>
             )}

@@ -8,6 +8,7 @@ export const fr: Messages = {
       communications: 'Communications',
       admin:          'Administration',
       main:           'Principal',
+      site:           'Site',
     },
     dashboard:     'Tableau de bord',
     myStudents:    'Mes élèves',
@@ -31,6 +32,10 @@ export const fr: Messages = {
     analytics:     'Analytique',
     studentAnalytics: 'Analytique des étudiants',
     profitability: 'Rentabilité',
+    siteTeachers:  'Professeurs du site',
+    siteReviews:   'Avis',
+    siteTraffic:   'Trafic du site',
+    siteSettings:  'Paramètres du site',
   },
   analytics: {
     title:                'Analytique',

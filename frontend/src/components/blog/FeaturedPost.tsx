@@ -34,7 +34,7 @@ export function FeaturedPost({ post }: Props) {
         className="absolute inset-0 opacity-10"
         style={{
           backgroundImage:
-            'radial-gradient(circle at 30% 70%, #C9A24B 0%, transparent 60%), radial-gradient(circle at 70% 30%, #0E7C5A 0%, transparent 60%)',
+            'radial-gradient(circle at 30% 70%, #C0A854 0%, transparent 60%), radial-gradient(circle at 70% 30%, #0E7C5A 0%, transparent 60%)',
         }}
         aria-hidden="true"
       />

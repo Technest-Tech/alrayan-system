@@ -10,7 +10,7 @@ export default function LoginPage() {
       {/* ── Left panel ───────────────────────────────────────────────── */}
       <div
         className="hidden lg:flex flex-col relative overflow-hidden w-[52%] shrink-0"
-        style={{ background: 'linear-gradient(160deg, #0d2548 0%, #0B1F3A 55%, #071528 100%)' }}
+        style={{ background: 'linear-gradient(160deg, #0d2548 0%, #18483C 55%, #071528 100%)' }}
       >
         {/* Decorative geometric background — echoes the brand mark */}
         <svg
@@ -23,7 +23,7 @@ export default function LoginPage() {
             <path
               d="M26 4 L30 14 L40 10 L36 20 L46 24 L36 28 L40 38 L30 34 L26 44 L22 34 L12 38 L16 28 L6 24 L16 20 L12 10 L22 14 Z"
               transform="scale(0.76) translate(2,0)"
-              fill="#C9A24B"
+              fill="#C0A854"
             />
           </g>
           {/* Medium star — bottom left */}
@@ -31,21 +31,21 @@ export default function LoginPage() {
             <path
               d="M26 4 L30 14 L40 10 L36 20 L46 24 L36 28 L40 38 L30 34 L26 44 L22 34 L12 38 L16 28 L6 24 L16 20 L12 10 L22 14 Z"
               transform="scale(0.76) translate(2,0)"
-              fill="#C9A24B"
+              fill="#C0A854"
             />
           </g>
           {/* Subtle grid dots */}
           <pattern id="dots" x="0" y="0" width="40" height="40" patternUnits="userSpaceOnUse">
-            <circle cx="1" cy="1" r="1" fill="#C9A24B" opacity="0.12" />
+            <circle cx="1" cy="1" r="1" fill="#C0A854" opacity="0.12" />
           </pattern>
           <rect width="100%" height="100%" fill="url(#dots)" />
           {/* Gold top accent line */}
           <rect x="0" y="0" width="100%" height="2" fill="url(#goldLine)" />
           <linearGradient id="goldLine" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stopColor="#C9A24B" stopOpacity="0" />
-            <stop offset="30%" stopColor="#C9A24B" stopOpacity="0.8" />
-            <stop offset="70%" stopColor="#C9A24B" stopOpacity="0.8" />
-            <stop offset="100%" stopColor="#C9A24B" stopOpacity="0" />
+            <stop offset="0%" stopColor="#C0A854" stopOpacity="0" />
+            <stop offset="30%" stopColor="#C0A854" stopOpacity="0.8" />
+            <stop offset="70%" stopColor="#C0A854" stopOpacity="0.8" />
+            <stop offset="100%" stopColor="#C0A854" stopOpacity="0" />
           </linearGradient>
         </svg>
 
@@ -68,7 +68,7 @@ export default function LoginPage() {
           <div className="flex-1 flex flex-col justify-center max-w-sm mt-10">
             <div
               className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold tracking-widest mb-8 w-fit"
-              style={{ background: 'rgba(201,162,75,0.15)', color: '#C9A24B', border: '1px solid rgba(201,162,75,0.3)' }}
+              style={{ background: 'rgba(201,162,75,0.15)', color: '#C0A854', border: '1px solid rgba(201,162,75,0.3)' }}
             >
               OPERATIONS CONSOLE
             </div>
@@ -92,7 +92,7 @@ export default function LoginPage() {
                 <div key={label}>
                   <div
                     className="text-2xl font-bold"
-                    style={{ color: '#C9A24B', fontFamily: "'Cormorant Garamond', Georgia, serif" }}
+                    style={{ color: '#C0A854', fontFamily: "'Cormorant Garamond', Georgia, serif" }}
                   >
                     {value}
                   </div>
@@ -140,7 +140,7 @@ export default function LoginPage() {
             {/* Gold divider */}
             <div
               className="h-px mb-8 mx-auto"
-              style={{ background: 'linear-gradient(90deg, transparent, #C9A24B55, transparent)', width: '80%' }}
+              style={{ background: 'linear-gradient(90deg, transparent, #C0A85455, transparent)', width: '80%' }}
             />
 
             {/* Heading */}

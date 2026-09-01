@@ -5,6 +5,7 @@ import { X, Pencil, Globe, Users, Camera, Play, MessageCircle, Music, CircleHelp
 import { useLead } from '@/hooks/system/useLeads'
 import type { LeadStatus, LeadPriority, LeadActivity } from '@/types/system/lead'
 import { useI18n } from '@/lib/system/i18n'
+import type { IconComponent } from '@/types/icon'
 
 const STATUS_LABEL_KEYS: Record<string, string> = {
   new_lead:            'leads.statusNewLead',
@@ -48,24 +49,24 @@ function OrnaDivider({ title }: { title: string }) {
   return (
     <div className="flex items-center gap-2 mb-3">
       <svg width="50" height="12" viewBox="0 0 50 12" aria-hidden className="shrink-0">
-        <line x1="0" y1="6" x2="48" y2="6" stroke="#C9A24B" strokeWidth="0.6" opacity="0.4" />
+        <line x1="0" y1="6" x2="48" y2="6" stroke="#C0A854" strokeWidth="0.6" opacity="0.4" />
         {diamonds.map(x => (
-          <polygon key={x} points={`${x},2 ${x+2.5},6 ${x},10 ${x-2.5},6`} fill="#C9A24B" opacity="0.3" />
+          <polygon key={x} points={`${x},2 ${x+2.5},6 ${x},10 ${x-2.5},6`} fill="#C0A854" opacity="0.3" />
         ))}
       </svg>
       <svg width="10" height="10" viewBox="0 0 100 100" aria-hidden className="shrink-0">
-        <path d={STAR} fill="#C9A24B" opacity="0.65" />
+        <path d={STAR} fill="#C0A854" opacity="0.65" />
       </svg>
       <span className="whitespace-nowrap text-[10px] font-semibold tracking-[0.13em] uppercase" style={{ color: 'rgb(90 100 112)' }}>
         {title}
       </span>
       <svg width="10" height="10" viewBox="0 0 100 100" aria-hidden className="shrink-0">
-        <path d={STAR} fill="#C9A24B" opacity="0.65" />
+        <path d={STAR} fill="#C0A854" opacity="0.65" />
       </svg>
       <svg width="50" height="12" viewBox="0 0 50 12" style={{ transform: 'scaleX(-1)' }} aria-hidden className="shrink-0">
-        <line x1="0" y1="6" x2="48" y2="6" stroke="#C9A24B" strokeWidth="0.6" opacity="0.4" />
+        <line x1="0" y1="6" x2="48" y2="6" stroke="#C0A854" strokeWidth="0.6" opacity="0.4" />
         {diamonds.map(x => (
-          <polygon key={x} points={`${x},2 ${x+2.5},6 ${x},10 ${x-2.5},6`} fill="#C9A24B" opacity="0.3" />
+          <polygon key={x} points={`${x},2 ${x+2.5},6 ${x},10 ${x-2.5},6`} fill="#C0A854" opacity="0.3" />
         ))}
       </svg>
     </div>
@@ -89,7 +90,7 @@ const PRIORITY_COLORS: Record<LeadPriority, { bg: string; color: string }> = {
   low:    { bg: 'rgb(90 100 112 / 0.1)', color: 'rgb(90 100 112)' },
 }
 
-const PLATFORM_ICONS: Record<string, React.ElementType> = {
+const PLATFORM_ICONS: Record<string, IconComponent> = {
   website:   Globe,
   facebook:  Users,
   instagram: Camera,
@@ -112,7 +113,7 @@ function initials(name: string) { return name.split(' ').map(w => w[0]).slice(0,
 
 /* ── Detail row ─────────────────────────────────── */
 function DetailRow({ icon: Icon, label, value, accent }: {
-  icon: React.ElementType; label: string; value: React.ReactNode; accent?: string
+  icon: IconComponent; label: string; value: React.ReactNode; accent?: string
 }) {
   if (!value) return null
   return (
@@ -139,7 +140,7 @@ function SectionCard({ title, children }: { title: string; children: React.React
       style={{ borderColor: 'rgb(229 233 240)', background: '#fff', boxShadow: '0 1px 3px rgb(11 31 58 / 0.04)' }}
     >
       {/* Gold top accent */}
-      <div style={{ height: 1.5, background: 'linear-gradient(90deg, transparent, #C9A24B44, transparent)' }} />
+      <div style={{ height: 1.5, background: 'linear-gradient(90deg, transparent, #C0A85444, transparent)' }} />
       <div className="px-4 pt-3 pb-1">
         <OrnaDivider title={title} />
       </div>
@@ -220,7 +221,7 @@ export function LeadDetailPanel({ leadId, onClose, onEdit }: Props) {
     <>
       {/* Backdrop */}
       <div
-        className="fixed inset-0 z-40 bg-[#0B1F3A]/40 backdrop-blur-sm"
+        className="fixed inset-0 z-40 bg-[#18483C]/40 backdrop-blur-sm"
         onClick={onClose}
       />
 
@@ -232,24 +233,24 @@ export function LeadDetailPanel({ leadId, onClose, onEdit }: Props) {
         {/* ── Dark navy header ── */}
         <div
           className="shrink-0 overflow-hidden"
-          style={{ background: 'linear-gradient(135deg, #0d2548 0%, #0B1F3A 65%, #071528 100%)' }}
+          style={{ background: 'linear-gradient(135deg, #0d2548 0%, #18483C 65%, #071528 100%)' }}
         >
           {/* Gold top line */}
-          <div style={{ height: 2, background: 'linear-gradient(90deg, transparent, #C9A24B, transparent)' }} />
+          <div style={{ height: 2, background: 'linear-gradient(90deg, transparent, #C0A854, transparent)' }} />
 
           {/* Background star watermarks */}
           <svg className="absolute right-0 top-0 pointer-events-none" width="160" height="80" aria-hidden>
             <g transform="translate(120, -12) scale(1.5)" opacity="0.05">
-              <path d={STAR} fill="#C9A24B" />
+              <path d={STAR} fill="#C0A854" />
             </g>
             <g transform="translate(55, 35) scale(0.8)" opacity="0.03">
-              <path d={STAR} fill="#C9A24B" />
+              <path d={STAR} fill="#C0A854" />
             </g>
           </svg>
           {/* Dot grid */}
           <svg className="absolute inset-0 w-full h-full pointer-events-none" aria-hidden>
             <pattern id="panel-dots" x="0" y="0" width="24" height="24" patternUnits="userSpaceOnUse">
-              <circle cx="1" cy="1" r="0.7" fill="#C9A24B" opacity="0.07" />
+              <circle cx="1" cy="1" r="0.7" fill="#C0A854" opacity="0.07" />
             </pattern>
             <rect width="100%" height="100%" fill="url(#panel-dots)" />
           </svg>
@@ -337,11 +338,11 @@ export function LeadDetailPanel({ leadId, onClose, onEdit }: Props) {
           </div>
 
           {/* Gold bottom accent */}
-          <div style={{ height: 1.5, background: 'linear-gradient(90deg, transparent, #C9A24B66, transparent)' }} />
+          <div style={{ height: 1.5, background: 'linear-gradient(90deg, transparent, #C0A85466, transparent)' }} />
         </div>
 
         {/* ── Scrollable body ── */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-3" style={{ scrollbarWidth: 'thin', scrollbarColor: '#C9A24B33 transparent' }}>
+        <div className="flex-1 overflow-y-auto p-4 space-y-3" style={{ scrollbarWidth: 'thin', scrollbarColor: '#C0A85433 transparent' }}>
           {isLoading ? (
             <div className="space-y-3">
               {[...Array(3)].map((_, i) => (
@@ -499,7 +500,7 @@ export function LeadDetailPanel({ leadId, onClose, onEdit }: Props) {
                             <ActivityIcon event={act.event} />
                           </div>
                           {i < lead.activities.length - 1 && (
-                            <div className="w-px flex-1 my-1" style={{ background: 'linear-gradient(180deg, #C9A24B33, transparent)', minHeight: 16 }} />
+                            <div className="w-px flex-1 my-1" style={{ background: 'linear-gradient(180deg, #C0A85433, transparent)', minHeight: 16 }} />
                           )}
                         </div>
 

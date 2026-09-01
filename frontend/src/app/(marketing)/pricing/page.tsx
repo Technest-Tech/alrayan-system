@@ -1,47 +1,71 @@
 import type { Metadata } from 'next'
 import { buildMetadata } from '@/lib/seo'
 import { breadcrumbSchema } from '@/lib/schema'
-import { Section } from '@/components/layout/Section'
 import { Container } from '@/components/layout/Container'
-import { LinkButton } from '@/components/ui/link-button'
+import { PricingPlans } from '@/components/pricing/PricingPlans'
 import { whatsappLink } from '@/config/site'
 import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from '@/components/ui/accordion'
-import {
-  pricingTiers,
-  comparisonRows,
-  pricingFaqs,
-  pricingPageContent,
+  getIncludedFeatures,
+  getPricingPageContent,
+  type IncludedIcon,
 } from '@/content/pricing'
-import { CheckCircle2, XCircle, Minus, Users } from 'lucide-react'
+import { getLocale } from '@/i18n/getLocale'
+import { getT } from '@/i18n/getDictionary'
+import { localizedHref } from '@/i18n/href'
+import {
+  Gift,
+  GraduationCap,
+  Award,
+  Clock,
+  BookOpen,
+  ShieldCheck,
+  Sparkles,
+  MessageCircle,
+  ArrowRight,
+  type LucideIcon,
+} from 'lucide-react'
 
-export const metadata: Metadata = buildMetadata({
-  title: 'Quran Class Pricing | Transparent Plans | Azhary',
-  description:
-    'Simple, transparent pricing for online Quran classes. Plans from $30/month. Free first class, no contracts, cancel anytime.',
-  path: '/pricing',
-})
-
-function ComparisonCell({ value }: { value: boolean | string }) {
-  if (typeof value === 'string') {
-    return <span className="text-sm font-medium text-primary">{value}</span>
-  }
-  if (value) {
-    return <CheckCircle2 className="size-5 text-secondary mx-auto" aria-label="Included" />
-  }
-  return <Minus className="size-5 text-muted-foreground/40 mx-auto" aria-label="Not included" />
+export async function generateMetadata(): Promise<Metadata> {
+  const locale = await getLocale()
+  const t = getT(locale)
+  return buildMetadata({
+    title: t('meta.pricingTitle'),
+    description: t('meta.pricingDescription'),
+    path: '/pricing',
+    locale,
+  })
 }
 
-export default function PricingPage() {
-  const { hero, familyDiscount, cta } = pricingPageContent
+const INCLUDED_ICONS: Record<IncludedIcon, LucideIcon> = {
+  gift: Gift,
+  graduation: GraduationCap,
+  certificate: Award,
+  clock: Clock,
+  book: BookOpen,
+  shield: ShieldCheck,
+}
+
+export default async function PricingPage() {
+  const locale = await getLocale()
+  const t = getT(locale)
+  const { hero, included, guarantee } = getPricingPageContent(locale)
+  const includedFeatures = getIncludedFeatures(locale)
   const crumbs = breadcrumbSchema([
-    { name: 'Home', href: '/' },
-    { name: 'Pricing', href: '/pricing' },
+    { name: t('nav.home'), href: localizedHref('/', locale) },
+    { name: t('nav.pricing'), href: localizedHref('/pricing', locale) },
   ])
+
+  const renderHighlight = (text: string, highlight?: string) => {
+    if (!highlight || !text.includes(highlight)) return text
+    const [before, after] = text.split(highlight)
+    return (
+      <>
+        {before}
+        <span className="gold-underline text-accent">{highlight}</span>
+        {after}
+      </>
+    )
+  }
 
   return (
     <>
@@ -50,265 +74,129 @@ export default function PricingPage() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(crumbs) }}
       />
 
-      {/* ── Hero ── */}
-      <section
-        className="relative bg-primary overflow-hidden pt-40 pb-20"
-        aria-labelledby="pricing-heading"
-      >
-        <div
-          className="absolute inset-0 opacity-[0.07]"
-          style={{
-            backgroundImage:
-              'radial-gradient(circle at 30% 70%, #C9A24B 0%, transparent 50%), radial-gradient(circle at 70% 30%, #0E7C5A 0%, transparent 50%)',
-          }}
-          aria-hidden="true"
-        />
-        <Container className="relative text-center">
-          <p className="text-accent text-sm font-semibold uppercase tracking-widest mb-4">
-            {hero.eyebrow}
-          </p>
-          <h1
-            id="pricing-heading"
-            className="heading-display font-display text-white text-balance mb-6 max-w-3xl mx-auto"
-          >
-            {hero.heading}
-          </h1>
-          <p className="text-white/70 text-xl leading-relaxed max-w-2xl mx-auto">
-            {hero.subheading}
-          </p>
-        </Container>
-      </section>
+      <div className="bg-primary text-white">
+        {/* ── Ambient background ── */}
+        <div className="relative overflow-hidden">
+          <div
+            className="pointer-events-none absolute inset-0 opacity-[0.06]"
+            style={{
+              backgroundImage:
+                'radial-gradient(circle at 20% 12%, #C0A854 0%, transparent 42%), radial-gradient(circle at 82% 30%, #0E7C5A 0%, transparent 45%)',
+            }}
+            aria-hidden="true"
+          />
 
-      {/* ── Pricing Cards ── */}
-      <Section bg="cream">
-        <Container>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
-            {pricingTiers.map((tier) => (
-              <div
-                key={tier.id}
-                className={[
-                  'relative flex flex-col rounded-2xl bg-white border p-8 transition-shadow',
-                  tier.highlighted
-                    ? 'border-accent ring-2 ring-accent shadow-xl md:scale-[1.03] md:-translate-y-2'
-                    : 'border-border-soft shadow-soft',
-                ].join(' ')}
-              >
-                {tier.highlighted && (
-                  <div className="absolute -top-3.5 left-1/2 -translate-x-1/2">
-                    <span className="bg-accent text-primary text-xs font-bold uppercase tracking-wider px-4 py-1.5 rounded-full shadow-sm">
-                      Most Popular
-                    </span>
-                  </div>
-                )}
-
-                <div className="mb-6">
-                  <h2 className="text-lg font-semibold text-primary mb-1">{tier.name}</h2>
-                  <div className="flex items-end gap-1">
-                    <span className="text-5xl font-display font-semibold text-primary">
-                      ${tier.priceUsd}
-                    </span>
-                    <span className="text-muted-foreground text-base pb-1">/mo</span>
-                  </div>
-                  <p className="text-muted-foreground text-sm mt-1">
-                    {tier.sessionsPerMonth} classes &middot; {tier.minutesPerSession} min each
-                  </p>
-                </div>
-
-                <ul className="space-y-3 mb-8 flex-1" aria-label={`${tier.name} plan features`}>
-                  {tier.features.map((f) => (
-                    <li key={f} className="flex items-start gap-3 text-sm text-primary">
-                      <CheckCircle2
-                        className="size-4 text-secondary shrink-0 mt-0.5"
-                        aria-hidden="true"
-                      />
-                      {f}
-                    </li>
-                  ))}
-                  {tier.notIncluded?.map((f) => (
-                    <li key={f} className="flex items-start gap-3 text-sm text-muted-foreground/60">
-                      <XCircle className="size-4 shrink-0 mt-0.5" aria-hidden="true" />
-                      {f}
-                    </li>
-                  ))}
-                </ul>
-
-                <LinkButton
-                  href="/contact"
-                  variant={tier.highlighted ? 'gold' : 'outline'}
-                  className="w-full justify-center"
+          {/* ── Hero + Plans ── */}
+          <section className="relative pt-36 pb-20" aria-labelledby="pricing-heading">
+            <Container>
+              <div className="mx-auto mb-12 max-w-2xl text-center">
+                <p className="mb-5 inline-flex items-center gap-2 rounded-full border border-accent/30 bg-accent/10 px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.15em] text-accent">
+                  <Sparkles className="size-3.5" aria-hidden="true" />
+                  {hero.eyebrow}
+                </p>
+                <h1
+                  id="pricing-heading"
+                  className="heading-display font-display text-balance text-white"
                 >
-                  {tier.ctaLabel}
-                </LinkButton>
+                  {renderHighlight(hero.heading, hero.highlight)}
+                </h1>
+                <p className="mx-auto mt-6 max-w-xl text-lg leading-relaxed text-white/65">
+                  {hero.subheading}
+                </p>
               </div>
-            ))}
-          </div>
 
-          <p className="text-center text-muted-foreground text-sm mt-8">
-            All plans include a <strong className="text-primary">free first class</strong>. No credit card required.
-          </p>
-        </Container>
-      </Section>
+              <PricingPlans ctaHref={localizedHref('/contact', locale)} />
+            </Container>
+          </section>
+        </div>
 
-      {/* ── Family Discount callout ── */}
-      <Section bg="white">
-        <Container>
-          <div className="bg-accent/10 border border-accent/25 rounded-2xl p-8 md:p-10 max-w-2xl mx-auto text-center">
-            <div className="size-12 rounded-full bg-accent/20 flex items-center justify-center mx-auto mb-4">
-              <Users className="size-6 text-accent" aria-hidden="true" />
+        {/* ── Included in every package ── */}
+        <section className="border-t border-white/5 py-20" aria-labelledby="included-heading">
+          <Container>
+            <div className="mx-auto mb-12 max-w-2xl text-center">
+              <h2
+                id="included-heading"
+                className="heading-xl font-display text-white"
+              >
+                {renderHighlight(included.heading, included.highlight)}
+              </h2>
+              <p className="mt-4 text-white/60">{included.subheading}</p>
             </div>
-            <h2 className="text-xl font-display font-semibold text-primary mb-3">
-              {familyDiscount.heading}
-            </h2>
-            <p className="text-muted-foreground leading-relaxed mb-6">{familyDiscount.body}</p>
-            <a
-              href={whatsappLink('Assalamu alaikum, I would like to activate the sibling discount for the Premium plan.')}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 text-sm font-semibold text-accent hover:underline"
-            >
-              Activate via WhatsApp →
-            </a>
-          </div>
-        </Container>
-      </Section>
 
-      {/* ── Comparison Table ── */}
-      <Section bg="cream">
-        <Container>
-          <div className="text-center mb-10">
-            <h2 className="heading-xl font-display text-primary">Compare Plans</h2>
-          </div>
-
-          {/* Desktop table */}
-          <div className="hidden md:block overflow-x-auto rounded-2xl border border-border-soft shadow-soft">
-            <table className="w-full border-collapse text-sm">
-              <thead>
-                <tr className="bg-primary text-white">
-                  <th className="text-left px-6 py-4 font-medium w-1/2">Feature</th>
-                  {pricingTiers.map((t) => (
-                    <th
-                      key={t.id}
-                      className={[
-                        'text-center px-6 py-4 font-semibold',
-                        t.highlighted ? 'text-accent' : '',
-                      ].join(' ')}
-                    >
-                      {t.name}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {comparisonRows.map((row, i) => (
-                  <tr
-                    key={row.feature}
-                    className={i % 2 === 0 ? 'bg-white' : 'bg-cream'}
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {includedFeatures.map((f) => {
+                const Icon = INCLUDED_ICONS[f.icon]
+                return (
+                  <div
+                    key={f.title}
+                    className="flex items-start gap-4 rounded-2xl border border-white/10 bg-white/[0.03] p-5 transition-colors hover:border-white/20 hover:bg-white/[0.05]"
                   >
-                    <td className="px-6 py-3.5 font-medium text-primary">{row.feature}</td>
-                    <td className="px-6 py-3.5 text-center">
-                      <ComparisonCell value={row.starter} />
-                    </td>
-                    <td className="px-6 py-3.5 text-center bg-accent/5">
-                      <ComparisonCell value={row.growth} />
-                    </td>
-                    <td className="px-6 py-3.5 text-center">
-                      <ComparisonCell value={row.premium} />
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                    <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-secondary/15 text-secondary">
+                      <Icon className="size-5" aria-hidden="true" />
+                    </div>
+                    <div>
+                      <h3 className="font-heading text-base font-semibold text-white">
+                        {f.title}
+                      </h3>
+                      <p className="mt-1 text-sm leading-relaxed text-white/55">{f.desc}</p>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </Container>
+        </section>
 
-          {/* Mobile stacked cards */}
-          <div className="md:hidden space-y-6">
-            {pricingTiers.map((tier) => (
+        {/* ── No-commitment guarantee ── */}
+        <section className="pb-20" aria-labelledby="guarantee-heading">
+          <Container>
+            <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-secondary/15 via-white/[0.02] to-accent/10 px-6 py-14 text-center sm:px-10">
               <div
-                key={tier.id}
-                className="bg-white rounded-2xl border border-border-soft p-6 shadow-soft"
-              >
-                <h3 className="font-display font-semibold text-primary text-lg mb-4">
-                  {tier.name} — ${tier.priceUsd}/mo
-                </h3>
-                <ul className="space-y-2.5">
-                  {comparisonRows.map((row) => {
-                    const val = row[tier.id]
-                    return (
-                      <li key={row.feature} className="flex items-center justify-between gap-4 text-sm">
-                        <span className="text-muted-foreground">{row.feature}</span>
-                        {typeof val === 'string' ? (
-                          <span className="font-medium text-primary">{val}</span>
-                        ) : val ? (
-                          <CheckCircle2 className="size-4 text-secondary shrink-0" />
-                        ) : (
-                          <Minus className="size-4 text-muted-foreground/40 shrink-0" />
-                        )}
-                      </li>
-                    )
-                  })}
-                </ul>
+                className="pointer-events-none absolute inset-0 opacity-[0.08]"
+                style={{
+                  backgroundImage:
+                    'radial-gradient(circle at 50% 0%, #C0A854 0%, transparent 55%)',
+                }}
+                aria-hidden="true"
+              />
+              <div className="relative mx-auto max-w-2xl">
+                <span className="inline-flex items-center gap-2 rounded-full border border-accent/40 bg-accent/10 px-4 py-1.5 text-xs font-bold uppercase tracking-wider text-accent">
+                  <ShieldCheck className="size-3.5" aria-hidden="true" />
+                  {guarantee.badge}
+                </span>
+                <h2
+                  id="guarantee-heading"
+                  className="heading-lg mt-6 font-display text-white"
+                >
+                  {guarantee.heading}
+                </h2>
+                <p className="mx-auto mt-4 max-w-xl leading-relaxed text-white/65">
+                  {guarantee.body}
+                </p>
+                <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
+                  <a
+                    href={whatsappLink(t('pricingPlans.waMessage'))}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-secondary px-6 text-sm font-semibold text-white transition-colors hover:bg-[#0a6849]"
+                  >
+                    <MessageCircle className="size-4" aria-hidden="true" />
+                    {guarantee.ctaSecondary}
+                  </a>
+                  <a
+                    href={localizedHref('/contact', locale)}
+                    className="inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-accent px-6 text-sm font-semibold text-primary transition-colors hover:bg-[#d8b258]"
+                  >
+                    {guarantee.ctaPrimary}
+                    <ArrowRight className="size-4" aria-hidden="true" />
+                  </a>
+                </div>
               </div>
-            ))}
-          </div>
-        </Container>
-      </Section>
-
-      {/* ── Pricing FAQ ── */}
-      <Section bg="white">
-        <Container>
-          <div className="max-w-2xl mx-auto">
-            <div className="text-center mb-10">
-              <p className="text-secondary text-sm font-semibold uppercase tracking-wider mb-3">
-                Pricing FAQ
-              </p>
-              <h2 className="heading-xl font-display text-primary">Frequently Asked Questions</h2>
             </div>
+          </Container>
+        </section>
 
-            <div className="border border-border-soft rounded-2xl overflow-hidden divide-y divide-border-soft">
-              <Accordion multiple>
-                {pricingFaqs.map((faq, i) => (
-                  <AccordionItem key={i} value={String(i)}>
-                    <AccordionTrigger className="px-6 py-4 text-base font-semibold text-primary hover:no-underline">
-                      {faq.q}
-                    </AccordionTrigger>
-                    <AccordionContent className="px-6">
-                      <p className="text-muted-foreground leading-relaxed">{faq.a}</p>
-                    </AccordionContent>
-                  </AccordionItem>
-                ))}
-              </Accordion>
-            </div>
-          </div>
-        </Container>
-      </Section>
-
-      {/* ── CTA Banner ── */}
-      <Section bg="primary">
-        <Container>
-          <div className="text-center max-w-2xl mx-auto">
-            <h2
-              id="pricing-cta-heading"
-              className="heading-xl font-display text-white mb-4"
-            >
-              {cta.heading}
-            </h2>
-            <p className="text-white/70 text-lg mb-10">{cta.subheading}</p>
-            <div className="flex flex-wrap justify-center gap-4">
-              <LinkButton href="/contact" size="lg" variant="gold">
-                {cta.ctaPrimary}
-              </LinkButton>
-              <a
-                href={whatsappLink()}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-2.5 h-14 px-7 rounded-xl border border-white/30 text-white font-medium hover:border-accent hover:text-accent transition-colors"
-              >
-                {cta.ctaSecondary}
-              </a>
-            </div>
-          </div>
-        </Container>
-      </Section>
+      </div>
     </>
   )
 }

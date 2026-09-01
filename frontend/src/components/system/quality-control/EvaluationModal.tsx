@@ -214,7 +214,7 @@ export function EvaluationModal({
                   onClick={handleSubmit}
                   disabled={submitting}
                   className="inline-flex items-center gap-2 px-5 py-2 rounded-xl text-sm font-semibold text-white disabled:opacity-50 transition-opacity"
-                  style={{ background: '#0B1F3A' }}
+                  style={{ background: '#18483C' }}
                 >
                   <Sparkles size={14} />
                   {submitting

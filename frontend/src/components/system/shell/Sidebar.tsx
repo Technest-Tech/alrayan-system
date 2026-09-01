@@ -49,7 +49,7 @@ export function Sidebar({ collapsed, onToggle, nav, mobileOpen, onMobileClose }:
               <span className="font-display text-[1.6rem] font-semibold tracking-tight text-white">
                 Azhary
               </span>
-              <span className="text-[0.6rem] font-semibold uppercase tracking-[0.22em] mt-0.5" style={{ color: '#C9A24B' }}>
+              <span className="text-[0.6rem] font-semibold uppercase tracking-[0.22em] mt-0.5" style={{ color: '#C0A854' }}>
                 Quran Academy
               </span>
             </div>

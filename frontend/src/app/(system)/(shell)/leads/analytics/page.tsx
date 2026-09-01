@@ -26,7 +26,7 @@ const STATUS_LABEL_KEYS: Record<string, string> = {
 /* ─────────────── helpers ─────────────── */
 const STAR_PATH = 'M50,5 L57.65,31.52 L81.82,18.18 L68.48,42.35 L95,50 L68.48,57.65 L81.82,81.82 L57.65,68.48 L50,95 L42.35,68.48 L18.18,81.82 L31.52,57.65 L5,50 L31.52,42.35 L18.18,18.18 L42.35,31.52 Z'
 
-function KhatamStar({ size = 18, color = '#C9A24B', opacity = 1 }: { size?: number; color?: string; opacity?: number }) {
+function KhatamStar({ size = 18, color = '#C0A854', opacity = 1 }: { size?: number; color?: string; opacity?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 100 100" style={{ opacity }}>
       <path d={STAR_PATH} fill={color} />
@@ -37,9 +37,9 @@ function KhatamStar({ size = 18, color = '#C9A24B', opacity = 1 }: { size?: numb
 function GoldDivider() {
   return (
     <div className="flex items-center gap-0" style={{ height: 2 }}>
-      <div style={{ flex: 1, height: 1, background: 'linear-gradient(90deg, transparent, #C9A24B88)' }} />
-      <div style={{ width: 6, height: 6, background: '#C9A24B', transform: 'rotate(45deg)', margin: '0 4px', opacity: 0.7 }} />
-      <div style={{ flex: 1, height: 1, background: 'linear-gradient(90deg, #C9A24B88, transparent)' }} />
+      <div style={{ flex: 1, height: 1, background: 'linear-gradient(90deg, transparent, #C0A85488)' }} />
+      <div style={{ width: 6, height: 6, background: '#C0A854', transform: 'rotate(45deg)', margin: '0 4px', opacity: 0.7 }} />
+      <div style={{ flex: 1, height: 1, background: 'linear-gradient(90deg, #C0A85488, transparent)' }} />
     </div>
   )
 }
@@ -241,26 +241,26 @@ export default function LeadStatisticsPage() {
       <div
         className="rounded-2xl mb-5 overflow-hidden"
         style={{
-          background: 'linear-gradient(135deg, #0d2548 0%, #0B1F3A 60%, #071528 100%)',
+          background: 'linear-gradient(135deg, #0d2548 0%, #18483C 60%, #071528 100%)',
           boxShadow: '0 4px 24px rgb(11 31 58 / 0.18)',
         }}
       >
-        <div style={{ height: 2, background: 'linear-gradient(90deg, transparent 0%, #C9A24B 30%, #C9A24B 70%, transparent 100%)' }} />
+        <div style={{ height: 2, background: 'linear-gradient(90deg, transparent 0%, #C0A854 30%, #C0A854 70%, transparent 100%)' }} />
         <div className="relative px-5 py-4 overflow-hidden">
           <svg className="absolute right-0 top-0 pointer-events-none select-none" width="220" height="90" aria-hidden>
-            <g transform="translate(140, -20) scale(1.8)" opacity="0.04"><path d={STAR_PATH} fill="#C9A24B" /></g>
-            <g transform="translate(60, 30) scale(1.1)" opacity="0.03"><path d={STAR_PATH} fill="#C9A24B" /></g>
+            <g transform="translate(140, -20) scale(1.8)" opacity="0.04"><path d={STAR_PATH} fill="#C0A854" /></g>
+            <g transform="translate(60, 30) scale(1.1)" opacity="0.03"><path d={STAR_PATH} fill="#C0A854" /></g>
           </svg>
           <svg className="absolute inset-0 w-full h-full pointer-events-none" aria-hidden>
             <pattern id="stat-dots" x="0" y="0" width="28" height="28" patternUnits="userSpaceOnUse">
-              <circle cx="1" cy="1" r="0.8" fill="#C9A24B" opacity="0.08" />
+              <circle cx="1" cy="1" r="0.8" fill="#C0A854" opacity="0.08" />
             </pattern>
             <rect width="100%" height="100%" fill="url(#stat-dots)" />
           </svg>
 
           <div className="relative z-10 flex items-center justify-between gap-4">
             <div className="flex items-center gap-3 min-w-0">
-              <KhatamStar size={22} color="#C9A24B" opacity={0.9} />
+              <KhatamStar size={22} color="#C0A854" opacity={0.9} />
               <div>
                 <h1 className="text-2xl font-bold text-white leading-none" style={{ fontFamily: "'Cormorant Garamond', Georgia, serif", letterSpacing: '-0.01em' }}>
                   {t('leads.crmTitle')}

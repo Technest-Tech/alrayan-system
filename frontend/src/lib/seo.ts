@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { siteConfig } from '@/config/site'
+import { defaultLocale, ogLocale, type Locale } from '@/i18n/config'
 
 type BuildMetadataArgs = {
   title: string
@@ -8,6 +9,16 @@ type BuildMetadataArgs = {
   image?: string
   type?: 'website' | 'article'
   noIndex?: boolean
+  /** Active locale. Defaults to English. */
+  locale?: Locale
+}
+
+/** Absolute URL for a path in a given locale (French pages live under /fr). */
+export function localeUrl(path: string, locale: Locale): string {
+  const prefix = locale === defaultLocale ? '' : `/${locale}`
+  // Normalize the home path so canonicals match the sitemap ("/fr", not "/fr/").
+  const suffix = path === '/' ? '' : path
+  return `${siteConfig.url}${prefix}${suffix}`
 }
 
 export function buildMetadata({
@@ -17,8 +28,9 @@ export function buildMetadata({
   image,
   type = 'website',
   noIndex = false,
+  locale = defaultLocale,
 }: BuildMetadataArgs): Metadata {
-  const url = `${siteConfig.url}${path}`
+  const url = localeUrl(path, locale)
   const ogImage = image ?? `${siteConfig.url}/og-default.jpg`
 
   return {
@@ -28,9 +40,11 @@ export function buildMetadata({
     ...(noIndex && { robots: { index: false, follow: false } }),
     alternates: {
       canonical: url,
+      // hreflang — tells search engines each page has an English and a French twin.
       languages: {
-        'en-US': url,
-        'x-default': url,
+        en: localeUrl(path, 'en'),
+        fr: localeUrl(path, 'fr'),
+        'x-default': localeUrl(path, 'en'),
       },
     },
     openGraph: {
@@ -39,7 +53,8 @@ export function buildMetadata({
       url,
       type,
       siteName: siteConfig.name,
-      locale: 'en_US',
+      locale: ogLocale[locale],
+      alternateLocale: locale === 'fr' ? ogLocale.en : ogLocale.fr,
       images: [
         {
           url: ogImage,

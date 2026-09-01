@@ -2,8 +2,12 @@ import { Button as ButtonPrimitive } from "@base-ui/react/button"
 import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "@/lib/utils"
 
+// Labels are translated, and French runs ~50% longer than the English it mirrors
+// ("Book Free Trial Class" -> "Réserver un cours d'essai gratuit"). The base
+// therefore lets a label wrap and caps the button at its container's width
+// instead of letting a long one push itself off a phone screen.
 const buttonVariants = cva(
-  "inline-flex shrink-0 items-center justify-center gap-2 rounded-xl border border-transparent font-medium whitespace-nowrap transition-all duration-150 outline-none select-none focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-offset-2 disabled:pointer-events-none disabled:opacity-50 cursor-pointer [&_svg]:pointer-events-none [&_svg]:shrink-0",
+  "inline-flex max-w-full shrink-0 items-center justify-center gap-2 rounded-xl border border-transparent text-center font-medium transition-all duration-150 outline-none select-none focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-offset-2 disabled:pointer-events-none disabled:opacity-50 cursor-pointer [&_svg]:pointer-events-none [&_svg]:shrink-0",
   {
     variants: {
       variant: {
@@ -26,9 +30,9 @@ const buttonVariants = cva(
         link: "underline-offset-4 hover:underline text-secondary p-0 h-auto",
       },
       size: {
-        default: "h-12 px-7 text-base",
-        sm: "h-9 px-5 text-sm",
-        lg: "h-14 px-8 text-lg",
+        default: "min-h-12 px-7 py-2 text-base",
+        sm: "min-h-9 px-5 py-1.5 text-sm",
+        lg: "min-h-14 px-8 py-2.5 text-lg",
         icon: "size-10",
         "icon-sm": "size-7",
         "icon-xs": "size-6",

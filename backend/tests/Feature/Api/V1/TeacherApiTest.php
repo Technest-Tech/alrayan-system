@@ -66,6 +66,60 @@ class TeacherApiTest extends TestCase
         $this->assertEquals('Teacher B', $data[1]['name']);
     }
 
+    public function test_french_request_returns_the_french_title(): void
+    {
+        $this->makeTeacher([
+            'title'    => 'Quran and Arabic Language Teacher',
+            'title_fr' => 'Professeur de Coran et de langue arabe',
+            'role_fr'  => 'Enseignant',
+        ]);
+
+        $this->getJson('/api/v1/teachers?locale=fr')
+            ->assertOk()
+            ->assertJsonPath('data.0.title', 'Professeur de Coran et de langue arabe');
+    }
+
+    public function test_french_title_falls_back_to_the_french_role_not_english(): void
+    {
+        // A teacher saved through the admin panel without a French title: the
+        // French site must not print the English hook at the reader.
+        $this->makeTeacher([
+            'title'    => 'Quran and Arabic Language Teacher',
+            'title_fr' => null,
+            'role_fr'  => 'Enseignante',
+        ]);
+
+        $this->getJson('/api/v1/teachers?locale=fr')
+            ->assertOk()
+            ->assertJsonPath('data.0.title', 'Enseignante');
+    }
+
+    public function test_english_request_is_unaffected_by_the_french_fallback(): void
+    {
+        $this->makeTeacher([
+            'title'    => 'Quran and Arabic Language Teacher',
+            'title_fr' => null,
+            'role_fr'  => 'Enseignante',
+        ]);
+
+        $this->getJson('/api/v1/teachers')
+            ->assertOk()
+            ->assertJsonPath('data.0.title', 'Quran and Arabic Language Teacher');
+    }
+
+    public function test_french_title_keeps_english_when_there_is_no_french_role_either(): void
+    {
+        $this->makeTeacher([
+            'title'    => 'Quran and Arabic Language Teacher',
+            'title_fr' => null,
+            'role_fr'  => null,
+        ]);
+
+        $this->getJson('/api/v1/teachers?locale=fr')
+            ->assertOk()
+            ->assertJsonPath('data.0.title', 'Quran and Arabic Language Teacher');
+    }
+
     public function test_response_includes_expected_fields(): void
     {
         $this->makeTeacher();

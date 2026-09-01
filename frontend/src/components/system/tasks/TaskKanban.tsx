@@ -76,7 +76,7 @@ export function TaskKanban({ tasks, isLoading, canDecide, onSelect }: Props) {
               >
                 <div className="flex items-center gap-2">
                   <span className="w-2 h-2 rounded-full" style={{ background: dot }} />
-                  <span className="text-xs font-semibold" style={{ color: '#0B1F3A' }}>{t(TASK_STATUS_KEYS[status])}</span>
+                  <span className="text-xs font-semibold" style={{ color: '#18483C' }}>{t(TASK_STATUS_KEYS[status])}</span>
                 </div>
                 <span className="text-xs font-bold tabular-nums px-1.5 py-0.5 rounded-full" style={{ background: 'rgba(255,255,255,0.85)', color: dot }}>
                   {colTasks.length}

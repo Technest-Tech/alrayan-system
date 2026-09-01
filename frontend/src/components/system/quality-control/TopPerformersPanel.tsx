@@ -9,7 +9,7 @@ import { RangeToggle, Avatar, type QcRange } from './RangeToggle'
 const BORDER = 'rgb(var(--border-default,229 233 240))'
 const NAVY   = 'rgb(11 31 58)'
 const MUTED  = 'rgb(90 100 112)'
-const GOLD   = '#C9A24B'
+const GOLD   = '#C0A854'
 
 // Podium display order: 2nd, 1st, 3rd — with the winner tallest in the centre.
 const SLOTS: { rank: number; order: number; height: number; size: number }[] = [

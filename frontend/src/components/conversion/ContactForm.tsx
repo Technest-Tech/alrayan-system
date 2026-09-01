@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useMemo } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -9,26 +9,53 @@ import { Button } from '@/components/ui/button'
 import { FormField } from './FormField'
 import { SuccessState } from './SuccessState'
 import { TurnstileWidget } from './TurnstileWidget'
+import { useT } from '@/i18n/MarketingI18nProvider'
+import type { TranslateFn } from '@/i18n/translate'
+import {
+  sendWeb3FormsNotification,
+  type Web3FormsFields,
+} from '@/lib/web3forms'
 
-const schema = z.object({
-  name: z.string().min(2, 'Full name required'),
-  email: z.string().email('Valid email required'),
-  subject: z.string().min(3, 'Subject required'),
-  message: z.string().min(10, 'Please write at least 10 characters'),
-  turnstileToken: z.string().min(1, 'Please complete the security check'),
-})
+// Cloudflare Turnstile is optional: the captcha only appears (and is required)
+// when a site key is configured. Without one, the form submits without it and
+// the backend skips verification too.
+const SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY
+const CAPTCHA_ENABLED = Boolean(SITE_KEY)
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000'
 
-type FormValues = z.infer<typeof schema>
+const makeSchema = (t: TranslateFn) =>
+  z
+    .object({
+      name: z.string().min(2, t('contactForm.nameRequired')),
+      email: z.string().email(t('contactForm.emailInvalid')),
+      subject: z.string().min(3, t('contactForm.subjectRequired')),
+      message: z.string().min(10, t('contactForm.messageMin')),
+      turnstileToken: z.string().optional(),
+    })
+    .superRefine((val, ctx) => {
+      if (CAPTCHA_ENABLED && !val.turnstileToken) {
+        ctx.addIssue({
+          code: 'custom',
+          message: t('contactForm.captchaRequired'),
+          path: ['turnstileToken'],
+        })
+      }
+    })
+
+type FormValues = z.infer<ReturnType<typeof makeSchema>>
 
 type Status = 'idle' | 'loading' | 'success' | 'error'
 
-const SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY ?? '1x00000000000000000000AA'
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000'
-
 export function ContactForm() {
+  const { t, locale } = useT()
   const [status, setStatus] = useState<Status>('idle')
   const [reference, setReference] = useState('')
   const [errorMsg, setErrorMsg] = useState('')
+  const [pendingNotification, setPendingNotification] = useState<Web3FormsFields | null>(
+    null,
+  )
+
+  const schema = useMemo(() => makeSchema(t), [t])
 
   const {
     register,
@@ -47,22 +74,68 @@ export function ContactForm() {
   const onSubmit = async (data: FormValues) => {
     setStatus('loading')
     setErrorMsg('')
+    let savedInBackend = pendingNotification !== null
+
     try {
-      const res = await fetch(`${API_URL}/api/v1/contacts`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-        body: JSON.stringify(data),
-      })
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}))
-        throw new Error((err as { message?: string }).message ?? 'Submission failed')
+      let notification = pendingNotification
+
+      if (!notification) {
+        const res = await fetch(`${API_URL}/api/v1/contacts`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+          body: JSON.stringify(data),
+        })
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}))
+          throw new Error(
+            (err as { message?: string }).message ?? t('contactForm.errorGeneric'),
+          )
+        }
+
+        const json = (await res.json()) as { reference: string }
+        setReference(json.reference)
+        savedInBackend = true
+
+        notification = {
+          subject: `[Website Contact] ${data.subject}`,
+          form_name: 'General contact form',
+          reference: json.reference,
+          name: data.name,
+          email: data.email,
+          inquiry_subject: data.subject,
+          message: data.message,
+          language: locale.toUpperCase(),
+          page_url: window.location.href,
+        }
+        setPendingNotification(notification)
       }
-      const json = (await res.json()) as { reference: string }
-      setReference(json.reference)
+
+      await sendWeb3FormsNotification(notification)
       setStatus('success')
     } catch (e) {
       setStatus('error')
-      setErrorMsg(e instanceof Error ? e.message : 'Something went wrong. Please try again.')
+      setErrorMsg(
+        savedInBackend
+          ? t('contactForm.emailRetry')
+          : e instanceof Error
+            ? e.message
+            : t('contactForm.errorGeneric'),
+      )
+    }
+  }
+
+  const retryEmailNotification = async () => {
+    if (!pendingNotification) return
+
+    setStatus('loading')
+    setErrorMsg('')
+
+    try {
+      await sendWeb3FormsNotification(pendingNotification)
+      setStatus('success')
+    } catch {
+      setStatus('error')
+      setErrorMsg(t('contactForm.emailRetry'))
     }
   }
 
@@ -71,61 +144,64 @@ export function ContactForm() {
   }
 
   const isLoading = status === 'loading'
+  const fieldsDisabled = isLoading || pendingNotification !== null
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-4">
       <div className="grid sm:grid-cols-2 gap-4">
         <FormField
           id="contact-name"
-          label="Full Name"
+          label={t('contactForm.nameLabel')}
           required
-          placeholder="Your name"
+          placeholder={t('contactForm.namePlaceholder')}
           error={errors.name?.message}
-          disabled={isLoading}
+          disabled={fieldsDisabled}
           {...register('name')}
         />
         <FormField
           id="contact-email"
-          label="Email Address"
+          label={t('contactForm.emailLabel')}
           type="email"
           required
-          placeholder="you@example.com"
+          placeholder={t('contactForm.emailPlaceholder')}
           error={errors.email?.message}
-          disabled={isLoading}
+          disabled={fieldsDisabled}
           {...register('email')}
         />
       </div>
 
       <FormField
         id="contact-subject"
-        label="Subject"
+        label={t('contactForm.subjectLabel')}
         required
-        placeholder="What is your question about?"
+        placeholder={t('contactForm.subjectPlaceholder')}
         error={errors.subject?.message}
-        disabled={isLoading}
+        disabled={fieldsDisabled}
         {...register('subject')}
       />
 
       <FormField
         id="contact-message"
-        label="Message"
+        label={t('contactForm.messageLabel')}
         as="textarea"
         required
-        placeholder="Write your message here…"
+        placeholder={t('contactForm.messagePlaceholder')}
         rows={4}
         error={errors.message?.message}
-        disabled={isLoading}
+        disabled={fieldsDisabled}
         {...register('message')}
       />
 
-      <div>
-        <TurnstileWidget siteKey={SITE_KEY} onSuccess={handleTurnstileSuccess} />
-        {errors.turnstileToken && (
-          <p role="alert" aria-live="polite" className="text-destructive text-sm mt-1">
-            {errors.turnstileToken.message}
-          </p>
-        )}
-      </div>
+      {CAPTCHA_ENABLED && (
+        <div>
+          <TurnstileWidget siteKey={SITE_KEY!} onSuccess={handleTurnstileSuccess} />
+          {errors.turnstileToken && (
+            <p role="alert" aria-live="polite" className="text-destructive text-sm mt-1">
+              {errors.turnstileToken.message}
+            </p>
+          )}
+        </div>
+      )}
 
       {status === 'error' && (
         <div
@@ -137,18 +213,19 @@ export function ContactForm() {
       )}
 
       <Button
-        type="submit"
+        type={pendingNotification ? 'button' : 'submit'}
         size="default"
         className="w-full justify-center"
         disabled={isLoading}
+        onClick={pendingNotification ? retryEmailNotification : undefined}
       >
         {isLoading ? (
           <>
             <Loader2 className="size-4 animate-spin" aria-hidden="true" />
-            Sending…
+            {t('contactForm.submitting')}
           </>
         ) : (
-          'Send Message'
+          pendingNotification ? t('contactForm.retryEmail') : t('contactForm.submit')
         )}
       </Button>
     </form>

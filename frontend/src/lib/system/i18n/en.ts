@@ -6,6 +6,7 @@ export const en = {
       communications: 'Communications',
       admin:          'Admin',
       main:           'Main',
+      site:           'Site',
     },
     dashboard:     'Dashboard',
     myStudents:    'My Students',
@@ -29,6 +30,10 @@ export const en = {
     analytics:     'Analytics',
     studentAnalytics: 'Students Analytics',
     profitability: 'Profitability',
+    siteTeachers:  'Site Teachers',
+    siteReviews:   'Reviews',
+    siteTraffic:   'Site Traffic',
+    siteSettings:  'Site Settings',
   },
   analytics: {
     title:                'Analytics',

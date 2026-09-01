@@ -57,11 +57,11 @@ export default function QualityControlPage() {
   return (
     <div className="min-w-0 space-y-5">
       {/* Hero header */}
-      <div className="rounded-2xl overflow-hidden" style={{ background: 'linear-gradient(135deg, #0d2548 0%, #0B1F3A 60%, #071528 100%)', boxShadow: '0 4px 24px rgb(11 31 58 / 0.18)' }}>
-        <div style={{ height: 2, background: 'linear-gradient(90deg, transparent 0%, #C9A24B 30%, #C9A24B 70%, transparent 100%)' }} />
+      <div className="rounded-2xl overflow-hidden" style={{ background: 'linear-gradient(135deg, #0d2548 0%, #18483C 60%, #071528 100%)', boxShadow: '0 4px 24px rgb(11 31 58 / 0.18)' }}>
+        <div style={{ height: 2, background: 'linear-gradient(90deg, transparent 0%, #C0A854 30%, #C0A854 70%, transparent 100%)' }} />
         <div className="relative px-5 py-4 flex items-center justify-between gap-4">
           <div className="flex items-center gap-3 min-w-0">
-            <ClipboardCheck size={22} color="#C9A24B" />
+            <ClipboardCheck size={22} color="#C0A854" />
             <div>
               <h1 className="text-2xl font-bold text-white leading-none" style={{ fontFamily: "'Cormorant Garamond', Georgia, serif", letterSpacing: '-0.01em' }}>{t('qualityControl.title')}</h1>
               <p className="text-xs mt-0.5" style={{ color: 'rgba(201,162,75,0.7)' }}>{t('qualityControl.subtitle')}</p>
@@ -96,7 +96,7 @@ export default function QualityControlPage() {
             )}
           </div>
         </div>
-        <div style={{ height: 1.5, background: 'linear-gradient(90deg, transparent, #C9A24B88, transparent)' }} />
+        <div style={{ height: 1.5, background: 'linear-gradient(90deg, transparent, #C0A85488, transparent)' }} />
       </div>
 
       {/* KPI cards */}
