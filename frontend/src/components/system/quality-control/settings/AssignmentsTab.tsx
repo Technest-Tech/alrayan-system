@@ -69,7 +69,7 @@ export function AssignmentsTab() {
             {t('qualityControl.settingsModal.assignmentTeacher')}
             <div className="mt-1"><SearchSelect value={teacher} onChange={setTeacher} options={teacherOptions} placeholder={t('qualityControl.settingsModal.assignmentTeacher')} /></div>
           </label>
-          <button onClick={add} disabled={create.isPending || !mgr || !teacher} className="inline-flex items-center gap-1.5 px-3 py-2.5 rounded-xl text-white text-sm disabled:opacity-40" style={{ background: '#0B1F3A' }}>
+          <button onClick={add} disabled={create.isPending || !mgr || !teacher} className="inline-flex items-center gap-1.5 px-3 py-2.5 rounded-xl text-white text-sm disabled:opacity-40" style={{ background: '#18483C' }}>
             <Plus size={14} /> {t('qualityControl.settingsModal.addAssignment')}
           </button>
         </div>

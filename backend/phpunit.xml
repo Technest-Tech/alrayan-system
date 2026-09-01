@@ -27,12 +27,21 @@
         <env name="DB_CONNECTION" value="sqlite" force="true"/>
         <env name="DB_DATABASE" value=":memory:" force="true"/>
         <env name="MAIL_MAILER" value="array"/>
+        <!-- Blank so NextRevalidationService short-circuits. The queue runs sync
+             under test, so a set URL makes any test that touches a revalidated
+             model fire a real HTTP request at a dev server: the suite then
+             passes or fails depending on whether `pnpm dev` happens to be up. -->
+        <env name="NEXT_REVALIDATE_URL" value="" force="true"/>
         <env name="PULSE_ENABLED" value="false"/>
         <env name="QUEUE_CONNECTION" value="sync"/>
         <env name="REPORTS_RENDERER" value="fake"/>
         <env name="REPORTS_PUBLIC_BASE_URL" value="https://reports.test"/>
         <env name="SESSION_DRIVER" value="array"/>
         <env name="TELESCOPE_ENABLED" value="false"/>
+        <!-- VerifyTurnstileToken skips verification when no secret is set, so
+             without this the captcha tests assert a guard that never runs. The
+             siteverify call itself is faked in the form tests. -->
+        <env name="TURNSTILE_SECRET_KEY" value="1x0000000000000000000000000000000AA" force="true"/>
         <!-- Never let the suite reach the real Acadmyq gateway. -->
         <env name="WHATSAPP_ENABLED" value="false"/>
     </php>

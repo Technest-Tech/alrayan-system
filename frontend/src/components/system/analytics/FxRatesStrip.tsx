@@ -30,7 +30,7 @@ export function FxRatesStrip() {
     <div className="rounded-2xl p-5" style={{ background: 'rgb(var(--surface-card))', border: '1px solid rgb(var(--border-default))' }}>
       <div className="flex items-center justify-between gap-3 mb-4">
         <div className="flex items-center gap-2 min-w-0">
-          <span style={{ color: '#C9A24B' }}><Coins size={16} /></span>
+          <span style={{ color: '#C0A854' }}><Coins size={16} /></span>
           <h3 className="text-sm font-semibold truncate">{t('analytics.exchangeRates')}</h3>
           {data && (
             <span

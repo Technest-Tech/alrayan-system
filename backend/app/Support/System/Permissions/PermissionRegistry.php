@@ -30,6 +30,7 @@ class PermissionRegistry
         'whatsapp'      => ['view', 'edit'],
         'certificates'  => ['view', 'issue'],
         'settings'      => ['view', 'edit'],
+        'site'          => ['manage', 'view_analytics'],
         'users'          => ['view', 'view_directory', 'invite', 'create', 'edit', 'deactivate', 'suspend', 'archive', 'delete'],
         'audit'          => ['view'],
         'students_notes' => ['view', 'create', 'edit_own', 'edit_any', 'delete_own', 'delete_any'],

@@ -8,50 +8,57 @@ import {
   AccordionTrigger,
 } from '@/components/ui/accordion'
 import { whatsappLink } from '@/config/site'
-import { faqs, faqCategories } from '@/content/faq'
-import type { FaqCategory } from '@/content/faq'
+import { getFaqs, getFaqCategories } from '@/content/faq'
+import { useT } from '@/i18n/MarketingI18nProvider'
 import { Search, MessageCircle } from 'lucide-react'
 
+/** Sentinel for the "show every category" filter (never a real category name). */
+const ALL = '__all__'
+
 export function FaqContent() {
-  const [activeCategory, setActiveCategory] = useState<FaqCategory | 'All'>('All')
+  const { locale, t } = useT()
+  const [activeCategory, setActiveCategory] = useState<string>(ALL)
   const [searchQuery, setSearchQuery] = useState('')
+
+  const faqs = useMemo(() => getFaqs(locale), [locale])
+  const faqCategories = useMemo(() => getFaqCategories(locale), [locale])
 
   const filtered = useMemo(() => {
     const q = searchQuery.toLowerCase()
     return faqs.filter((faq) => {
       const matchesCategory =
-        activeCategory === 'All' || faq.category === activeCategory
+        activeCategory === ALL || faq.category === activeCategory
       const matchesSearch =
         !q || faq.q.toLowerCase().includes(q) || faq.a.toLowerCase().includes(q)
       return matchesCategory && matchesSearch
     })
-  }, [activeCategory, searchQuery])
+  }, [faqs, activeCategory, searchQuery])
 
   const grouped = useMemo(() => {
-    if (activeCategory !== 'All' || searchQuery) return null
+    if (activeCategory !== ALL || searchQuery) return null
     return faqCategories.map((cat) => ({
       category: cat,
       items: filtered.filter((f) => f.category === cat),
     }))
-  }, [activeCategory, searchQuery, filtered])
+  }, [faqCategories, activeCategory, searchQuery, filtered])
 
   return (
     <div className="grid md:grid-cols-[220px_1fr] gap-10 items-start">
       {/* ── Category sidebar ── */}
       <nav
-        aria-label="FAQ categories"
+        aria-label={t('faqPage.searchAria')}
         className="md:sticky md:top-28 flex md:flex-col gap-2 flex-wrap"
       >
         <button
-          onClick={() => setActiveCategory('All')}
+          onClick={() => setActiveCategory(ALL)}
           className={[
             'w-full text-left px-4 py-2.5 rounded-xl text-sm font-medium transition-colors',
-            activeCategory === 'All'
+            activeCategory === ALL
               ? 'bg-secondary text-white'
               : 'text-primary hover:bg-cream',
           ].join(' ')}
         >
-          All
+          {t('faqPage.all')}
         </button>
         {faqCategories.map((cat) => (
           <button
@@ -79,7 +86,7 @@ export function FaqContent() {
           />
           <input
             type="search"
-            placeholder="Search questions…"
+            placeholder={t('faqPage.searchPlaceholder')}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full pl-11 pr-4 h-12 rounded-xl border border-border-soft bg-white text-sm text-primary placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary transition-colors"
@@ -93,17 +100,17 @@ export function FaqContent() {
               className="size-10 text-muted-foreground/40 mx-auto mb-4"
               aria-hidden="true"
             />
-            <p className="text-primary font-semibold mb-2">No questions found</p>
+            <p className="text-primary font-semibold mb-2">{t('faqPage.noResultsTitle')}</p>
             <p className="text-muted-foreground text-sm mb-6">
-              Try a different search term or browse all categories.
+              {t('faqPage.noResultsBody')}
             </p>
             <a
-              href={whatsappLink('Assalamu alaikum, I have a question I couldn\'t find in the FAQ.')}
+              href={whatsappLink(t('faqPage.waMessage'))}
               target="_blank"
               rel="noopener noreferrer"
               className="text-secondary font-semibold text-sm hover:underline"
             >
-              Ask us on WhatsApp →
+              {t('faqPage.askWhatsapp')}
             </a>
           </div>
         )}

@@ -32,15 +32,15 @@ export default function TasksPage() {
   return (
     <div className="min-w-0">
       {/* Header */}
-      <div className="rounded-2xl mb-5 overflow-hidden" style={{ background: 'linear-gradient(135deg, #0d2548 0%, #0B1F3A 60%, #071528 100%)', boxShadow: '0 4px 24px rgb(11 31 58 / 0.18)' }}>
-        <div style={{ height: 2, background: 'linear-gradient(90deg, transparent 0%, #C9A24B 30%, #C9A24B 70%, transparent 100%)' }} />
+      <div className="rounded-2xl mb-5 overflow-hidden" style={{ background: 'linear-gradient(135deg, #0d2548 0%, #18483C 60%, #071528 100%)', boxShadow: '0 4px 24px rgb(11 31 58 / 0.18)' }}>
+        <div style={{ height: 2, background: 'linear-gradient(90deg, transparent 0%, #C0A854 30%, #C0A854 70%, transparent 100%)' }} />
         <div className="relative px-5 py-4" style={{ overflow: 'hidden' }}>
           <svg className="absolute right-0 top-0 pointer-events-none select-none" width="220" height="90" aria-hidden>
-            <g transform="translate(140, -20) scale(1.8)" opacity="0.04"><path d={STAR_PATH} fill="#C9A24B" /></g>
+            <g transform="translate(140, -20) scale(1.8)" opacity="0.04"><path d={STAR_PATH} fill="#C0A854" /></g>
           </svg>
           <div className="relative z-10 flex items-center justify-between gap-4">
             <div className="flex items-center gap-3 min-w-0">
-              <ListChecks size={22} color="#C9A24B" />
+              <ListChecks size={22} color="#C0A854" />
               <div>
                 <h1 className="text-2xl font-bold text-white leading-none" style={{ fontFamily: "'Cormorant Garamond', Georgia, serif", letterSpacing: '-0.01em' }}>{t('tasks.title')}</h1>
                 <p className="text-xs mt-0.5" style={{ color: 'rgba(201,162,75,0.7)' }}>{t('tasks.subtitle')}</p>
@@ -65,7 +65,7 @@ export default function TasksPage() {
             </div>
           </div>
         </div>
-        <div style={{ height: 1.5, background: 'linear-gradient(90deg, transparent, #C9A24B88, transparent)' }} />
+        <div style={{ height: 1.5, background: 'linear-gradient(90deg, transparent, #C0A85488, transparent)' }} />
       </div>
 
       <Tabs defaultValue="kanban">

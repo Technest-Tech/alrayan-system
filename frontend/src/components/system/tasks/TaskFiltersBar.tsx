@@ -31,7 +31,7 @@ function FilterSelect({ value, options, onChange }: { value: string; options: { 
         onChange={e => onChange(e.target.value)}
         className="appearance-none w-full pl-3 pr-7 py-2 rounded-lg border text-xs outline-none transition-all cursor-pointer focus:ring-2"
         style={{
-          borderColor: value ? '#C9A24B66' : 'rgb(229 233 240)',
+          borderColor: value ? '#C0A85466' : 'rgb(229 233 240)',
           background: value ? 'rgba(201,162,75,0.04)' : '#fff',
           color: value ? 'rgb(11 31 58)' : 'rgb(90 100 112)',
         }}
@@ -102,7 +102,7 @@ export function TaskFiltersBar({ filters, onChange }: Props) {
               type="text"
               placeholder={t('tasks.searchPlaceholder')}
               className="w-full pl-8 pr-3 h-9 rounded-lg border text-xs outline-none focus:ring-2 focus:ring-[#0E7C5A]/20 transition-all"
-              style={{ borderColor: filters.q ? '#C9A24B66' : 'rgb(229 233 240)', background: filters.q ? 'rgba(201,162,75,0.04)' : '#fff' }}
+              style={{ borderColor: filters.q ? '#C0A85466' : 'rgb(229 233 240)', background: filters.q ? 'rgba(201,162,75,0.04)' : '#fff' }}
               value={filters.q ?? ''}
               onChange={e => onChange({ ...filters, q: e.target.value })}
             />
@@ -119,14 +119,14 @@ export function TaskFiltersBar({ filters, onChange }: Props) {
             value={filters.from_date ?? ''}
             onChange={e => onChange({ ...filters, from_date: e.target.value })}
             className="w-full h-9 px-3 rounded-lg border text-xs outline-none focus:ring-2 focus:ring-[#0E7C5A]/20 cursor-pointer"
-            style={{ borderColor: filters.from_date ? '#C9A24B66' : 'rgb(229 233 240)', color: filters.from_date ? 'rgb(11 31 58)' : 'rgb(156 163 175)' }}
+            style={{ borderColor: filters.from_date ? '#C0A85466' : 'rgb(229 233 240)', color: filters.from_date ? 'rgb(11 31 58)' : 'rgb(156 163 175)' }}
           />
           <input
             type="date"
             value={filters.to_date ?? ''}
             onChange={e => onChange({ ...filters, to_date: e.target.value })}
             className="w-full h-9 px-3 rounded-lg border text-xs outline-none focus:ring-2 focus:ring-[#0E7C5A]/20 cursor-pointer"
-            style={{ borderColor: filters.to_date ? '#C9A24B66' : 'rgb(229 233 240)', color: filters.to_date ? 'rgb(11 31 58)' : 'rgb(156 163 175)' }}
+            style={{ borderColor: filters.to_date ? '#C0A85466' : 'rgb(229 233 240)', color: filters.to_date ? 'rgb(11 31 58)' : 'rgb(156 163 175)' }}
           />
         </div>
       </div>

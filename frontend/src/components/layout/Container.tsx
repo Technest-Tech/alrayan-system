@@ -1,3 +1,4 @@
+import { createElement } from 'react'
 import { cn } from '@/lib/utils'
 
 type ContainerProps = {
@@ -11,9 +12,5 @@ export function Container({
   className,
   as: Tag = 'div',
 }: ContainerProps) {
-  return (
-    <Tag className={cn('container-site', className)}>
-      {children}
-    </Tag>
-  )
+  return createElement(Tag, { className: cn('container-site', className) }, children)
 }

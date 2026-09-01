@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\System\Lead;
 use Illuminate\Database\Eloquent\Model;
 
 class TrialBooking extends Model
@@ -15,4 +16,10 @@ class TrialBooking extends Model
     protected $casts = [
         'submitted_at' => 'datetime',
     ];
+
+    /** The CRM lead this booking was surfaced as. */
+    public function lead()
+    {
+        return $this->hasOne(Lead::class);
+    }
 }

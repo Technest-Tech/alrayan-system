@@ -15,7 +15,7 @@ import { ApiError } from '@/lib/system/api'
 import { useI18n } from '@/lib/system/i18n'
 
 /* ─── Avatar helpers ──────────────────────────── */
-const PALETTE = ['#0E7C5A', '#0B1F3A', '#1E5AAB', '#7C3AED', '#B45309', '#BE185D', '#C05621']
+const PALETTE = ['#0E7C5A', '#18483C', '#1E5AAB', '#7C3AED', '#B45309', '#BE185D', '#C05621']
 
 function initials(name: string | null) {
   if (!name) return '?'

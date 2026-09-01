@@ -12,7 +12,7 @@ import type { HoursByMonthPoint, TopTeacher, BestDay, AnalyticsTeacherOption } f
 
 const INK        = 'rgb(11 31 58)'
 const HOURS_CLR  = '#1E5AAB'
-const GOLD       = '#C9A24B'
+const GOLD       = '#C0A854'
 const GREEN      = '#0E7C5A'
 
 const DAY_KEYS = ['days.sun', 'days.mon', 'days.tue', 'days.wed', 'days.thu', 'days.fri', 'days.sat'] as const

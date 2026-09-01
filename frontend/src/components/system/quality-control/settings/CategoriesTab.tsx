@@ -46,7 +46,7 @@ export function CategoriesTab() {
         <div className="flex items-center gap-2">
           <input className={`${inp} flex-1`} style={{ borderColor: BORDER }} placeholder={t('qualityControl.settingsModal.categoryName')} value={name} onChange={e => setName(e.target.value)} onKeyDown={e => e.key === 'Enter' && addCategory()} />
           <input type="number" min={0} max={100} className={`${inp} w-16`} style={{ borderColor: BORDER }} value={weight} onChange={e => setWeight(Number(e.target.value))} />
-          <button onClick={addCategory} disabled={createCat.isPending || !name.trim()} className="p-2 rounded-lg text-white disabled:opacity-40" style={{ background: '#0B1F3A' }} aria-label={t('qualityControl.settingsModal.addCategory')}>
+          <button onClick={addCategory} disabled={createCat.isPending || !name.trim()} className="p-2 rounded-lg text-white disabled:opacity-40" style={{ background: '#18483C' }} aria-label={t('qualityControl.settingsModal.addCategory')}>
             <Plus size={15} />
           </button>
         </div>
@@ -134,7 +134,7 @@ function CategoryRow({ category, rules }: { category: QcCategory; rules: QcSpeci
             <input className={`${inp} flex-1`} style={{ borderColor: BORDER }} placeholder={t('qualityControl.settingsModal.subItemLabel')} value={newLabel} onChange={e => setNewLabel(e.target.value)} onKeyDown={e => e.key === 'Enter' && addItem()} />
             <input type="number" min={0} max={100} className={`${inp} w-14`} style={{ borderColor: BORDER }} value={newPenalty} onChange={e => setNewPenalty(Number(e.target.value))} />
             <RuleSelect rules={rules} value={newRule} onChange={setNewRule} />
-            <button onClick={addItem} disabled={!newLabel.trim()} className="p-1.5 rounded-lg text-white disabled:opacity-40" style={{ background: '#0B1F3A' }} aria-label={t('qualityControl.settingsModal.addSubItem')}>
+            <button onClick={addItem} disabled={!newLabel.trim()} className="p-1.5 rounded-lg text-white disabled:opacity-40" style={{ background: '#18483C' }} aria-label={t('qualityControl.settingsModal.addSubItem')}>
               <Plus size={14} />
             </button>
           </div>

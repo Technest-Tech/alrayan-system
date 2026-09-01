@@ -19,7 +19,7 @@ const S8 = 'M50,5 L57.65,31.52 L81.82,18.18 L68.48,42.35 L95,50 L68.48,57.65 L81
 
 // ─── Reusable SVG star ────────────────────────────────────────────────────────
 function KhatamStar({
-  cx, cy, size, fill = '#C9A24B', opacity = 1,
+  cx, cy, size, fill = '#C0A854', opacity = 1,
 }: { cx: number; cy: number; size: number; fill?: string; opacity?: number }) {
   const s = size / 100
   return (
@@ -31,7 +31,7 @@ function KhatamStar({
 
 // ─── Ornamental divider (star flanked by diamond chains) ─────────────────────
 function OrnaDiv({
-  width = 400, cy = 14, color = '#C9A24B',
+  width = 400, cy = 14, color = '#C0A854',
 }: { width?: number; cy?: number; color?: string }) {
   const half = width / 2
   const starSize = 28
@@ -82,18 +82,18 @@ export function ClassicCert({ data }: { data: CertData }) {
         <defs>
           {/* Diamond grid background pattern */}
           <pattern id="cl-bg" x="0" y="0" width="50" height="50" patternUnits="userSpaceOnUse">
-            <path d="M25,0 L50,25 L25,50 L0,25 Z" fill="none" stroke="#C9A24B" strokeWidth="0.5" opacity="0.1" />
+            <path d="M25,0 L50,25 L25,50 L0,25 Z" fill="none" stroke="#C0A854" strokeWidth="0.5" opacity="0.1" />
           </pattern>
           {/* Gold gradient for border */}
           <linearGradient id="cl-gold-h" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stopColor="#C9A24B" stopOpacity="0.6" />
-            <stop offset="50%" stopColor="#C9A24B" stopOpacity="1" />
-            <stop offset="100%" stopColor="#C9A24B" stopOpacity="0.6" />
+            <stop offset="0%" stopColor="#C0A854" stopOpacity="0.6" />
+            <stop offset="50%" stopColor="#C0A854" stopOpacity="1" />
+            <stop offset="100%" stopColor="#C0A854" stopOpacity="0.6" />
           </linearGradient>
           <linearGradient id="cl-gold-v" x1="0%" y1="0%" x2="0%" y2="100%">
-            <stop offset="0%" stopColor="#C9A24B" stopOpacity="0.6" />
-            <stop offset="50%" stopColor="#C9A24B" stopOpacity="1" />
-            <stop offset="100%" stopColor="#C9A24B" stopOpacity="0.6" />
+            <stop offset="0%" stopColor="#C0A854" stopOpacity="0.6" />
+            <stop offset="50%" stopColor="#C0A854" stopOpacity="1" />
+            <stop offset="100%" stopColor="#C0A854" stopOpacity="0.6" />
           </linearGradient>
         </defs>
 
@@ -101,28 +101,28 @@ export function ClassicCert({ data }: { data: CertData }) {
         <rect x={0} y={0} width={W} height={H} fill="url(#cl-bg)" />
 
         {/* Outer border */}
-        <rect x={12} y={12} width={W - 24} height={H - 24} fill="none" stroke="#C9A24B" strokeWidth={3} />
+        <rect x={12} y={12} width={W - 24} height={H - 24} fill="none" stroke="#C0A854" strokeWidth={3} />
         {/* Inner border */}
-        <rect x={20} y={20} width={W - 40} height={H - 40} fill="none" stroke="#C9A24B" strokeWidth={1} />
+        <rect x={20} y={20} width={W - 40} height={H - 40} fill="none" stroke="#C0A854" strokeWidth={1} />
 
         {/* Mid-point border ornaments (small diamonds at edge midpoints) */}
         {/* Top edge mid */}
-        <polygon points={`${W / 2},12 ${W / 2 + 6},18 ${W / 2},24 ${W / 2 - 6},18`} fill="#C9A24B" opacity={0.5} />
+        <polygon points={`${W / 2},12 ${W / 2 + 6},18 ${W / 2},24 ${W / 2 - 6},18`} fill="#C0A854" opacity={0.5} />
         {/* Bottom edge mid */}
-        <polygon points={`${W / 2},${H - 12} ${W / 2 + 6},${H - 18} ${W / 2},${H - 24} ${W / 2 - 6},${H - 18}`} fill="#C9A24B" opacity={0.5} />
+        <polygon points={`${W / 2},${H - 12} ${W / 2 + 6},${H - 18} ${W / 2},${H - 24} ${W / 2 - 6},${H - 18}`} fill="#C0A854" opacity={0.5} />
         {/* Left edge mid */}
-        <polygon points={`12,${H / 2} 18,${H / 2 + 6} 24,${H / 2} 18,${H / 2 - 6}`} fill="#C9A24B" opacity={0.5} />
+        <polygon points={`12,${H / 2} 18,${H / 2 + 6} 24,${H / 2} 18,${H / 2 - 6}`} fill="#C0A854" opacity={0.5} />
         {/* Right edge mid */}
-        <polygon points={`${W - 12},${H / 2} ${W - 18},${H / 2 + 6} ${W - 24},${H / 2} ${W - 18},${H / 2 - 6}`} fill="#C9A24B" opacity={0.5} />
+        <polygon points={`${W - 12},${H / 2} ${W - 18},${H / 2 + 6} ${W - 24},${H / 2} ${W - 18},${H / 2 - 6}`} fill="#C0A854" opacity={0.5} />
 
         {/* ── 4 corner Khatam stars, centered exactly on inner-border corners ── */}
-        <g transform={`translate(${tlX},${tlY}) scale(${starS})`}><path d={S8} fill="#C9A24B" /></g>
-        <g transform={`translate(${W - 22 - 50 * starS},${tlY}) scale(${starS})`}><path d={S8} fill="#C9A24B" /></g>
-        <g transform={`translate(${tlX},${H - 22 - 50 * starS}) scale(${starS})`}><path d={S8} fill="#C9A24B" /></g>
-        <g transform={`translate(${W - 22 - 50 * starS},${H - 22 - 50 * starS}) scale(${starS})`}><path d={S8} fill="#C9A24B" /></g>
+        <g transform={`translate(${tlX},${tlY}) scale(${starS})`}><path d={S8} fill="#C0A854" /></g>
+        <g transform={`translate(${W - 22 - 50 * starS},${tlY}) scale(${starS})`}><path d={S8} fill="#C0A854" /></g>
+        <g transform={`translate(${tlX},${H - 22 - 50 * starS}) scale(${starS})`}><path d={S8} fill="#C0A854" /></g>
+        <g transform={`translate(${W - 22 - 50 * starS},${H - 22 - 50 * starS}) scale(${starS})`}><path d={S8} fill="#C0A854" /></g>
 
         {/* Subtle large central watermark star */}
-        <KhatamStar cx={W / 2} cy={H / 2} size={260} fill="#C9A24B" opacity={0.025} />
+        <KhatamStar cx={W / 2} cy={H / 2} size={260} fill="#C0A854" opacity={0.025} />
       </svg>
 
       {/* ── Text content ─────────────────────────────────────────── */}
@@ -152,7 +152,7 @@ export function ClassicCert({ data }: { data: CertData }) {
         </div>
         {/* Academy name AR */}
         <div style={{
-          fontSize: 14, color: '#C9A24B', marginBottom: 10,
+          fontSize: 14, color: '#C0A854', marginBottom: 10,
           fontFamily: '"Amiri", "Scheherazade New", serif',
           direction: 'rtl',
         }}>
@@ -174,15 +174,15 @@ export function ClassicCert({ data }: { data: CertData }) {
 
         {/* Student name with twin gold rules */}
         <div style={{ position: 'relative', marginBottom: 10 }}>
-          <div style={{ height: 1.5, background: 'linear-gradient(90deg, transparent, #C9A24B 30%, #C9A24B 70%, transparent)', marginBottom: 5 }} />
+          <div style={{ height: 1.5, background: 'linear-gradient(90deg, transparent, #C0A854 30%, #C0A854 70%, transparent)', marginBottom: 5 }} />
           <div style={{
-            fontSize: 30, color: '#0B1F3A', fontStyle: 'italic',
+            fontSize: 30, color: '#18483C', fontStyle: 'italic',
             paddingInline: 40, letterSpacing: 0.5,
             minWidth: 300,
           }}>
             {data.studentName || 'Student Name'}
           </div>
-          <div style={{ height: 1.5, background: 'linear-gradient(90deg, transparent, #C9A24B 30%, #C9A24B 70%, transparent)', marginTop: 5 }} />
+          <div style={{ height: 1.5, background: 'linear-gradient(90deg, transparent, #C0A854 30%, #C0A854 70%, transparent)', marginTop: 5 }} />
         </div>
 
         {data.title && (
@@ -210,9 +210,9 @@ export function ClassicCert({ data }: { data: CertData }) {
           ] as [string, string][]).map(([name, role]) => (
             <div key={role} style={{ textAlign: 'center', width: 185 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 5 }}>
-                <div style={{ flex: 1, height: 1, background: '#C9A24B', opacity: 0.4 }} />
-                <svg width={10} height={10} viewBox="0 0 100 100"><path d={S8} fill="#C9A24B" opacity={0.5} /></svg>
-                <div style={{ flex: 1, height: 1, background: '#C9A24B', opacity: 0.4 }} />
+                <div style={{ flex: 1, height: 1, background: '#C0A854', opacity: 0.4 }} />
+                <svg width={10} height={10} viewBox="0 0 100 100"><path d={S8} fill="#C0A854" opacity={0.5} /></svg>
+                <div style={{ flex: 1, height: 1, background: '#C0A854', opacity: 0.4 }} />
               </div>
               <div style={{ fontSize: 10, color: '#2C2008', fontWeight: 600 }}>{name}</div>
               <div style={{ fontSize: 9, color: '#9B8860', marginTop: 2 }}>{role}</div>
@@ -222,7 +222,7 @@ export function ClassicCert({ data }: { data: CertData }) {
       </div>
 
       {/* Cert number */}
-      <div style={{ position: 'absolute', bottom: 24, right: 32, fontSize: 8, color: '#C9A24B', fontFamily: 'monospace', opacity: 0.7 }}>
+      <div style={{ position: 'absolute', bottom: 24, right: 32, fontSize: 8, color: '#C0A854', fontFamily: 'monospace', opacity: 0.7 }}>
         {data.certNumber}
       </div>
     </div>
@@ -261,25 +261,25 @@ export function ModernCert({ data }: { data: CertData }) {
 
           {/* Subtle diamond grid for body */}
           <pattern id="md-body-bg" x="0" y="0" width="60" height="60" patternUnits="userSpaceOnUse">
-            <path d="M30,0 L60,30 L30,60 L0,30 Z" fill="none" stroke="#0B1F3A" strokeWidth="0.3" opacity="0.04" />
+            <path d="M30,0 L60,30 L30,60 L0,30 Z" fill="none" stroke="#18483C" strokeWidth="0.3" opacity="0.04" />
           </pattern>
         </defs>
 
         {/* Navy header fill */}
-        <rect x={0} y={0} width={W} height={HDR} fill="#0B1F3A" />
+        <rect x={0} y={0} width={W} height={HDR} fill="#18483C" />
         {/* Islamic circle pattern overlay on header */}
         <rect x={0} y={0} width={W} height={HDR} fill="url(#md-circles)" clipPath="url(#md-hdr-clip)" />
         {/* Large central khatam watermark in header */}
-        <KhatamStar cx={W / 2} cy={HDR / 2 + 10} size={180} fill="#C9A24B" opacity={0.07} />
+        <KhatamStar cx={W / 2} cy={HDR / 2 + 10} size={180} fill="#C0A854" opacity={0.07} />
         {/* Small white khatam stars at header corners */}
         <KhatamStar cx={20} cy={20} size={22} fill="white" opacity={0.18} />
         <KhatamStar cx={W - 20} cy={20} size={22} fill="white" opacity={0.18} />
 
         {/* Gold separator bar */}
-        <rect x={0} y={HDR} width={W} height={4} fill="#C9A24B" />
+        <rect x={0} y={HDR} width={W} height={4} fill="#C0A854" />
 
         {/* Left gold accent bar (full height below header) */}
-        <rect x={0} y={HDR + 4} width={5} height={H - HDR - 4 - 56} fill="#C9A24B" />
+        <rect x={0} y={HDR + 4} width={5} height={H - HDR - 4 - 56} fill="#C0A854" />
 
         {/* Body diamond background */}
         <rect x={0} y={HDR + 4} width={W} height={H - HDR - 60} fill="url(#md-body-bg)" />
@@ -287,7 +287,7 @@ export function ModernCert({ data }: { data: CertData }) {
         {/* Right decorative khatam column */}
         {[0.25, 0.4, 0.55, 0.7].map((t, i) => {
           const y = HDR + 4 + t * (H - HDR - 60)
-          return <KhatamStar key={i} cx={W - 28} cy={y} size={22} fill="#C9A24B" opacity={0.12} />
+          return <KhatamStar key={i} cx={W - 28} cy={y} size={22} fill="#C0A854" opacity={0.12} />
         })}
 
         {/* Green footer */}
@@ -307,7 +307,7 @@ export function ModernCert({ data }: { data: CertData }) {
         <div>
           <div style={{ color: '#ffffff', fontSize: 22, fontWeight: 800, letterSpacing: 3 }}>AZHARY</div>
           <div style={{
-            color: '#C9A24B', fontSize: 13, marginTop: 3,
+            color: '#C0A854', fontSize: 13, marginTop: 3,
             fontFamily: '"Amiri", "Scheherazade New", serif', direction: 'rtl',
           }}>
             أكاديمية أزهري
@@ -325,7 +325,7 @@ export function ModernCert({ data }: { data: CertData }) {
 
         {/* Bismillah (small, gold) */}
         <div style={{
-          fontSize: 12, color: '#C9A24B', marginBottom: 8,
+          fontSize: 12, color: '#C0A854', marginBottom: 8,
           fontFamily: '"Amiri", "Scheherazade New", serif',
           direction: 'rtl',
         }}>
@@ -333,37 +333,37 @@ export function ModernCert({ data }: { data: CertData }) {
         </div>
 
         {/* Certificate label */}
-        <div style={{ fontSize: 8.5, letterSpacing: 5, textTransform: 'uppercase', color: '#C9A24B', marginBottom: 8 }}>
+        <div style={{ fontSize: 8.5, letterSpacing: 5, textTransform: 'uppercase', color: '#C0A854', marginBottom: 8 }}>
           Certificate of Achievement
         </div>
 
         {/* Type */}
-        <div style={{ fontSize: 26, fontWeight: 800, color: '#0B1F3A', letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 14 }}>
+        <div style={{ fontSize: 26, fontWeight: 800, color: '#18483C', letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 14 }}>
           {data.typeLabel || 'Course Completion'}
         </div>
 
         {/* Ornamental divider */}
-        <OrnaDiv width={380} cy={14} color="#C9A24B" />
+        <OrnaDiv width={380} cy={14} color="#C0A854" />
 
         <div style={{ fontSize: 11, color: '#6B7280', marginTop: 12, marginBottom: 6 }}>This is to certify that</div>
 
         {/* Student name framed by gold rules */}
         <div style={{ width: '72%', marginBottom: 10 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
-            <div style={{ flex: 1, height: 1, background: 'linear-gradient(to right, transparent, #C9A24B)' }} />
-            <svg width={12} height={12} viewBox="0 0 100 100"><path d={S8} fill="#C9A24B" /></svg>
-            <div style={{ flex: 1, height: 1, background: 'linear-gradient(to left, transparent, #C9A24B)' }} />
+            <div style={{ flex: 1, height: 1, background: 'linear-gradient(to right, transparent, #C0A854)' }} />
+            <svg width={12} height={12} viewBox="0 0 100 100"><path d={S8} fill="#C0A854" /></svg>
+            <div style={{ flex: 1, height: 1, background: 'linear-gradient(to left, transparent, #C0A854)' }} />
           </div>
           <div style={{
-            fontSize: 36, fontWeight: 300, color: '#0B1F3A',
+            fontSize: 36, fontWeight: 300, color: '#18483C',
             fontFamily: 'Georgia, serif', fontStyle: 'italic', letterSpacing: 1,
           }}>
             {data.studentName || 'Student Name'}
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 6 }}>
-            <div style={{ flex: 1, height: 1, background: 'linear-gradient(to right, transparent, #C9A24B)' }} />
-            <svg width={12} height={12} viewBox="0 0 100 100"><path d={S8} fill="#C9A24B" /></svg>
-            <div style={{ flex: 1, height: 1, background: 'linear-gradient(to left, transparent, #C9A24B)' }} />
+            <div style={{ flex: 1, height: 1, background: 'linear-gradient(to right, transparent, #C0A854)' }} />
+            <svg width={12} height={12} viewBox="0 0 100 100"><path d={S8} fill="#C0A854" /></svg>
+            <div style={{ flex: 1, height: 1, background: 'linear-gradient(to left, transparent, #C0A854)' }} />
           </div>
         </div>
 
@@ -379,8 +379,8 @@ export function ModernCert({ data }: { data: CertData }) {
         )}
 
         <div style={{ display: 'flex', gap: 24, fontSize: 10, color: '#9CA3AF', marginBottom: 18 }}>
-          {data.courseName && <span>Course: <strong style={{ color: '#0B1F3A' }}>{data.courseName}</strong></span>}
-          {data.issuedOn && <span>Date: <strong style={{ color: '#0B1F3A' }}>{data.issuedOn}</strong></span>}
+          {data.courseName && <span>Course: <strong style={{ color: '#18483C' }}>{data.courseName}</strong></span>}
+          {data.issuedOn && <span>Date: <strong style={{ color: '#18483C' }}>{data.issuedOn}</strong></span>}
         </div>
 
         {/* Signatures */}
@@ -390,7 +390,7 @@ export function ModernCert({ data }: { data: CertData }) {
             [data.teacherName || 'Instructor', 'Instructor'],
           ] as [string, string][]).map(([name, role]) => (
             <div key={role} style={{ textAlign: 'center', width: 190 }}>
-              <div style={{ borderTop: '2px solid #0B1F3A', paddingTop: 8, fontSize: 10.5, fontWeight: 700, color: '#0B1F3A' }}>{name}</div>
+              <div style={{ borderTop: '2px solid #18483C', paddingTop: 8, fontSize: 10.5, fontWeight: 700, color: '#18483C' }}>{name}</div>
               <div style={{ fontSize: 8.5, color: '#9CA3AF', marginTop: 2 }}>{role}</div>
             </div>
           ))}
@@ -482,45 +482,45 @@ body{width:297mm;height:210mm;background:#FDF8EE;position:relative;overflow:hidd
 .bismillah{font-size:8.5pt;color:#9B7A2E;margin-bottom:2.5mm;font-family:'Amiri','Scheherazade New','Traditional Arabic',serif;direction:rtl;letter-spacing:.3mm}
 .logo{height:14mm;margin-bottom:2mm;object-fit:contain}
 .an-en{font-size:6.5pt;letter-spacing:4px;text-transform:uppercase;color:#7A6030;margin-bottom:1mm}
-.an-ar{font-size:8pt;color:#C9A24B;font-family:'Amiri','Scheherazade New',serif;direction:rtl;margin-bottom:3mm}
+.an-ar{font-size:8pt;color:#C0A854;font-family:'Amiri','Scheherazade New',serif;direction:rtl;margin-bottom:3mm}
 .ct{font-size:18pt;color:#1C1208;font-weight:bold;margin-bottom:1.5mm;letter-spacing:.3mm}
 .at{font-size:8pt;color:#6B5B35;font-style:italic;margin-bottom:2.5mm}
 .sn-wrap{position:relative;margin-bottom:3mm}
-.sn-line{height:.5mm;background:linear-gradient(90deg,transparent,#C9A24B 30%,#C9A24B 70%,transparent)}
-.sn{font-size:20pt;color:#0B1F3A;font-style:italic;padding:1mm 12mm;letter-spacing:.3mm}
+.sn-line{height:.5mm;background:linear-gradient(90deg,transparent,#C0A854 30%,#C0A854 70%,transparent)}
+.sn{font-size:20pt;color:#18483C;font-style:italic;padding:1mm 12mm;letter-spacing:.3mm}
 .ach{font-size:8.5pt;color:#2C2008;font-weight:bold;margin-bottom:1.5mm}
 .desc{font-size:7pt;color:#5A4A28;font-style:italic;max-width:170mm;line-height:1.6;margin-bottom:2mm}
 .meta{display:flex;gap:8mm;font-size:7pt;color:#6B5B35;margin-bottom:6mm}
 .sigs{display:flex;justify-content:space-between;width:140mm}
 .sb{text-align:center;width:58mm}
 .sl-wrap{display:flex;align-items:center;gap:2mm;margin-bottom:1.5mm}
-.sl-line{flex:1;height:.4mm;background:#C9A24B;opacity:.4}
+.sl-line{flex:1;height:.4mm;background:#C0A854;opacity:.4}
 .sl-star{display:inline-block;width:2.5mm;height:2.5mm}
 .sn-name{font-size:7.5pt;color:#2C2008;font-weight:bold}
 .sn-role{font-size:6pt;color:#9B8860;margin-top:.5mm}
-.cn{position:absolute;bottom:7mm;right:9mm;font-size:5.5pt;color:#C9A24B;font-family:monospace;opacity:.7}
+.cn{position:absolute;bottom:7mm;right:9mm;font-size:5.5pt;color:#C0A854;font-family:monospace;opacity:.7}
 </style></head><body>
 <svg class="geo" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 297 210" width="297mm" height="210mm">
   <defs>
     <pattern id="cl-bg" x="0" y="0" width="14" height="14" patternUnits="userSpaceOnUse">
-      <path d="M7,0 L14,7 L7,14 L0,7 Z" fill="none" stroke="#C9A24B" stroke-width="0.15" opacity="0.1"/>
+      <path d="M7,0 L14,7 L7,14 L0,7 Z" fill="none" stroke="#C0A854" stroke-width="0.15" opacity="0.1"/>
     </pattern>
   </defs>
   <rect x="0" y="0" width="${W}" height="${H}" fill="url(#cl-bg)"/>
-  <rect x="4.5" y="4.5" width="${W - 9}" height="${H - 9}" fill="none" stroke="#C9A24B" stroke-width="1"/>
-  <rect x="7.5" y="7.5" width="${W - 15}" height="${H - 15}" fill="none" stroke="#C9A24B" stroke-width=".35"/>
+  <rect x="4.5" y="4.5" width="${W - 9}" height="${H - 9}" fill="none" stroke="#C0A854" stroke-width="1"/>
+  <rect x="7.5" y="7.5" width="${W - 15}" height="${H - 15}" fill="none" stroke="#C0A854" stroke-width=".35"/>
   <!-- Mid-point ornaments -->
-  <polygon points="${cx},4.5 ${cx + 2},7.5 ${cx},10.5 ${cx - 2},7.5" fill="#C9A24B" opacity=".5"/>
-  <polygon points="${cx},${H - 4.5} ${cx + 2},${H - 7.5} ${cx},${H - 10.5} ${cx - 2},${H - 7.5}" fill="#C9A24B" opacity=".5"/>
-  <polygon points="4.5,${cy} 7.5,${cy + 2} 10.5,${cy} 7.5,${cy - 2}" fill="#C9A24B" opacity=".5"/>
-  <polygon points="${W - 4.5},${cy} ${W - 7.5},${cy + 2} ${W - 10.5},${cy} ${W - 7.5},${cy - 2}" fill="#C9A24B" opacity=".5"/>
+  <polygon points="${cx},4.5 ${cx + 2},7.5 ${cx},10.5 ${cx - 2},7.5" fill="#C0A854" opacity=".5"/>
+  <polygon points="${cx},${H - 4.5} ${cx + 2},${H - 7.5} ${cx},${H - 10.5} ${cx - 2},${H - 7.5}" fill="#C0A854" opacity=".5"/>
+  <polygon points="4.5,${cy} 7.5,${cy + 2} 10.5,${cy} 7.5,${cy - 2}" fill="#C0A854" opacity=".5"/>
+  <polygon points="${W - 4.5},${cy} ${W - 7.5},${cy + 2} ${W - 10.5},${cy} ${W - 7.5},${cy - 2}" fill="#C0A854" opacity=".5"/>
   <!-- Corner khatam stars (10mm, centered on inner border corners at 7.5mm) -->
-  ${htmlStar8(sc, sc, 10, '#C9A24B')}
-  ${htmlStar8(W - sc, sc, 10, '#C9A24B')}
-  ${htmlStar8(sc, H - sc, 10, '#C9A24B')}
-  ${htmlStar8(W - sc, H - sc, 10, '#C9A24B')}
+  ${htmlStar8(sc, sc, 10, '#C0A854')}
+  ${htmlStar8(W - sc, sc, 10, '#C0A854')}
+  ${htmlStar8(sc, H - sc, 10, '#C0A854')}
+  ${htmlStar8(W - sc, H - sc, 10, '#C0A854')}
   <!-- Large central watermark -->
-  ${htmlStar8(cx, cy, 80, '#C9A24B', 0.025)}
+  ${htmlStar8(cx, cy, 80, '#C0A854', 0.025)}
 </svg>
 <div class="content">
   <div class="bismillah">بِسۡمِ ٱللَّهِ ٱلرَّحۡمَٰنِ ٱلرَّحِيمِ</div>
@@ -528,7 +528,7 @@ body{width:297mm;height:210mm;background:#FDF8EE;position:relative;overflow:hidd
   <div class="an-en">Azhary</div>
   <div class="an-ar">أكاديمية أزهري</div>
   <svg width="130mm" height="8mm" viewBox="0 0 130 8" xmlns="http://www.w3.org/2000/svg" style="margin-bottom:3mm">
-    ${htmlOrnaDiv(65, 4, 60, '#C9A24B')}
+    ${htmlOrnaDiv(65, 4, 60, '#C0A854')}
   </svg>
   <div class="ct">Certificate of ${esc(d.typeLabel)}</div>
   <div class="at">This is to certify that</div>
@@ -544,7 +544,7 @@ body{width:297mm;height:210mm;background:#FDF8EE;position:relative;overflow:hidd
     <div class="sb">
       <div class="sl-wrap">
         <div class="sl-line"></div>
-        <svg class="sl-star" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><path d="${S8}" fill="#C9A24B" opacity=".5"/></svg>
+        <svg class="sl-star" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><path d="${S8}" fill="#C0A854" opacity=".5"/></svg>
         <div class="sl-line"></div>
       </div>
       <div class="sn-name">${esc(d.directorName || 'Academy Director')}</div>
@@ -553,7 +553,7 @@ body{width:297mm;height:210mm;background:#FDF8EE;position:relative;overflow:hidd
     <div class="sb">
       <div class="sl-wrap">
         <div class="sl-line"></div>
-        <svg class="sl-star" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><path d="${S8}" fill="#C9A24B" opacity=".5"/></svg>
+        <svg class="sl-star" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><path d="${S8}" fill="#C0A854" opacity=".5"/></svg>
         <div class="sl-line"></div>
       </div>
       <div class="sn-name">${esc(d.teacherName || 'Instructor')}</div>
@@ -578,25 +578,25 @@ body{width:297mm;height:210mm;background:#F9FAFB;position:relative;overflow:hidd
 .hdr-content{position:absolute;top:0;left:0;right:0;height:${HDR}mm;display:flex;align-items:center;justify-content:center;gap:5mm}
 .logo{height:13mm;object-fit:contain;filter:brightness(0) invert(1)}
 .an-en{color:#fff;font-size:14pt;font-weight:800;letter-spacing:3px}
-.an-ar{color:#C9A24B;font-size:8pt;font-family:'Amiri','Scheherazade New',serif;direction:rtl;margin-top:1.5mm}
+.an-ar{color:#C0A854;font-size:8pt;font-family:'Amiri','Scheherazade New',serif;direction:rtl;margin-top:1.5mm}
 .content{position:absolute;top:${HDR + 1.5}mm;left:4mm;right:14mm;bottom:18mm;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}
-.bismillah{font-size:7pt;color:#C9A24B;margin-bottom:2.5mm;font-family:'Amiri','Scheherazade New',serif;direction:rtl}
-.cl{font-size:5.5pt;letter-spacing:4px;text-transform:uppercase;color:#C9A24B;margin-bottom:2.5mm}
-.ct{font-size:17pt;font-weight:800;color:#0B1F3A;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:4mm}
+.bismillah{font-size:7pt;color:#C0A854;margin-bottom:2.5mm;font-family:'Amiri','Scheherazade New',serif;direction:rtl}
+.cl{font-size:5.5pt;letter-spacing:4px;text-transform:uppercase;color:#C0A854;margin-bottom:2.5mm}
+.ct{font-size:17pt;font-weight:800;color:#18483C;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:4mm}
 .at{font-size:7.5pt;color:#9CA3AF;margin-bottom:2.5mm}
 .sn-frame{width:70%;margin-bottom:3mm}
 .sn-rule{display:flex;align-items:center;gap:3mm}
 .sn-rl{flex:1;height:.4mm}
-.sn-rl-l{background:linear-gradient(to right,transparent,#C9A24B)}
-.sn-rl-r{background:linear-gradient(to left,transparent,#C9A24B)}
+.sn-rl-l{background:linear-gradient(to right,transparent,#C0A854)}
+.sn-rl-r{background:linear-gradient(to left,transparent,#C0A854)}
 .sn-star{display:inline-block;width:3mm;height:3mm}
-.sn{font-size:22pt;font-weight:300;color:#0B1F3A;font-family:Georgia,serif;font-style:italic;letter-spacing:.5px;padding:1.5mm 0}
+.sn{font-size:22pt;font-weight:300;color:#18483C;font-family:Georgia,serif;font-style:italic;letter-spacing:.5px;padding:1.5mm 0}
 .ach{font-size:8pt;color:#0E7C5A;font-weight:700;margin-bottom:1.5mm}
 .desc{font-size:6.5pt;color:#9CA3AF;max-width:160mm;line-height:1.65;margin-bottom:2mm}
 .meta{display:flex;gap:7mm;font-size:7pt;color:#9CA3AF;margin-bottom:5mm}
 .sigs{display:flex;justify-content:space-between;width:130mm}
 .sb{text-align:center;width:55mm}
-.sl{border-top:1.5px solid #0B1F3A;padding-top:2mm;font-size:7.5pt;font-weight:700;color:#0B1F3A}
+.sl{border-top:1.5px solid #18483C;padding-top:2mm;font-size:7.5pt;font-weight:700;color:#18483C}
 .sr{font-size:6pt;color:#9CA3AF;margin-top:.5mm}
 .ftr{position:absolute;bottom:0;left:0;right:0;height:17mm;display:flex;align-items:center;justify-content:space-between;padding:0 8mm}
 .fl{color:rgba(255,255,255,.6);font-size:5.5pt}
@@ -612,24 +612,24 @@ body{width:297mm;height:210mm;background:#F9FAFB;position:relative;overflow:hidd
       <circle cx="6" cy="6" r="6" fill="none" stroke="white" stroke-width="0.2" opacity="0.12"/>
     </pattern>
     <pattern id="md-body" x="0" y="0" width="18" height="18" patternUnits="userSpaceOnUse">
-      <path d="M9,0 L18,9 L9,18 L0,9 Z" fill="none" stroke="#0B1F3A" stroke-width="0.1" opacity="0.04"/>
+      <path d="M9,0 L18,9 L9,18 L0,9 Z" fill="none" stroke="#18483C" stroke-width="0.1" opacity="0.04"/>
     </pattern>
     <clipPath id="md-hclip"><rect x="0" y="0" width="${W}" height="${HDR}"/></clipPath>
   </defs>
   <!-- Navy header -->
-  <rect x="0" y="0" width="${W}" height="${HDR}" fill="#0B1F3A"/>
+  <rect x="0" y="0" width="${W}" height="${HDR}" fill="#18483C"/>
   <rect x="0" y="0" width="${W}" height="${HDR}" fill="url(#md-circ)" clip-path="url(#md-hclip)"/>
-  ${htmlStar8(cx, HDR / 2 + 3, 56, '#C9A24B', 0.07)}
+  ${htmlStar8(cx, HDR / 2 + 3, 56, '#C0A854', 0.07)}
   ${htmlStar8(7, 7, 7, 'white', 0.18)}
   ${htmlStar8(W - 7, 7, 7, 'white', 0.18)}
   <!-- Gold bar -->
-  <rect x="0" y="${HDR}" width="${W}" height="1.5" fill="#C9A24B"/>
+  <rect x="0" y="${HDR}" width="${W}" height="1.5" fill="#C0A854"/>
   <!-- Left accent -->
-  <rect x="0" y="${HDR + 1.5}" width="1.8" height="${H - HDR - 18}" fill="#C9A24B"/>
+  <rect x="0" y="${HDR + 1.5}" width="1.8" height="${H - HDR - 18}" fill="#C0A854"/>
   <!-- Body background -->
   <rect x="0" y="${HDR}" width="${W}" height="${H - HDR - 17}" fill="url(#md-body)"/>
   <!-- Right stars column -->
-  ${[0.25, 0.42, 0.59, 0.76].map(t => htmlStar8(W - 7, HDR + 1.5 + t * (H - HDR - 19), 7, '#C9A24B', 0.12)).join('')}
+  ${[0.25, 0.42, 0.59, 0.76].map(t => htmlStar8(W - 7, HDR + 1.5 + t * (H - HDR - 19), 7, '#C0A854', 0.12)).join('')}
   <!-- Green footer -->
   <rect x="0" y="${H - 17}" width="${W}" height="17" fill="#0E7C5A"/>
   ${htmlStar8(cx, H - 8.5, 14, 'white', 0.06)}
@@ -643,25 +643,25 @@ body{width:297mm;height:210mm;background:#F9FAFB;position:relative;overflow:hidd
   <div class="cl">Certificate of Achievement</div>
   <div class="ct">${esc(d.typeLabel)}</div>
   <svg width="120mm" height="8mm" viewBox="0 0 120 8" xmlns="http://www.w3.org/2000/svg" style="margin-bottom:3mm">
-    ${htmlOrnaDiv(60, 4, 55, '#C9A24B')}
+    ${htmlOrnaDiv(60, 4, 55, '#C0A854')}
   </svg>
   <div class="at">This is to certify that</div>
   <div class="sn-frame">
     <div class="sn-rule">
       <div class="sn-rl sn-rl-l"></div>
-      <svg class="sn-star" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><path d="${S8}" fill="#C9A24B"/></svg>
+      <svg class="sn-star" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><path d="${S8}" fill="#C0A854"/></svg>
       <div class="sn-rl sn-rl-r"></div>
     </div>
     <div class="sn">${esc(d.studentName || 'Student Name')}</div>
     <div class="sn-rule">
       <div class="sn-rl sn-rl-l"></div>
-      <svg class="sn-star" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><path d="${S8}" fill="#C9A24B"/></svg>
+      <svg class="sn-star" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><path d="${S8}" fill="#C0A854"/></svg>
       <div class="sn-rl sn-rl-r"></div>
     </div>
   </div>
   ${d.title ? `<div class="ach">${esc(d.title)}</div>` : ''}
   ${d.description ? `<div class="desc">${esc(d.description)}</div>` : ''}
-  <div class="meta">${d.courseName ? `<span>Course: <strong style="color:#0B1F3A">${esc(d.courseName)}</strong></span>` : ''}${d.issuedOn ? `<span>Date: <strong style="color:#0B1F3A">${esc(d.issuedOn)}</strong></span>` : ''}</div>
+  <div class="meta">${d.courseName ? `<span>Course: <strong style="color:#18483C">${esc(d.courseName)}</strong></span>` : ''}${d.issuedOn ? `<span>Date: <strong style="color:#18483C">${esc(d.issuedOn)}</strong></span>` : ''}</div>
   <div class="sigs">
     <div class="sb"><div class="sl">${esc(d.directorName || 'Academy Director')}</div><div class="sr">Academy Director</div></div>
     <div class="sb"><div class="sl">${esc(d.teacherName || 'Instructor')}</div><div class="sr">Instructor</div></div>

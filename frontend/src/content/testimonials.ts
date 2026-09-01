@@ -1,3 +1,5 @@
+import type { Locale } from '@/i18n/config'
+
 export type Testimonial = {
   id: string
   name: string
@@ -127,3 +129,127 @@ export const testimonials: Testimonial[] = [
     rating: 5,
   },
 ]
+
+export const testimonialsFr: typeof testimonials = [
+  {
+    id: 't1',
+    name: 'Sarah A.',
+    location: 'Londres, Royaume-Uni',
+    country: 'uk',
+    quote: "Le Tajwid de mes enfants s'est amélioré au point d'être méconnaissable en seulement 3 mois. Les enseignants sont si patients et compétents — ma fille attend même ses cours avec impatience chaque jour.",
+    course: 'Coran pour les enfants',
+    rating: 5,
+  },
+  {
+    id: 't2',
+    name: 'Ahmed K.',
+    location: 'Toronto, Canada',
+    country: 'canada',
+    quote: "J'ai commencé en tant que grand débutant et je lis maintenant le Coran avec assurance. Le format en tête-à-tête change tout — l'enseignant se concentre entièrement sur moi et sur mon rythme.",
+    course: 'Qaïda Nourania',
+    rating: 5,
+  },
+  {
+    id: 't3',
+    name: 'Fatima R.',
+    location: 'New York, États-Unis',
+    country: 'usa',
+    quote: "Avoir une enseignante était très important pour moi. Les horaires des cours sont flexibles et s'adaptent parfaitement à mes heures de travail. Je me sens si à l'aise et soutenue.",
+    course: 'Tajwid pour les adultes',
+    rating: 5,
+  },
+  {
+    id: 't4',
+    name: 'Omar M.',
+    location: 'Melbourne, Australie',
+    country: 'australia',
+    quote: "Le programme d'Ijazah est rigoureux et authentique. Mon enseignant possède une chaîne de transmission directe avec Al-Azhar. J'ai terminé ma révision du Hifz et reçu mon certificat d'Ijazah — un rêve devenu réalité.",
+    course: "Programme d'Ijazah",
+    rating: 5,
+  },
+  {
+    id: 't5',
+    name: 'Amina H.',
+    location: 'Birmingham, Royaume-Uni',
+    country: 'uk',
+    quote: "J'ai essayé plusieurs académies en ligne. Azhary est la seule où je me suis sentie véritablement soutenue. L'essai gratuit m'a convaincue immédiatement — la qualité est exceptionnelle.",
+    course: 'Arabe pour non-arabophones',
+    rating: 5,
+  },
+  {
+    id: 't6',
+    name: 'Yusuf B.',
+    location: 'Paris, France',
+    country: 'france',
+    quote: "Mon fils a achevé son Hifz à l'âge de 12 ans. L'enseignant a été dévoué, patient et l'a gardé motivé tout au long du parcours. Nous sommes tellement reconnaissants envers Azhary.",
+    course: 'Hifz / Mémorisation',
+    rating: 5,
+  },
+  {
+    id: 't7',
+    name: 'Khalid M.',
+    location: 'Houston, Texas',
+    country: 'usa',
+    quote: "Mon fils est parti de zéro et il est maintenant à mi-chemin de son Hifz. L'enseignant prend de nos nouvelles sur WhatsApp chaque semaine — nous avons l'impression de faire partie d'une famille.",
+    course: 'Hifz / Mémorisation',
+    rating: 5,
+  },
+  {
+    id: 't8',
+    name: 'Nadia S.',
+    location: 'Dearborn, Michigan',
+    country: 'usa',
+    quote: "En tant que convertie, j'appréhendais de trouver un enseignant qui serait patient avec mon niveau de grande débutante. Mon enseignant a été merveilleux — bienveillant, clair et encourageant.",
+    course: 'Qaïda Nourania',
+    rating: 5,
+  },
+  {
+    id: 't9',
+    name: 'Zaynab H.',
+    location: 'Manchester, Royaume-Uni',
+    country: 'uk',
+    quote: "Ma fille avait des difficultés avec le Tajwid à la madrassa. En deux mois de séances en tête-à-tête avec Azhary, son enseignante à la madrassa a remarqué ses progrès. Je recommande vivement.",
+    course: 'Cours de Tajwid',
+    rating: 5,
+  },
+  {
+    id: 't10',
+    name: 'Ibrahim F.',
+    location: 'Calgary, Alberta',
+    country: 'canada',
+    quote: "Calgary est mal desservie par les écoles islamiques locales. Azhary a comblé ce manque à la perfection. Mes enfants bénéficient désormais d'un enseignement du Coran régulier et de grande qualité, depuis la maison.",
+    course: 'Coran pour les enfants',
+    rating: 5,
+  },
+  {
+    id: 't11',
+    name: 'Maryam T.',
+    location: 'Vancouver, Colombie-Britannique',
+    country: 'canada',
+    quote: "Les créneaux du soir à l'heure du Pacifique sont parfaits. Mes enfants terminent l'école, prennent un goûter, puis rejoignent leur cours de Coran avant le dîner. Cette routine a transformé notre foyer.",
+    course: 'Coran pour les enfants',
+    rating: 5,
+  },
+  {
+    id: 't12',
+    name: 'Aisha N.',
+    location: 'Sydney, Nouvelle-Galles du Sud',
+    country: 'australia',
+    quote: "Nous avons essayé des professeurs particuliers du coin, mais il était difficile de rester réguliers. L'emploi du temps hebdomadaire fixe de Azhary et les rappels sur WhatsApp nous ont permis de tenir le cap. Mon fils a terminé son premier Juz en six mois.",
+    course: 'Hifz / Mémorisation',
+    rating: 5,
+  },
+  {
+    id: 't13',
+    name: 'Hassan W.',
+    location: 'Brisbane, Queensland',
+    country: 'australia',
+    quote: "J'ai commencé à apprendre le Coran à l'âge adulte. Je pensais qu'il était trop tard, mais mon enseignant m'a mis complètement à l'aise. Je lis désormais la sourate Al-Baqara avec assurance.",
+    course: 'Coran pour les adultes',
+    rating: 5,
+  },
+]
+
+export function getTestimonials(locale: Locale): typeof testimonials {
+  return locale === 'fr' ? testimonialsFr : testimonials
+}

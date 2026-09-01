@@ -5,8 +5,9 @@ import {
   MessageSquare, Bell, Settings, Circle,
 } from 'lucide-react'
 import { useI18n } from '@/lib/system/i18n'
+import type { IconComponent } from '@/types/icon'
 
-const EVENT_ICONS: Record<string, React.ElementType> = {
+const EVENT_ICONS: Record<string, IconComponent> = {
   enrolled:       UserCheck,
   cancelled:      UserX,
   paused:         Pause,

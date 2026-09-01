@@ -11,6 +11,15 @@ class VerifyTurnstileToken
     public function handle(Request $request, Closure $next): mixed
     {
         $secret = config('services.turnstile.secret');
+
+        // Captcha is optional. When no secret is configured we skip verification
+        // entirely so the public forms keep working. Set TURNSTILE_SECRET_KEY
+        // (and the frontend NEXT_PUBLIC_TURNSTILE_SITE_KEY) to turn on bot
+        // protection — verification then applies automatically.
+        if (! $secret) {
+            return $next($request);
+        }
+
         $token = $request->input('turnstileToken');
 
         if (! $token) {

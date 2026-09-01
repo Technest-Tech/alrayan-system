@@ -17,6 +17,7 @@ import {
   BookOpen,
   Star,
 } from 'lucide-react'
+import type { IconComponent } from '@/types/icon'
 
 export const metadata: Metadata = buildMetadata({
   title: 'About Azhary | Our Story, Mission & Teachers',
@@ -25,7 +26,7 @@ export const metadata: Metadata = buildMetadata({
   path: '/about',
 })
 
-const iconMap: Record<string, React.ElementType> = {
+const iconMap: Record<string, IconComponent> = {
   Target,
   Eye,
   Heart,
@@ -66,7 +67,7 @@ export default function AboutPage() {
           className="absolute inset-0 opacity-[0.06]"
           style={{
             backgroundImage:
-              'radial-gradient(circle at 80% 20%, #C9A24B 0%, transparent 50%), radial-gradient(circle at 10% 90%, #0E7C5A 0%, transparent 50%)',
+              'radial-gradient(circle at 80% 20%, #C0A854 0%, transparent 50%), radial-gradient(circle at 10% 90%, #0E7C5A 0%, transparent 50%)',
           }}
           aria-hidden="true"
         />

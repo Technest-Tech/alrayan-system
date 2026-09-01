@@ -6,10 +6,10 @@ import { Html } from '@react-three/drei'
 import { EffectComposer, Bloom, Vignette } from '@react-three/postprocessing'
 import * as THREE from 'three'
 
-const GOLD = new THREE.Color('#C9A24B')
+const GOLD = new THREE.Color('#C0A854')
 const GOLD_LIGHT = new THREE.Color('#F0D58A')
 const GREEN = new THREE.Color('#0E7C5A')
-const NAVY = '#0B1F3A'
+const NAVY = '#18483C'
 
 /* Floating Quran verses, projected into the 3D scene as DOM (crisp Arabic via Amiri). */
 const VERSES = [

@@ -59,7 +59,7 @@ export default function TeachersPage() {
 
       {/* ── Stat cards ── */}
       <div className="grid grid-cols-3 gap-3 mb-5">
-        <StatCard icon={<Users size={15} />}         label={t('common.total')}      value={stats.total}    accent="#0B1F3A" />
+        <StatCard icon={<Users size={15} />}         label={t('common.total')}      value={stats.total}    accent="#18483C" />
         <StatCard icon={<GraduationCap size={15} />} label={t('status.active')}     value={stats.active}   accent="rgb(14 124 90)" />
         <StatCard icon={<UserX size={15} />}         label={t('status.inactive')}   value={stats.inactive} accent="rgb(90 100 112)" />
       </div>

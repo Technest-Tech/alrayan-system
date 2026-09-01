@@ -81,7 +81,7 @@ export default function StudentsPage() {
 
       {/* ── Stat cards ── */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
-        <StatCard icon={<Users size={15} />}       label={t('common.total')}         value={stats.total}    accent="#0B1F3A" />
+        <StatCard icon={<Users size={15} />}       label={t('common.total')}         value={stats.total}    accent="#18483C" />
         <StatCard icon={<GraduationCap size={15} />} label={t('status.active')}        value={stats.active}   accent="rgb(14 124 90)" />
         <StatCard icon={<Clock size={15} />}         label={t('status.trial')}         value={stats.trial}    accent="rgb(30 90 171)" />
         <StatCard icon={<PauseCircle size={15} />}   label={t('status.paused')}        value={stats.paused}   accent="rgb(154 113 23)" />

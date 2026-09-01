@@ -4,18 +4,23 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Events\TrialBookingCreated;
 use App\Http\Controllers\Controller;
-use App\Mail\TrialBookingAdminNotification;
 use App\Mail\TrialBookingConfirmation;
 use App\Models\TrialBooking;
 use App\Services\BookingReferenceGenerator;
+use App\Mail\TrialBookingAdminNotification;
+use App\Services\System\LeadFromTrialBookingConverter;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 
 class TrialBookingController extends Controller
 {
-    public function store(Request $request, BookingReferenceGenerator $refs): JsonResponse
-    {
+    public function store(
+        Request $request,
+        BookingReferenceGenerator $refs,
+        LeadFromTrialBookingConverter $leads,
+    ): JsonResponse {
         $validated = $request->validate([
             'name'           => 'required|string|max:100',
             'email'          => 'required|email|max:255',
@@ -41,10 +46,23 @@ class TrialBookingController extends Controller
             'message'         => $validated['message'] ?? null,
         ]);
 
+        // A trial booking is a hot inquiry — surface it in the CRM as a new lead.
+        // The converter owns the mapping (notably country name → 2-char code,
+        // which sys_leads.country requires) and is idempotent, so the queued
+        // listener below finds this lead instead of creating a second one.
+        try {
+            $leads->convert($booking);
+        } catch (\Throwable $e) {
+            Log::warning('Failed to create lead from trial booking', ['booking' => $booking->id, 'error' => $e->getMessage()]);
+        }
+
         TrialBookingCreated::dispatch($booking);
 
+        // Notify the academy inbox. Zad relies on Web3Forms from the website for
+        // this; here the backend owns it, so keep the queued mail.
         Mail::to(config('mail.admin_address', 'info@alrayan-academy.com'))
             ->queue(new TrialBookingAdminNotification($booking));
+
         Mail::to($booking->email)
             ->queue(new TrialBookingConfirmation($booking));
 

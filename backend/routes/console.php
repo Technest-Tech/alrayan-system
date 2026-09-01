@@ -1,5 +1,6 @@
 <?php
 
+use App\Console\Commands\Site\PruneSiteVisits;
 use App\Console\Commands\System\AutoSuspendNonPayers;
 use App\Console\Commands\System\GenerateMonthlyReport;
 use App\Console\Commands\System\CalculatePayroll;
@@ -49,3 +50,6 @@ Schedule::command(GenerateMonthlyReport::class)->cron('0 4 1 * *')->onOneServer(
 
 // Auth housekeeping — sessions never expire, so reap the abandoned ones.
 Schedule::command(PruneIdleSessions::class)->dailyAt('03:00')->onOneServer();
+
+// Site traffic housekeeping — one row per public page view adds up.
+Schedule::command(PruneSiteVisits::class)->dailyAt('03:30')->onOneServer();

@@ -23,6 +23,23 @@ import {
 import type { LucideIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { Course } from '@/content/courses'
+import type { Locale } from '@/i18n/config'
+import type { TranslateFn } from '@/i18n/translate'
+import { useT } from '@/i18n/MarketingI18nProvider'
+import { localizedHref } from '@/i18n/href'
+
+/** Localized label for a category / level / audience filter value (logic stays keyed on English). */
+function labelFor(t: TranslateFn, kind: 'category' | 'level' | 'audience', value: string): string {
+  if (value === 'All') return t('courseCatalog.all')
+  if (kind === 'level') return t(`common.levels.${value}`)
+  if (kind === 'audience') {
+    if (value === 'Kids') return t('courseCatalog.audienceKids')
+    if (value === 'Adults') return t('courseCatalog.audienceAdults')
+    if (value === 'Families') return t('courseCatalog.audienceFamilies')
+    return value
+  }
+  return t(`courseCatalog.categories.${value}`)
+}
 
 const iconMap: Record<string, LucideIcon> = {
   BookOpen,
@@ -78,6 +95,7 @@ type CourseCatalogProps = {
 }
 
 export function CourseCatalog({ courses }: CourseCatalogProps) {
+  const { locale, t } = useT()
   const [query, setQuery] = useState('')
   const [category, setCategory] = useState('All')
   const [level, setLevel] = useState<Course['level'] | 'All'>('All')
@@ -136,25 +154,25 @@ export function CourseCatalog({ courses }: CourseCatalogProps) {
               <SlidersHorizontal className="size-4" aria-hidden="true" />
             </div>
             <div>
-              <h3 className="text-base font-semibold text-primary">Filter programs</h3>
-              <p className="text-sm text-muted-text">{filtered.length} of {courses.length} programs shown</p>
+              <h3 className="text-base font-semibold text-primary">{t('courseCatalog.filterHeading')}</h3>
+              <p className="text-sm text-muted-text">{t('courseCatalog.programsShown', { shown: filtered.length, total: courses.length })}</p>
             </div>
           </div>
 
           <label className="relative block w-full lg:max-w-sm">
-            <span className="sr-only">Search programs</span>
+            <span className="sr-only">{t('courseCatalog.searchLabel')}</span>
             <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-text" aria-hidden="true" />
             <input
               value={query}
               onChange={(event) => setQuery(event.target.value)}
-              placeholder="Search by course, goal, or skill"
+              placeholder={t('coursePage.searchPlaceholder')}
               className="h-12 w-full rounded-lg border border-border-soft bg-cream/45 pl-10 pr-3 text-sm text-primary outline-none transition focus:border-secondary focus:bg-white focus:ring-2 focus:ring-secondary/15"
             />
           </label>
         </div>
 
         <div className="mt-5 grid gap-4 lg:grid-cols-[1.2fr_0.8fr_0.8fr]">
-          <FilterGroup icon={Filter} label="Category">
+          <FilterGroup icon={Filter} label={t('courseCatalog.category')}>
             {categories.map((item) => (
               <FilterChip
                 key={item}
@@ -162,23 +180,23 @@ export function CourseCatalog({ courses }: CourseCatalogProps) {
                 onClick={() => setCategory(item)}
                 className={item === 'All' ? undefined : categoryAccent[item]}
               >
-                {item}
+                {labelFor(t, 'category', item)}
               </FilterChip>
             ))}
           </FilterGroup>
 
-          <FilterGroup icon={Award} label="Level">
+          <FilterGroup icon={Award} label={t('courseCatalog.level')}>
             {levels.map((item) => (
               <FilterChip key={item} active={level === item} onClick={() => setLevel(item)}>
-                {item}
+                {labelFor(t, 'level', item)}
               </FilterChip>
             ))}
           </FilterGroup>
 
-          <FilterGroup icon={Users} label="Audience">
+          <FilterGroup icon={Users} label={t('courseCatalog.audience')}>
             {audiences.map((item) => (
               <FilterChip key={item} active={audience === item} onClick={() => setAudience(item)}>
-                {item}
+                {labelFor(t, 'audience', item)}
               </FilterChip>
             ))}
           </FilterGroup>
@@ -186,14 +204,14 @@ export function CourseCatalog({ courses }: CourseCatalogProps) {
 
         {hasFilters && (
           <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-border-soft pt-4">
-            <p className="text-sm text-muted-text">Refine the list or reset to compare every program.</p>
+            <p className="text-sm text-muted-text">{t('courseCatalog.refineNote')}</p>
             <button
               type="button"
               onClick={clearFilters}
               className="inline-flex h-9 items-center gap-2 rounded-lg border border-border-soft bg-white px-3 text-sm font-medium text-primary transition hover:border-secondary/40 hover:text-secondary"
             >
               <X className="size-3.5" aria-hidden="true" />
-              Clear filters
+              {t('courseCatalog.clearFilters')}
             </button>
           </div>
         )}
@@ -202,21 +220,21 @@ export function CourseCatalog({ courses }: CourseCatalogProps) {
       {filtered.length > 0 ? (
         <ul className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3" role="list">
           {filtered.map((course) => (
-            <CourseCard key={course.slug} course={course} />
+            <CourseCard key={course.slug} course={course} t={t} locale={locale} />
           ))}
         </ul>
       ) : (
         <div className="rounded-lg border border-dashed border-border-soft bg-white px-6 py-14 text-center">
-          <p className="font-heading text-2xl font-semibold text-primary">No matching programs</p>
+          <p className="font-heading text-2xl font-semibold text-primary">{t('courseCatalog.noMatch')}</p>
           <p className="mx-auto mt-2 max-w-md text-sm text-muted-text">
-            Try a broader search or reset filters to see all available courses.
+            {t('courseCatalog.noMatchSub')}
           </p>
           <button
             type="button"
             onClick={clearFilters}
             className="mt-6 inline-flex h-11 items-center justify-center rounded-lg bg-secondary px-5 text-sm font-semibold text-white transition hover:bg-[#0a6849]"
           >
-            Show all programs
+            {t('courseCatalog.showAll')}
           </button>
         </div>
       )}
@@ -270,13 +288,13 @@ function FilterChip({
   )
 }
 
-function CourseCard({ course }: { course: Course & { category: string; audience: string } }) {
+function CourseCard({ course, t, locale }: { course: Course & { category: string; audience: string }; t: TranslateFn; locale: Locale }) {
   const Icon = iconMap[course.icon] ?? BookOpen
 
   return (
     <li>
       <a
-        href={`/courses/${course.slug}`}
+        href={localizedHref(`/courses/${course.slug}`, locale)}
         className="group flex h-full flex-col overflow-hidden rounded-lg border border-border-soft bg-white shadow-soft transition-all duration-200 hover:-translate-y-1 hover:border-secondary/30 hover:shadow-lg"
       >
         <div className="flex items-start justify-between gap-4 p-5 pb-4">
@@ -286,7 +304,7 @@ function CourseCard({ course }: { course: Course & { category: string; audience:
             </div>
             <div>
               <span className={cn('inline-flex rounded-md px-2 py-1 text-[11px] font-semibold ring-1', categoryAccent[course.category])}>
-                {course.category}
+                {labelFor(t, 'category', course.category)}
               </span>
               <h3 className="mt-3 font-heading text-lg font-semibold leading-snug text-primary transition group-hover:text-secondary">
                 {course.title}
@@ -294,7 +312,7 @@ function CourseCard({ course }: { course: Course & { category: string; audience:
             </div>
           </div>
           <span className={cn('shrink-0 rounded-md px-2.5 py-1 text-[11px] font-semibold ring-1', levelBadge[course.level])}>
-            {course.level}
+            {labelFor(t, 'level', course.level)}
           </span>
         </div>
 
@@ -311,12 +329,12 @@ function CourseCard({ course }: { course: Course & { category: string; audience:
             {course.durationMonths && (
               <span className="inline-flex items-center gap-1.5 rounded-md bg-[#EEF3F7] px-2.5 py-1 text-[11px] font-medium text-[#36566F]">
                 <Clock3 className="size-3" aria-hidden="true" />
-                {course.durationMonths} months
+                {course.durationMonths} {t('coursesIndex.months')}
               </span>
             )}
           </div>
 
-          <ul className="mt-auto space-y-2" aria-label={`${course.title} highlights`}>
+          <ul className="mt-auto space-y-2" aria-label={t('courseCatalog.highlightsAria', { title: course.title })}>
             {course.features.slice(0, 3).map((feature) => (
               <li key={feature} className="flex gap-2 text-xs leading-relaxed text-muted-text">
                 <CheckCircle2 className="mt-0.5 size-3.5 shrink-0 text-secondary" aria-hidden="true" />
@@ -327,7 +345,7 @@ function CourseCard({ course }: { course: Course & { category: string; audience:
         </div>
 
         <div className="flex items-center justify-between border-t border-border-soft bg-[#FBFAF7] px-5 py-4 text-sm font-semibold text-secondary">
-          View program
+          {t('courseCatalog.viewProgram')}
           <span className="transition-transform group-hover:translate-x-1" aria-hidden="true">-&gt;</span>
         </div>
       </a>

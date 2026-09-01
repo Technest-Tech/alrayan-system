@@ -105,6 +105,33 @@ Route::prefix('system')->name('system.')->group(function () {
         // Generic file upload (photos / documents) for forms.
         Route::post('/uploads', [\App\Http\Controllers\System\UploadController::class, 'store'])->name('uploads.store');
 
+        // ── Site management: public marketing teachers + their reviews ──
+        Route::middleware('system.can:site.manage')->group(function () {
+            Route::get('/site/teachers',                    [\App\Http\Controllers\System\SiteTeacherController::class, 'index'])->name('site.teachers.index');
+            Route::post('/site/teachers',                   [\App\Http\Controllers\System\SiteTeacherController::class, 'store'])->name('site.teachers.store');
+            Route::get('/site/teachers/{teacher}',          [\App\Http\Controllers\System\SiteTeacherController::class, 'show'])->name('site.teachers.show');
+            Route::patch('/site/teachers/{teacher}',        [\App\Http\Controllers\System\SiteTeacherController::class, 'update'])->name('site.teachers.update');
+            Route::delete('/site/teachers/{teacher}',       [\App\Http\Controllers\System\SiteTeacherController::class, 'destroy'])->name('site.teachers.destroy');
+            Route::post('/site/teachers/reorder',           [\App\Http\Controllers\System\SiteTeacherController::class, 'reorder'])->name('site.teachers.reorder');
+
+            // Reviews — managed either under one teacher or across all of them.
+            Route::get('/site/reviews',                     [\App\Http\Controllers\System\SiteReviewController::class, 'index'])->name('site.reviews.index');
+            Route::get('/site/reviews/stats',               [\App\Http\Controllers\System\SiteReviewController::class, 'stats'])->name('site.reviews.stats');
+            Route::post('/site/reviews/bulk',               [\App\Http\Controllers\System\SiteReviewController::class, 'bulk'])->name('site.reviews.bulk');
+            Route::post('/site/teachers/{teacher}/reviews', [\App\Http\Controllers\System\SiteTeacherController::class, 'storeReview'])->name('site.teachers.reviews.store');
+            Route::patch('/site/reviews/{review}',          [\App\Http\Controllers\System\SiteTeacherController::class, 'updateReview'])->name('site.reviews.update');
+            Route::delete('/site/reviews/{review}',         [\App\Http\Controllers\System\SiteTeacherController::class, 'destroyReview'])->name('site.reviews.destroy');
+
+            // Site settings: public contact details + social links
+            Route::get('/site/settings',  [\App\Http\Controllers\System\SiteSettingsController::class, 'show'])->name('site.settings.show');
+            Route::put('/site/settings',  [\App\Http\Controllers\System\SiteSettingsController::class, 'update'])->name('site.settings.update');
+        });
+        // Public-site traffic. Split from site.manage so an analyst can read the
+        // numbers without also gaining edit rights over the site's content.
+        Route::middleware('system.can:site.view_analytics')
+            ->get('/site/analytics', [\App\Http\Controllers\System\SiteAnalyticsController::class, 'index'])->name('site.analytics.index');
+
+
         // Unified user directory (students, teachers, parents, staff in one place).
         // Defined before the /users/{id} routes so /users/directory/* matches first.
         Route::middleware('system.can:users.view_directory')->group(function () {

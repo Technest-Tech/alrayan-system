@@ -76,7 +76,7 @@ export function SpecialRulesTab() {
           </label>
         </div>
         <div className="mt-2 flex justify-end">
-          <button onClick={add} disabled={create.isPending || !ruleKey.trim() || !label.trim()} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-white text-sm disabled:opacity-40" style={{ background: '#0B1F3A' }}>
+          <button onClick={add} disabled={create.isPending || !ruleKey.trim() || !label.trim()} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-white text-sm disabled:opacity-40" style={{ background: '#18483C' }}>
             <Plus size={14} /> {t('qualityControl.settingsModal.add')}
           </button>
         </div>

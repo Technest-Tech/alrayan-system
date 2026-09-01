@@ -18,7 +18,7 @@ import { useI18n } from '@/lib/system/i18n'
 type Density = 'compact' | 'default' | 'comfortable'
 
 /* ─── Avatar helpers ──────────────────────────── */
-const PALETTE = ['#0E7C5A', '#0B1F3A', '#1E5AAB', '#7C3AED', '#B45309', '#BE185D', '#C05621']
+const PALETTE = ['#0E7C5A', '#18483C', '#1E5AAB', '#7C3AED', '#B45309', '#BE185D', '#C05621']
 
 function initials(name: string) {
   return name.split(' ').slice(0, 2).map(n => n[0]?.toUpperCase() ?? '').join('')

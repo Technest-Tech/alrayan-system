@@ -2,6 +2,7 @@
 
 import { useCountUp } from '@/hooks/useCountUp'
 import { Container } from '@/components/layout/Container'
+import { SectionDivider } from '@/components/layout/SectionDivider'
 import type { Stat } from '@/content/stats'
 
 function parseStat(value: string): { num: number; suffix: string; decimals: number } {
@@ -24,19 +25,19 @@ function StatItem({ value, label, description }: Stat) {
   return (
     <div
       ref={elementRef as React.RefObject<HTMLDivElement>}
-      className="text-center px-8 py-12"
+      className="text-center px-6 py-6"
     >
       <dt
-        className="font-display font-semibold text-accent mb-2"
-        style={{ fontSize: 'clamp(2.4rem, 3.8vw, 3.4rem)', lineHeight: 1.05 }}
+        className="font-display font-semibold text-accent mb-1"
+        style={{ fontSize: 'clamp(1.9rem, 2.8vw, 2.5rem)', lineHeight: 1.05 }}
         aria-label={value}
       >
         <span aria-hidden="true">{display}{suffix}</span>
       </dt>
       <dd>
-        <p className="text-white font-semibold text-sm mb-1">{label}</p>
+        <p className="text-white font-semibold text-xs sm:text-sm mb-0.5">{label}</p>
         {description && (
-          <p className="text-white/45 text-xs leading-snug">{description}</p>
+          <p className="text-white/45 text-[11px] leading-snug">{description}</p>
         )}
       </dd>
     </div>
@@ -62,10 +63,14 @@ export function StatsSection({ stats }: { stats: Stat[] }) {
         </svg>
       </div>
 
-      <Container className="relative">
-        <dl className="flex flex-col sm:flex-row divide-y sm:divide-y-0 sm:divide-x divide-white/10">
+      <Container className="relative py-3 sm:pt-2 sm:pb-0">
+        <SectionDivider tone="dark" className="mb-2" />
+        <dl className="grid grid-cols-2 sm:flex sm:flex-row">
           {stats.map((stat) => (
-            <div key={stat.label} className="flex-1">
+            <div
+              key={stat.label}
+              className="flex-1 border-white/10 odd:border-r nth-[n+3]:border-t sm:border-r sm:border-t-0 sm:last:border-r-0"
+            >
               <StatItem {...stat} />
             </div>
           ))}

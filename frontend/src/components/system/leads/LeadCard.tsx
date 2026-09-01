@@ -3,6 +3,7 @@ import type { Lead } from '@/types/system/lead'
 import { formatDistanceToNow } from 'date-fns'
 import { Globe, Users, Camera, Play, MessageCircle, Music, CircleHelp, Phone, Pencil, Trash2 } from 'lucide-react'
 import { useI18n } from '@/lib/system/i18n'
+import type { IconComponent } from '@/types/icon'
 
 /* ── Islamic 8-point star ───────────────────────── */
 const STAR = 'M50,5 L57.65,31.52 L81.82,18.18 L68.48,42.35 L95,50 L68.48,57.65 L81.82,81.82 L57.65,68.48 L50,95 L42.35,68.48 L18.18,81.82 L31.52,57.65 L5,50 L31.52,42.35 L18.18,18.18 L42.35,31.52 Z'
@@ -38,7 +39,7 @@ const SOURCE_COLORS: Record<string, { bg: string; color: string }> = {
   manual_entry:     { bg: 'rgba(90,100,112,0.10)',  color: 'rgb(90 100 112)' },
 }
 
-const PLATFORM_ICONS: Record<string, React.ElementType> = {
+const PLATFORM_ICONS: Record<string, IconComponent> = {
   website:   Globe,
   facebook:  Users,
   instagram: Camera,
@@ -113,14 +114,14 @@ export function LeadCard({ lead, dragging, onClick, onEdit, onDelete }: LeadCard
       }}
     >
       {/* Gold top accent line */}
-      <div style={{ height: 1.5, background: 'linear-gradient(90deg, transparent 0%, #C9A24B44 50%, transparent 100%)' }} />
+      <div style={{ height: 1.5, background: 'linear-gradient(90deg, transparent 0%, #C0A85444 50%, transparent 100%)' }} />
 
       {/* Corner star watermark */}
       <svg
         className="absolute bottom-1.5 right-1.5 pointer-events-none select-none"
         width="14" height="14" viewBox="0 0 100 100" aria-hidden
       >
-        <path d={STAR} fill="#C9A24B" opacity="0.07" />
+        <path d={STAR} fill="#C0A854" opacity="0.07" />
       </svg>
 
       {/* Hover action buttons */}
@@ -162,7 +163,7 @@ export function LeadCard({ lead, dragging, onClick, onEdit, onDelete }: LeadCard
           >
             {initials(lead.name)}
           </div>
-          <p className="text-[13px] font-semibold truncate leading-tight" style={{ color: '#0B1F3A' }}>
+          <p className="text-[13px] font-semibold truncate leading-tight" style={{ color: '#18483C' }}>
             {lead.name}
           </p>
         </div>
@@ -197,7 +198,7 @@ export function LeadCard({ lead, dragging, onClick, onEdit, onDelete }: LeadCard
           )}
           {lead.supervisor_name ? (
             <span className="text-[10px] truncate ml-auto" style={{ color: 'rgb(90 100 112)' }}>
-              {t('leads.addedBy')} <span style={{ color: '#0B1F3A', fontWeight: 500 }}>{lead.supervisor_name}</span>
+              {t('leads.addedBy')} <span style={{ color: '#18483C', fontWeight: 500 }}>{lead.supervisor_name}</span>
             </span>
           ) : (
             <span className="text-[10px] ml-auto whitespace-nowrap" style={{ color: 'rgb(203 211 222)' }}>

@@ -244,5 +244,15 @@ class AppServiceProvider extends ServiceProvider
                 ], 429);
             });
         });
+
+        // The analytics beacon fires once per page view, so the ceiling has to
+        // clear genuine browsing — including a whole school or office behind one
+        // IP — while still capping a flood. Dropped requests answer 204 like a
+        // successful one: a throttled beacon is not the visitor's problem.
+        RateLimiter::for('beacon', function (Request $request) {
+            return Limit::perMinute(120)->by($request->ip())->response(function () {
+                return response()->json(null, 204);
+            });
+        });
     }
 }

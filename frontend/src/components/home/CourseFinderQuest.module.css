@@ -1,0 +1,628 @@
+.section {
+  --quest-bg: #06232a;
+  --quest-panel: #0b4854;
+  --quest-card: #062f38;
+  --quest-border: #27616a;
+  --quest-teal: #35b8b5;
+  --quest-gold: #e7bb25;
+  position: relative;
+  isolation: isolate;
+  min-height: 720px;
+  scroll-margin-top: 112px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  padding: 72px 24px;
+  color: #fff;
+  background-color: var(--quest-bg);
+  background-image:
+    linear-gradient(rgba(65, 150, 158, 0.055) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(65, 150, 158, 0.055) 1px, transparent 1px);
+  background-size: 64px 64px;
+  border-block: 1px solid rgba(64, 157, 164, 0.35);
+}
+
+.section::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  width: 620px;
+  height: 620px;
+  left: calc(50% - 305px);
+  top: 50%;
+  translate: -50% -50%;
+  border-radius: 44%;
+  background: rgba(17, 77, 83, 0.12);
+  rotate: 45deg;
+  filter: blur(2px);
+}
+
+.layout {
+  width: min(100%, 1240px);
+  margin-inline: auto;
+  display: grid;
+  grid-template-columns: minmax(330px, 0.8fr) minmax(620px, 1.35fr);
+  align-items: center;
+  gap: clamp(38px, 6vw, 92px);
+}
+
+.mascotColumn {
+  position: relative;
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.mascotGlow {
+  position: absolute;
+  inset: 13% 7% 7%;
+  z-index: -1;
+  border-radius: 50%;
+  background: rgba(19, 122, 125, 0.15);
+  filter: blur(34px);
+}
+
+.mascot {
+  width: min(100%, 470px);
+  height: auto;
+  filter:
+    saturate(1.14)
+    brightness(1.04)
+    drop-shadow(0 22px 22px rgba(0, 0, 0, 0.3));
+  transform-origin: center bottom;
+  animation: mascotFloat 5s ease-in-out infinite;
+}
+
+.missionBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  margin-top: -22px;
+  padding: 9px 18px;
+  border: 1px solid rgba(68, 162, 169, 0.55);
+  border-radius: 999px;
+  background: #0a4350;
+  color: #fff;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.missionTarget {
+  color: #d7ee22;
+}
+
+.panel {
+  width: 100%;
+  min-height: 560px;
+  border: 1px solid rgba(49, 139, 151, 0.62);
+  border-radius: 28px;
+  padding: 26px 25px 24px;
+  background: var(--quest-panel);
+  box-shadow: 0 28px 80px rgba(0, 0, 0, 0.2);
+}
+
+.panelHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.eyebrow {
+  color: var(--quest-teal);
+  font-size: 11px;
+  font-weight: 900;
+  line-height: 1;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+}
+
+.title {
+  margin-top: 10px;
+  font-family: var(--font-inter), system-ui, sans-serif;
+  font-size: clamp(25px, 2.2vw, 31px);
+  font-weight: 900;
+  line-height: 1.05;
+  letter-spacing: -0.035em;
+}
+
+.lives {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 4px;
+  margin-top: 8px;
+  padding: 8px 13px;
+  border-radius: 999px;
+  background: rgba(109, 173, 182, 0.24);
+  color: #f15d68;
+}
+
+.progressBlock {
+  margin-top: 24px;
+}
+
+.progressMeta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  color: #b6d0d5;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.progressTrack {
+  height: 14px;
+  padding: 3px;
+  overflow: hidden;
+  border: 1px solid rgba(47, 147, 156, 0.55);
+  border-radius: 999px;
+  background: #052c34;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.progressFill {
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #2aa8a7, #42c7c1);
+  box-shadow: 0 0 13px rgba(57, 196, 190, 0.58);
+  transition: width 380ms ease;
+}
+
+.intro {
+  margin-top: 26px;
+  color: #b8cfd3;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.courseGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 13px;
+  margin-top: 16px;
+}
+
+.courseCard {
+  position: relative;
+  min-height: 168px;
+  padding: 17px;
+  border: 2px solid rgba(65, 105, 109, 0.72);
+  border-radius: 17px;
+  background: var(--quest-card);
+  color: #fff;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    translate 180ms ease,
+    border-color 180ms ease,
+    background-color 180ms ease,
+    box-shadow 180ms ease;
+}
+
+.courseCard:hover {
+  translate: 0 -3px;
+  border-color: var(--quest-teal);
+  background: #073842;
+  box-shadow: 0 13px 28px rgba(0, 0, 0, 0.18);
+}
+
+.courseCard:focus-visible,
+.answer:focus-visible,
+.backButton:focus-visible,
+.primaryCta:focus-visible,
+.secondaryCta:focus-visible,
+.restartButton:focus-visible {
+  outline: 3px solid #f2ca35;
+  outline-offset: 3px;
+}
+
+.courseIcon {
+  display: grid;
+  width: 48px;
+  height: 48px;
+  place-items: center;
+  border-radius: 15px;
+  color: #fff;
+}
+
+.courseStart {
+  position: absolute;
+  top: 17px;
+  right: 16px;
+  padding: 5px 9px;
+  border-radius: 999px;
+  background: rgba(107, 168, 176, 0.3);
+  font-size: 10px;
+  font-weight: 900;
+}
+
+.courseName {
+  display: block;
+  margin-top: 16px;
+  font-size: 17px;
+  font-weight: 900;
+  line-height: 1.1;
+}
+
+.courseDescription {
+  display: block;
+  margin-top: 8px;
+  color: #b7ccd0;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.questionMeta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 9px;
+  margin-top: 25px;
+}
+
+.backButton {
+  display: grid;
+  width: 40px;
+  height: 40px;
+  place-items: center;
+  border: 1px solid rgba(107, 166, 174, 0.55);
+  border-radius: 50%;
+  background: rgba(103, 166, 175, 0.3);
+  color: #fff;
+  cursor: pointer;
+  transition: background-color 160ms ease;
+}
+
+.backButton:hover {
+  background: rgba(113, 186, 194, 0.45);
+}
+
+.metaPill {
+  padding: 8px 13px;
+  border-radius: 999px;
+  background: rgba(71, 143, 152, 0.35);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.questionPill {
+  background: rgba(202, 171, 35, 0.2);
+  color: #ffe58a;
+}
+
+.questionTitle {
+  margin-top: 21px;
+  font-family: var(--font-inter), system-ui, sans-serif;
+  font-size: clamp(20px, 2vw, 24px);
+  font-weight: 900;
+  line-height: 1.2;
+  letter-spacing: -0.025em;
+}
+
+.answers {
+  display: grid;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.answer {
+  display: flex;
+  min-height: 64px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  width: 100%;
+  padding: 14px 17px;
+  border: 2px solid rgba(59, 96, 101, 0.8);
+  border-radius: 16px;
+  background: #062f38;
+  color: #fff;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    border-color 150ms ease,
+    background-color 150ms ease,
+    transform 150ms ease;
+}
+
+.answer:hover:not(:disabled) {
+  transform: translateX(3px);
+  border-color: rgba(53, 184, 181, 0.76);
+  background: #073943;
+}
+
+.answer:disabled {
+  cursor: default;
+}
+
+.answerSelected {
+  border-color: var(--quest-teal);
+  background: #0b4d57;
+}
+
+.answerText {
+  font-size: 14px;
+  font-weight: 800;
+  line-height: 1.35;
+}
+
+.answerCheck {
+  flex: none;
+  color: var(--quest-teal);
+}
+
+.resultCard {
+  position: relative;
+  margin-top: 26px;
+  padding: 20px 21px;
+  border: 2px solid rgba(210, 174, 30, 0.56);
+  border-radius: 23px;
+  background:
+    linear-gradient(135deg, rgba(226, 184, 36, 0.09), transparent 50%),
+    rgba(25, 81, 78, 0.92);
+}
+
+.resultTopline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.resultLabel {
+  display: inline-flex;
+  align-items: center;
+  min-height: 25px;
+  padding: 5px 13px;
+  border-radius: 999px;
+  background: var(--quest-gold);
+  color: #08313a;
+  font-size: 10px;
+  font-weight: 950;
+  letter-spacing: 0.14em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.levelBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 11px;
+  border-radius: 999px;
+  background: rgba(101, 166, 166, 0.34);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 900;
+}
+
+.levelBadge svg {
+  color: #ffd84d;
+}
+
+.resultTitle {
+  margin-top: 14px;
+  font-family: var(--font-inter), system-ui, sans-serif;
+  font-size: 23px;
+  font-weight: 900;
+  line-height: 1.1;
+}
+
+.resultPack {
+  margin-top: 9px;
+  color: var(--quest-teal);
+  font-size: 17px;
+  font-weight: 900;
+}
+
+.resultDescription {
+  margin-top: 16px;
+  color: #d0dcde;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.skillGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.skill {
+  padding: 12px 8px;
+  border-radius: 15px;
+  background: rgba(94, 159, 173, 0.34);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 900;
+  text-align: center;
+}
+
+.actions {
+  display: grid;
+  grid-template-columns: 1.1fr 1.1fr 56px;
+  gap: 10px;
+  margin-top: 19px;
+}
+
+.primaryCta,
+.secondaryCta,
+.restartButton {
+  display: inline-flex;
+  min-height: 56px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 15px;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 900;
+  text-decoration: none;
+  transition:
+    transform 160ms ease,
+    filter 160ms ease,
+    background-color 160ms ease;
+}
+
+.primaryCta {
+  border: 0;
+  background: #37b6b3;
+  box-shadow: 0 7px 0 #167b80;
+}
+
+.primaryCta:hover {
+  transform: translateY(-2px);
+  filter: brightness(1.08);
+}
+
+.secondaryCta {
+  border: 2px solid rgba(96, 155, 164, 0.62);
+  background: rgba(100, 153, 163, 0.22);
+}
+
+.secondaryCta:hover,
+.restartButton:hover {
+  background: rgba(113, 181, 190, 0.3);
+}
+
+.restartButton {
+  border: 2px solid rgba(86, 141, 149, 0.55);
+  background: #062f38;
+  cursor: pointer;
+}
+
+@keyframes mascotFloat {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mascot {
+    animation: none;
+  }
+
+  .progressFill,
+  .courseCard,
+  .answer,
+  .primaryCta,
+  .secondaryCta,
+  .restartButton {
+    transition: none;
+  }
+}
+
+@media (max-width: 1050px) {
+  .section {
+    padding-block: 58px;
+  }
+
+  .layout {
+    grid-template-columns: minmax(270px, 0.65fr) minmax(540px, 1.35fr);
+    gap: 28px;
+  }
+
+  .mascot {
+    width: min(100%, 390px);
+  }
+
+  .panel {
+    padding-inline: 20px;
+  }
+}
+
+@media (max-width: 820px) {
+  .section {
+    min-height: 0;
+    padding: 54px 18px;
+  }
+
+  .section::before {
+    left: 50%;
+    top: 230px;
+  }
+
+  .layout {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+
+  .mascot {
+    width: min(88vw, 390px);
+  }
+
+  .missionBadge {
+    margin-top: -28px;
+  }
+
+  .panel {
+    width: min(100%, 680px);
+    min-height: 0;
+    margin-inline: auto;
+  }
+}
+
+@media (max-width: 560px) {
+  .section {
+    padding-inline: 12px;
+  }
+
+  .panel {
+    border-radius: 22px;
+    padding: 22px 15px 18px;
+  }
+
+  .title {
+    max-width: 240px;
+    font-size: 24px;
+  }
+
+  .lives {
+    padding-inline: 10px;
+  }
+
+  .courseGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .courseCard {
+    min-height: 144px;
+  }
+
+  .questionTitle {
+    font-size: 20px;
+  }
+
+  .answer {
+    min-height: 60px;
+  }
+
+  .resultTopline {
+    align-items: flex-start;
+  }
+
+  .skillGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .actions {
+    grid-template-columns: 1fr 56px;
+  }
+
+  .primaryCta {
+    grid-column: 1 / -1;
+  }
+}

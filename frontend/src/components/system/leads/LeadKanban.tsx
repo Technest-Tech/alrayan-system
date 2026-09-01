@@ -89,7 +89,7 @@ function FilterSelect({ value, options, onChange }: {
         onChange={e => onChange(e.target.value)}
         className="appearance-none w-full pl-3 pr-7 py-2 rounded-lg border text-xs outline-none transition-all cursor-pointer focus:ring-2"
         style={{
-          borderColor: value ? '#C9A24B66' : 'rgb(229 233 240)',
+          borderColor: value ? '#C0A85466' : 'rgb(229 233 240)',
           background: value ? 'rgba(201,162,75,0.04)' : '#fff',
           color: value ? 'rgb(11 31 58)' : 'rgb(90 100 112)',
         }}
@@ -243,7 +243,7 @@ export function LeadKanban({ leads, isLoading, filters, onFiltersChange }: Props
                 placeholder={t('leads.searchPlaceholder')}
                 className="w-full pl-8 pr-3 h-9 rounded-lg border text-xs outline-none focus:ring-2 focus:ring-[#0E7C5A]/20 transition-all"
                 style={{
-                  borderColor: filters.q ? '#C9A24B66' : 'rgb(229 233 240)',
+                  borderColor: filters.q ? '#C0A85466' : 'rgb(229 233 240)',
                   background: filters.q ? 'rgba(201,162,75,0.04)' : '#fff',
                 }}
                 value={filters.q ?? ''}
@@ -270,7 +270,7 @@ export function LeadKanban({ leads, isLoading, filters, onFiltersChange }: Props
                 onChange={e => onFiltersChange({ ...filters, from_date: e.target.value })}
                 className="w-full h-9 pl-3 pr-3 rounded-lg border text-xs outline-none focus:ring-2 focus:ring-[#0E7C5A]/20 transition-all cursor-pointer"
                 style={{
-                  borderColor: filters.from_date ? '#C9A24B66' : 'rgb(229 233 240)',
+                  borderColor: filters.from_date ? '#C0A85466' : 'rgb(229 233 240)',
                   background: filters.from_date ? 'rgba(201,162,75,0.04)' : '#fff',
                   color: filters.from_date ? 'rgb(11 31 58)' : 'rgb(156 163 175)',
                 }}
@@ -289,7 +289,7 @@ export function LeadKanban({ leads, isLoading, filters, onFiltersChange }: Props
                 onChange={e => onFiltersChange({ ...filters, to_date: e.target.value })}
                 className="w-full h-9 pl-3 pr-3 rounded-lg border text-xs outline-none focus:ring-2 focus:ring-[#0E7C5A]/20 transition-all cursor-pointer"
                 style={{
-                  borderColor: filters.to_date ? '#C9A24B66' : 'rgb(229 233 240)',
+                  borderColor: filters.to_date ? '#C0A85466' : 'rgb(229 233 240)',
                   background: filters.to_date ? 'rgba(201,162,75,0.04)' : '#fff',
                   color: filters.to_date ? 'rgb(11 31 58)' : 'rgb(156 163 175)',
                 }}
@@ -304,7 +304,7 @@ export function LeadKanban({ leads, isLoading, filters, onFiltersChange }: Props
       </div>
 
       {/* ── Board ── */}
-      <div className="overflow-x-auto pb-4" style={{ scrollbarWidth: 'thin', scrollbarColor: '#C9A24B33 transparent' }}>
+      <div className="overflow-x-auto pb-4" style={{ scrollbarWidth: 'thin', scrollbarColor: '#C0A85433 transparent' }}>
         <div className="flex gap-3" style={{ minWidth: 'max-content' }}>
           {COLUMNS.map(col => {
             const isOver     = dragOverCol === col.key
@@ -334,7 +334,7 @@ export function LeadKanban({ leads, isLoading, filters, onFiltersChange }: Props
                   <div className="flex items-center justify-between px-3 py-2.5">
                     <div className="flex items-center gap-2">
                       <span className="w-2 h-2 rounded-full shrink-0" style={{ background: col.dot }} />
-                      <span className="text-xs font-semibold" style={{ color: '#0B1F3A' }}>
+                      <span className="text-xs font-semibold" style={{ color: '#18483C' }}>
                         {t(col.labelKey)}
                       </span>
                     </div>

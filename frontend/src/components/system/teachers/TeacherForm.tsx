@@ -8,6 +8,7 @@ import type { Teacher } from '@/types/system/teacher'
 import { useCourses } from '@/hooks/system/useCourses'
 import { WhatsAppInput } from '@/components/system/students/WhatsAppInput'
 import { useI18n } from '@/lib/system/i18n'
+import type { IconComponent } from '@/types/icon'
 
 const schema = z.object({
   name:                    z.string().min(1, 'Name is required'),
@@ -46,7 +47,7 @@ const PAYMENT_METHODS = [
 const inputCls   = 'w-full px-3 py-2.5 rounded-xl border text-sm outline-none focus:ring-2 focus:ring-[rgb(14,124,90)] transition-shadow'
 const inputStyle = { borderColor: 'rgb(var(--border-default, 229 233 240))', background: 'rgb(var(--surface-card, 255 255 255))' }
 
-function SectionHeader({ icon: Icon, title }: { icon: React.ElementType; title: string }) {
+function SectionHeader({ icon: Icon, title }: { icon: IconComponent; title: string }) {
   return (
     <div className="flex items-center gap-2.5 pb-3 border-b" style={{ borderColor: 'rgb(var(--border-default, 229 233 240))' }}>
       <span className="flex items-center justify-center w-7 h-7 rounded-lg" style={{ background: 'rgb(14 124 90 / 0.1)' }}>
