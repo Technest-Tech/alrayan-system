@@ -89,7 +89,8 @@ class RebuildStudentPackages extends Command
         return StudentPackage::query()
             ->leftJoin('sys_lesson_package_allocations as a', 'a.package_id', '=', 'sys_student_packages.id')
             ->groupBy('sys_student_packages.student_id')
-            ->pluck(DB::raw('COALESCE(SUM(a.hours),0)'), 'sys_student_packages.student_id')
+            ->selectRaw('sys_student_packages.student_id AS sid, COALESCE(SUM(a.hours), 0) AS consumed')
+            ->pluck('consumed', 'sid')
             ->toArray();
     }
 }
