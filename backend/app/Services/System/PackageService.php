@@ -189,6 +189,10 @@ class PackageService
      *
      * Rules:
      *  - Only CONSUMING statuses (attended / paid_absence / cancelled_by_student) fill hours.
+     *  - The student's FIRST delivered session is the free trial and fills nothing, whatever
+     *    status it was recorded under (see config('system.first_session_free')). It is keyed
+     *    off the first consuming lesson rather than the first row, so a cancellation before
+     *    the student ever sat a lesson does not burn their free trial.
      *  - A lesson that crosses a package limit is split: it fills the current package exactly
      *    to its limit and the overflow flows into the next package (created if needed).
      *  - EVERY package re-shifts — paid/suspended packages re-count exactly like pending ones,
@@ -252,6 +256,8 @@ class PackageService
 
             $current        = null;   // StudentPackage currently being filled
             $currentMin     = 0;      // minutes already placed in $current
+            // The free trial is spent by the first lesson the student actually sits.
+            $trialPending   = (bool) config('system.first_session_free', true);
             $usedPackageIds = [];
             $allocRows      = [];
             $lessonUpdates  = [];
@@ -260,7 +266,14 @@ class PackageService
             foreach ($lessons as $lesson) {
                 $duration = (int) $lesson->duration_minutes;
 
-                if (!$lesson->isConsuming()) {
+                // The first session the student sits is the advertised free trial: point it at
+                // a package so it still shows on their timeline, but bill nothing for it.
+                $isFreeTrial = $trialPending && $lesson->isConsuming();
+                if ($isFreeTrial) {
+                    $trialPending = false;
+                }
+
+                if ($isFreeTrial || !$lesson->isConsuming()) {
                     if ($current === null) { $current = $nextPackage(); $currentMin = 0; }
                     $lessonUpdates[$lesson->id] = ['package_id' => $current->id, 'session_number_hours' => 0];
                     $usedPackageIds[$current->id] = true;

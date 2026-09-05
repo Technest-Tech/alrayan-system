@@ -19,6 +19,12 @@ class PackageConsumptionEngineTest extends SystemTestCase
     {
         parent::setUp();
         $this->teacher = Teacher::factory()->create();
+
+        // These cases exercise package mechanics — splitting, re-shifting, overflow —
+        // and each counts hours from the very first lesson. The free-trial policy is a
+        // separate rule with its own coverage in FreeTrialSessionTest, so switch it off
+        // here rather than prepending a throwaway trial lesson to every scenario.
+        config(['system.first_session_free' => false]);
     }
 
     private function student(int $packageHours = 2): Student
