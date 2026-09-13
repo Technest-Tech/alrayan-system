@@ -125,18 +125,46 @@ class FreeTrialSessionTest extends SystemTestCase
             'with the policy off the first session bills as normal');
     }
 
-    public function test_an_explicit_trial_status_still_bills_nothing_and_keeps_the_free_session(): void
+    public function test_a_lesson_recorded_as_trial_is_the_free_session_and_not_an_extra_one(): void
     {
-        $s = $this->student(2);
-        $this->lesson($s, 'trial', 60, now()->setTime(9, 0));   // already free by status
-        $first = $this->lesson($s, 'attended', 60, now()->setTime(11, 0));
-        $billed = $this->lesson($s, 'attended', 60, now()->setTime(13, 0));
+        // Regression: the allowance used to be spent only by a consuming lesson, so a
+        // recorded `trial` left it unspent and the next attended lesson was free too —
+        // two free sessions for one student (seen in production for student #77).
+        $s = $this->student(8);
+        $trial  = $this->lesson($s, 'trial', 60, now()->setTime(9, 0));
+        $first  = $this->lesson($s, 'attended', 60, now()->setTime(11, 0));
+        $second = $this->lesson($s, 'attended', 60, now()->setTime(13, 0));
         $this->rebuild($s);
 
-        // The `trial` status never consumed, so the free-trial allowance is still
-        // unspent and lands on the first attended session.
-        $this->assertSame(0, LessonPackageAllocation::where('lesson_id', $first->id)->count());
+        $this->assertSame(0, LessonPackageAllocation::where('lesson_id', $trial->id)->count());
         $this->assertEqualsWithDelta(1.0,
-            (float) LessonPackageAllocation::where('lesson_id', $billed->id)->sum('hours'), 0.001);
+            (float) LessonPackageAllocation::where('lesson_id', $first->id)->sum('hours'), 0.001,
+            'the first attended lesson after a recorded trial is billed');
+        $this->assertEqualsWithDelta(1.0, (float) $first->fresh()->session_number_hours, 0.001);
+        $this->assertEqualsWithDelta(2.0, (float) $second->fresh()->session_number_hours, 0.001);
+        $this->assertEqualsWithDelta(2.0, $this->packages($s)[0]->consumed_hours, 0.001);
+    }
+
+    public function test_a_first_lesson_recorded_as_free_also_spends_the_trial(): void
+    {
+        $s = $this->student(8);
+        $this->lesson($s, 'free', 60, now()->setTime(9, 0));
+        $first = $this->lesson($s, 'attended', 60, now()->setTime(11, 0));
+        $this->rebuild($s);
+
+        $this->assertEqualsWithDelta(1.0,
+            (float) LessonPackageAllocation::where('lesson_id', $first->id)->sum('hours'), 0.001,
+            'a first lesson already given free is the student\'s free session');
+    }
+
+    public function test_an_absence_before_the_first_lesson_does_not_spend_the_trial(): void
+    {
+        $s = $this->student(8);
+        $this->lesson($s, 'absent', 60, now()->setTime(8, 0));
+        $trial = $this->lesson($s, 'attended', 60, now()->setTime(9, 0));
+        $this->rebuild($s);
+
+        $this->assertSame(0, LessonPackageAllocation::where('lesson_id', $trial->id)->count(),
+            'nothing was delivered at the absence, so the trial is still owed');
     }
 }
