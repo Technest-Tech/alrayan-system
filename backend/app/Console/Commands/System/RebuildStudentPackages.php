@@ -9,11 +9,10 @@ use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 
 /**
- * Re-runs the package engine for students so a policy change (notably the free
- * first session) reaches records created before it existed. Without this a
- * student's figures only correct themselves the next time someone happens to edit
- * one of their lessons, which would leave two students on the same deal showing
- * different balances.
+ * Re-runs the package engine for students so a change to how lessons are counted
+ * reaches records created before it. Without this a student's figures only correct
+ * themselves the next time someone happens to edit one of their lessons, which
+ * leaves two students on the same deal showing different balances.
  */
 class RebuildStudentPackages extends Command
 {

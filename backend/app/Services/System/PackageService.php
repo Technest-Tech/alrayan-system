@@ -189,9 +189,6 @@ class PackageService
      *
      * Rules:
      *  - Only CONSUMING statuses (attended / paid_absence / cancelled_by_student) fill hours.
-     *  - Each student gets ONE free session (see config('system.first_session_free')). A lesson
-     *    recorded as `trial`/`free` spends it; otherwise the first lesson that would bill is
-     *    zeroed. Cancellations and absences never spend it, since nothing was delivered.
      *  - A lesson that crosses a package limit is split: it fills the current package exactly
      *    to its limit and the overflow flows into the next package (created if needed).
      *  - EVERY package re-shifts — paid/suspended packages re-count exactly like pending ones,
@@ -255,8 +252,6 @@ class PackageService
 
             $current        = null;   // StudentPackage currently being filled
             $currentMin     = 0;      // minutes already placed in $current
-            // The free trial is spent by the first lesson the student actually sits.
-            $trialPending   = (bool) config('system.first_session_free', true);
             $usedPackageIds = [];
             $allocRows      = [];
             $lessonUpdates  = [];
@@ -265,18 +260,7 @@ class PackageService
             foreach ($lessons as $lesson) {
                 $duration = (int) $lesson->duration_minutes;
 
-                // The student gets ONE free session. It is spent by whichever comes first: a
-                // lesson already recorded as zero-charge (`trial`/`free`), which bills nothing
-                // on its own, or the first lesson that would bill, which we zero here. Keying
-                // only off consuming lessons let a recorded trial slip past unspent, so the next
-                // attended lesson came out free as well.
-                $zeroCharge  = in_array($lesson->status, Lesson::ZERO_CHARGE_STATUSES, true);
-                $isFreeTrial = $trialPending && $lesson->isConsuming();
-                if ($trialPending && ($isFreeTrial || $zeroCharge)) {
-                    $trialPending = false;
-                }
-
-                if ($isFreeTrial || !$lesson->isConsuming()) {
+                if (!$lesson->isConsuming()) {
                     if ($current === null) { $current = $nextPackage(); $currentMin = 0; }
                     $lessonUpdates[$lesson->id] = ['package_id' => $current->id, 'session_number_hours' => 0];
                     $usedPackageIds[$current->id] = true;

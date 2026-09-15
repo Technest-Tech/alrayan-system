@@ -11,14 +11,6 @@ use Tests\SystemTestCase;
 
 class CalendarLessonEndpointsTest extends SystemTestCase
 {
-
-    protected function setUp(): void
-    {
-        parent::setUp();
-        // Predates the free-trial policy: these cases count hours from the very first
-        // lesson. The policy itself is covered in FreeTrialSessionTest.
-        config(['system.first_session_free' => false]);
-    }
     /** Create a student configured so PackageService can build packages. */
     private function lessonStudent(array $overrides = []): Student
     {

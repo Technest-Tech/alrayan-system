@@ -19,12 +19,6 @@ class PackageConsumptionEngineTest extends SystemTestCase
     {
         parent::setUp();
         $this->teacher = Teacher::factory()->create();
-
-        // These cases exercise package mechanics — splitting, re-shifting, overflow —
-        // and each counts hours from the very first lesson. The free-trial policy is a
-        // separate rule with its own coverage in FreeTrialSessionTest, so switch it off
-        // here rather than prepending a throwaway trial lesson to every scenario.
-        config(['system.first_session_free' => false]);
     }
 
     private function student(int $packageHours = 2): Student
@@ -218,6 +212,30 @@ class PackageConsumptionEngineTest extends SystemTestCase
     }
 
     /* ── Completion → task ── */
+
+    public function test_only_a_lesson_marked_trial_is_free_and_an_attended_first_lesson_is_billed(): void
+    {
+        // Decided by the academy (2026-09-15): the free trial is whatever lesson is
+        // marked `trial`. The engine must not guess that an `attended` first lesson was
+        // really the trial — an automatic "first lesson free" rule was tried and removed
+        // because it freed paid lessons and billed students inconsistently.
+        $withTrial = $this->student(8);
+        $trial     = $this->lesson($withTrial, 'trial', 60, now()->setTime(9, 0));
+        $afterTrial = $this->lesson($withTrial, 'attended', 60, now()->setTime(11, 0));
+
+        $noTrial     = $this->student(8);
+        $firstLesson = $this->lesson($noTrial, 'attended', 60, now()->setTime(9, 0));
+
+        $this->rebuild($withTrial);
+        $this->rebuild($noTrial);
+
+        $this->assertSame(0, LessonPackageAllocation::where('lesson_id', $trial->id)->count(),
+            'a lesson marked trial is free');
+        $this->assertEqualsWithDelta(1.0, (float) LessonPackageAllocation::where('lesson_id', $afterTrial->id)->sum('hours'), 0.001,
+            'the attended lesson after the trial is billed');
+        $this->assertEqualsWithDelta(1.0, (float) LessonPackageAllocation::where('lesson_id', $firstLesson->id)->sum('hours'), 0.001,
+            'an attended first lesson is billed — it is not assumed to be the trial');
+    }
 
     public function test_filling_a_package_generates_a_completion_task(): void
     {

@@ -28,12 +28,6 @@ class Lesson extends Model
      */
     public const TEACHER_PAID_STATUSES = ['attended', 'paid_absence', 'free'];
 
-    /**
-     * Delivered sessions the student is not charged for. Either one standing first in a
-     * student's history IS their free trial, so the engine must not grant another.
-     */
-    public const ZERO_CHARGE_STATUSES = ['trial', 'free'];
-
     /** All valid lesson statuses (consuming + non-consuming). */
     public const STATUSES = [
         'scheduled', 'attended', 'paid_absence', 'absent',

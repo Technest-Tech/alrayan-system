@@ -24,9 +24,6 @@ class LessonReportEndpointsTest extends SystemTestCase
     protected function setUp(): void
     {
         parent::setUp();
-        // Predates the free-trial policy: these cases count hours from the very first
-        // lesson. The policy itself is covered in FreeTrialSessionTest.
-        config(['system.first_session_free' => false]);
 
         Storage::fake('public');
     }
