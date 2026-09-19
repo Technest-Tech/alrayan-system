@@ -30,10 +30,14 @@ import {
 
 type Props = { params: Promise<{ id: string }> }
 
-export async function generateStaticParams() {
-  const teachers = await fetchTeachers()
-  return teachers.map((t) => ({ id: t.id }))
-}
+/**
+ * Rendered per request. The profile is built from request headers (the active locale)
+ * and from teachers the academy edits in Site → Teachers, so it cannot be baked at
+ * build time: prerendering it produced DYNAMIC_SERVER_USAGE and a 500 on every profile.
+ * generateStaticParams used to fetch the teacher list during the build, which also meant
+ * a teacher added after a deploy had no page until the next one.
+ */
+export const dynamic = 'force-dynamic'
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { id } = await params
