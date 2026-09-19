@@ -79,6 +79,13 @@ export type PricingPackage = {
 export const BASE_DURATION: DurationId = '60'
 
 /**
+ * The lesson length the pricing table opens on. Distinct from BASE_DURATION, which is
+ * the length prices are quoted at and drives the maths — changing that would reprice
+ * every package. Most enquiries are for the half-hour lesson, so lead with it.
+ */
+export const DEFAULT_DURATION: DurationId = '30'
+
+/**
  * What a package costs at each lesson length, as a share of its 60-minute
  * price — the fallback for any package that does not quote that length in
  * `quotedPrices`.

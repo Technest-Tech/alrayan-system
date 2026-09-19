@@ -355,11 +355,10 @@ export default async function TeacherPage({ params }: Props) {
                 ))}
               </div>
 
-              {/* Review list — held to a fixed height once there are more
-                  than a handful, so a well-reviewed teacher does not push the
-                  rest of the page (availability, booking) out of reach. Below
-                  the threshold the list simply renders at its natural height,
-                  with no scrollbar to explain. */}
+              {/* Review list — about three cards are visible and the rest scroll,
+                  so a well-reviewed teacher does not push the availability and
+                  booking sections out of reach. At or below the threshold the list
+                  renders at its natural height, with no scrollbar to explain. */}
               {t.reviews.length === 0 ? (
                 <p className="rounded-xl border border-dashed border-white/15 bg-white/[0.02] px-5 py-8 text-center text-sm text-white/45">
                   {tr('teacherPage.noReviews')}
@@ -368,7 +367,7 @@ export default async function TeacherPage({ params }: Props) {
                 <div
                   className={
                     t.reviews.length > REVIEWS_BEFORE_SCROLL
-                      ? 'max-h-[28rem] overflow-y-auto pr-2 [scrollbar-color:rgba(255,255,255,0.25)_transparent] [scrollbar-width:thin]'
+                      ? 'max-h-[22rem] overflow-y-auto pr-2 [scrollbar-color:rgba(255,255,255,0.25)_transparent] [scrollbar-width:thin]'
                       : undefined
                   }
                 >

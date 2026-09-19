@@ -18,6 +18,7 @@ import {
   durations,
   currencies,
   BASE_DURATION,
+  DEFAULT_DURATION,
   getPricingPackages,
   lessonRate,
   packagePrice,
@@ -249,7 +250,7 @@ export function PricingPlans({ ctaHref = '/contact' }: { ctaHref?: string }) {
   const { locale, t } = useT()
   // Opens on the hour — the length the academy's quoted prices are set at,
   // so the headline figure matches the price list.
-  const [duration, setDuration] = useState<DurationId>(BASE_DURATION)
+  const [duration, setDuration] = useState<DurationId>(DEFAULT_DURATION)
   const [currency, setCurrency] = useState<CurrencyCode>('USD')
 
   const pricingPackages = useMemo(() => getPricingPackages(locale), [locale])

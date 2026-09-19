@@ -279,6 +279,39 @@ class LessonReportEndpointsTest extends SystemTestCase
         $this->assertStringContainsString('25%', $this->storedReport());
     }
 
+    public function test_progress_is_the_lessons_own_position_not_the_packages_running_total(): void
+    {
+        // Regression: the report read the package's live consumed_hours, so re-sending an
+        // older lesson's report showed today's figure. A parent reading the report for
+        // lesson 1 must see where the student stood at lesson 1.
+        $student = $this->lessonStudent(['package_hours_default' => 8]);
+        $teacher = Teacher::factory()->create();
+
+        $first = $this->asAdmin()
+            ->postJson('/api/system/lessons', $this->payload($student, $teacher, [
+                'scheduled_at'     => now()->setTime(10, 0)->toIso8601String(),
+                'duration_minutes' => 120,
+            ]))
+            ->assertCreated()
+            ->json('data.id');
+
+        // A later lesson moves the package on to 4h of 8h.
+        $this->asAdmin()
+            ->postJson('/api/system/lessons', $this->payload($student, $teacher, [
+                'scheduled_at'     => now()->addDay()->setTime(10, 0)->toIso8601String(),
+                'duration_minutes' => 120,
+            ]))
+            ->assertCreated();
+
+        $this->assertSame(4.0, StudentPackage::where('student_id', $student->id)->sole()->consumed_hours);
+
+        $this->asAdmin()->postJson("/api/system/lessons/{$first}/report")->assertStatus(202);
+
+        $html = $this->storedReport();
+        $this->assertStringContainsString('25%', $html, "the first lesson's report still reads 2h of 8h");
+        $this->assertStringNotContainsString('50%', $html, 'it must not show the package total');
+    }
+
     /* ───────────────────────  RESEND  ───────────────────────── */
 
     public function test_a_lesson_report_can_be_re_sent(): void

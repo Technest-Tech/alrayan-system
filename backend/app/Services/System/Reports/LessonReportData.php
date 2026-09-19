@@ -3,6 +3,7 @@
 namespace App\Services\System\Reports;
 
 use App\Models\System\Lesson;
+use App\Models\System\LessonPackageAllocation;
 use App\Support\System\SubjectCatalog;
 use App\Models\System\StudentPackage;
 use App\Support\System\Setting;
@@ -51,9 +52,9 @@ class LessonReportData
 
             'package' => $package ? [
                 'number'  => $package->package_number,
-                'used'    => $this->formatHours($package->consumed_hours),
+                'used'    => $this->formatHours($usedSoFar = $this->usedAsOf($lesson, $package)),
                 'total'   => $this->formatHours($package->package_hours),
-                'percent' => $this->percent($package),
+                'percent' => $this->percent($usedSoFar, $package),
                 'isPaid'  => $package->status === 'paid',
             ] : null,
 
@@ -84,13 +85,43 @@ class LessonReportData
         return $lesson->allocations->last()?->package ?? $lesson->package;
     }
 
-    private function percent(StudentPackage $package): int
+    /**
+     * Hours used in this package as of THIS lesson — not the package's running total.
+     * A report is about one lesson and is read right after it, so it must show where the
+     * student stood then; using the live total made an old report climb every time a
+     * later lesson was added, and disagreed with the calendar's own progress column.
+     */
+    private function usedAsOf(Lesson $lesson, StudentPackage $package): float
+    {
+        // A lesson straddling a package boundary carries the cumulative figure on its
+        // last allocation, which is exactly where the student stands in that package.
+        $allocation = $lesson->allocations
+            ->firstWhere('package_id', $package->id);
+
+        if ($allocation) {
+            return (float) $allocation->cumulative_hours;
+        }
+
+        // Non-consuming lessons (a trial, a free lesson) have no allocation of their own,
+        // so carry the hours already banked in this package before this lesson ran.
+        return (float) LessonPackageAllocation::where('sys_lesson_package_allocations.package_id', $package->id)
+            ->join('sys_lessons as l', 'l.id', '=', 'sys_lesson_package_allocations.lesson_id')
+            ->whereNull('l.deleted_at')
+            ->where(fn ($q) => $q
+                ->where('l.scheduled_at', '<', $lesson->scheduled_at)
+                ->orWhere(fn ($t) => $t
+                    ->where('l.scheduled_at', '=', $lesson->scheduled_at)
+                    ->where('l.id', '<', $lesson->id)))
+            ->sum('sys_lesson_package_allocations.hours');
+    }
+
+    private function percent(float $used, StudentPackage $package): int
     {
         if ($package->package_hours <= 0) {
             return 0;
         }
 
-        return (int) min(100, round($package->consumed_hours / $package->package_hours * 100));
+        return (int) min(100, round($used / $package->package_hours * 100));
     }
 
     /** 11.0 → "11h", 28.5 → "28.5h" — never "28.50h". */
