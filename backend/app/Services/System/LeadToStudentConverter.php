@@ -13,6 +13,7 @@ class LeadToStudentConverter
     public function __construct(
         private PackageService $packages,
         private UserProvisioner $provisioner,
+        private TeacherNotifier $teacherNotifier,
     ) {}
 
     public function convert(Lead $lead, array $studentData): Student
@@ -102,6 +103,9 @@ class LeadToStudentConverter
                 'paid_at'        => $lessonPackage->paid_at ?? now(),
             ]);
             $this->packages->rebuild($student);
+            // Closing the lead is when the down payment is collected. #0 usually opened "paid"
+            // back at the trial lesson, so there is no status change for the observer to see.
+            $this->teacherNotifier->packagePaid($lessonPackage);
 
             $lead->update([
                 'status'                  => 'closed',

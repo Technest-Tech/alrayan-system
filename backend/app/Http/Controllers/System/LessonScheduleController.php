@@ -5,6 +5,7 @@ namespace App\Http\Controllers\System;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\System\Lesson\StoreLessonScheduleRequest;
 use App\Http\Resources\System\LessonScheduleResource;
+use App\Models\System\Lesson;
 use App\Models\System\LessonSchedule;
 use App\Models\System\LessonScheduleSlot;
 use App\Models\System\Student;
@@ -91,6 +92,11 @@ class LessonScheduleController extends Controller
     public function update(Request $request, LessonSchedule $lessonSchedule): LessonScheduleResource
     {
         $this->authorize('update', $lessonSchedule);
+
+        $request->validate([
+            'slots'                    => ['sometimes', 'array', 'min:1'],
+            'slots.*.duration_minutes' => ['required_with:slots', ...Lesson::durationRules()],
+        ]);
 
         $data = $request->only([
             'teacher_id',

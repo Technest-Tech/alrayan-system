@@ -47,11 +47,17 @@ function fmt(minor: number, currency: string) {
   return `${currency} ${(minor / 100).toFixed(2)}`
 }
 
+/** Today as YYYY-MM-DD in the viewer's own timezone — the latest payment date allowed. */
+function localToday() {
+  return new Date().toLocaleDateString('en-CA')
+}
+
 /* ── Editable row ──────────────────────────────────────── */
 interface EditState {
   package_hours: string
   tariff_at_time: string
   status: PackageStatus
+  paid_at: string
   notes: string
 }
 
@@ -62,6 +68,7 @@ function PackageRow({ pkg, onSaved }: { pkg: PackageRow; onSaved: () => void }) 
     package_hours:  String(pkg.package_hours),
     tariff_at_time: String(pkg.tariff_at_time / 100),
     status:         pkg.status,
+    paid_at:        pkg.paid_at ?? '',
     notes:          pkg.notes ?? '',
   })
 
@@ -74,6 +81,7 @@ function PackageRow({ pkg, onSaved }: { pkg: PackageRow; onSaved: () => void }) 
       package_hours:  String(pkg.package_hours),
       tariff_at_time: String(pkg.tariff_at_time / 100),
       status:         pkg.status,
+      paid_at:        pkg.paid_at ?? '',
       notes:          pkg.notes ?? '',
     })
     setEditing(true)
@@ -91,6 +99,9 @@ function PackageRow({ pkg, onSaved }: { pkg: PackageRow; onSaved: () => void }) 
         package_hours:  hours,
         tariff_at_time: tariff,
         status:         edit.status,
+        // A pending package has no payment date (the server clears it); left empty on a paid
+        // one, the server stamps today.
+        paid_at:        edit.status !== 'pending' && edit.paid_at ? edit.paid_at : undefined,
         notes:          edit.notes || undefined,
       })
       toast.success(t('payments.toastUpdated'))
@@ -175,13 +186,28 @@ function PackageRow({ pkg, onSaved }: { pkg: PackageRow; onSaved: () => void }) 
           <SearchableSelect
             options={STATUS_OPTIONS.map(o => ({ value: o.value, label: t(o.key) }))}
             value={edit.status}
-            onChange={v => setEdit(p => ({ ...p, status: v as PackageStatus }))}
+            onChange={v => setEdit(p => ({
+              ...p,
+              status:  v as PackageStatus,
+              // Switching to paid proposes today as the payment date; it stays editable.
+              paid_at: v === 'paid' && !p.paid_at ? localToday() : p.paid_at,
+            }))}
             className="w-36"
           />
         </td>
         {/* Paid At */}
         <td className="px-3 py-2.5 text-sm" style={{ color: MUTED }}>
-          {pkg.paid_at ?? '—'}
+          {edit.status === 'pending' ? '—' : (
+            <input
+              type="date"
+              max={localToday()}
+              value={edit.paid_at}
+              onChange={e => setEdit(p => ({ ...p, paid_at: e.target.value }))}
+              aria-label={t('payments.paidAtLabel')}
+              className="w-36 px-2 py-1.5 rounded-lg border text-sm outline-none focus:ring-2 focus:ring-[#0d9488] bg-white"
+              style={{ borderColor: TEAL_100 }}
+            />
+          )}
         </td>
         {/* Notes */}
         <td className="px-3 py-2.5">

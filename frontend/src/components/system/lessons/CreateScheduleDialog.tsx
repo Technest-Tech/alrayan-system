@@ -11,6 +11,7 @@ import { useMyStudents } from '@/hooks/system/useMyStudents'
 import { useSystemUser } from '@/components/system/shell/SystemShell'
 import type { LessonSchedule, ScheduleSlot } from '@/types/system/lesson'
 import { SearchableSelect } from './SearchableSelect'
+import { SCHEDULE_DURATION_OPTIONS, formatLessonDuration } from '@/lib/system/lessonDuration'
 import { useI18n } from '@/lib/system/i18n'
 
 /* ── Design tokens ────────────────────────────────────────── */
@@ -65,8 +66,6 @@ const TIME_OPTIONS = Array.from({ length: 48 }, (_, i) => {
   const m = i % 2 === 0 ? '00' : '30'
   return `${h}:${m}`
 })
-
-const DURATION_OPTIONS = [30, 45, 60, 75, 90, 120]
 
 const RECURRENCE_OPTIONS: { value: LessonSchedule['recurrence']; key: string }[] = [
   { value: 'none',          key: 'lessons.schedule.recurrenceNone'        },
@@ -279,7 +278,7 @@ export function CreateScheduleDialog({ open, onOpenChange, onSuccess, schedule, 
                         value={slot.duration_minutes}
                         onChange={e => updateSlot(i, 'duration_minutes', e.target.value)}
                       >
-                        {DURATION_OPTIONS.map(d => <option key={d} value={d}>{t('lessons.form.minutesShort', { n: String(d) })}</option>)}
+                        {SCHEDULE_DURATION_OPTIONS.map(d => <option key={d} value={d}>{formatLessonDuration(d, t)}</option>)}
                       </select>
 
                       {slots.length > 1 ? (

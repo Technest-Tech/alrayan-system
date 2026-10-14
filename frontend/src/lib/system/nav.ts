@@ -85,6 +85,7 @@ export const TEACHER_NAV: readonly NavSection[] = [
       { label: 'nav.myStudents', href: '/teacher/students', icon: GraduationCap,   perm: null },
       { label: 'nav.calendar',   href: '/calendar',         icon: CalendarDays,    perm: null },
       { label: 'nav.mySalary',   href: '/teacher/salary',   icon: Wallet,          perm: null },
+      { label: 'nav.notifications', href: '/notifications', icon: Bell,            perm: null },
     ],
   },
   {

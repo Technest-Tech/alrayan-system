@@ -51,6 +51,44 @@ class PaymentsEndpointsTest extends SystemTestCase
             ]);
     }
 
+    public function test_marking_a_package_paid_from_the_edit_row_records_the_payment_date(): void
+    {
+        $pkg = $this->package(Student::factory()->create(), 1, 'pending', 3600);
+
+        $this->asAdmin()
+            ->patchJson("/api/system/student-packages/{$pkg->id}", ['status' => 'paid'])
+            ->assertOk()
+            ->assertJsonPath('data.paid_at', now()->toDateString());
+    }
+
+    public function test_the_payment_date_can_be_set_and_is_cleared_when_back_to_pending(): void
+    {
+        $pkg = $this->package(Student::factory()->create(), 1, 'paid', 3600, now());
+
+        $this->asAdmin()
+            ->patchJson("/api/system/student-packages/{$pkg->id}", ['paid_at' => '2026-09-16'])
+            ->assertOk()
+            ->assertJsonPath('data.paid_at', '2026-09-16');
+
+        // Re-saving the row without a date keeps the one it has.
+        $this->patchJson("/api/system/student-packages/{$pkg->id}", ['status' => 'paid', 'notes' => 'cash'])
+            ->assertJsonPath('data.paid_at', '2026-09-16');
+
+        $this->patchJson("/api/system/student-packages/{$pkg->id}", ['status' => 'pending'])
+            ->assertOk()
+            ->assertJsonPath('data.paid_at', null);
+    }
+
+    public function test_a_payment_date_cannot_be_in_the_future(): void
+    {
+        $pkg = $this->package(Student::factory()->create(), 1, 'paid', 3600, now());
+
+        $this->asAdmin()
+            ->patchJson("/api/system/student-packages/{$pkg->id}", ['paid_at' => now()->addWeek()->toDateString()])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors(['paid_at']);
+    }
+
     private function package(
         Student $student,
         int $number,

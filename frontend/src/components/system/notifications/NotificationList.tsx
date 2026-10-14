@@ -1,22 +1,19 @@
 'use client'
 import type { SysNotification } from '@/types/system/notification'
-import { useMarkRead, useMarkAllRead } from '@/hooks/system/useNotifications'
 import { formatDistanceToNow } from 'date-fns'
-import { Button } from '@/components/ui/button'
 import Link from 'next/link'
 import { useI18n } from '@/lib/system/i18n'
+import { notificationText } from '@/lib/system/notificationText'
 
 interface Props {
   notifications: SysNotification[]
   isLoading: boolean
+  /** Ids that were unread when this view opened (and were read by opening it): shown as new. */
+  fresh?: ReadonlySet<number>
 }
 
-export function NotificationList({ notifications, isLoading }: Props) {
+export function NotificationList({ notifications, isLoading, fresh }: Props) {
   const { t } = useI18n()
-  const markRead = useMarkRead()
-  const markAllRead = useMarkAllRead()
-
-  const unread = notifications.filter(n => !n.read_at)
 
   if (isLoading) {
     return (
@@ -28,42 +25,33 @@ export function NotificationList({ notifications, isLoading }: Props) {
     )
   }
 
+  if (notifications.length === 0) {
+    return <p className="text-sm text-muted-foreground text-center py-12">{t('notifications.inbox.empty')}</p>
+  }
+
   return (
-    <div className="space-y-4">
-      {unread.length > 0 && (
-        <div className="flex justify-end">
-          <Button variant="ghost" size="sm" onClick={() => markAllRead.mutate()}>
-            {t('notifications.inbox.markAllRead')}
-          </Button>
-        </div>
-      )}
-
-      {notifications.length === 0 && (
-        <p className="text-sm text-muted-foreground text-center py-12">{t('notifications.inbox.empty')}</p>
-      )}
-
-      <div className="border rounded divide-y">
-        {notifications.map(n => (
+    <div className="border rounded divide-y">
+      {notifications.map(n => {
+        const { title, body } = notificationText(n, t)
+        const isNew = !n.read_at || !!fresh?.has(n.id)
+        return (
           <div
             key={n.id}
-            className={`flex items-start gap-3 px-4 py-3 ${!n.read_at ? 'bg-primary/5' : ''}`}
+            className={`flex items-start gap-3 px-4 py-3 ${isNew ? 'bg-primary/5' : ''}`}
           >
-            {!n.read_at && (
-              <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-primary" />
-            )}
-            {n.read_at && <span className="mt-1.5 h-2 w-2 shrink-0" />}
+            <span className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${isNew ? 'bg-primary' : ''}`} />
 
             <div className="flex-1 min-w-0">
               <div className="flex items-start justify-between gap-2">
-                <p className={`text-sm ${!n.read_at ? 'font-medium' : 'text-muted-foreground'}`}>
-                  {n.title}
+                <p className={`text-sm ${isNew ? 'font-medium' : 'text-muted-foreground'}`}>
+                  {title}
                 </p>
                 <span className="text-xs text-muted-foreground shrink-0">
                   {formatDistanceToNow(new Date(n.created_at), { addSuffix: true })}
                 </span>
               </div>
-              {n.body && (
-                <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{n.body}</p>
+              {body && (
+                <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{body}</p>
               )}
               {n.link && (
                 <Link href={n.link} className="text-xs text-primary hover:underline mt-0.5 inline-block">
@@ -71,18 +59,9 @@ export function NotificationList({ notifications, isLoading }: Props) {
                 </Link>
               )}
             </div>
-
-            {!n.read_at && (
-              <button
-                className="text-xs text-muted-foreground hover:text-foreground shrink-0"
-                onClick={() => markRead.mutate(n.id)}
-              >
-                {t('common.dismiss')}
-              </button>
-            )}
           </div>
-        ))}
-      </div>
+        )
+      })}
     </div>
   )
 }

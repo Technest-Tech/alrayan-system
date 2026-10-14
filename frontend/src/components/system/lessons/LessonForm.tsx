@@ -15,6 +15,7 @@ import { useMyStudents } from '@/hooks/system/useMyStudents'
 import { useSystemUser } from '@/components/system/shell/SystemShell'
 import type { Lesson, LessonStatus, StoreLessonPayload, TrialEvaluation } from '@/types/system/lesson'
 import { LESSON_STATUSES } from '@/lib/system/lessonStatus'
+import { LESSON_HOUR_OPTIONS, LESSON_MINUTE_OPTIONS, LESSON_MAX_MINUTES } from '@/lib/system/lessonDuration'
 import { useI18n } from '@/lib/system/i18n'
 
 /* ── Design tokens ────────────────────────────────────────── */
@@ -78,9 +79,6 @@ const STATUS_KEY: Record<LessonStatus, string> = {
   trial:                'lessons.status.trial',
   free:                 'lessons.status.free',
 }
-
-const HOUR_OPTIONS   = [0, 1, 2, 3]
-const MINUTE_OPTIONS = [0, 30]
 
 /* ── Trial-lesson evaluation options ─────────────────────────
  * The canonical English string stays the STORED value — existing trial evaluations
@@ -387,9 +385,14 @@ export function LessonForm({ initialValues, prefill, onSuccess, onCancel }: Prop
                 className="px-2.5 py-2.5 rounded-xl border text-sm outline-none focus:ring-2 focus:ring-[#0d9488] bg-white"
                 style={{ borderColor: BORDER }}
                 value={durationH}
-                onChange={e => setDurationH(Number(e.target.value))}
+                onChange={e => {
+                  const h = Number(e.target.value)
+                  setDurationH(h)
+                  // 3h is the longest lesson: don't leave "3h 45min" selected.
+                  if (h * 60 + durationM > LESSON_MAX_MINUTES) setDurationM(0)
+                }}
               >
-                {HOUR_OPTIONS.map(h => <option key={h} value={h}>{t('lessons.form.hoursShort', { n: String(h) })}</option>)}
+                {LESSON_HOUR_OPTIONS.map(h => <option key={h} value={h}>{t('lessons.form.hoursShort', { n: String(h) })}</option>)}
               </select>
               <span style={{ color: MUTED }}>:</span>
               <select
@@ -398,7 +401,7 @@ export function LessonForm({ initialValues, prefill, onSuccess, onCancel }: Prop
                 value={durationM}
                 onChange={e => setDurationM(Number(e.target.value))}
               >
-                {MINUTE_OPTIONS.map(m => <option key={m} value={m}>{t('lessons.form.minutesShort', { n: String(m).padStart(2,'0') })}</option>)}
+                {LESSON_MINUTE_OPTIONS.filter(m => durationH * 60 + m <= LESSON_MAX_MINUTES).map(m => <option key={m} value={m}>{t('lessons.form.minutesShort', { n: String(m).padStart(2,'0') })}</option>)}
               </select>
             </div>
           </div>

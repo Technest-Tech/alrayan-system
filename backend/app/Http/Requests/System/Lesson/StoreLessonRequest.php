@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\System\Lesson;
 
+use App\Models\System\Lesson;
 use Illuminate\Foundation\Http\FormRequest;
 
 class StoreLessonRequest extends FormRequest
@@ -17,7 +18,7 @@ class StoreLessonRequest extends FormRequest
             'teacher_id'      => ['required', 'integer', 'exists:sys_teachers,id'],
             'student_id'      => ['required', 'integer', 'exists:sys_students,id'],
             'scheduled_at'    => ['required', 'date'],
-            'duration_minutes'=> ['required', 'integer', 'in:30,60,90,120'],
+            'duration_minutes'=> ['required', ...Lesson::durationRules()],
             'subject_id'      => ['nullable', 'integer', 'exists:sys_lesson_subjects,id'],
             'subject_ids'     => ['nullable', 'array'],
             'subject_ids.*'   => ['integer', 'exists:courses,id'],

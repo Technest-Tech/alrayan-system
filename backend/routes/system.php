@@ -164,13 +164,12 @@ Route::prefix('system')->name('system.')->group(function () {
             Route::post('/users/{id}/deactivate', [UserController::class, 'deactivate'])->name('users.deactivate');
         });
 
-        // Notifications
-        Route::middleware('system.can:notifications.view')->group(function () {
-            Route::get('/notifications',                   [NotificationController::class, 'index'])->name('notifications.index');
-            Route::get('/notifications/unread-count',      [NotificationController::class, 'unreadCount'])->name('notifications.unread-count');
-            Route::post('/notifications/{id}/read',        [NotificationController::class, 'markRead'])->name('notifications.read');
-            Route::post('/notifications/read-all',         [NotificationController::class, 'markAllRead'])->name('notifications.read-all');
-        });
+        // Notifications — a personal inbox: every query is scoped to the caller's own rows, so it
+        // needs no permission. Teachers have none and still get their inbox (and the topbar bell).
+        Route::get('/notifications',                   [NotificationController::class, 'index'])->name('notifications.index');
+        Route::get('/notifications/unread-count',      [NotificationController::class, 'unreadCount'])->name('notifications.unread-count');
+        Route::post('/notifications/{id}/read',        [NotificationController::class, 'markRead'])->name('notifications.read');
+        Route::post('/notifications/read-all',         [NotificationController::class, 'markAllRead'])->name('notifications.read-all');
 
         // ── SYS-03 ──────────────────────────────────────────────────────────────
 

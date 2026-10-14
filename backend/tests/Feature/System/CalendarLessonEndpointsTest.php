@@ -441,16 +441,59 @@ class CalendarLessonEndpointsTest extends SystemTestCase
     {
         $teacher = Teacher::factory()->create();
         $student = $this->lessonStudent();
+        $this->actingAs($this->adminUser(), 'sanctum');
 
-        $this->actingAs($this->adminUser(), 'sanctum')
-            ->postJson('/api/system/lessons', [
+        // Off the quarter-hour grid, or longer than three hours.
+        foreach ([40, 195, 0] as $minutes) {
+            $this->postJson('/api/system/lessons', [
                 'teacher_id'       => $teacher->id,
                 'student_id'       => $student->id,
                 'scheduled_at'     => now()->toDateTimeString(),
-                'duration_minutes' => 45,
+                'duration_minutes' => $minutes,
             ])
+                ->assertStatus(422)
+                ->assertJsonValidationErrors(['duration_minutes']);
+        }
+    }
+
+    public function test_store_accepts_quarter_hour_durations_up_to_three_hours(): void
+    {
+        $teacher = Teacher::factory()->create();
+        $student = $this->lessonStudent();
+        $this->actingAs($this->adminUser(), 'sanctum');
+
+        foreach ([15, 45, 120, 180] as $i => $minutes) {
+            $this->postJson('/api/system/lessons', [
+                'teacher_id'       => $teacher->id,
+                'student_id'       => $student->id,
+                'scheduled_at'     => now()->addDays($i + 1)->setTime(10, 0)->toDateTimeString(),
+                'duration_minutes' => $minutes,
+            ])
+                ->assertCreated()
+                ->assertJsonPath('data.duration_minutes', $minutes);
+        }
+    }
+
+    public function test_schedule_slots_accept_the_same_durations_on_create_and_edit(): void
+    {
+        $teacher = Teacher::factory()->create();
+        $student = $this->lessonStudent();
+        $this->actingAs($this->adminUser(), 'sanctum');
+
+        $slot = fn (int $minutes) => ['day_of_week' => 1, 'start_time' => '18:00', 'duration_minutes' => $minutes];
+
+        $id = $this->postJson('/api/system/lesson-schedules', [
+            'teacher_id' => $teacher->id,
+            'student_id' => $student->id,
+            'recurrence' => 'none',
+            'start_date' => now()->addWeek()->toDateString(),
+            'slots'      => [$slot(15), $slot(45)],
+        ])->assertCreated()->json('data.id');
+
+        $this->putJson("/api/system/lesson-schedules/{$id}", ['slots' => [$slot(180)]])->assertOk();
+        $this->putJson("/api/system/lesson-schedules/{$id}", ['slots' => [$slot(50)]])
             ->assertStatus(422)
-            ->assertJsonValidationErrors(['duration_minutes']);
+            ->assertJsonValidationErrors(['slots.0.duration_minutes']);
     }
 
     public function test_cumulative_session_numbers_across_multiple_lessons(): void

@@ -54,6 +54,8 @@ use App\Models\System\TeacherLeave;
 use App\Models\System\TeacherNote;
 use App\Models\System\WhatsAppGroup;
 use App\Observers\System\SessionObserver;
+use App\Observers\System\StudentObserver;
+use App\Observers\System\StudentPackageObserver;
 use App\Policies\System\InvoicePolicy;
 use App\Policies\System\LeadPolicy;
 use App\Policies\System\LessonEvaluationPolicy;
@@ -204,6 +206,10 @@ class AppServiceProvider extends ServiceProvider
 
         // Observers — SYS-04
         Session::observe(SessionObserver::class);
+
+        // Observers — teacher inbox (student assigned, package paid)
+        Student::observe(StudentObserver::class);
+        StudentPackage::observe(StudentPackageObserver::class);
 
         // Events — SYS-02/03
         Event::listen(TeacherLeaveApproved::class, NotifyTeacherOnLeaveApproved::class);

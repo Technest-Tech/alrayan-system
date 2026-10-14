@@ -8,6 +8,7 @@ use App\Models\System\LessonPackageAllocation;
 use App\Models\System\Student;
 use App\Models\System\StudentPackage;
 use Carbon\Carbon;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
 class PackageService
@@ -200,8 +201,9 @@ class PackageService
     public function rebuild(Student $student): void
     {
         $completedPackageIds = [];
+        $fullBefore          = [];
 
-        DB::transaction(function () use ($student, &$completedPackageIds) {
+        DB::transaction(function () use ($student, &$completedPackageIds, &$fullBefore) {
             // Serialize concurrent rebuilds for the same student.
             Student::whereKey($student->id)->lockForUpdate()->first();
 
@@ -209,6 +211,10 @@ class PackageService
                 ->where('student_id', $student->id)
                 ->orderBy('package_number')
                 ->get();
+
+            // Every rebuild re-detects every full package, so remember which were full already:
+            // only a package that fills up in THIS rebuild is news to the teacher.
+            $fullBefore = $this->fullPackageIds($packages);
 
             // Every package is re-shiftable: drop all allocations and rebuild from scratch.
             $allPackageIds = $packages->pluck('id')->all();
@@ -357,7 +363,40 @@ class PackageService
             if ($worthATask) {
                 PackageCompleted::dispatch($pkg);
             }
+            // The teacher hears about any package running out, paid or not — but only once.
+            if ($pkg && ! isset($fullBefore[$pid])) {
+                app(TeacherNotifier::class)->packageCompleted($pkg);
+            }
         }
+    }
+
+    /**
+     * Ids of real packages whose current allocations reach their hour limit. Allocation hours are
+     * rounded to 2 decimals per lesson, so the sum is compared with a small tolerance.
+     *
+     * @param  Collection<int, StudentPackage>  $packages
+     * @return array<int, true>
+     */
+    private function fullPackageIds(Collection $packages): array
+    {
+        $limits = $packages->where('package_hours', '>', 0)->pluck('package_hours', 'id');
+        if ($limits->isEmpty()) {
+            return [];
+        }
+
+        $consumed = LessonPackageAllocation::whereIn('package_id', $limits->keys())
+            ->groupBy('package_id')
+            ->selectRaw('package_id, SUM(hours) as total')
+            ->pluck('total', 'package_id');
+
+        $full = [];
+        foreach ($consumed as $id => $total) {
+            if ((float) $total >= (int) $limits[$id] - 0.05) {
+                $full[$id] = true;
+            }
+        }
+
+        return $full;
     }
 
     // ── Backwards-compatible shims (all consumption mutations funnel into rebuild) ──

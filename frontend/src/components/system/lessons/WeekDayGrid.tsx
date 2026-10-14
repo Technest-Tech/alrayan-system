@@ -2,6 +2,7 @@
 import { useState, useRef, useEffect, useMemo } from 'react'
 import type { Lesson } from '@/types/system/lesson'
 import { lessonBlockStyle, displaySessionHours } from '@/lib/system/lessonStatus'
+import { formatLessonDuration } from '@/lib/system/lessonDuration'
 import { useI18n } from '@/lib/system/i18n'
 
 /* Short weekday i18n keys, indexed by Date.getDay() (0 = Sunday). */
@@ -264,7 +265,7 @@ export function WeekDayGrid({ days, lessons, showFullDay = false, onLessonClick,
                       </div>
                       {pos.height >= SLOT_H * 1.5 && (
                         <div className="text-xs opacity-60 truncate leading-tight">
-                          {t('lessons.form.minutesShort', { n: String(lesson.duration_minutes) })}
+                          {formatLessonDuration(lesson.duration_minutes, t)}
                         </div>
                       )}
                     </div>

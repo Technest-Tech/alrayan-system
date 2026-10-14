@@ -29,6 +29,27 @@ class NotificationService
         ]);
     }
 
+    /**
+     * Push unless this user has EVER had a notification of this type with this link. For
+     * one-off events (a given package being paid or finished) that the engine can re-detect
+     * on later edits; push()'s dedupe only spans unread rows inside its time window.
+     */
+    public static function pushOnce(
+        User $user,
+        string $type,
+        string $title,
+        ?string $body = null,
+        ?string $link = null,
+        ?array $payload = null,
+    ): ?SysNotification {
+        $exists = SysNotification::where('user_id', $user->id)
+            ->where('type', $type)
+            ->where('link', $link)
+            ->exists();
+
+        return $exists ? null : static::push($user, $type, $title, $body, $link, $payload);
+    }
+
     public static function pushToAdmins(
         string $type,
         string $title,

@@ -1789,6 +1789,7 @@ export const en = {
     colHours: 'Hours',
     colAmount: 'Amount',
     colPaidAt: 'Paid At',
+    paidAtLabel: 'Payment date',
     noPackages: 'No packages found for this student.',
     notePlaceholder: 'Note…',
     addNotePlaceholder: 'Add note to current package…',
@@ -2009,8 +2010,19 @@ export const en = {
     inbox: {
       title:       'Notifications',
       subtitle:    'Your internal alert inbox.',
-      markAllRead: 'Mark all read',
       empty:       'No notifications yet.',
+    },
+    // Teacher inbox, rendered from the notification payload in the viewer's language.
+    teacher: {
+      studentAssignedTitle:   'New student assigned',
+      studentAssignedBody:    '{student} has been assigned to you.',
+      studentAssignedPackage: 'Package: {hours} hours.',
+      packagePaidTitle:       'New package paid',
+      packagePaidBody:        '{student} paid {package} ({hours} hours).',
+      packageCompletedTitle:  'Package completed',
+      packageCompletedBody:   '{student} has finished {package} ({hours} hours).',
+      packageNumber:          'package #{number}',
+      downPaymentPackage:     'the down-payment package',
     },
     deliveryLog: {
       title:                  'WhatsApp delivery log',
@@ -2361,6 +2373,7 @@ export const en = {
     },
     students: {
       searchPlaceholder: 'Search name or email…',
+      showAll:           'Show all students',
     },
     settings: {
       title:            'Settings',
@@ -2483,6 +2496,7 @@ export const en = {
       subjectDetailsTitle:  '{subject} Details',
       hoursShort:           '{n}h',
       minutesShort:         '{n}min',
+      hoursMinutesShort:    '{h}h {m}min',
       voiceInput:           'Voice input',
       useLast:              'Use last',
       contentPlaceholder:   'What was covered in this lesson…',
@@ -2863,8 +2877,8 @@ export const en = {
   },
   shell: {
     notifications:        'Notifications',
-    markAllRead:          'Mark all read',
     allCaughtUp:          "You're all caught up.",
+    viewAll:              'View all',
     account:              'Account',
     profile:              'Profile',
     signOut:              'Sign out',

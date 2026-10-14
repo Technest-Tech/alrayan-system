@@ -1,6 +1,7 @@
 'use client'
-import { useMemo, useState } from 'react'
-import { Search } from 'lucide-react'
+import { Suspense, useMemo, useState } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
+import { Search, X } from 'lucide-react'
 import { PageHeader } from '@/components/system/primitives/PageHeader'
 import { TeacherStudentCards } from '@/components/system/teachers/TeacherStudentCards'
 import { useMyStudents } from '@/hooks/system/useMyStudents'
@@ -17,11 +18,23 @@ const TABS: { key: TabKey; label: string; color: string }[] = [
   { key: 'cancelled', label: 'status.cancelled',   color: 'rgb(107 114 128)' },
 ]
 
+// useSearchParams needs a Suspense boundary or the production build refuses to prerender the route.
 export default function TeacherStudentsPage() {
+  return (
+    <Suspense fallback={null}>
+      <TeacherStudents />
+    </Suspense>
+  )
+}
+
+function TeacherStudents() {
   const { t } = useI18n()
+  const router = useRouter()
   const { data: students = [], isLoading } = useMyStudents()
   const [tab, setTab] = useState<TabKey>('all')
   const [q, setQ] = useState('')
+  // A notification links here as ?student=<id> to open on that one student.
+  const focusId = Number(useSearchParams().get('student')) || null
 
   const counts = useMemo(() => {
     const by = (s: StudentStatus) => students.filter(x => x.status === s).length
@@ -31,6 +44,7 @@ export default function TeacherStudentsPage() {
   const filtered = useMemo(() => {
     const needle = q.trim().toLowerCase()
     return students.filter((s: Student) => {
+      if (focusId && s.id !== focusId) return false
       const matchesTab =
         tab === 'all' ? true
         : tab === 'paused' ? (s.status === 'paused' || s.status === 'suspended')
@@ -41,7 +55,7 @@ export default function TeacherStudentsPage() {
         || (s.whatsapp ?? '').includes(needle)
       return matchesTab && matchesQ
     })
-  }, [students, tab, q])
+  }, [students, tab, q, focusId])
 
   const selStyle = {
     background: 'rgb(var(--surface-card, 255 255 255))',
@@ -85,6 +99,17 @@ export default function TeacherStudentsPage() {
           </div>
         </div>
       </div>
+
+      {focusId && (
+        <button
+          onClick={() => router.replace('/teacher/students')}
+          className="inline-flex items-center gap-1.5 mb-3 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors hover:bg-black/5"
+          style={{ color: 'rgb(90 100 112)' }}
+        >
+          <X size={13} />
+          {t('teacher.students.showAll')}
+        </button>
+      )}
 
       <TeacherStudentCards students={filtered} isLoading={isLoading} showStats={false} />
     </>

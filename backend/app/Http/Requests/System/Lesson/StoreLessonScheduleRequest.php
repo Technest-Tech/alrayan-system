@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\System\Lesson;
 
+use App\Models\System\Lesson;
 use Illuminate\Foundation\Http\FormRequest;
 
 class StoreLessonScheduleRequest extends FormRequest
@@ -24,7 +25,7 @@ class StoreLessonScheduleRequest extends FormRequest
             'slots'                  => ['required', 'array', 'min:1'],
             'slots.*.day_of_week'    => ['required', 'integer', 'between:0,6'],
             'slots.*.start_time'     => ['required', 'date_format:H:i'],
-            'slots.*.duration_minutes' => ['required', 'integer', 'in:30,60,90,120,150,180'],
+            'slots.*.duration_minutes' => ['required', ...Lesson::durationRules()],
         ];
     }
 }

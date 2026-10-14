@@ -11,9 +11,12 @@ class NotificationController extends Controller
 {
     public function index(Request $request): JsonResponse
     {
+        $perPage = min(max((int) $request->query('per_page', 10), 1), 100);
+
         $notifications = SysNotification::where('user_id', $request->user()->id)
             ->orderByDesc('created_at')
-            ->paginate(10);
+            ->orderByDesc('id')
+            ->paginate($perPage);
 
         return response()->json($notifications);
     }
@@ -37,12 +40,17 @@ class NotificationController extends Controller
         return response()->json(['message' => 'Marked as read.']);
     }
 
+    /**
+     * The panel calls this as soon as the inbox is opened. It returns the ids it marked so the
+     * panel can keep showing those as new for the viewing that cleared them.
+     */
     public function markAllRead(Request $request): JsonResponse
     {
-        SysNotification::where('user_id', $request->user()->id)
-            ->whereNull('read_at')
-            ->update(['read_at' => now()]);
+        $unread = SysNotification::where('user_id', $request->user()->id)->whereNull('read_at');
 
-        return response()->json(['message' => 'All marked as read.']);
+        $ids = (clone $unread)->pluck('id');
+        $unread->update(['read_at' => now()]);
+
+        return response()->json(['message' => 'All marked as read.', 'ids' => $ids]);
     }
 }

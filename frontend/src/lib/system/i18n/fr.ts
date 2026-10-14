@@ -1784,6 +1784,7 @@ export const fr: Messages = {
     colHours: 'Heures',
     colAmount: 'Montant',
     colPaidAt: 'Payé le',
+    paidAtLabel: 'Date de paiement',
     noPackages: 'Aucun forfait trouvé pour cet étudiant.',
     notePlaceholder: 'Note…',
     addNotePlaceholder: 'Ajouter une note au forfait actuel…',
@@ -2004,8 +2005,18 @@ export const fr: Messages = {
     inbox: {
       title:       'Notifications',
       subtitle:    'Votre boîte de réception des alertes internes.',
-      markAllRead: 'Tout marquer comme lu',
       empty:       'Aucune notification pour le moment.',
+    },
+    teacher: {
+      studentAssignedTitle:   'Nouvel étudiant assigné',
+      studentAssignedBody:    "L'étudiant {student} vous a été assigné.",
+      studentAssignedPackage: 'Forfait : {hours} heures.',
+      packagePaidTitle:       'Nouveau forfait payé',
+      packagePaidBody:        '{student} a payé {package} ({hours} heures).',
+      packageCompletedTitle:  'Forfait terminé',
+      packageCompletedBody:   '{student} a terminé {package} ({hours} heures).',
+      packageNumber:          'le forfait n°{number}',
+      downPaymentPackage:     "le forfait d'acompte",
     },
     deliveryLog: {
       title:                  'Journal de livraison WhatsApp',
@@ -2356,6 +2367,7 @@ export const fr: Messages = {
     },
     students: {
       searchPlaceholder: 'Rechercher un nom ou un e-mail…',
+      showAll:           'Afficher tous les élèves',
     },
     settings: {
       title:            'Paramètres',
@@ -2478,6 +2490,7 @@ export const fr: Messages = {
       subjectDetailsTitle:  'Détails — {subject}',
       hoursShort:           '{n} h',
       minutesShort:         '{n} min',
+      hoursMinutesShort:    '{h} h {m} min',
       voiceInput:           'Saisie vocale',
       useLast:              'Réutiliser le dernier',
       contentPlaceholder:   'Ce qui a été abordé pendant ce cours…',
@@ -2858,8 +2871,8 @@ export const fr: Messages = {
   },
   shell: {
     notifications:        'Notifications',
-    markAllRead:          'Tout marquer comme lu',
     allCaughtUp:          'Vous êtes à jour.',
+    viewAll:              'Tout voir',
     account:              'Compte',
     profile:              'Profil',
     signOut:              'Se déconnecter',

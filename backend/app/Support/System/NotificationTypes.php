@@ -20,4 +20,10 @@ class NotificationTypes
 
     const TEACHER_LEAVE_PENDING         = 'teacher.leave_pending';
     const TEACHER_LEAVE_NEEDS_RESCHEDULE= 'teacher.leave_needs_reschedule';
+
+    // Teacher inbox. The frontend renders these from `payload` in the viewer's language;
+    // the stored English title/body are only the fallback.
+    const TEACHER_STUDENT_ASSIGNED      = 'teacher.student_assigned';
+    const TEACHER_PACKAGE_PAID          = 'teacher.package_paid';
+    const TEACHER_PACKAGE_COMPLETED     = 'teacher.package_completed';
 }

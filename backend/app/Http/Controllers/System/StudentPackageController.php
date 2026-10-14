@@ -55,7 +55,7 @@ class StudentPackageController extends Controller
             // Hand-edited: the rebuild below must not soft-delete this row for holding no
             // lessons, and later rebuilds must not either.
             'is_manual' => true,
-        ]);
+        ] + $this->paidAtFor($request, $studentPackage));
 
         if (
             $request->has('package_hours') &&
@@ -72,6 +72,32 @@ class StudentPackageController extends Controller
         $studentPackage->loadCount('lessons');
 
         return new StudentPackageResource($studentPackage);
+    }
+
+    /**
+     * Every paid package carries the date it was paid. Marking one paid from the edit row used to
+     * leave the date empty (only "Mark as paid" stamped it); an explicit date always wins, and a
+     * package sent back to pending has not been paid at all.
+     *
+     * @return array{paid_at?: \Illuminate\Support\Carbon|string|null}
+     */
+    private function paidAtFor(UpdateStudentPackageRequest $request, StudentPackage $package): array
+    {
+        $status = $request->input('status', $package->status);
+
+        if ($status === 'pending') {
+            return ['paid_at' => null];
+        }
+
+        if ($request->filled('paid_at')) {
+            return ['paid_at' => $request->date('paid_at')];
+        }
+
+        if ($status === 'paid' && $package->paid_at === null) {
+            return ['paid_at' => now()];
+        }
+
+        return [];
     }
 
     /**

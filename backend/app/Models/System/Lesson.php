@@ -34,6 +34,26 @@ class Lesson extends Model
         'trial', 'free', 'cancelled_by_student', 'cancelled_by_teacher',
     ];
 
+    /**
+     * Bookable lesson lengths: quarter-hour steps from 15 minutes to 3 hours. Shared by single
+     * lessons and schedule slots so the two can't drift apart again (they once accepted different
+     * sets, and each rejected lengths the calendar UI offered).
+     */
+    public const MIN_DURATION_MINUTES  = 15;
+    public const MAX_DURATION_MINUTES  = 180;
+    public const DURATION_STEP_MINUTES = 15;
+
+    /** @return list<string> validation rules for a lesson length, after required/sometimes. */
+    public static function durationRules(): array
+    {
+        return [
+            'integer',
+            'min:' . self::MIN_DURATION_MINUTES,
+            'max:' . self::MAX_DURATION_MINUTES,
+            'multiple_of:' . self::DURATION_STEP_MINUTES,
+        ];
+    }
+
     public function isConsuming(): bool
     {
         return in_array($this->status, self::CONSUMING_STATUSES, true);
