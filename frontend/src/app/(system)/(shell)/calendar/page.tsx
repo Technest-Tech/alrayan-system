@@ -726,11 +726,35 @@ export default function CalendarPage() {
   // calendar keeps most of the viewport while Create Schedule/Lesson stay reachable.
   const [headerCondensed, setHeaderCondensed] = useState(false)
   useEffect(() => {
-    function onScroll() { setHeaderCondensed(window.scrollY > 24) }
+    // Separate condense/expand points, so a few pixels of jitter at the boundary can't flip it.
+    function onScroll() { setHeaderCondensed(c => (c ? window.scrollY > 8 : window.scrollY > 24)) }
     onScroll()
     window.addEventListener('scroll', onScroll, { passive: true })
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
+
+  // Condensing shrinks the header by ~55px. Left alone that pulls the content up, the browser's
+  // scroll anchoring moves the scroll position to compensate, which crosses the threshold back and
+  // expands it again — the header flickered in and out. A bottom margin worth the lost height keeps
+  // everything below exactly where it was, so the scroll position never moves.
+  const headerRef = useRef<HTMLDivElement>(null)
+  const expandedHeaderH = useRef(0)
+  const [headerHeightLoss, setHeaderHeightLoss] = useState(0)
+  useEffect(() => {
+    const el = headerRef.current
+    if (!el) return
+    const ro = new ResizeObserver(() => {
+      const h = el.offsetHeight
+      if (!headerCondensed) {
+        expandedHeaderH.current = h
+        setHeaderHeightLoss(0)
+      } else {
+        setHeaderHeightLoss(Math.max(0, expandedHeaderH.current - h))
+      }
+    })
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [headerCondensed])
 
   // Teachers get a self-scoped calendar: they can create/manage their own
   // lessons & schedules, but not the admin-only filters/settings.
@@ -923,8 +947,9 @@ export default function CalendarPage() {
     <>
       {/* ── Page header (pinned under the 60px topbar) ──── */}
       <div
+        ref={headerRef}
         className="sticky top-[60px] z-20 -mt-2 pt-2 pb-4 -mx-4 px-4 lg:-mx-6 lg:px-6"
-        style={{ background: 'rgb(var(--surface-bg, 244 246 250))' }}
+        style={{ background: 'rgb(var(--surface-bg, 244 246 250))', marginBottom: headerHeightLoss }}
       >
         <div
           className={`relative rounded-2xl overflow-hidden transition-all duration-200 ${headerCondensed ? 'px-4 py-2.5' : 'px-6 py-5'}`}
