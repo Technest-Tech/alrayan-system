@@ -138,6 +138,32 @@ class LeadEndpointsTest extends SystemTestCase
         $this->assertDatabaseHas('sys_students', ['id' => $lead->student_id, 'status' => 'trial']);
     }
 
+    public function test_create_lead_without_source_defaults_to_manual_entry(): void
+    {
+        $this->actingAs($this->adminUser(), 'sanctum')
+            ->postJson('/api/system/leads', ['name' => 'No Source'])
+            ->assertCreated()
+            ->assertJsonPath('data.source', 'manual_entry');
+    }
+
+    public function test_create_lead_with_an_email_already_in_use_succeeds(): void
+    {
+        $admin = $this->adminUser();
+
+        // A sibling lead, and a lead sharing an existing staff address.
+        foreach (['Sibling One' => 'family@example.com', 'Sibling Two' => 'family@example.com', 'Staff Twin' => $admin->email] as $name => $email) {
+            $this->actingAs($admin, 'sanctum')
+                ->postJson('/api/system/leads', ['name' => $name, 'email' => $email, 'source' => 'manual_entry'])
+                ->assertCreated()
+                ->assertJsonPath('data.email', $email);
+        }
+
+        // The second sibling's student identity falls back to a synthesized address.
+        $second = Lead::where('name', 'Sibling Two')->firstOrFail();
+        $this->assertNotNull($second->student_id);
+        $this->assertNotSame('family@example.com', $second->student->user->email);
+    }
+
     public function test_lead_assigned_teacher_flows_onto_provisioned_student(): void
     {
         $teacher = Teacher::factory()->create();

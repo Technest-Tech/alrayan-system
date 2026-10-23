@@ -75,14 +75,22 @@ class LeadController extends Controller
         $teacherId = $data['assigned_teacher_id'] ?? null;
         unset($data['assigned_teacher_id']);
 
+        // The form lets Source stay blank, but sys_leads.source is a NOT NULL enum.
+        $data['source'] ??= 'manual_entry';
+
         $lead = DB::transaction(function () use ($data, $teacherId, $request) {
             $lead = Lead::create($data);
+
+            // users.email is unique, and a lead often shares an address with someone already
+            // in the system (a sibling, a returning family). Keep the real address on the lead
+            // and let the student identity fall back to a synthesized one, as edits already do.
+            $emailIsFree = $lead->email && ! User::where('email', $lead->email)->exists();
 
             // Every new lead is provisioned as a real student (+ user, role=student) up front,
             // with NO payment/package details yet. Payment is finalised later on close/convert.
             $student = $this->studentCreator->create([
                 'name'                => $lead->name,
-                'email'               => $lead->email,
+                'email'               => $emailIsFree ? $lead->email : null,
                 'whatsapp'            => $lead->whatsapp ?? $lead->phone,
                 'gender'              => $lead->gender,
                 'country'             => $lead->country,
@@ -124,6 +132,11 @@ class LeadController extends Controller
         $teacherTouched = array_key_exists('assigned_teacher_id', $data);
         $teacherId      = $data['assigned_teacher_id'] ?? null;
         unset($data['assigned_teacher_id']);
+
+        // sys_leads.source is NOT NULL — clearing it in the form means "leave it as is".
+        if (array_key_exists('source', $data) && $data['source'] === null) {
+            unset($data['source']);
+        }
 
         DB::transaction(function () use ($lead, $data, $status, $teacherId, $teacherTouched, $request) {
             $lead->update($data);

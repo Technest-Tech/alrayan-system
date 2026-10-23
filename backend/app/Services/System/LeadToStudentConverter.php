@@ -5,6 +5,7 @@ namespace App\Services\System;
 use App\Models\System\Guardian;
 use App\Models\System\Lead;
 use App\Models\System\Student;
+use App\Models\User;
 use App\Support\System\IdentityEmail;
 use Illuminate\Support\Facades\DB;
 
@@ -69,7 +70,10 @@ class LeadToStudentConverter
             } else {
                 // No provisioned student → also mint the unified `users` identity row,
                 // otherwise the converted student is invisible in the user directory.
-                $email = $lead->email ?: IdentityEmail::forStudent($lead->name);
+                // users.email is unique — an address already taken falls back to a synthesized one.
+                $email = $lead->email && ! User::where('email', $lead->email)->exists()
+                    ? $lead->email
+                    : IdentityEmail::forStudent($lead->name);
                 $user  = $this->provisioner->create([
                     'name'     => $lead->name,
                     'email'    => $email,
