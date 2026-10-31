@@ -101,7 +101,7 @@ export default async function CoursesPage() {
               {t('nav.bookFreeTrial')}
             </LinkButton>
             <a
-              href={whatsappLink()}
+              href={whatsappLink(t('common.waDefault'))}
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-2.5 h-14 px-7 rounded-xl border border-white/30 text-white text-base font-medium hover:border-accent hover:text-accent transition-colors"
@@ -209,7 +209,7 @@ export default async function CoursesPage() {
                 {t('nav.bookFreeTrial')}
               </LinkButton>
               <a
-                href={whatsappLink()}
+                href={whatsappLink(t('common.waDefault'))}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-2.5 h-14 px-7 rounded-xl border border-white/30 text-white font-medium hover:border-accent hover:text-accent transition-colors"

@@ -39,7 +39,7 @@ export function ContactSidebar() {
             <div>
               <p className="text-xs text-muted-foreground mb-0.5">{t('contactSidebar.whatsappLabel')}</p>
               <a
-                href={whatsappLink()}
+                href={whatsappLink(t('common.waDefault'))}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-sm font-medium text-primary hover:text-secondary transition-colors"

@@ -69,6 +69,8 @@ export const fr: Messages = {
     english: 'English',
     french: 'Français',
     whatsappButtonAria: 'Discutez avec nous sur WhatsApp',
+    waDefault: 'Assalamu alaikum, je souhaiterais en savoir plus sur vos cours de Coran.',
+    waAskTeacher: 'Assalamu alaikum, je souhaiterais avoir des renseignements sur vos enseignants.',
     scrollLeft: 'Défiler vers la gauche',
     scrollRight: 'Défiler vers la droite',
     copyLink: 'Copier le lien',

@@ -170,7 +170,7 @@ export default async function HomePage() {
                 {homeContent.cta.ctaPrimary}
               </LinkButton>
               <a
-                href={whatsappLink()}
+                href={whatsappLink(t('common.waDefault'))}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex h-14 w-full items-center justify-center gap-2.5 rounded-xl border border-white/30 px-7 font-medium text-white transition-colors hover:border-accent hover:text-accent sm:w-auto"

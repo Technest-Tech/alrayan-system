@@ -5,6 +5,8 @@ import { Section } from '@/components/layout/Section'
 import { Container } from '@/components/layout/Container'
 import { LinkButton } from '@/components/ui/link-button'
 import { whatsappLink } from '@/config/site'
+import { getLocale } from '@/i18n/getLocale'
+import { getT } from '@/i18n/getDictionary'
 import { aboutContent } from '@/content/about'
 import { teachers } from '@/content/teachers'
 import {
@@ -42,7 +44,8 @@ function IconBox({ name, className }: { name: string; className?: string }) {
   return <Icon className={className} aria-hidden="true" />
 }
 
-export default function AboutPage() {
+export default async function AboutPage() {
+  const t = getT(await getLocale())
   const schemasJson = [
     aboutPageSchema(),
     ...teachers.map((t) => personSchema(t)),
@@ -281,7 +284,7 @@ export default function AboutPage() {
                 Book a Free Trial Class
               </LinkButton>
               <a
-                href={whatsappLink('Assalamu alaikum, I would like to ask about your teachers.')}
+                href={whatsappLink(t('common.waAskTeacher'))}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-2 h-11 px-6 rounded-xl border border-border-soft text-primary text-sm font-medium hover:border-secondary hover:text-secondary transition-colors"
@@ -313,7 +316,7 @@ export default function AboutPage() {
                 Book Free Trial Class
               </LinkButton>
               <a
-                href={whatsappLink()}
+                href={whatsappLink(t('common.waDefault'))}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-2.5 h-14 px-7 rounded-xl border border-white/30 text-white font-medium hover:border-accent hover:text-accent transition-colors"

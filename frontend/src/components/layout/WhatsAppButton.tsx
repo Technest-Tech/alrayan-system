@@ -15,7 +15,7 @@ export function WhatsAppButton() {
 
   return (
     <a
-      href={whatsappLink()}
+      href={whatsappLink(t('common.waDefault'))}
       target="_blank"
       rel="noopener noreferrer"
       aria-label={t('common.whatsappButtonAria')}

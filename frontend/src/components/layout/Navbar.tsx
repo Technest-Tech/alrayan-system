@@ -188,7 +188,7 @@ export function Navbar() {
           <div className="hidden lg:flex items-center gap-3">
             <LanguageSwitcher variant={useLightText ? 'light' : 'dark'} />
             <a
-              href={whatsappLink()}
+              href={whatsappLink(t('common.waDefault'))}
               target="_blank"
               rel="noopener noreferrer"
               className={cn(
@@ -285,7 +285,7 @@ export function Navbar() {
                     {t('nav.bookFreeTrial')}
                   </LinkButton>
                   <a
-                    href={whatsappLink()}
+                    href={whatsappLink(t('common.waDefault'))}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex items-center justify-center gap-2 w-full h-11 rounded-xl border border-border-soft text-sm font-medium text-primary hover:bg-cream transition-colors"

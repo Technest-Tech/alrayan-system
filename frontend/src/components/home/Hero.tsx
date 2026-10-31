@@ -124,7 +124,7 @@ export async function Hero() {
                 <ArrowRight className="size-5 transition-transform group-hover:translate-x-1" aria-hidden="true" />
               </LinkButton>
               <a
-                href={whatsappLink()}
+                href={whatsappLink(t('common.waDefault'))}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center justify-center gap-2.5 h-14 px-7 rounded-xl border border-white/25 text-white text-base font-medium hover:border-accent/60 hover:text-accent hover:bg-white/5 transition-all duration-200 w-full sm:w-auto backdrop-blur-sm"

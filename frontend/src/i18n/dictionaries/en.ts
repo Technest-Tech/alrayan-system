@@ -71,6 +71,8 @@ export const en = {
     english: 'English',
     french: 'Français',
     whatsappButtonAria: 'Chat with us on WhatsApp',
+    waDefault: 'Assalamu alaikum, I would like to learn more about your Quran classes.',
+    waAskTeacher: 'Assalamu alaikum, I would like to ask about your teachers.',
     scrollLeft: 'Scroll left',
     scrollRight: 'Scroll right',
     copyLink: 'Copy link',
