@@ -30,10 +30,26 @@ class Expense extends Model
         return $this->belongsTo(User::class, 'created_by_user_id');
     }
 
+    public function account()
+    {
+        return $this->belongsTo(TreasuryAccount::class, 'account_id')->withTrashed();
+    }
+
+    public function item()
+    {
+        return $this->belongsTo(ExpenseItem::class, 'item_id')->withTrashed();
+    }
+
+    /** The account movement that pays for this expense, when it came out of an account. */
+    public function treasuryTransaction()
+    {
+        return $this->hasOne(TreasuryTransaction::class, 'expense_id');
+    }
+
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()
-            ->logOnly(['category_id', 'amount_minor', 'currency', 'occurred_on', 'description'])
+            ->logOnly(['category_id', 'account_id', 'item_id', 'amount_minor', 'currency', 'occurred_on', 'period', 'description'])
             ->logOnlyDirty()
             ->dontSubmitEmptyLogs()
             ->useLogName('system');

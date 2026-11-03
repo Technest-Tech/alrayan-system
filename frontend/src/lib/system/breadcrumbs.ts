@@ -22,6 +22,8 @@ const PATH_KEYS: Record<string, string> = {
   accounting:          'breadcrumbs.accounting',
   revenue:             'breadcrumbs.revenue',
   expenses:            'breadcrumbs.expenses',
+  items:               'breadcrumbs.expenseItems',
+  treasury:            'breadcrumbs.treasury',
   'profit-loss':       'breadcrumbs.profitLoss',
   collection:          'breadcrumbs.collection',
   cancellations:       'breadcrumbs.cancellations',

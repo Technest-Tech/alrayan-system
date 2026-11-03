@@ -3,7 +3,7 @@ import {
   Award, DollarSign, Wallet, BarChart3, TrendingUp,
   Bell, Settings, ScrollText, UserCheck, CreditCard, ListChecks,
   GraduationCap, Globe, MessageSquare, ClipboardCheck,
-  BadgeDollarSign, ChartNoAxesCombined, Landmark, Star,
+  BadgeDollarSign, Banknote, ChartNoAxesCombined, Landmark, Receipt, Star,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 
@@ -39,6 +39,8 @@ export const SYSTEM_NAV: readonly NavSection[] = [
       { label: 'nav.billing',    href: '/billing/invoices',   icon: DollarSign, perm: 'invoices.view' },
       { label: 'nav.payroll',    href: '/payroll',            icon: Wallet,     perm: 'payroll.view' },
       { label: 'nav.salaryTiers', href: '/salary-tiers',       icon: BadgeDollarSign, perm: 'payroll.view_any' },
+      { label: 'nav.treasury',   href: '/treasury',           icon: Banknote,   perm: 'treasury.view' },
+      { label: 'nav.expenses',   href: '/accounting/expenses', icon: Receipt,   perm: 'expenses.view' },
       { label: 'nav.accounting', href: '/accounting/revenue', icon: BarChart3,  perm: 'accounting.view' },
       { label: 'nav.profitability', href: '/accounting/profitability', icon: Landmark, perm: 'accounting.view_pnl' },
       { label: 'nav.analytics',  href: '/analytics',          icon: TrendingUp, perm: 'payroll.view_any' },

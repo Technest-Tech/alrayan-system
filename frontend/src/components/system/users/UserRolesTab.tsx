@@ -46,7 +46,7 @@ export function UserRolesTab() {
     makeups: t('users.permissions.makeups'), quality: t('users.permissions.quality'),
     invoices: t('users.permissions.invoices'), wallet: t('users.permissions.wallet'),
     payments: t('users.permissions.payments'), payroll: t('users.permissions.payroll'),
-    expenses: t('users.permissions.expenses'), accounting: t('users.permissions.accounting'),
+    expenses: t('users.permissions.expenses'), treasury: t('users.permissions.treasury'), accounting: t('users.permissions.accounting'),
     notifications: t('users.permissions.notifications'), whatsapp: t('users.permissions.whatsapp'),
     certificates: t('users.permissions.certificates'), settings: t('users.permissions.settings'),
     users: t('users.permissions.users'), audit: t('users.permissions.auditLog'),

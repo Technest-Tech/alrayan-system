@@ -54,10 +54,7 @@ class TeacherProfitabilityService
 
     private function defaultCurrency(): string
     {
-        $configured = Setting::get(ProfitabilityConfig::CURRENCY_KEY);
-        if (is_string($configured) && preg_match('/^[A-Z]{3}$/', $configured)) return $configured;
-
-        return Setting::get('reports.base_currency', config('system.default_base_currency', 'EGP'));
+        return ProfitabilityConfig::reportCurrency();
     }
 
     /**

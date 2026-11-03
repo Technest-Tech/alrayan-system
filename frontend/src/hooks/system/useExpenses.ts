@@ -1,10 +1,12 @@
 'use client'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { keepPreviousData, useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { api, type Paginated } from '@/lib/system/api'
-import type { Expense, ExpenseCategory } from '@/types/system/expense'
+import { invalidateMoney } from '@/hooks/system/useTreasury'
+import type { Expense, ExpenseCategory, ExpenseItemsResponse } from '@/types/system/expense'
 
 interface ExpenseFilters {
   category_id?: number | string
+  account_id?: number | string
   currency?: string
   from?: string
   to?: string
@@ -16,6 +18,7 @@ interface ExpenseFilters {
 export function useExpenses(filters: ExpenseFilters = {}) {
   const params = new URLSearchParams()
   if (filters.category_id) params.set('filter[category_id]', String(filters.category_id))
+  if (filters.account_id) params.set('filter[account_id]', String(filters.account_id))
   if (filters.currency) params.set('filter[currency]', filters.currency)
   if (filters.from) params.set('filter[from]', filters.from)
   if (filters.to) params.set('filter[to]', filters.to)
@@ -26,6 +29,14 @@ export function useExpenses(filters: ExpenseFilters = {}) {
   return useQuery({
     queryKey: ['system', 'expenses', filters],
     queryFn: () => api<Paginated<Expense>>(`/expenses${qs ? '?' + qs : ''}`),
+    placeholderData: keepPreviousData,
+  })
+}
+
+export function useExpense(id: number) {
+  return useQuery({
+    queryKey: ['system', 'expenses', 'detail', id],
+    queryFn: () => api<{ data: Expense }>(`/expenses/${id}`).then(r => r.data),
   })
 }
 
@@ -42,7 +53,7 @@ export function useCreateExpense() {
   return useMutation({
     mutationFn: (data: Record<string, unknown>) =>
       api<{ data: Expense }>('/expenses', { method: 'POST', body: JSON.stringify(data) }).then(r => r.data),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['system', 'expenses'] }),
+    onSuccess: () => invalidateMoney(qc),
   })
 }
 
@@ -51,7 +62,7 @@ export function useUpdateExpense(id: number) {
   return useMutation({
     mutationFn: (data: Record<string, unknown>) =>
       api<{ data: Expense }>(`/expenses/${id}`, { method: 'PATCH', body: JSON.stringify(data) }).then(r => r.data),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['system', 'expenses'] }),
+    onSuccess: () => invalidateMoney(qc),
   })
 }
 
@@ -59,7 +70,44 @@ export function useDeleteExpense() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: (id: number) => api(`/expenses/${id}`, { method: 'DELETE' }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['system', 'expenses'] }),
+    onSuccess: () => invalidateMoney(qc),
+  })
+}
+
+export function useExpenseItems(month?: string) {
+  return useQuery({
+    queryKey: ['system', 'expense-items', month ?? 'current'],
+    queryFn: () => api<ExpenseItemsResponse>(`/expense-items${month ? `?month=${month}` : ''}`),
+    placeholderData: keepPreviousData,
+  })
+}
+
+export function useSaveExpenseItem() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, data }: { id?: number; data: Record<string, unknown> }) =>
+      api(id ? `/expense-items/${id}` : '/expense-items', {
+        method: id ? 'PATCH' : 'POST',
+        body: JSON.stringify(data),
+      }),
+    onSuccess: () => invalidateMoney(qc),
+  })
+}
+
+export function useDeleteExpenseItem() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (id: number) => api(`/expense-items/${id}`, { method: 'DELETE' }),
+    onSuccess: () => invalidateMoney(qc),
+  })
+}
+
+export function useRecordExpenseItem() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, data }: { id: number; data: Record<string, unknown> }) =>
+      api<{ data: Expense }>(`/expense-items/${id}/record`, { method: 'POST', body: JSON.stringify(data) }),
+    onSuccess: () => invalidateMoney(qc),
   })
 }
 

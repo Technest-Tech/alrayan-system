@@ -13,6 +13,10 @@ use App\Http\Controllers\System\CourseController;
 use App\Http\Controllers\System\DashboardController;
 use App\Http\Controllers\System\ExpenseCategoryController;
 use App\Http\Controllers\System\ExpenseController;
+use App\Http\Controllers\System\ExpenseItemController;
+use App\Http\Controllers\System\TreasuryAccountController;
+use App\Http\Controllers\System\TreasuryRoutingController;
+use App\Http\Controllers\System\TreasuryTransactionController;
 use App\Http\Controllers\System\ExportController;
 use App\Http\Controllers\System\FxRatesController;
 use App\Http\Controllers\System\HealthController;
@@ -581,6 +585,34 @@ Route::prefix('system')->name('system.')->group(function () {
             Route::post('/expense-categories',               [ExpenseCategoryController::class, 'store'])->name('expense-categories.store');
             Route::patch('/expense-categories/{id}',         [ExpenseCategoryController::class, 'update'])->name('expense-categories.update');
             Route::post('/expense-categories/{id}/deactivate',[ExpenseCategoryController::class, 'deactivate'])->name('expense-categories.deactivate');
+            Route::post('/expense-items',         [ExpenseItemController::class, 'store'])->name('expense-items.store');
+            Route::patch('/expense-items/{id}',   [ExpenseItemController::class, 'update'])->name('expense-items.update');
+            Route::delete('/expense-items/{id}',  [ExpenseItemController::class, 'destroy'])->name('expense-items.destroy');
+        });
+        Route::middleware('system.can:expenses.view')
+            ->get('/expense-items', [ExpenseItemController::class, 'index'])->name('expense-items.index');
+        Route::middleware('system.can:expenses.create')
+            ->post('/expense-items/{id}/record', [ExpenseItemController::class, 'record'])->name('expense-items.record');
+
+        // Treasury — the academy's own accounts and the money moving through them
+        Route::middleware('system.can:treasury.view')->group(function () {
+            Route::get('/treasury/accounts',                   [TreasuryAccountController::class, 'index'])->name('treasury.accounts.index');
+            Route::get('/treasury/accounts/{id}',              [TreasuryAccountController::class, 'show'])->name('treasury.accounts.show');
+            Route::get('/treasury/accounts/{id}/transactions', [TreasuryTransactionController::class, 'statement'])->name('treasury.accounts.statement');
+            Route::get('/treasury/transactions',               [TreasuryTransactionController::class, 'index'])->name('treasury.transactions.index');
+            Route::get('/treasury/auto-posting',               [TreasuryRoutingController::class, 'show'])->name('treasury.routing.show');
+        });
+        Route::middleware('system.can:treasury.manage')->group(function () {
+            Route::put('/treasury/auto-posting',       [TreasuryRoutingController::class, 'update'])->name('treasury.routing.update');
+            Route::post('/treasury/accounts',          [TreasuryAccountController::class, 'store'])->name('treasury.accounts.store');
+            Route::patch('/treasury/accounts/{id}',    [TreasuryAccountController::class, 'update'])->name('treasury.accounts.update');
+            Route::delete('/treasury/accounts/{id}',   [TreasuryAccountController::class, 'destroy'])->name('treasury.accounts.destroy');
+        });
+        Route::middleware('system.can:treasury.record')->group(function () {
+            Route::post('/treasury/transactions',        [TreasuryTransactionController::class, 'store'])->name('treasury.transactions.store');
+            Route::patch('/treasury/transactions/{id}',  [TreasuryTransactionController::class, 'update'])->name('treasury.transactions.update');
+            Route::delete('/treasury/transactions/{id}', [TreasuryTransactionController::class, 'destroy'])->name('treasury.transactions.destroy');
+            Route::post('/treasury/transfers',           [TreasuryTransactionController::class, 'transfer'])->name('treasury.transfers.store');
         });
 
         // Certificates

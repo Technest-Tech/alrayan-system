@@ -15,6 +15,7 @@ class LeadToStudentConverter
         private PackageService $packages,
         private UserProvisioner $provisioner,
         private TeacherNotifier $teacherNotifier,
+        private TreasuryAutoPoster $treasury,
     ) {}
 
     public function convert(Lead $lead, array $studentData): Student
@@ -110,6 +111,7 @@ class LeadToStudentConverter
             // Closing the lead is when the down payment is collected. #0 usually opened "paid"
             // back at the trial lesson, so there is no status change for the observer to see.
             $this->teacherNotifier->packagePaid($lessonPackage);
+            rescue(fn () => $this->treasury->syncPackage($lessonPackage, moneyJustMoved: true));
 
             $lead->update([
                 'status'                  => 'closed',

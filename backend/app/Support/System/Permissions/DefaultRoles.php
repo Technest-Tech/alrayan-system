@@ -58,6 +58,8 @@ class DefaultRoles
         'payments.view', 'payments.refund',
         'payroll.view', 'payroll.view_any', 'payroll.approve', 'payroll.mark_transferred', 'payroll.adjust', 'payroll.export',
         'expenses.view', 'expenses.create', 'expenses.edit', 'expenses.delete',
+        // Accountants post movements; creating accounts and setting opening balances stays admin-only.
+        'treasury.view', 'treasury.record',
         'accounting.view', 'accounting.export',
         'tasks.view', 'tasks.view_any', 'tasks.approve', 'tasks.reject',
         'task_notes.create',

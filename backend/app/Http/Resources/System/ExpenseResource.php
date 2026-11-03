@@ -16,6 +16,17 @@ class ExpenseResource extends JsonResource
                 'name' => $this->category?->name,
                 'slug' => $this->category?->slug,
             ],
+            'account'      => $this->account ? [
+                'id'       => $this->account->id,
+                'name'     => $this->account->name,
+                'currency' => $this->account->currency,
+            ] : null,
+            'item'         => $this->item ? [
+                'id'   => $this->item->id,
+                'name' => $this->item->name,
+                'type' => $this->item->type,
+            ] : null,
+            'period'       => $this->period,
             'amount_minor' => $this->amount_minor,
             'currency'     => $this->currency,
             'description'  => $this->description,

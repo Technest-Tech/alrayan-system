@@ -71,6 +71,15 @@ class ProfitabilityConfig
         return $out ?: self::DEFAULT_DEDUCTIONS;
     }
 
+    /** The currency owner-level reports convert into when they need a single figure. */
+    public static function reportCurrency(): string
+    {
+        $configured = Setting::get(self::CURRENCY_KEY);
+        if (is_string($configured) && preg_match('/^[A-Z]{3}$/', $configured)) return $configured;
+
+        return Setting::get('reports.base_currency', config('system.default_base_currency', 'EGP'));
+    }
+
     /** How many ways net profit is split at the bottom of the table (0 = don't show a share). */
     public static function partnerCount(): int
     {

@@ -211,6 +211,10 @@ class AppServiceProvider extends ServiceProvider
         Student::observe(StudentObserver::class);
         StudentPackage::observe(StudentPackageObserver::class);
 
+        // Observers — treasury (paid packages and transferred salaries move account balances)
+        StudentPackage::observe(\App\Observers\System\StudentPackageTreasuryObserver::class);
+        Payroll::observe(\App\Observers\System\PayrollTreasuryObserver::class);
+
         // Events — SYS-02/03
         Event::listen(TeacherLeaveApproved::class, NotifyTeacherOnLeaveApproved::class);
 

@@ -32,7 +32,7 @@ export function useMarkTransferred() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: ({ id, transfer_reference }: { id: number | string; transfer_reference: string }) =>
-      api<{ data: Payroll }>(`/payrolls/${id}/transfer`, {
+      api<{ data: Payroll }>(`/payrolls/${id}/mark-transferred`, {
         method: 'POST',
         body: JSON.stringify({ transfer_reference }),
       }).then(r => r.data),
@@ -59,10 +59,10 @@ export function useBulkApprove() {
 export function useBulkTransfer() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: (ids: (number | string)[]) =>
+    mutationFn: ({ ids, transfer_reference }: { ids: (number | string)[]; transfer_reference: string }) =>
       api<{ message: string }>('/payrolls/bulk-transfer', {
         method: 'POST',
-        body: JSON.stringify({ ids }),
+        body: JSON.stringify({ items: ids.map(id => ({ id, transfer_reference })) }),
       }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['system', 'payrolls'] })

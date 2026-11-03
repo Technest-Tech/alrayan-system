@@ -13,7 +13,8 @@ export type Permission =
   | 'invoices.view' | 'invoices.create' | 'invoices.edit' | 'invoices.void' | 'invoices.record_payment'
   | 'wallet.view' | 'wallet.adjust'
   | 'payroll.view' | 'payroll.approve' | 'payroll.mark_transferred'
-  | 'expenses.view' | 'expenses.create' | 'expenses.edit' | 'expenses.delete'
+  | 'expenses.view' | 'expenses.create' | 'expenses.edit' | 'expenses.delete' | 'expenses.manage_categories'
+  | 'treasury.view' | 'treasury.record' | 'treasury.manage'
   | 'accounting.view' | 'accounting.export'
   | 'notifications.view' | 'notifications.edit_templates'
   | 'whatsapp.view' | 'whatsapp.edit'
@@ -36,7 +37,8 @@ export const PERMISSION_GROUPS: Record<string, string[]> = {
   invoices:      ['view', 'create', 'edit', 'void', 'record_payment'],
   wallet:        ['view', 'adjust'],
   payroll:       ['view', 'approve', 'mark_transferred'],
-  expenses:      ['view', 'create', 'edit', 'delete'],
+  expenses:      ['view', 'create', 'edit', 'delete', 'manage_categories'],
+  treasury:      ['view', 'record', 'manage'],
   accounting:    ['view', 'export'],
   notifications: ['view', 'edit_templates'],
   whatsapp:      ['view', 'edit'],
