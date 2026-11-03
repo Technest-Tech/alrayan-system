@@ -41,6 +41,8 @@ export function useCalendarFeed({ teacherId, studentIds, start, end }: CalendarF
 interface LessonFilters {
   teacher_id?: number | string
   student_id?: number | string
+  /** Any of these students; sent as `student_id[]`. */
+  student_ids?: number[]
   status?: string
   package_id?: number | string
   /** Inclusive date window (YYYY-MM-DD) on `scheduled_at`. */
@@ -53,9 +55,11 @@ interface LessonFilters {
 
 export function useLessons(filters: LessonFilters = {}, options: { enabled?: boolean } = {}) {
   const params = new URLSearchParams()
-  Object.entries(filters).forEach(([k, v]) => {
+  const { student_ids, ...scalars } = filters
+  Object.entries(scalars).forEach(([k, v]) => {
     if (v !== undefined && v !== '') params.set(k, String(v))
   })
+  student_ids?.forEach(id => params.append('student_id[]', String(id)))
 
   return useQuery({
     queryKey: ['system', 'lessons', filters],

@@ -200,6 +200,35 @@ class CalendarLessonEndpointsTest extends SystemTestCase
 
     /* ─────────────────────────────  LESSONS INDEX  ──────────────────── */
 
+    public function test_lessons_index_filters_by_several_students_before_paginating(): void
+    {
+        $teacher  = Teacher::factory()->create();
+        $wanted   = Student::factory()->create(['assigned_teacher_id' => $teacher->id]);
+        $also     = Student::factory()->create(['assigned_teacher_id' => $teacher->id]);
+        $busy     = Student::factory()->create(['assigned_teacher_id' => $teacher->id]);
+
+        // The busy student's lessons are newer, so a page of one row would hide the
+        // others if the filter ran after pagination.
+        $this->makeLesson($wanted, $teacher, $this->makePackage($wanted), ['scheduled_at' => now()->subDays(3)]);
+        $this->makeLesson($also, $teacher, $this->makePackage($also), ['scheduled_at' => now()->subDays(2)]);
+        $this->makeLesson($busy, $teacher, $this->makePackage($busy), ['scheduled_at' => now()->subDay()]);
+
+        $admin = $this->adminUser();
+
+        $this->actingAs($admin, 'sanctum')
+            ->getJson("/api/system/lessons?per_page=1&student_id[]={$wanted->id}&student_id[]={$also->id}")
+            ->assertOk()
+            ->assertJsonPath('meta.total', 2)
+            ->assertJsonPath('data.0.student_id', $also->id);
+
+        // The single-value form other screens send keeps working.
+        $this->actingAs($admin, 'sanctum')
+            ->getJson("/api/system/lessons?student_id={$wanted->id}")
+            ->assertOk()
+            ->assertJsonPath('meta.total', 1)
+            ->assertJsonPath('data.0.student_id', $wanted->id);
+    }
+
     public function test_admin_can_list_lessons_paginated(): void
     {
         $teacher = Teacher::factory()->create();

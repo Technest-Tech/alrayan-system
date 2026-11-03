@@ -8,6 +8,7 @@ import {
 import { useCalendarFeed, useLessons, useLessonSchedules } from '@/hooks/system/useLessons'
 import { useTeachers }                 from '@/hooks/system/useTeachers'
 import { useStudents }                 from '@/hooks/system/useStudents'
+import { matchesSearch }               from '@/lib/system/search'
 import { useMyStudents }               from '@/hooks/system/useMyStudents'
 import { useSystemUser }               from '@/components/system/shell/SystemShell'
 import { CreateLessonDialog }          from '@/components/system/lessons/CreateLessonDialog'
@@ -358,10 +359,11 @@ function ListView({ lessons, truncated, onLessonClick }: {
 }
 
 /* ── Student multi-select with search ──────────────────── */
-function StudentMultiSelect({ allStudents, selected, onChange }: {
+function StudentMultiSelect({ allStudents, selected, onChange, loading }: {
   allStudents: { id: number; name: string }[]
   selected:    number[]
   onChange:    (ids: number[]) => void
+  loading?:    boolean
 }) {
   const { t }             = useI18n()
   const [open,  setOpen]  = useState(false)
@@ -373,9 +375,7 @@ function StudentMultiSelect({ allStudents, selected, onChange }: {
   const searchRef  = useRef<HTMLInputElement>(null)
 
   const sel      = allStudents.filter(s => selected.includes(s.id))
-  const filtered = query.trim()
-    ? allStudents.filter(s => s.name.toLowerCase().includes(query.toLowerCase()))
-    : allStudents
+  const filtered = allStudents.filter(s => matchesSearch(s.name, query))
 
   function toggle(id: number) {
     onChange(selected.includes(id) ? selected.filter(x => x !== id) : [...selected, id])
@@ -482,7 +482,7 @@ function StudentMultiSelect({ allStudents, selected, onChange }: {
             {/* Options */}
             <div className="overflow-y-auto" style={{ maxHeight: 220 }}>
               {filtered.length === 0 ? (
-                <p className="text-sm text-center py-4" style={{ color: MUTED }}>{t('common.noResults')}</p>
+                <p className="text-sm text-center py-4" style={{ color: MUTED }}>{t(loading ? 'common.loading' : 'common.noResults')}</p>
               ) : filtered.map(s => {
                 const isSel = selected.includes(s.id)
                 return (
@@ -762,8 +762,8 @@ export default function CalendarPage() {
   const isTeacher = user?.role === 'teacher'
 
   const { data: teachersData } = useTeachers({}, { enabled: !isTeacher })
-  const { data: studentsData } = useStudents({ per_page: 500 }, { enabled: !isTeacher })
-  const { data: myStudents } = useMyStudents({ enabled: isTeacher })
+  const { data: studentsData, isLoading: studentsLoading } = useStudents({ per_page: 500 }, { enabled: !isTeacher })
+  const { data: myStudents, isLoading: myStudentsLoading } = useMyStudents({ enabled: isTeacher })
   const { data: schedulesData } = useLessonSchedules({ teacherId: teacherFilter ? Number(teacherFilter) : undefined })
   const teachers  = teachersData?.data ?? []
   const students  = isTeacher ? (myStudents ?? []) : (studentsData?.data ?? [])
@@ -798,10 +798,13 @@ export default function CalendarPage() {
   // actually changes what it shows instead of always listing the newest lessons.
   const { data: lessonsData } = useLessons(
     {
-      teacher_id: teacherFilter || undefined,
-      from:       monthStart,
-      to:         monthEnd,
-      per_page:   500,
+      teacher_id:  teacherFilter || undefined,
+      // Filter on the server: the page is capped at 500 rows, so filtering afterwards
+      // would lose a student whose lessons fall outside the newest 500.
+      student_ids: studentFilter.length ? studentFilter : undefined,
+      from:        monthStart,
+      to:          monthEnd,
+      per_page:    500,
     },
     { enabled: listMode },
   )
@@ -831,11 +834,8 @@ export default function CalendarPage() {
     : undefined
 
   const listLessons = useMemo(() => {
-    let ls = lessonsData?.data ?? []
-    ls = ls.filter(l => months.includes(l.scheduled_at.slice(0, 7)))
-    if (studentFilter.length) ls = ls.filter(l => studentFilter.includes(l.student_id))
-    return ls
-  }, [lessonsData, studentFilter, months])
+    return (lessonsData?.data ?? []).filter(l => months.includes(l.scheduled_at.slice(0, 7)))
+  }, [lessonsData, months])
 
   // Month/List: the arrows walk the *whole* selection, keeping its shape (e.g.
   // Sep+Nov steps to Oct+Dec). Week/Day: they walk the anchor date as before.
@@ -1057,7 +1057,7 @@ export default function CalendarPage() {
                   </span>
                 )}
               </label>
-              <StudentMultiSelect allStudents={students} selected={studentFilter} onChange={setStudentFilter} />
+              <StudentMultiSelect allStudents={students} selected={studentFilter} onChange={setStudentFilter} loading={studentsLoading || myStudentsLoading} />
             </div>
 
             {/* Clear all filters */}

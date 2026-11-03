@@ -3,6 +3,7 @@ import { useRef, useState, useEffect, useCallback } from 'react'
 import { createPortal } from 'react-dom'
 import { Check, ChevronDown, Search, X } from 'lucide-react'
 import { useI18n } from '@/lib/system/i18n'
+import { matchesSearch } from '@/lib/system/search'
 
 export interface SelectOption {
   value: string
@@ -38,9 +39,7 @@ export function SearchableSelect({ options, value, onChange, placeholder, cleara
   const dropRef    = useRef<HTMLDivElement>(null)
 
   const selected = options.find(o => o.value === value)
-  const filtered = query.trim()
-    ? options.filter(o => o.label.toLowerCase().includes(query.toLowerCase()))
-    : options
+  const filtered = options.filter(o => matchesSearch(o.label, query))
 
   const calcPos = useCallback(() => {
     if (!triggerRef.current) return null

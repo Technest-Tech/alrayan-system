@@ -73,7 +73,7 @@ class LessonController extends Controller
             $query->where('teacher_id', auth()->user()->teacher?->id);
         }
         if ($request->filled('student_id')) {
-            $query->where('student_id', $request->input('student_id'));
+            $query->whereIn('student_id', (array) $request->input('student_id'));
         }
         if ($request->filled('status')) {
             $query->where('status', $request->input('status'));
