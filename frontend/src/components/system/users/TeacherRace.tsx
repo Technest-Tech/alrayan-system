@@ -77,7 +77,6 @@ export default function TeacherRace({ currentTeacherId, month }: { currentTeache
   const { data, isLoading } = useTeacherRace(filter)
 
   const racers = data?.racers ?? []
-  const leaderHours = data?.leader_hours ?? 0
   const k = racers.length
   const trackWidth = Math.max(1000, 140 + k * 160)          // one straight line — a column per racer
 
@@ -275,9 +274,9 @@ function RacerNode({ racer, tier, left, top, scale, z, isYou, motion, taunts, sl
         {/* vehicle */}
         <div className="-mt-1">{tier === 'camel' ? <Camel color={color} /> : <Vehicle tier={tier} color={color} motion={motion} />}</div>
 
-        {/* name + hours */}
+        {/* name */}
         <div className="mt-0.5 px-2 py-0.5 rounded-full text-[9px] font-bold backdrop-blur-sm shadow whitespace-nowrap" style={{ background: 'rgba(255,255,255,.92)', color: 'rgb(11 31 58)' }}>
-          {(racer.name ?? '—').split(' ')[0]} · {racer.hours.toFixed(1)}h
+          {(racer.name ?? '—').split(' ')[0]}
         </div>
       </div>
     </div>

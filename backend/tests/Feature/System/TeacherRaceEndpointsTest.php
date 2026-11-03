@@ -52,35 +52,50 @@ class TeacherRaceEndpointsTest extends SystemTestCase
             ->getJson('/api/system/teachers/race?month=2026-07')
             ->assertOk()
             ->assertJsonPath('range', 'month')
-            ->assertJsonPath('month', '2026-07')
-            ->assertJsonPath('leader_hours', 2);
+            ->assertJsonPath('month', '2026-07');
 
         $racers = collect($response->json('racers'));
         $this->assertCount(3, $racers);
         $this->assertSame([$leader->id, $second->id, $idle->id], $racers->pluck('teacher_id')->all());
         $this->assertSame([1, 2, 3], $racers->pluck('rank')->all());
-        $this->assertSame([2, 1, 0], $racers->pluck('hours')->all());
+    }
+
+    public function test_the_response_never_exposes_hours(): void
+    {
+        $teacher = Teacher::factory()->create();
+        $this->attendedLesson($teacher, '2026-07-10 10:00:00', 120);
+
+        $response = $this->actingAs($this->adminUser(), 'sanctum')
+            ->getJson('/api/system/teachers/race?month=2026-07')
+            ->assertOk()
+            ->assertJsonMissingPath('leader_hours');
+
+        $this->assertArrayNotHasKey('hours', $response->json('racers.0'));
     }
 
     public function test_all_time_and_custom_ranges_use_the_requested_windows(): void
     {
-        $teacher = Teacher::factory()->create();
-        $this->attendedLesson($teacher, '2026-05-10 10:00:00', 60);
-        $this->attendedLesson($teacher, '2026-07-10 10:00:00', 120);
+        $spread = Teacher::factory()->create();
+        $recent = Teacher::factory()->create();
+        $this->attendedLesson($spread, '2026-05-10 10:00:00', 60);
+        $this->attendedLesson($spread, '2026-06-10 10:00:00', 120);
+        $this->attendedLesson($recent, '2026-07-10 10:00:00', 120);
 
-        $this->actingAs($this->adminUser(), 'sanctum')
+        $order = fn ($response) => collect($response->json('racers'))->pluck('teacher_id')->all();
+
+        $all = $this->actingAs($this->adminUser(), 'sanctum')
             ->getJson('/api/system/teachers/race?range=all')
             ->assertOk()
-            ->assertJsonPath('range', 'all')
-            ->assertJsonPath('leader_hours', 3);
+            ->assertJsonPath('range', 'all');
+        $this->assertSame([$spread->id, $recent->id], $order($all));
 
-        $this->actingAs($this->adminUser(), 'sanctum')
-            ->getJson('/api/system/teachers/race?range=custom&from=2026-05-01&to=2026-05-31')
+        $july = $this->actingAs($this->adminUser(), 'sanctum')
+            ->getJson('/api/system/teachers/race?range=custom&from=2026-07-01&to=2026-07-31')
             ->assertOk()
             ->assertJsonPath('range', 'custom')
-            ->assertJsonPath('from', '2026-05-01')
-            ->assertJsonPath('to', '2026-05-31')
-            ->assertJsonPath('leader_hours', 1);
+            ->assertJsonPath('from', '2026-07-01')
+            ->assertJsonPath('to', '2026-07-31');
+        $this->assertSame([$recent->id, $spread->id], $order($july));
     }
 
     public function test_custom_range_rejects_missing_or_reversed_dates(): void

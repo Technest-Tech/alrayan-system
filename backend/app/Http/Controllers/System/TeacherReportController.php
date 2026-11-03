@@ -8,6 +8,7 @@ use App\Models\System\QcEvaluation;
 use App\Models\System\Teacher;
 use App\Services\System\LessonMetrics;
 use Carbon\Carbon;
+use Illuminate\Support\Arr;
 
 /**
  * Teacher-facing reporting. Every number here is derived from `sys_lessons`
@@ -131,7 +132,8 @@ class TeacherReportController extends Controller
 
     /**
      * Teacher Race leaderboard — all active teachers ranked by hours taught in the selected
-     * window. Drives the gamified race track on the dashboard/profile. Accepts:
+     * window. Drives the gamified race track on the dashboard/profile. Every teacher can
+     * read this, so it returns the ranking only, never the hours behind it. Accepts:
      *   ?range=all                        → every attended session, all-time
      *   ?from=YYYY-MM-DD&to=YYYY-MM-DD    → custom date range (inclusive)
      *   ?month=YYYY-MM (default)          → a single calendar month (current if omitted)
@@ -186,15 +188,14 @@ class TeacherReportController extends Controller
                 ['name', 'asc'],
             ])
             ->values()
-            ->map(fn(array $r, int $i) => [...$r, 'rank' => $i + 1]);
+            ->map(fn(array $r, int $i) => [...Arr::except($r, 'hours'), 'rank' => $i + 1]);
 
         return response()->json([
-            'range'        => $range,
-            'month'        => $month,
-            'from'         => $windowStart?->format('Y-m-d'),
-            'to'           => $windowEnd?->format('Y-m-d'),
-            'leader_hours' => (float) ($racers->max('hours') ?? 0),
-            'racers'       => $racers->values(),
+            'range'  => $range,
+            'month'  => $month,
+            'from'   => $windowStart?->format('Y-m-d'),
+            'to'     => $windowEnd?->format('Y-m-d'),
+            'racers' => $racers->values(),
         ]);
     }
 

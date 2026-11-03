@@ -88,7 +88,6 @@ export interface Racer {
   teacher_id: number
   name: string | null
   photo_url: string | null
-  hours: number
   rank: number
 }
 
@@ -106,7 +105,6 @@ export interface TeacherRaceData {
   month: string | null
   from: string | null
   to: string | null
-  leader_hours: number
   racers: Racer[]
 }
 
