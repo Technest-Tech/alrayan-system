@@ -57,6 +57,15 @@ export function countryFrom(headers: Headers): string | null {
   return null
 }
 
+/** Countries the public site is not served in. The admin console is unaffected. */
+const BLOCKED_COUNTRIES = new Set(['EG'])
+
+/** False when the country is unknown, so a missing header never takes the site down. */
+export function isBlockedCountry(headers: Headers): boolean {
+  const country = countryFrom(headers)
+  return !!country && BLOCKED_COUNTRIES.has(country)
+}
+
 /** The language of a country, or null when the country does not settle it. */
 export function localeFromCountry(country: string | null): Locale | null {
   if (!country) return null

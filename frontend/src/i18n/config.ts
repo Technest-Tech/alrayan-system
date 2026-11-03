@@ -10,12 +10,16 @@ export const defaultLocale: Locale = 'en'
 export const LOCALE_HEADER = 'x-locale'
 
 /**
- * Cookie holding the language the visitor is browsing in. Written whenever a
- * language is resolved — by the `/fr` prefix, by the switcher, or by first-visit
- * country detection — so the detection only ever runs once and a manual choice
- * is never overruled on the next page.
+ * Cookie holding the language a visitor picked or was sent to: written by the
+ * `/fr` prefix and by the switcher, so a manual choice is never overruled on the
+ * next page. A detected English is not stored, so detection can still send that
+ * visitor to French later.
+ *
+ * Renamed from `azhary.locale`, which also stored detected English for a year.
+ * That kept visitors in France on English, and their cookies can't be told apart
+ * from a manual choice, so the old name is ignored.
  */
-export const LOCALE_COOKIE = 'azhary.locale'
+export const LOCALE_COOKIE = 'azhary.locale.v2'
 
 /** A year: the choice should outlive the visit that made it. */
 export const LOCALE_COOKIE_MAX_AGE = 60 * 60 * 24 * 365

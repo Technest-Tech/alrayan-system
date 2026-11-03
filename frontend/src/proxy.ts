@@ -6,7 +6,7 @@ import {
   isLocale,
   type Locale,
 } from '@/i18n/config'
-import { detectLocale, isBot } from '@/i18n/negotiate'
+import { detectLocale, isBlockedCountry, isBot } from '@/i18n/negotiate'
 
 // Next 16 renamed the `middleware` convention to `proxy`. This file also owns
 // locale routing for the public marketing site: French lives under a `/fr`
@@ -19,8 +19,8 @@ import { detectLocale, isBot } from '@/i18n/negotiate'
 //   2. the locale cookie — what the visitor last browsed in or picked
 //      with the switcher;
 //   3. the country the request comes from, then `Accept-Language`
-//      (see src/i18n/negotiate.ts) — first visit only, and the result is
-//      written to the cookie so it is never guessed twice.
+//      (see src/i18n/negotiate.ts) — only while no cookie is set. A detected
+//      English is not written to the cookie (see the end of `proxy`).
 // A visitor detected as French-speaking is redirected to the French twin of the
 // URL they asked for, so the address bar always agrees with the page.
 
@@ -78,6 +78,13 @@ function remember<T extends NextResponse>(res: T, locale: Locale, current: Local
   return res
 }
 
+const BLOCKED_PAGE = `<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><title>Not available</title></head>
+<body style="font-family:system-ui,sans-serif;text-align:center;padding:4rem 1rem;color:#0b1f3a">
+<p>This website is not available in your country.</p>
+<p lang="ar" dir="rtl">هذا الموقع غير متاح في بلدك.</p>
+</body></html>`
+
 /** `/sitemap.xml`, `/robots.txt`, `/og-default.jpg` — never language-routed. */
 function isFile(path: string) {
   return path.slice(path.lastIndexOf('/')).includes('.')
@@ -103,6 +110,13 @@ export function proxy(req: NextRequest) {
   }
 
   // ── Public marketing site (site host) ──
+  if (isBlockedCountry(req.headers)) {
+    return new NextResponse(BLOCKED_PAGE, {
+      status: 403,
+      headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' },
+    })
+  }
+
   // Resolve locale from the `/fr` prefix, then run the rest of the routing on
   // the un-prefixed path.
   const stored = req.cookies.get(LOCALE_COOKIE)?.value
@@ -145,7 +159,11 @@ export function proxy(req: NextRequest) {
     locale = preferred
   }
 
-  return remember(serve(req, basePath, locale, 'next'), locale, chosen)
+  // Only the `/fr` prefix is remembered here. An un-prefixed page is either a stored
+  // English (nothing to write) or a detected one, and storing that would pin the
+  // visitor to English, e.g. if their country was unknown on this request.
+  const res = serve(req, basePath, locale, 'next')
+  return prefixed ? remember(res, locale, chosen) : res
 }
 
 export const config = {

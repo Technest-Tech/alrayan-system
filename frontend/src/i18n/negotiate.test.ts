@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest'
 import {
   countryFrom,
   detectLocale,
+  isBlockedCountry,
   isBot,
   localeFromAcceptLanguage,
   localeFromCountry,
@@ -27,6 +28,19 @@ describe('countryFrom', () => {
 
   it('is null when no CDN sits in front (local development)', () => {
     expect(countryFrom(headers({}))).toBeNull()
+  })
+})
+
+describe('isBlockedCountry', () => {
+  it('blocks Egypt from any country header', () => {
+    expect(isBlockedCountry(headers({ 'x-country-code': 'EG' }))).toBe(true)
+    expect(isBlockedCountry(headers({ 'cf-ipcountry': 'eg' }))).toBe(true)
+  })
+
+  it('lets other and unknown countries through', () => {
+    expect(isBlockedCountry(headers({ 'x-country-code': 'FR' }))).toBe(false)
+    expect(isBlockedCountry(headers({ 'cf-ipcountry': 'XX' }))).toBe(false)
+    expect(isBlockedCountry(headers({}))).toBe(false)
   })
 })
 
