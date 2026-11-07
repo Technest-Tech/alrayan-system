@@ -79,23 +79,46 @@ class PackageService
         $isDownPayment = $packageNumber === self::FIRST_PACKAGE_NUMBER;
 
         // A follow-on package continues the deal the student is already on, so it inherits the
-        // size and price of their latest real package. Re-deriving both from the student row is
-        // what used to make an edited package silently revert to the enrolment defaults.
-        $previous = StudentPackage::withTrashed()
-            ->where('student_id', $student->id)
-            ->where('package_hours', '>', 0)
-            ->orderByDesc('package_number')
-            ->first();
+        // size, price and currency of their latest real package. Re-deriving them from the
+        // student row is what used to make an edited package silently revert to the enrolment
+        // defaults (and a EUR student's next package flip to the row's USD default).
+        $terms = $this->followOnTerms($student, $this->latestRealPackage($student));
+        if ($hours !== null) {
+            $terms['package_hours'] = $hours;
+        }
 
         return StudentPackage::create([
             'student_id'     => $student->id,
             'package_number' => $packageNumber,
-            'package_hours'  => $hours ?? $this->inheritedHours($student, $previous),
-            'tariff_at_time' => $this->inheritedPrice($student, $previous),
-            'currency'       => $student->currency,
+            ...$terms,
             'status'         => $isDownPayment ? 'paid' : 'pending',
             'paid_at'        => $isDownPayment ? now() : null,
         ]);
+    }
+
+    /** The student's highest-numbered real package, optionally only those numbered below $below. */
+    private function latestRealPackage(Student $student, ?int $below = null): ?StudentPackage
+    {
+        return StudentPackage::withTrashed()
+            ->where('student_id', $student->id)
+            ->where('package_hours', '>', 0)
+            ->when($below !== null, fn ($q) => $q->where('package_number', '<', $below))
+            ->orderByDesc('package_number')
+            ->first();
+    }
+
+    /**
+     * Hours, price and currency for a package that continues after $previous.
+     *
+     * @return array{package_hours:int, tariff_at_time:int, currency:string}
+     */
+    private function followOnTerms(Student $student, ?StudentPackage $previous): array
+    {
+        return [
+            'package_hours'  => $this->inheritedHours($student, $previous),
+            'tariff_at_time' => $this->inheritedPrice($student, $previous),
+            'currency'       => $previous?->currency ?: $student->currency,
+        ];
     }
 
     /** Size for a package nobody sized: the previous one's, else the student's enrolment default. */
@@ -218,7 +241,13 @@ class PackageService
 
             // Every package is re-shiftable: drop all allocations and rebuild from scratch.
             $allPackageIds = $packages->pluck('id')->all();
+            $heldLessons   = [];
             if ($allPackageIds) {
+                $heldLessons = LessonPackageAllocation::whereIn('package_id', $allPackageIds)
+                    ->distinct()
+                    ->pluck('package_id')
+                    ->flip()
+                    ->all();
                 LessonPackageAllocation::whereIn('package_id', $allPackageIds)->delete();
             }
 
@@ -236,11 +265,27 @@ class PackageService
             $maxNumber  = $highest === null ? self::FIRST_PACKAGE_NUMBER - 1 : (int) $highest;
             $firstNumber = (int) ($packages->min('package_number') ?? self::FIRST_PACKAGE_NUMBER);
 
-            $nextPackage = function () use (&$slots, &$slotIndex, &$maxNumber, $student) {
+            $nextPackage = function () use (&$slots, &$slotIndex, &$maxNumber, $student, $heldLessons, $firstNumber) {
                 if ($slotIndex < $slots->count()) {
                     $pkg = $slots[$slotIndex++];
+                    // An untouched follow-on package the engine opened ahead of time only carries
+                    // the terms of the moment it was opened — often a 1-hour USD placeholder from
+                    // before the lead was closed, binned when #0 grew and restored here once #0
+                    // ran out. It has held no lessons yet, so start it on the current deal.
+                    $untouched = $pkg->trashed() || ! isset($heldLessons[$pkg->id]);
                     if ($pkg->trashed()) {
                         $pkg->restore();
+                    }
+                    if ($untouched && ! $pkg->is_manual && $pkg->status === 'pending'
+                        && (int) $pkg->package_number > $firstNumber) {
+                        $terms = $this->followOnTerms(
+                            $student,
+                            $this->latestRealPackage($student, (int) $pkg->package_number),
+                        );
+                        $pkg->fill($terms);
+                        if ($pkg->isDirty()) {
+                            $pkg->save();
+                        }
                     }
                     return $pkg;
                 }
