@@ -23,7 +23,7 @@ class TeacherNotifier
 {
     public function studentAssigned(Student $student): void
     {
-        DB::afterCommit(function () use ($student) {
+        $this->afterCommit(function () use ($student) {
             $student = $student->fresh();
             $teacher = $this->teacherUserFor($student);
             if (! $teacher) {
@@ -49,7 +49,7 @@ class TeacherNotifier
 
     public function packagePaid(StudentPackage $package): void
     {
-        DB::afterCommit(function () use ($package) {
+        $this->afterCommit(function () use ($package) {
             $package = $package->fresh();
             // Reset to pending again before the commit: nothing was paid after all.
             if (! $package || $package->status !== 'paid') {
@@ -67,7 +67,7 @@ class TeacherNotifier
 
     public function packageCompleted(StudentPackage $package): void
     {
-        DB::afterCommit(function () use ($package) {
+        $this->afterCommit(function () use ($package) {
             $package = $package->fresh();
             if (! $package) {
                 return;
@@ -112,6 +112,16 @@ class TeacherNotifier
                 'package_hours'  => (int) $package->package_hours,
             ],
         );
+    }
+
+    /**
+     * Runs once the save has committed — and from then on it is final. A notification that
+     * fails there must not surface as an error: the form would report a failed save that in
+     * fact went through, and the retry would create the student a second time.
+     */
+    private function afterCommit(callable $notify): void
+    {
+        DB::afterCommit(fn () => rescue($notify));
     }
 
     private function teacherUserFor(?Student $student): ?User

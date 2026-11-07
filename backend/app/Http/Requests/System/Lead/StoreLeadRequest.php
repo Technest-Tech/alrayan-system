@@ -35,6 +35,14 @@ class StoreLeadRequest extends FormRequest
             'assigned_supervisor_id' => 'nullable|exists:users,id',
             'assigned_teacher_id'    => 'nullable|exists:sys_teachers,id',
             'payload'                => 'nullable|array',
+            // Walk-in: create the lead and close it in the same request (and transaction), so a
+            // failed conversion leaves nothing behind for a retry to provision a second time.
+            // Mirrors the quick-close subset of ConvertLeadRequest.
+            'convert'                     => 'nullable|array',
+            'convert.package_hours'       => 'required_with:convert|integer|min:1',
+            'convert.package_price_minor' => 'required_with:convert|integer|min:0',
+            'convert.course_id'           => 'nullable|exists:courses,id',
+            'convert.currency'            => 'nullable|string|size:3',
         ];
     }
 }

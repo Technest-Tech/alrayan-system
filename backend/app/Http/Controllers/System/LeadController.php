@@ -75,10 +75,14 @@ class LeadController extends Controller
         $teacherId = $data['assigned_teacher_id'] ?? null;
         unset($data['assigned_teacher_id']);
 
+        // Not a lead column: the enrolment for a walk-in that is closed on the spot.
+        $convert = $data['convert'] ?? null;
+        unset($data['convert']);
+
         // The form lets Source stay blank, but sys_leads.source is a NOT NULL enum.
         $data['source'] ??= 'manual_entry';
 
-        $lead = DB::transaction(function () use ($data, $teacherId, $request) {
+        $lead = DB::transaction(function () use ($data, $teacherId, $convert, $request) {
             $lead = Lead::create($data);
 
             // users.email is unique, and a lead often shares an address with someone already
@@ -108,6 +112,14 @@ class LeadController extends Controller
                 $leadUpdates['status'] = 'waiting_for_trial';
             }
             $lead->update($leadUpdates);
+
+            // Walk-in closed on the spot. It used to be a second request from the form; when
+            // that one failed, the lead and its student were already saved, and pressing the
+            // button again provisioned the same person twice.
+            if ($convert) {
+                $this->authorize('convert', $lead);
+                $this->converter->convert($lead->refresh(), $convert);
+            }
 
             return $lead->refresh();
         });

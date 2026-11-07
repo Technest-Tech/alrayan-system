@@ -1,6 +1,7 @@
 'use client'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { api, type Paginated } from '@/lib/system/api'
+import { idempotencyHeaders, type SubmissionKeyFor } from '@/lib/system/submission-key'
 import type { Lead, LeadDetail, LeadAnalytics } from '@/types/system/lead'
 
 interface LeadFilters {
@@ -52,12 +53,18 @@ export function useLeadAnalytics(from: string, to: string) {
   })
 }
 
-export function useCreateLead() {
+export function useCreateLead(submissionKey?: SubmissionKeyFor) {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: (data: Record<string, unknown>) =>
-      api<{ data: LeadDetail }>('/leads', { method: 'POST', body: JSON.stringify(data) }).then(r => r.data),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['system', 'leads'] }),
+      api<{ data: LeadDetail }>('/leads', {
+        method: 'POST', body: JSON.stringify(data), headers: idempotencyHeaders(submissionKey?.(data)),
+      }).then(r => r.data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['system', 'leads'] })
+      // Every lead provisions a student, and a walk-in closes it on the spot.
+      qc.invalidateQueries({ queryKey: ['system', 'user-directory'] })
+    },
   })
 }
 

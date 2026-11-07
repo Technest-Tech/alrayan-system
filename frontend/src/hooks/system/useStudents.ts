@@ -1,6 +1,7 @@
 'use client'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { api, type Paginated } from '@/lib/system/api'
+import { idempotencyHeaders, type SubmissionKeyFor } from '@/lib/system/submission-key'
 import type { Student, StudentDetail } from '@/types/system/student'
 
 interface StudentFilters {
@@ -41,11 +42,13 @@ export function useStudent(id: number | string) {
   })
 }
 
-export function useCreateStudent() {
+export function useCreateStudent(submissionKey?: SubmissionKeyFor) {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: (data: Record<string, unknown>) =>
-      api<{ data: StudentDetail }>('/students', { method: 'POST', body: JSON.stringify(data) }).then(r => r.data),
+      api<{ data: StudentDetail }>('/students', {
+        method: 'POST', body: JSON.stringify(data), headers: idempotencyHeaders(submissionKey?.(data)),
+      }).then(r => r.data),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['system', 'students'] }),
   })
 }

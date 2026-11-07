@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useCreateLead } from '@/hooks/system/useLeads'
 import { useState } from 'react'
 import { useI18n } from '@/lib/system/i18n'
+import { useSubmissionKey } from '@/lib/system/submission-key'
 
 const CUSTOM_SOURCE = '__custom__'
 const CUSTOM_PAYMENT = '__custom__'
@@ -16,7 +17,8 @@ const CUSTOM_PAYMENT = '__custom__'
 export default function NewLeadPage() {
   const { t } = useI18n()
   const router = useRouter()
-  const create = useCreateLead()
+  const submissionKey = useSubmissionKey()
+  const create = useCreateLead(submissionKey.get)
   const [form, setForm] = useState({
     name: '',
     email: '',

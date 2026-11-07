@@ -143,7 +143,7 @@ Route::prefix('system')->name('system.')->group(function () {
             Route::get('/users/directory/stats',   [UserDirectoryController::class, 'stats'])->name('users.directory.stats');
             Route::get('/users/directory/{id}',    [UserDirectoryController::class, 'show'])->whereNumber('id')->name('users.directory.show');
         });
-        Route::middleware('system.can:users.create')->post('/users/directory', [UserDirectoryController::class, 'store'])->name('users.directory.store');
+        Route::middleware(['system.can:users.create', 'system.once'])->post('/users/directory', [UserDirectoryController::class, 'store'])->name('users.directory.store');
         Route::middleware('system.can:users.edit')->patch('/users/directory/{id}', [UserDirectoryController::class, 'update'])->whereNumber('id')->name('users.directory.update');
         Route::middleware('system.can:users.deactivate')->group(function () {
             Route::post('/users/directory/{id}/activate',   [UserDirectoryController::class, 'activate'])->whereNumber('id')->name('users.directory.activate');
@@ -234,7 +234,7 @@ Route::prefix('system')->name('system.')->group(function () {
             Route::get('/students/{student}', [StudentController::class, 'show'])->name('students.show');
             Route::get('/students/{student}/notes', [StudentNoteController::class, 'index'])->name('students.notes.index');
         });
-        Route::middleware('system.can:students.create')->post('/students', [StudentController::class, 'store'])->name('students.store');
+        Route::middleware(['system.can:students.create', 'system.once'])->post('/students', [StudentController::class, 'store'])->name('students.store');
         Route::middleware('system.can:students.edit')->group(function () {
             Route::patch('/students/{student}',                          [StudentController::class, 'update'])->name('students.update');
             Route::post('/students/{student}/siblings',                  [StudentFamilyController::class, 'store'])->name('students.siblings.store');
@@ -402,7 +402,7 @@ Route::prefix('system')->name('system.')->group(function () {
             Route::get('/leads/analytics',                           LeadAnalyticsController::class)->name('leads.analytics');
         });
         Route::get('/leads/{lead}',                                  [LeadController::class, 'show'])->name('leads.show');
-        Route::middleware('system.can:leads.create')
+        Route::middleware(['system.can:leads.create', 'system.once'])
             ->post('/leads',                                         [LeadController::class, 'store'])->name('leads.store');
         Route::middleware('system.can:leads.edit')
             ->patch('/leads/{lead}',                                 [LeadController::class, 'update'])->name('leads.update');

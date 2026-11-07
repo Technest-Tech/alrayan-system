@@ -16,6 +16,7 @@ import { useCourses } from '@/hooks/system/useCourses'
 import { useTeachers } from '@/hooks/system/useTeachers'
 import { useI18n } from '@/lib/system/i18n'
 import { ApiError } from '@/lib/system/api'
+import { useSubmissionKey } from '@/lib/system/submission-key'
 
 const schema = z.object({
   name:                  z.string().min(1, 'name'),
@@ -67,7 +68,8 @@ const ERROR_KEYS: Record<string, string> = {
 export default function NewStudentPage() {
   const { t }   = useI18n()
   const router  = useRouter()
-  const create  = useCreateStudent()
+  const submissionKey = useSubmissionKey()
+  const create = useCreateStudent(submissionKey.get)
   const { data: courses = [] }  = useCourses()
   const { data: teachersData }  = useTeachers()
   const teachers = teachersData?.data ?? []

@@ -12,6 +12,7 @@ import { WhatsAppInput } from './WhatsAppInput'
 import { useCreateStudent } from '@/hooks/system/useStudents'
 import { ApiError } from '@/lib/system/api'
 import { useI18n } from '@/lib/system/i18n'
+import { useSubmissionKey } from '@/lib/system/submission-key'
 
 /* ─── Schema ───────────────────────────────────────── */
 const schema = z.object({
@@ -47,7 +48,10 @@ interface AddStudentDialogProps {
 
 export function AddStudentDialog({ open, onOpenChange }: AddStudentDialogProps) {
   const { t } = useI18n()
-  const create = useCreateStudent()
+  // A repeat of the same submission (double submit, retry after an error that had in fact
+  // saved) replays the first result instead of creating the student a second time.
+  const submissionKey = useSubmissionKey()
+  const create = useCreateStudent(submissionKey.get)
   const [waDialCode, setWaDialCode]     = useState<string | undefined>(undefined)
   const [children, setChildren]         = useState([{ name: '' }])
   const [childErrors, setChildErrors]   = useState<string[]>([])
@@ -87,16 +91,20 @@ export function AddStudentDialog({ open, onOpenChange }: AddStudentDialogProps) 
           setChildErrors(errs)
           return
         }
+        // Siblings share ONE guardian: the first child creates it and the rest link to it.
+        // Sending the guardian's details with every child minted a new guardian per child.
+        let guardianId = values.guardian_id
         for (const child of children) {
-          await create.mutateAsync({
+          const created = await create.mutateAsync({
             name:              child.name.trim(),
             country:           values.country,
             timezone:          values.timezone,
             student_type:      'child',
-            guardian_id:       values.guardian_id,
+            guardian_id:       guardianId,
             guardian_name:     values.guardian_name,
             guardian_whatsapp: values.guardian_whatsapp,
           } as Record<string, unknown>)
+          guardianId = guardianId || created.guardian?.id
         }
         const label = children.length > 1 ? `${children.length} students enrolled successfully.` : 'Student enrolled successfully.'
         toast.success(label)
@@ -104,6 +112,7 @@ export function AddStudentDialog({ open, onOpenChange }: AddStudentDialogProps) 
         await create.mutateAsync(values as Record<string, unknown>)
         toast.success('Student enrolled successfully.')
       }
+      submissionKey.renew()
       reset()
       setChildren([{ name: '' }])
       setChildErrors([])

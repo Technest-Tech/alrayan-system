@@ -11,6 +11,7 @@ import { useSections } from '@/hooks/system/useSections'
 import { useUsers } from '@/hooks/system/useUsers'
 import { ApiError } from '@/lib/system/api'
 import { useI18n } from '@/lib/system/i18n'
+import { useSubmissionKey } from '@/lib/system/submission-key'
 import type { Lead, LeadStatus, LeadPriority, LeadPlatform, LeadSource } from '@/types/system/lead'
 
 /* ── Design tokens (create-lesson form style) ───── */
@@ -438,7 +439,10 @@ export function AddLeadDialog({ open, onOpenChange, lead, initialStatus }: AddLe
   const isEditMode = !!lead
   const isAlreadyClosed = lead?.status === 'closed'
 
-  const create  = useCreateLead()
+  // A repeat of the same submission (double submit, retry after an error that had in fact
+  // saved) replays the first result instead of provisioning the student a second time.
+  const submissionKey = useSubmissionKey()
+  const create  = useCreateLead(submissionKey.get)
   const update  = useUpdateLead(lead?.id ?? 0)
   const convert = useConvertLead()
 
@@ -599,11 +603,11 @@ export function AddLeadDialog({ open, onOpenChange, lead, initialStatus }: AddLe
           toast.success(t('leads.toastUpdated'))
         }
       } else if (isClosing) {
-        /* ── Walk-in: create the lead (provisions a student) then convert it in one step. The
-              lead can't be created as 'closed' (convert would reject it), so it lands ready-to-pay. ── */
+        /* ── Walk-in: create the lead and convert it in ONE request — the server does both in a
+              single transaction. As two requests, a failed convert left the lead + its student
+              saved, and pressing the button again provisioned the same person twice. ── */
         basePayload.status = 'waiting_for_payment'
-        const createdLead = await create.mutateAsync(basePayload)
-        await convert.mutateAsync({ id: createdLead.id, ...convertData })
+        await create.mutateAsync({ ...basePayload, convert: convertData })
         toast.success(t('leads.toastConverted'))
       } else {
         /* ── Create ── */
@@ -611,7 +615,7 @@ export function AddLeadDialog({ open, onOpenChange, lead, initialStatus }: AddLe
         await create.mutateAsync(basePayload)
         toast.success(t('leads.toastCreated'))
       }
-      reset(); onOpenChange(false)
+      submissionKey.renew(); reset(); onOpenChange(false)
     } catch (err) {
       toast.error(err instanceof ApiError ? err.message : isEditMode ? t('leads.toastUpdateFailed') : t('leads.toastCreateFailed'))
     }

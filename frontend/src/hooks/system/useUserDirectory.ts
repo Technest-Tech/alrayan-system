@@ -2,6 +2,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { api } from '@/lib/system/api'
 import type { Paginated } from '@/lib/system/api'
+import { idempotencyHeaders, type SubmissionKeyFor } from '@/lib/system/submission-key'
 import { invalidatePackageDerived } from '@/lib/system/packageCache'
 import type { DirectoryUser, DirectoryFilters, UserStatus, UserStats } from '@/types/system/user-directory'
 
@@ -46,11 +47,13 @@ export function useDirectoryUser(id: number | string | null) {
   })
 }
 
-export function useCreateUser() {
+export function useCreateUser(submissionKey?: SubmissionKeyFor) {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: (data: Record<string, unknown>) =>
-      api<{ data: DirectoryUser }>('/users/directory', { method: 'POST', body: JSON.stringify(data) }).then(r => r.data),
+      api<{ data: DirectoryUser }>('/users/directory', {
+        method: 'POST', body: JSON.stringify(data), headers: idempotencyHeaders(submissionKey?.(data)),
+      }).then(r => r.data),
     onSuccess: () => qc.invalidateQueries({ queryKey: KEY }),
   })
 }

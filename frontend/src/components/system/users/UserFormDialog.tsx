@@ -11,6 +11,7 @@ import { useCreateUser, useUpdateUser } from '@/hooks/system/useUserDirectory'
 import { uploadFile } from '@/lib/system/upload'
 import { ApiError } from '@/lib/system/api'
 import { useI18n } from '@/lib/system/i18n'
+import { useSubmissionKey } from '@/lib/system/submission-key'
 import {
   USER_ROLES, USER_STATUSES, LOGIN_ROLES,
   type DirectoryUser, type UserRole, type StudentProfile, type TeacherProfile,
@@ -154,7 +155,10 @@ export function UserFormDialog({ open, onOpenChange, user }: Props) {
   const [form, setForm] = useState<FormState>(blank())
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [uploading, setUploading] = useState<string | null>(null)
-  const create = useCreateUser()
+  // A repeat of the same submission (double submit, retry after an error that had in fact
+  // saved) replays the first result instead of creating the person a second time.
+  const submissionKey = useSubmissionKey()
+  const create = useCreateUser(submissionKey.get)
   const update = useUpdateUser()
   const { data: courses = [] } = useCourses()
   const { data: teachersData } = useTeachers()
@@ -280,6 +284,7 @@ export function UserFormDialog({ open, onOpenChange, user }: Props) {
         toast.success('User updated')
       } else {
         await create.mutateAsync(buildPayload())
+        submissionKey.renew()
         toast.success('User created')
       }
       onOpenChange(false)

@@ -29,6 +29,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'turnstile'    => \App\Http\Middleware\VerifyTurnstileToken::class,
             'system.active'=> \App\Http\Middleware\System\EnsureSystemActive::class,
             'system.can'   => \App\Http\Middleware\System\EnsurePermission::class,
+            'system.once'  => \App\Http\Middleware\System\PreventDuplicateSubmission::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
