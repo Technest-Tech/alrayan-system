@@ -274,9 +274,9 @@ function RacerNode({ racer, tier, left, top, scale, z, isYou, motion, taunts, sl
         {/* vehicle */}
         <div className="-mt-1">{tier === 'camel' ? <Camel color={color} /> : <Vehicle tier={tier} color={color} motion={motion} />}</div>
 
-        {/* name */}
+        {/* name (+ hours, only when the server sent them for this viewer) */}
         <div className="mt-0.5 px-2 py-0.5 rounded-full text-[9px] font-bold backdrop-blur-sm shadow whitespace-nowrap" style={{ background: 'rgba(255,255,255,.92)', color: 'rgb(11 31 58)' }}>
-          {(racer.name ?? '—').split(' ')[0]}
+          {(racer.name ?? '—').split(' ')[0]}{racer.hours != null && ` · ${racer.hours.toFixed(1)}h`}
         </div>
       </div>
     </div>

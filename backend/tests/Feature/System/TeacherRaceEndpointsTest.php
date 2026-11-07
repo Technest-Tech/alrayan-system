@@ -60,17 +60,37 @@ class TeacherRaceEndpointsTest extends SystemTestCase
         $this->assertSame([1, 2, 3], $racers->pluck('rank')->all());
     }
 
-    public function test_the_response_never_exposes_hours(): void
+    public function test_an_admin_sees_every_racers_hours(): void
     {
-        $teacher = Teacher::factory()->create();
-        $this->attendedLesson($teacher, '2026-07-10 10:00:00', 120);
+        $leader = Teacher::factory()->create();
+        $second = Teacher::factory()->create();
+        $this->attendedLesson($leader, '2026-07-10 10:00:00', 120);
+        $this->attendedLesson($second, '2026-07-11 10:00:00', 90);
 
         $response = $this->actingAs($this->adminUser(), 'sanctum')
             ->getJson('/api/system/teachers/race?month=2026-07')
             ->assertOk()
             ->assertJsonMissingPath('leader_hours');
 
-        $this->assertArrayNotHasKey('hours', $response->json('racers.0'));
+        $this->assertEquals([2, 1.5], collect($response->json('racers'))->pluck('hours')->all());
+    }
+
+    public function test_a_teacher_sees_only_their_own_hours(): void
+    {
+        ['user' => $user, 'teacher' => $me] = $this->teacherUser();
+        $rival = Teacher::factory()->create();
+        $this->attendedLesson($rival, '2026-07-10 10:00:00', 120);
+        $this->attendedLesson($me, '2026-07-11 10:00:00', 90);
+
+        $response = $this->actingAs($user, 'sanctum')
+            ->getJson('/api/system/teachers/race?month=2026-07')
+            ->assertOk()
+            ->assertJsonMissingPath('leader_hours');
+
+        $hours = collect($response->json('racers'))->pluck('hours', 'teacher_id');
+        $this->assertSame([$rival->id, $me->id], $hours->keys()->all());   // ranking is still shared
+        $this->assertEquals(1.5, $hours[$me->id]);
+        $this->assertNull($hours[$rival->id]);
     }
 
     public function test_all_time_and_custom_ranges_use_the_requested_windows(): void

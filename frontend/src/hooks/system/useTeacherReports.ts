@@ -88,6 +88,8 @@ export interface Racer {
   teacher_id: number
   name: string | null
   photo_url: string | null
+  /** Only sent for racers the viewer may see (admin: all, teacher: themselves); null otherwise. */
+  hours: number | null
   rank: number
 }
 

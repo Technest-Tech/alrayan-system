@@ -184,8 +184,9 @@ Route::prefix('system')->name('system.')->group(function () {
         Route::middleware('system.can:courses.edit')->delete('/courses/{course}', [CourseController::class, 'destroy'])->name('courses.destroy');
 
         // Teachers
-        // Teacher Race leaderboard is available to any authenticated user (it only
-        // exposes name/photo/hours) so a teacher can see it on their own dashboard.
+        // Teacher Race leaderboard is available to any authenticated user so a teacher
+        // can see it on their own dashboard. It exposes name/photo/rank for everyone, but
+        // hours only for racers the viewer may view (admin: all, teacher: themselves).
         // Literal route must precede /teachers/{teacher} so "race"/"me" aren't treated as ids.
         Route::get('/teachers/race', [TeacherReportController::class, 'race'])->name('teachers.race');
 

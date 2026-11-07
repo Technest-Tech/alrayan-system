@@ -133,7 +133,9 @@ class TeacherReportController extends Controller
     /**
      * Teacher Race leaderboard — all active teachers ranked by hours taught in the selected
      * window. Drives the gamified race track on the dashboard/profile. Every teacher can
-     * read this, so it returns the ranking only, never the hours behind it. Accepts:
+     * read the ranking, but a racer's hours are only filled in when the viewer may see that
+     * teacher (TeacherPolicy::view): an admin sees everyone's, a teacher only their own,
+     * and every other racer's `hours` comes back null. Accepts:
      *   ?range=all                        → every attended session, all-time
      *   ?from=YYYY-MM-DD&to=YYYY-MM-DD    → custom date range (inclusive)
      *   ?month=YYYY-MM (default)          → a single calendar month (current if omitted)
@@ -173,6 +175,7 @@ class TeacherReportController extends Controller
         }
 
         $hoursByTeacher = $this->lessons->hoursByTeacher($windowStart, $windowEnd);
+        $viewer         = request()->user();
 
         $racers = Teacher::where('is_active', true)
             ->with('user:id,name,photo_url')
@@ -182,13 +185,18 @@ class TeacherReportController extends Controller
                 'name'       => optional($t->user)->name,
                 'photo_url'  => optional($t->user)->photo_url,
                 'hours'      => round((float) ($hoursByTeacher[$t->id] ?? 0), 1),
+                'visible'    => $viewer->can('view', $t),
             ])
             ->sortBy([
                 ['hours', 'desc'],
                 ['name', 'asc'],
             ])
             ->values()
-            ->map(fn(array $r, int $i) => [...Arr::except($r, 'hours'), 'rank' => $i + 1]);
+            ->map(fn(array $r, int $i) => [
+                ...Arr::except($r, ['hours', 'visible']),
+                'hours' => $r['visible'] ? $r['hours'] : null,
+                'rank'  => $i + 1,
+            ]);
 
         return response()->json([
             'range'  => $range,
