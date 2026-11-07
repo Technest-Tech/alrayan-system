@@ -24,6 +24,7 @@ class PaymentsController extends Controller
             ->when($request->payment_status, fn ($q, $s) => $q->where('status', $s))
             ->when($request->search, fn ($q, $s) => $q->whereHas('student', fn ($sq) =>
                 $sq->where('name', 'like', "%{$s}%")
+                   ->orWhere('whatsapp', 'like', "%{$s}%")
                    ->orWhereHas('guardian', fn ($gq) => $gq->where('whatsapp', 'like', "%{$s}%"))
             ))
             ->when($request->teacher_id, fn ($q, $tid) => $q->whereHas('student', fn ($sq) =>

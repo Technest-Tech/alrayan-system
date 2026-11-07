@@ -15,7 +15,8 @@ class PaymentRowResource extends JsonResource
             'package_id'           => $this->id,
             'student_id'           => $student?->id,
             'student_name'         => $student?->name,
-            'phone'                => $student?->guardian?->whatsapp,
+            // The student's own number first; the guardian's only when the student has none.
+            'phone'                => $student?->whatsapp ?: $student?->guardian?->whatsapp,
             'teacher_name'         => $teacher->name,
             'payment_status'       => $this->status,
             'package_number'       => $this->package_number,

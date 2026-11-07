@@ -51,6 +51,28 @@ class PaymentsEndpointsTest extends SystemTestCase
             ]);
     }
 
+    public function test_each_row_shows_the_students_own_phone_falling_back_to_the_guardians(): void
+    {
+        $adult = Student::factory()->create(['whatsapp' => '+201000000001']);
+        $child = Student::factory()->child()->create(['whatsapp' => null]);
+        $child->guardian->update(['whatsapp' => '+201000000002']);
+
+        $this->package($adult, 1, 'pending', 2000);
+        $this->package($child, 1, 'pending', 2000);
+
+        $phones = collect($this->asAdmin()->getJson('/api/system/payments')->assertOk()->json('data'))
+            ->pluck('phone', 'student_id');
+
+        $this->assertSame('+201000000001', $phones[$adult->id]);
+        $this->assertSame('+201000000002', $phones[$child->id]);
+
+        // And the student's own number finds them in search.
+        $this->getJson('/api/system/payments?search=000000001')
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.student_id', $adult->id);
+    }
+
     public function test_marking_a_package_paid_from_the_edit_row_records_the_payment_date(): void
     {
         $pkg = $this->package(Student::factory()->create(), 1, 'pending', 3600);
