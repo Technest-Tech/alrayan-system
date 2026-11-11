@@ -51,6 +51,34 @@ class PaymentsEndpointsTest extends SystemTestCase
             ]);
     }
 
+    public function test_a_deleted_students_packages_are_neither_listed_nor_counted(): void
+    {
+        $kept    = Student::factory()->create();
+        $deleted = Student::factory()->create();
+
+        $keptPackage = $this->package($kept, 0, 'paid', 1000, now());
+        $this->package($deleted, 0, 'paid', 8600, now());
+        $this->package($deleted, 1, 'pending', 4000);
+        $this->package($deleted, 2, 'pending', 4000);
+
+        // Deleting the student leaves their packages behind; they must not show as blank rows.
+        $this->asAdmin()->deleteJson("/api/system/students/{$deleted->id}")->assertOk();
+
+        $this->getJson('/api/system/payments')
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.package_id', $keptPackage->id);
+
+        $this->getJson('/api/system/payments/stats')
+            ->assertOk()
+            ->assertJson([
+                'pending_students'     => 0,
+                'multiple_unpaid'      => 0,
+                'total_pending_minor'  => 0,
+                'received_month_minor' => 1000,
+            ]);
+    }
+
     public function test_each_row_shows_the_students_own_phone_falling_back_to_the_guardians(): void
     {
         $adult = Student::factory()->create(['whatsapp' => '+201000000001']);

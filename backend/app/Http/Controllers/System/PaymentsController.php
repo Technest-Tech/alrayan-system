@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\System\PaymentRowResource;
 use App\Models\System\StudentPackage;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 
 class PaymentsController extends Controller
 {
@@ -20,6 +19,9 @@ class PaymentsController extends Controller
             ->groupBy('student_id');
 
         $query = StudentPackage::whereIn('id', $latestIds)
+            // Deleting a student soft-deletes only the student; their packages stay behind and
+            // would list as blank rows with no name, teacher or phone.
+            ->whereHas('student')
             ->with(['student.assignedTeacher.user', 'student.guardian'])
             ->when($request->payment_status, fn ($q, $s) => $q->where('status', $s))
             ->when($request->search, fn ($q, $s) => $q->whereHas('student', fn ($sq) =>
@@ -54,36 +56,37 @@ class PaymentsController extends Controller
     {
         // Matches index() so the counters describe the same rows the list shows. #0 is always
         // paid, so it can never add to the pending tally below.
+        // Packages of deleted students are left behind by the delete; they count for nothing here.
+        $live = fn () => StudentPackage::query()->whereHas('student');
+
         $latestIds = StudentPackage::selectRaw('MAX(id) as id')
             ->whereNull('deleted_at')
             ->groupBy('student_id');
 
-        $pendingStudents = StudentPackage::whereIn('id', $latestIds)
+        $pendingStudents = $live()->whereIn('id', $latestIds)
             ->where('status', 'pending')
             ->count();
 
-        $multipleUnpaid = DB::table(
-            DB::table('sys_student_packages')
-                ->whereNull('deleted_at')
-                ->where('status', 'pending')
-                ->selectRaw('student_id')
-                ->groupBy('student_id')
-                ->havingRaw('COUNT(*) > 1'),
-            'sub'
-        )->count();
+        $multipleUnpaid = $live()
+            ->where('status', 'pending')
+            ->select('student_id')
+            ->groupBy('student_id')
+            ->havingRaw('COUNT(*) > 1')
+            ->get()
+            ->count();
 
-        $totalPendingMinor = StudentPackage::whereNull('deleted_at')
+        $totalPendingMinor = $live()
             ->where('status', 'pending')
             ->sum('tariff_at_time');
 
-        $receivedMinor = StudentPackage::whereNull('deleted_at')
+        $receivedMinor = $live()
             ->where('status', 'paid')
             ->whereNotNull('paid_at')
             ->whereMonth('paid_at', now()->month)
             ->whereYear('paid_at', now()->year)
             ->sum('tariff_at_time');
 
-        $currency = StudentPackage::whereNull('deleted_at')
+        $currency = $live()
             ->whereNotNull('currency')
             ->value('currency') ?? 'USD';
 
